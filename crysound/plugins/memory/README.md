@@ -20,6 +20,6 @@ SQLite 事务串行处理并发写入，读写携带版本，冲突明确返回�
 
 ## 检查与交付
 
-轻量检查：Node 24 执行 `node --check index.mjs`、`node --check store.mjs`、`node --check panel.mjs`、`node --check client.js` 和 `node --test tests/*.test.mjs`。测试覆盖持久化、删除后原文移除、旧版本拒写、预算与满额回滚、凭据拒存、独立用户目录和真实 HTTP 管理接口。
+轻量检查：Node 24 执行 `node --check index.mjs`、`node --check store.mjs`、`node --check panel.mjs`、`node --check client.js` 和 `node --test tests/*.test.mjs`。测试覆盖持久化、删除后原文移除、旧版本拒写、预算与满额回滚、凭据拒存、独立用户目录和真实 HTTP 管理接口。仓库中的测试另从已提交的真实模型合成会话快照无密钥回放保存、召回、两种删除及重启，不调用模型；单独发布的运行包不包含测试及评估资料。
 
 部署由伙伴助理打包并仅安装到隔离测试账号；不发布市场、不改预装或正式容器。先经界面和存储结构分诊，再按 [隔离实测步骤](../memory-evaluation/TRIAL.md) 验收自动保存、新会话召回、遗忘、重启复查、中文页面查看/删除、公司域名代理和备份恢复，均通过后再交负责人决定是否预装。候选评估及真实证据见 [评估目录](../memory-evaluation/README.md)。

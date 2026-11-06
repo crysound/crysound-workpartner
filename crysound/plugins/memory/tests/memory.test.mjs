@@ -78,6 +78,29 @@ test('independent personal data roots never share memory', t => {
   assert.equal(two.snapshot().facts.length, 0);
 });
 
+test('keyless replay of recorded model rounds preserves save, recall and both deletion paths', t => {
+  const { store, dir } = fixture(t);
+  const evidence = JSON.parse(readFileSync(new URL('../../memory-evaluation/trial-evidence.json', import.meta.url), 'utf8'));
+  const ids = ['cc2259a0-d0aa-40e1-bbbf-abe887d94d51', 'b2944e78-e8f5-4a0e-91e2-f24a538f0cef', '7a9ae0ab-25fa-4e0c-9d45-310623799412', 'd3ac0f9a-b8e9-4ce9-a118-21afadbd73f5'];
+  for (const id of ids) {
+    // The recorded page confirmation happened between the third session and the restart.
+    if (id === ids[3]) store.remove({ id: '82e09c2b58f388f268e314f8', revision: 4 });
+    const session = evidence.sessions.find(s => s.session === 'session-' + id);
+    assert.ok(session);
+    const events = [...session.recall.map(x => ({ ...x, type: 'snapshot' })), ...session.memoryTools.map(x => ({ ...x, type: 'tool' }))].sort((a, b) => a.seq - b.seq);
+    for (const event of events) {
+      if (event.type === 'snapshot') assert.deepEqual(store.snapshot(), event.snapshot);
+      else if (event.name === 'crysound_memory_save') store.save(event.arguments);
+      else if (event.name === 'crysound_memory_forget') store.remove(event.arguments);
+      else assert.equal(event.name, 'crysound_memory_list');
+    }
+  }
+  const restarted = new MemoryStore(dir);
+  t.after(() => restarted.close());
+  assert.deepEqual(restarted.snapshot(), store.snapshot());
+  assert.deepEqual(restarted.snapshot().facts.map(f => f.title), ['工作方向']);
+});
+
 test('panel accepts configured public domains and refuses cross-site or rebound requests', () => {
   const startup = { trustedHosts: ['partner.example', 'exact.example:8080'] };
   const allowed = (headers) => trustedRequest({ headers }, startup, '172.22.0.3');
