@@ -10,8 +10,10 @@ const IMAGE = process.env.PARTNER_IMAGE;
 const USERS_FILE = "/etc/partner/users.json";
 const REDIRECT = `https://${PUBLIC_HOST}/_zp/callback`;
 // 宿主路径（建容器时 Docker 按宿主路径挂载）与网关内看到的路径
-const HOST_USERS = "/srv/xiaoman/zhaohua-partner/users";
-const HOST_SECURE = "/srv/xiaoman/secure/zhaohua-partner";
+const HOST_USERS = `${process.env.HOST_PARTNER_DATA || "/srv/xiaoman/zhaohua-partner"}/users`;
+const HOST_SECURE = process.env.HOST_PARTNER_SECURE || "/srv/xiaoman/secure/zhaohua-partner";
+// MAGPIE_KEYS=pool：magpie 不在本机（经内网连过去）时，新人从 /secure/magpie-pool 领一把预先建好的钥匙，领用记在 assigned.log。
+const KEY_POOL = process.env.MAGPIE_KEYS === "pool" ? "/secure/magpie-pool" : null;
 const DSH_UID = 1001;
 
 const secret = () => fs.readFileSync("/secure/feishu-app.secret", "utf8").trim();
@@ -59,6 +61,14 @@ async function dockerExec(docker, container, cmd) {
 async function magpieKey(docker, slug) {
   const file = `/secure/magpie-${slug}.key`;
   if (fs.existsSync(file)) return;
+  if (KEY_POOL) {
+    const spare = fs.readdirSync(KEY_POOL).filter((f) => f.endsWith(".key")).sort()[0];
+    if (!spare) throw new Error("预建的 magpie 钥匙用完了");
+    fs.renameSync(`${KEY_POOL}/${spare}`, file);
+    fs.chownSync(file, DSH_UID, DSH_UID);
+    fs.appendFileSync(`${KEY_POOL}/assigned.log`, `${spare} ${slug} ${new Date().toISOString()}\n`);
+    return;
+  }
   const name = `zhaohua-partner-${slug}`;
   const key = (await dockerExec(docker, "magpie", ["/magpie", "gateway-key", "add", name])).match(/sk-magpie-key-[A-Za-z0-9_-]+/)?.[0];
   if (!key) throw new Error("magpie 没有返回钥匙");
