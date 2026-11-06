@@ -15,6 +15,7 @@ description: 把公司 Cordis 插件组合包发布或更新到兆华市场，�
 {
   "name": "@crysound/example",
   "version": "0.1.0",
+  "displayName": "示例插件",
   "description": "这个插件帮助同事完成什么",
   "type": "module",
   "files": ["cordis.patch.yml", "lib", "README.md"],
@@ -23,6 +24,8 @@ description: 把公司 Cordis 插件组合包发布或更新到兆华市场，�
 ```
 
 README 说明用途、配置、权限和限制；有版本要求时声明 `engines.dsh`。先构建，用 `npm pack --dry-run` 核对内容并确认可通过 dsh profile 加载。不得包含令牌、`.env`、用户数据或本机路径。
+
+`package.json` 可写中文 `displayName`（也支持 `title`，前者优先），1 到 80 字；市场按它显示，安装仍使用原包名。公司官方插件显示名统一用“兆华 + 两到四字”，例如“兆华设计”“兆华动效”。“兆华官方”标识和作者“兆华工作伙伴”由管理员配置的发布账号与包名共同决定，发布者不能用包内字段自行声明官方；普通同事发布的包不带该标识。
 
 ## 身份与发布
 

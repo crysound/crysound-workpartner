@@ -40,9 +40,11 @@ function readState(file) {
  * 创建市场 HTTP 处理器；发布与审批串行、原子保存。未知上传结果保留 publishing，需管理员核对。
  * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份与用户列表读取器、管理员列表与通知函数。
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
+ *   officialPublishers 与 officialPackages 必须同时命中才显示官方标识；后者允许 @crysound/*，缺省均为空。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+  const officialNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效" };
   let state = readState(stateFile);
   let queue = Promise.resolve();
   const serial = (work) => {
@@ -72,6 +74,9 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     const [version, manifest] = entries[0];
     if (!VERSION.test(version) || semver.valid(version) === null || manifest?.name !== name || manifest?.version !== version || typeof manifest.dsh?.bundle?.patch !== "string" || !manifest.dsh.bundle.patch.trim() || typeof manifest.description !== "string" || !manifest.description.trim()) throw fail(400, "需要有效版本、description 和 dsh.bundle.patch");
     if (manifest.engines?.dsh !== undefined && (typeof manifest.engines.dsh !== "string" || !manifest.engines.dsh.trim() || semver.validRange(manifest.engines.dsh) === null)) throw fail(400, "engines.dsh 必须是有效的 SemVer 范围");
+    for (const field of ["displayName", "title"]) {
+      if (manifest[field] !== undefined && (typeof manifest[field] !== "string" || !manifest[field].trim() || manifest[field].length > 80)) throw fail(400, `${field} 必须是 1 到 80 字的显示名`);
+    }
     if (!doc._attachments || typeof doc._attachments !== "object" || Array.isArray(doc._attachments) || Object.keys(doc._attachments).length !== 1 || doc._deleted || doc._rev) throw fail(400, "只接受带 tarball 的新版本发布");
     // 仅向后端发送新版本数据，丢弃调用者的权限、修订号等注册表字段。
     const upload = JSON.stringify({ name, versions: { [version]: manifest }, "dist-tags": {}, _attachments: doc._attachments, readme: typeof doc.readme === "string" ? doc.readme : "" });
@@ -132,12 +137,16 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       });
       if (!versions.length) continue;
       const manifest = doc.versions[(versions.find((v) => semver.prerelease(v.version) === null) ?? versions[0]).version];
-      plugins.push({ name, description: manifest.description, author: users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
-        metadata: { keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: [], sortKeys: {} },
+      const official = officialPublishers.includes(pkg.owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*"));
+      const title = (official ? officialNames[name] : undefined) || manifest.displayName || manifest.title;
+      if (title !== undefined && (typeof title !== "string" || !title.trim() || title.length > 80)) throw fail(502, "已批准版本的显示名无效");
+      plugins.push({ name, ...(title === undefined ? {} : { title: title.trim() }), description: manifest.description,
+        author: official ? "兆华工作伙伴" : users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
+        metadata: { keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: official ? ["crysound-official"] : [], sortKeys: {} },
         versions,
       });
     }
-    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories: {}, labels: {}, sortKeys: {} }, plugins });
+    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories: {}, labels: { "crysound-official": { title: { zh: "兆华官方", en: "CRYSOUND official" } } }, sortKeys: {} }, plugins });
   }
 
   async function admin(req, res) {

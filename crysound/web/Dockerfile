@@ -2,6 +2,10 @@ FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates python3 ripgrep iproute2 librsvg2-bin \
  && rm -rf /var/lib/apt/lists/* \
  && npm i -g @deepseek-ai/dsh@0.2.2-rc.1 pnpm@10 && npm cache clean --force
+# 公司市场标签在打包时修补；运行中的普通用户不写全局运行时。
+COPY scripts/patch-market-ui.mjs /tmp/patch-market-ui.mjs
+RUN node /tmp/patch-market-ui.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-plugin-manager/lib/client.js" \
+ && rm /tmp/patch-market-ui.mjs
 # 固定公司插件包在构建时下载并校验；profile 只依赖本地文件。
 COPY plugin-artifacts.mjs /opt/partner/plugin-artifacts.mjs
 RUN node /opt/partner/plugin-artifacts.mjs download /opt/company-plugins \

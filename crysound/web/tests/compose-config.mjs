@@ -27,6 +27,8 @@ try {
   assert.deepEqual(Object.keys(registry.networks), ["partner-net"]);
   assert.ok(registry.volumes.some((v) => v.source === `${root}/data/npm` && v.target === "/verdaccio/storage"));
   assert.equal(config.services.gateway.environment.MARKET_ADMINS, "alice,bob");
+  assert.equal(config.services.gateway.environment.MARKET_OFFICIAL_PUBLISHERS, "");
+  assert.equal(config.services.gateway.environment.MARKET_OFFICIAL_PACKAGES, "");
   assert.equal(config.services.gateway.ports.length, 1);
   assert.equal(config.services.gateway.ports[0].target, 3090);
   assert.equal(config.services.gateway.environment.FEISHU_USER_AUTH_ENABLED, "0");
