@@ -24,7 +24,7 @@ ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ff
 COPY brand/ /tmp/brand/
 RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
  cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
- cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/welcome.js; \
+ cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/pet.js $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
         -e 's#\(href="\./\(favicon[-a-z]*\.svg\|apple-touch-icon\.png\)\)"#\1?v='"$v"'"#g' \
