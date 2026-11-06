@@ -525,7 +525,7 @@ export async function packageTarget(
   await execute(['run', 'prepare:dsh', ...(signPrimaryRuntime ? ['--defer-runtime-smoke'] : [])], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime', '--dsh'], electronBuilderEnv)
   // CRYSOUND: pre-install the company plugins so the first launch copies them instead of downloading.
-  if (target.platform === 'darwin') await execute(['exec', 'tsx', 'scripts/prepare-plugin-template.ts'], downloadEnv)
+  if (target.platform === 'darwin' || target.platform === 'win32') await execute(['exec', 'tsx', 'scripts/prepare-plugin-template.ts'], downloadEnv)
   if (invocation.prepareOnly) return
   const buildMacArtifact = (artifact: DesktopPrepackagedArtifact) => execute(
     desktopElectronBuilderArguments(target, false, artifact), artifact.format === 'zip'

@@ -77,6 +77,15 @@ jobs:
           if (-not $app) { throw 'installed app not found' }
           "installed: $($app.FullName)"
           New-Item -ItemType Directory -Force smoke | Out-Null
+          # Exercise the real preparation with the installed runtime before GUI login is possible.
+          # The script forbids plugin installation, verifies all five actual modules, and runs twice.
+          $env:SMOKE_APP = $app.FullName
+          $env:SMOKE_ROOT = Join-Path (Get-Location) 'smoke\plugins'
+          $env:ELECTRON_RUN_AS_NODE = '1'
+          & $app.FullName --import tsx/esm apps/desktop/scripts/crysound-smoke-windows-workspace.ts 2>&1 | Tee-Object smoke\plugins.txt
+          $pluginSmokeExit = $LASTEXITCODE
+          Remove-Item Env:ELECTRON_RUN_AS_NODE
+          if ($pluginSmokeExit -ne 0) { throw "offline plugin preparation failed with code $pluginSmokeExit" }
           $p = Start-Process -FilePath $app.FullName -PassThru -RedirectStandardOutput smoke\stdout.txt -RedirectStandardError smoke\stderr.txt
           Start-Sleep -Seconds 90
           Add-Type -AssemblyName System.Windows.Forms, System.Drawing

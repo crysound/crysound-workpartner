@@ -5,7 +5,7 @@
  * `modules/` stands for the profile's `node_modules`, because electron-builder drops a source directory's root `node_modules`.
  */
 import { spawn } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join, resolve } from 'node:path'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
@@ -14,7 +14,8 @@ import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetB
 
 const paths = resolveDesktopTargetBuildPaths()
 const target = desktopTargetPlatform(resolveDesktopBuildTarget())
-if (target.platform !== 'darwin' || target.arch !== process.arch) {
+const nativeWindows = target.platform === 'win32' && process.platform === 'win32' && target.arch === 'x64'
+if ((target.platform !== 'darwin' && !nativeWindows) || target.arch !== process.arch) {
   console.log(`plugin template: skipped for ${target.platform}-${target.arch} on ${process.platform}-${process.arch}; the app installs plugins online`)
   process.exit(0)
 }
@@ -30,7 +31,7 @@ if (existsSync(stamp) && readFileSync(stamp, 'utf8') === listText) {
 }
 rmSync(out, { recursive: true, force: true })
 
-const electron = join(paths.electron, 'Electron.app/Contents/MacOS/Electron')
+const electron = join(paths.electron, target.platform === 'win32' ? 'electron.exe' : 'Electron.app/Contents/MacOS/Electron')
 const cli = join(paths.dsh, 'node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js')
 const home = mkdtempSync(join(tmpdir(), 'zp-plugin-template-'))
 const profile = join(home, 'profiles', 'desktop')
@@ -56,10 +57,18 @@ for (const plugin of list.plugins) {
 }
 
 mkdirSync(out, { recursive: true })
-const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> }
+const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { name?: string; dependencies?: Record<string, string> }
 writeFileSync(join(out, 'package.json'), `${JSON.stringify({ dependencies: manifest.dependencies ?? {} }, null, 2)}\n`)
 cpSync(join(profile, 'pnpm-lock.yaml'), join(out, 'pnpm-lock.yaml'))
-cpSync(join(profile, 'node_modules'), join(out, 'modules'), { recursive: true, verbatimSymlinks: true })
+const modules = join(profile, 'node_modules')
+if (nativeWindows) {
+  // pnpm's workspace self-reference is not a dependency. Other Windows junctions must become portable files.
+  const self = manifest.name ? join(modules, manifest.name) : undefined
+  cpSync(modules, join(out, 'modules'), {
+    recursive: true, dereference: true,
+    filter: source => !(source === self && lstatSync(source).isSymbolicLink() && realpathSync(source) === realpathSync(profile)),
+  })
+} else cpSync(modules, join(out, 'modules'), { recursive: true, verbatimSymlinks: true })
 // pnpm's own state files record this machine's store path; the user's pnpm writes its own on the next install.
 for (const name of readdirSync(join(out, 'modules'))) {
   if (name === '.modules.yaml' || name.startsWith('.pnpm-workspace-state')) rmSync(join(out, 'modules', name), { force: true })
