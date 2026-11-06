@@ -1,4 +1,4 @@
-# 兆华工作伙伴的默认配置：首次写入默认值，每次启动刷新公司 magpie 提供方，个人其他提供方保留。
+# 兆华工作伙伴的默认配置：首次写入默认值，每次启动刷新公司 magpie 提供方和搜索地址、模型，个人其他提供方保留。
 # 模型地址由启动环境注入：桌面版连公开网关，网页版连内部模型网关；配置文件不包含部署地址。
 # 默认用 ChatGPT；DeepSeek 内置路由的地址和钥匙在启动时同样改指网关。
 - id: llm-pi-ai
@@ -36,6 +36,12 @@
     provider: magpie
     model: codex/gpt-6.1-sol
     reasoningEffort: medium
+
+# 网页搜索同样经网关：搜索插件默认直连 DeepSeek 官方地址，那里不认公司网关的钥匙。
+- id: web-search-deepseek
+  config:
+    baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL
+    model: deepseek/deepseek-flash
 
 # 预览版说明窗口按已读处理：新人第一次进来直接到输入框，首次进入后的飞书接入引导才不会被挡住。
 - id: ui-settings-general

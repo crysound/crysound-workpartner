@@ -92,6 +92,7 @@ function proxyModel(req, res, user, path) {
   try { key = fs.readFileSync(`/secure/magpie-${user.slug}.key`, "utf8").trim(); } catch { res.writeHead(403); return res.end(); }
   const headers = { ...req.headers, host: "magpie:3425", authorization: `Bearer ${key}` };
   delete headers.cookie;
+  delete headers["x-api-key"]; // Anthropic 格式的请求（网页搜索）同时带这一项，留着会让 magpie 拿通行证当钥匙。
   const up = http.request({ host: "magpie", port: 3425, path, method: req.method, headers }, (r) => {
     res.writeHead(r.statusCode, r.headers);
     r.pipe(res);

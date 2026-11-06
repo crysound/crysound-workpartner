@@ -66,7 +66,7 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   refreshProfile(file, seed, yaml, true);
   let text = await readFile(file, "utf8");
-  assert.equal(load(text).length, 4);
+  assert.deepEqual(load(text).map(row => row.id), load(await readFile(seed, "utf8")).map(row => row.id));
   text = text.replace("    reasoningEffort: medium\n", "");
   await writeFile(file, text);
   refreshProfile(file, seed, yaml);
@@ -76,12 +76,12 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "agent-default-model").config.reasoningEffort, "max");
   await writeFile(file, "[]\n");
   refreshProfile(file, seed, yaml);
-  assert.deepEqual(load(await readFile(file, "utf8")).map(row => row.id), ["llm-pi-ai"]);
+  assert.deepEqual(load(await readFile(file, "utf8")).map(row => row.id), ["llm-pi-ai", "web-search-deepseek"]);
 });
 
 test("invalid personal configuration fails without changing the file", async (t) => {
   const root = await temp(t), file = join(root, "cordis.patch.yml");
-  for (const text of ["- id: [broken\n", "- id: llm-pi-ai\n  config:\n    providers: !!js process.env.PROVIDERS\n"]) {
+  for (const text of ["- id: [broken\n", "- id: llm-pi-ai\n  config:\n    providers: !!js process.env.PROVIDERS\n", "- id: web-search-deepseek\n  config: !!js process.env.SEARCH_CONFIG\n"]) {
     await writeFile(file, text);
     assert.throws(() => refreshProfile(file, join(assets, "config/partner.patch.yml"), yaml));
     assert.equal(await readFile(file, "utf8"), text);
@@ -120,6 +120,7 @@ test("desktop selects the gateway snapshot, otherwise the whole packaged snapsho
   const root = await temp(t);
   let failure = false, invalid = false;
   const origin = await server(t, async (req, res) => {
+    res.setHeader("content-type", "text/plain; charset=utf-8");
     assert.equal(req.headers.authorization, `Bearer ${token}`);
     const file = req.url.slice("/_zp/config/".length);
     if (failure && file === "partner.patch.yml") { res.writeHead(503); return res.end(); }
@@ -150,6 +151,7 @@ test("desktop startup applies the selected plugin version and provider, then fal
   await writeFile(join(config, "plugins.json"), JSON.stringify({ plugins: [{ name: "fake-plugin", spec: "fake-plugin@1", want: "1" }], defaultBundles: ["fake-bundle"] }));
   let online = true, version = "2";
   const origin = await server(t, async (req, res) => {
+    res.setHeader("content-type", "text/plain; charset=utf-8");
     if (!online) { res.writeHead(503); return res.end(); }
     const file = req.url.slice("/_zp/config/".length);
     const text = await readFile(join(config, file), "utf8");
@@ -226,4 +228,25 @@ test("configuration refresh resolves a source-only dependency tree without any g
   assert.equal(result.status, 0, result.stderr);
   assert.equal(provider(load(await readFile(patch, "utf8"))).magpie.models[0].id, "codex/gpt-6.1-sol");
   for (const [directory] of packages) assert.ok(!(await readdir(join(root, directory))).includes("lib"));
+});
+
+test("startup refreshes missing and literal search settings from company config on every run", async (t) => {
+  const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
+  for (const baseURL of [undefined, "http://models.example.invalid:3425/v1", "https://partner.example.invalid/_zp/llm/v1"]) {
+    const rows = baseURL === undefined ? [] : [{ id: "web-search-deepseek", disabled: true,
+      config: { baseURL, model: "deepseek-v4-flash", maxResults: 3 } }];
+    await writeFile(file, yaml.stringify(rows));
+    refreshProfile(file, seed, yaml);
+    const after = await readFile(file, "utf8");
+    const search = load(after).find(row => row.id === "web-search-deepseek");
+    assert.equal(search.config.baseURL, "process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL");
+    assert.match(after, /baseURL: !!js process.env.CRYSOUND_LLM_BASE \|\| process.env.DEEPSEEK_BASE_URL/);
+    assert.equal(search.config.model, "deepseek/deepseek-flash");
+    if (baseURL !== undefined) {
+      assert.equal(search.config.maxResults, 3);
+      assert.equal(search.disabled, true);
+    }
+    refreshProfile(file, seed, yaml);
+    assert.equal(await readFile(file, "utf8"), after, "second run is byte-identical");
+  }
 });

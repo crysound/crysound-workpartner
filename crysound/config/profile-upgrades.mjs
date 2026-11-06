@@ -1,4 +1,4 @@
-// Refresh the company provider while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// Refresh company model and search settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
 // node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -38,6 +38,10 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
     else if (!yaml.isMap(value)) throw new Error("个人模型配置使用了动态表达式，无法安全刷新公司提供方；请把 providers 改为映射");
   }
   mine.setIn([index, "config", "providers", "magpie"], provider.clone());
+
+  // Preserve the search migration without replacing the user's existing search setup.
+  const searchIndex = find(seed, "web-search-deepseek");
+  if (searchIndex >= 0 && find(mine, "web-search-deepseek") < 0) mine.add(seed.contents.items[searchIndex].clone());
 
   // Historical default migration: leave the user's chosen model/effort alone.
   const defaultIndex = find(mine, "agent-default-model");
