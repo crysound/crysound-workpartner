@@ -404,8 +404,11 @@ async function main(): Promise<void> {
     for (const failure of result.failures) console.warn(`desktop login shell: ${failure.shell} failed (${failure.reason})`)
     return result.environment
   })
-  let hostEnvironment: NodeJS.ProcessEnv = { ...process.env, ...partnerHostEnvironment(partner) }
-  const prepareHostEnvironment = async (): Promise<void> => { hostEnvironment = { ...(await loginShell), ...partnerHostEnvironment(partner) } }
+  let hostEnvironment: NodeJS.ProcessEnv = { ...process.env, ...partnerHostEnvironment(partner, process.env) }
+  const prepareHostEnvironment = async (): Promise<void> => {
+    const environment = await loginShell
+    hostEnvironment = { ...environment, ...partnerHostEnvironment(partner, environment) }
+  }
   let quitting = false
   let startup: Promise<void> | undefined
   let workspaceRecovery: Promise<void> | undefined

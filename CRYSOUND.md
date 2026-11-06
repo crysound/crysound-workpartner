@@ -21,6 +21,7 @@
 ### 登录与模型
 - 启动时 `src/crysound/partner.ts` 读取 `userData/partner-session.json`（权限 600）；没有令牌，或网关对令牌返回 401 时，打开窗口加载 `https://workpartner.corp.crysound.com/_zp/desktop-login`，拦截跳到 `/_zp/desktop-done#token=…&name=…&avatar=…` 的那一步，存令牌后关窗进入工作区。
 - Host 环境：`MAGPIE_API_KEY`、`DEEPSEEK_API_KEY` 为令牌，`DEEPSEEK_BASE_URL=https://workpartner.corp.crysound.com/_zp/llm/v1`。
+- `src/main.ts` 在恢复登录终端环境后，把公司飞书命令目录加到恢复后的 PATH 前，保留 Homebrew 和终端安装的工具。
 - 运行中模型请求返回 401：`crysound/host-hook.mjs`（Host 以 `--import` 预加载）包装 `fetch`，通过 IPC 通知壳层，壳层打开登录窗口，成功后重启应用。
 - 菜单“退出登录”：删令牌、清登录窗口的飞书会话，重启后进入登录窗口。
 

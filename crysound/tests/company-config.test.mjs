@@ -179,6 +179,18 @@ test("desktop startup applies the selected plugin version and provider, then fal
   assert.deepEqual(manifest.dsh.profile.bundles, ["fake-bundle", "@deepseek-ai/dsh-experimental-plugin-market-bundle"]);
   assert.equal(provider(load(await readFile(join(profile, "cordis.patch.yml"), "utf8"))).magpie.models[0].id, "codex/gpt-6.1-sol");
   assert.deepEqual((await readdir(userData)).filter(file => file.startsWith("company-config-")), []);
+  // PUBLIC_HOST can launch from source without generating public-host.json.
+  await rm(join(config, "public-host.json"));
+  online = true;
+  await prepareCompanyWorkspace(options);
+  const feishuConfig = join(userData, "company/feishu.json");
+  assert.equal(JSON.parse(await readFile(feishuConfig, "utf8")).meegleHost, "project.example.test");
+  online = false;
+  await prepareCompanyWorkspace(options);
+  assert.equal(JSON.parse(await readFile(feishuConfig, "utf8")).meegleHost, "");
+  assert.match(await readFile(join(userData, "company/bin/lark-cli"), "utf8"), /cli\.mjs/);
+  await writeFile(join(config, "public-host.json"), "not JSON");
+  await assert.rejects(prepareCompanyWorkspace(options), SyntaxError);
 });
 
 

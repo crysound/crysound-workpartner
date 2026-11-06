@@ -30,7 +30,13 @@ echo "info  plugin template: $(du -sh "$tpl" | cut -f1), $(find "$tpl" -type f |
 has "$res/runtime/cli/bin/dsh"
 if [ -e "$res/app-update.yml" ]; then echo "FAIL  app-update.yml present (update feed configured)"; fail=1; else echo "ok    no app-update.yml (updates off)"; fi
 grep -qF 'baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL' "$res/crysound/config/partner.patch.yml" && echo "ok    seed uses the startup model gateway" || { echo "FAIL  seed baseURL"; fail=1; }
-node -e 'const fs=require("node:fs"),c=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(Object.keys(c).length!==1 || typeof c.PUBLIC_HOST!=="string" || !/^[a-z0-9.-]+(?::[0-9]+)?$/i.test(c.PUBLIC_HOST) || new URL(`https://${c.PUBLIC_HOST}`).host!==c.PUBLIC_HOST.toLowerCase()) process.exit(1)' "$res/crysound/config/public-host.json" && echo "ok    packaged PUBLIC_HOST is valid" || { echo "FAIL  packaged PUBLIC_HOST"; fail=1; }
+node -e '
+const fs = require("node:fs"), c = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const domain = value => typeof value === "string" && /^[a-z0-9.-]+(?::[0-9]+)?$/i.test(value)
+  && new URL(`https://${value}`).host === value.toLowerCase();
+if (Object.keys(c).some(key => !["PUBLIC_HOST", "MEEGLE_HOST"].includes(key)) || !domain(c.PUBLIC_HOST)
+  || (c.MEEGLE_HOST !== undefined && c.MEEGLE_HOST !== "" && !domain(c.MEEGLE_HOST))) process.exit(1);
+' "$res/crysound/config/public-host.json" && echo "ok    packaged public hosts are valid" || { echo "FAIL  packaged public hosts"; fail=1; }
 
 asar="$res/app.asar"
 has "$asar"
