@@ -48,8 +48,18 @@ find "$target" -type d \( -name '*.framework' -o -name '*.app' \) ! -path "$targ
 sign "$target"
 codesign --verify --deep --strict "$target"
 
+# Swap the signed app into a writable copy of the original image, so the window layout, background and
+# Applications link that electron-builder made stay as they were.
 signed="$out/$(basename "$dmg" | sed 's/-unsigned//')"
-hdiutil create -volname "${name%.app}" -srcfolder "$target" -ov -format ULMO "$signed" >/dev/null
+rw="$work/rw.dmg"
+hdiutil convert "$dmg" -format UDRW -o "$rw" -quiet
+hdiutil resize -size "$(( $(du -sm "$target" | cut -f1) + 200 ))m" "$rw"
+hdiutil attach "$rw" -mountpoint "$mount" -nobrowse -quiet
+rm -rf "$mount/$name"
+ditto "$target" "$mount/$name"
+test -L "$mount/Applications"
+hdiutil detach "$mount" -quiet
+hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
 result="$work/notarize.txt"
@@ -60,5 +70,7 @@ if ! grep -q "status: Accepted" "$result"; then
   echo "notarization was not accepted"
   exit 1
 fi
-xcrun stapler staple "$signed"
+# Apple's ticket service drops connections now and then (exit 68); retry before failing the build.
+retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" -lt 3 ] && sleep 20; done; return 1; }
+retry xcrun stapler staple "$signed"
 ls -lh "$signed"
