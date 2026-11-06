@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, cpSync, existsSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createRequire } from 'node:module';
+import { createRequire, stripTypeScriptTypes } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { FEISHU, WEB_SPEC, DESKTOP_WANT, verifyArchive, desktopPlugins, repairLockfile } from '../plugin-artifacts.mjs';
 import { prepareCompanyWorkspace } from '../../apps/desktop/src/crysound/workspace.ts';
@@ -66,16 +67,17 @@ test('web plugin startup repairs both locks before replacing the remote dependen
   writeFileSync(join(profile, 'package.json'), JSON.stringify({ dependencies: { [FEISHU.name]: FEISHU.url } }));
   for (const lock of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) writeFileSync(join(profile, lock), oldLock(false));
   // The installer only checks call order; real dsh/pnpm add/remove is covered by plugin-install-smoke.mjs.
-  const cli = join(bin, 'cli.mjs');
-  writeFileSync(cli, `import fs from 'node:fs';
+  const cli = join(bin, 'dsh');
+  writeFileSync(cli, `#!/usr/bin/env node
+import fs from 'node:fs';
     const p = process.env.DSH_HOME + '/profiles/web';
     for (const lock of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) {
       if (!fs.readFileSync(p + '/' + lock, 'utf8').includes(${JSON.stringify(FEISHU.integrity)})) process.exit(4);
     }
     if (process.argv.at(-1) !== ${JSON.stringify(WEB_SPEC)}) process.exit(5);
     fs.writeFileSync(p + '/package.json', JSON.stringify({dependencies:{${JSON.stringify(FEISHU.name)}:${JSON.stringify(WEB_SPEC)}}}, null, 2));
-    fs.appendFileSync(p + '/calls', 'add\\n');`);
-  writeFileSync(join(bin, 'dsh'), `#!/bin/sh\nexec '${process.execPath}' '${cli}' "$@"\n`, { mode: 0o755 });
+    fs.appendFileSync(p + '/calls', 'add\\n');`, { mode: 0o755 });
+  symlinkSync(process.execPath, join(bin, 'node'));
   const modules = join(bin, 'node_modules');
   for (const name of ['dsh', 'dsh-base', 'dsh-config-editor']) {
     const packageDir = join(modules, '@deepseek-ai', name);
@@ -89,9 +91,9 @@ test('web plugin startup repairs both locks before replacing the remote dependen
   const entrypoint = readFileSync(join(assets, 'web/entrypoint.sh'), 'utf8');
   const section = entrypoint.slice(entrypoint.indexOf('# 旧远程'), entrypoint.indexOf('# 第三方'))
     .replace('/opt/partner/plugin-artifacts.mjs', join(assets, 'plugin-artifacts.mjs'));
-  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, DSH_HOME: directory };
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, DSH_HOME: directory, CONFIG: config };
   for (let run = 0; run < 2; run++) {
-    const result = spawnSync('sh', ['-c', `CONFIG='${config}'\n${section}`], { env, encoding: 'utf8', timeout: 10000 });
+    const result = spawnSync('sh', ['-c', section], { env, encoding: 'utf8', timeout: 10000 });
     assert.equal(result.status, 0, result.stderr);
     assert.doesNotMatch(result.stdout, /安装失败/);
   }
@@ -122,7 +124,7 @@ test('desktop refuses a damaged bundled archive before changing the profile copy
   assert.deepEqual(readFileSync(target), before);
 });
 
-for (const template of [false, true]) test(`desktop preparation ${template ? 'copies the offline template' : 'installs from its local archive'} and repeats without reinstalling`, { skip: !archive }, async (t) => {
+for (const [template, emitted] of [[false, false], [true, false], [true, true]]) test(`desktop preparation ${emitted ? 'from the emitted directory ' : ''}${template ? 'copies the offline template' : 'installs from its local archive'} and repeats without reinstalling`, { skip: !archive }, async (t) => {
   const directory = temp(t), packaged = join(directory, 'packaged'), profile = join(directory, 'home/profiles/desktop'), userData = join(directory, 'userData');
   mkdirSync(join(packaged, 'config/skills/publish-zhaohua-market'), { recursive: true });
   mkdirSync(join(packaged, 'feishu')); mkdirSync(join(packaged, 'company-plugins')); mkdirSync(profile, { recursive: true });
@@ -146,10 +148,22 @@ for (const template of [false, true]) test(`desktop preparation ${template ? 'co
     writeFileSync(join(base, 'package.json'), JSON.stringify({ dependencies: { [FEISHU.name]: DESKTOP_WANT } }));
     writeFileSync(join(base, 'pnpm-lock.yaml'), `lockfileVersion: '9.0'\n# ${DESKTOP_WANT}\n`);
   }
+  let prepare = prepareCompanyWorkspace;
+  if (emitted) {
+    const output = join(directory, 'apps/desktop/lib/types/crysound');
+    mkdirSync(output, { recursive: true });
+    writeFileSync(join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
+    for (const file of ['workspace', 'company-config']) {
+      const source = readFileSync(new URL(`../../apps/desktop/src/crysound/${file}.ts`, import.meta.url), 'utf8');
+      const javascript = stripTypeScriptTypes(source).replace("'./company-config.ts'", "'./company-config.js'");
+      writeFileSync(join(output, `${file}.js`), javascript);
+    }
+    prepare = (await import(pathToFileURL(join(output, 'workspace.js')).href)).prepareCompanyWorkspace;
+  }
   const options = { assets: packaged, profile, userData, cliEntry: cli, execPath: process.execPath,
     environment: { ...process.env, CRYSOUND_LLM_BASE: 'https://partner.example.test/v1', MAGPIE_API_KEY: '' } };
-  assert.deepEqual(await prepareCompanyWorkspace(options), { missing: [] });
-  assert.deepEqual(await prepareCompanyWorkspace(options), { missing: [] });
+  assert.deepEqual(await prepare(options), { missing: [] });
+  assert.deepEqual(await prepare(options), { missing: [] });
   assert.equal(JSON.parse(readFileSync(join(profile, 'package.json'))).dependencies[FEISHU.name], DESKTOP_WANT);
   assert.equal(existsSync(calls), !template);
   if (!template) assert.equal(readFileSync(calls, 'utf8'), 'add\n');

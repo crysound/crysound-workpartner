@@ -4,12 +4,12 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { cp, copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { desktopPlugins } from '../../../../crysound/plugin-artifacts.mjs'
+import { pathToFileURL } from 'node:url'
 import { companyConfig } from './company-config.ts'
 
 /** Inputs of one preparation run; everything is a plain path so the run can also be smoke-tested outside Electron. */
 export interface WorkspaceOptions {
-  /** Company assets directory (`config/plugins.json`, `config/partner.patch.yml`, `config/plugin-patches.mjs`). */
+  /** Company assets directory, including config, plugin-artifacts.mjs and company-plugins. */
   readonly assets: string
   /** Desktop profile directory, already initialized. */
   readonly profile: string
@@ -157,6 +157,9 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
   const marketOrigin = new URL(options.environment.CRYSOUND_LLM_BASE).origin
   const config = await companyConfig(options.assets, userData, options.environment)
   try {
+    // Resources keep the same layout when TypeScript emits this file under lib/types.
+    const { desktopPlugins }: typeof import('../../../../crysound/plugin-artifacts.mjs') =
+      await import(pathToFileURL(join(assets, 'plugin-artifacts.mjs')).href)
     const configured = await readJson(join(config.directory, 'plugins.json')) as unknown as PluginList
     const list: PluginList = { ...configured, plugins: desktopPlugins(configured.plugins, join(assets, 'company-plugins'), profile) }
     const manifestPath = join(profile, 'package.json')

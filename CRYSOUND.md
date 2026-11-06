@@ -90,7 +90,7 @@ done
 ## 公司维护的插件（`crysound/plugins/`）
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
-- 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。
+- 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。桌面准备按 assets 资源目录加载共用脚本，不依赖源码或编译后文件的相对层级。
 - 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；飞书版本更新同时修改 `plugin-artifacts.mjs` 的文件名、下载地址和校验值，以及 `plugins.json` 的本地 spec/want。重建网页镜像并同步配置，逐人空闲时换镜像；桌面随下一安装包携带归档。不要只同步本地路径清单而沿用缺归档的旧镜像或旧桌面包。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。
 
