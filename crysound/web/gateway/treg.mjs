@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { dataPlatforms } from "./treg-catalog.mjs";
 import { createTregNotices, tregLimits, tregFailure as fail, dailyMessage, monthlyMessage, blockedMessage } from "./treg-state.mjs";
 
 const origin = "https://treg.to";
@@ -56,11 +57,8 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (!response.ok) { await response.body?.cancel(); throw fail(502, "数据目录暂时无法读取"); }
     return JSON.parse((await readBytes(response.body, 2 * 1024 * 1024)).toString());
   };
-  const platforms = async () => {
-    const value = await catalog();
-    if (!value) throw fail(503, "数据目录暂时无法读取");
-    return new Set(value.categories.flatMap((category) => category.platforms.map((p) => p.slug)));
-  };
+  const readPlatforms = catalog ?? (async () => dataPlatforms(await fetchJson("/catalog/platforms")));
+  const platforms = async () => new Set((await readPlatforms()).map((platform) => platform.slug));
   const endpoint = async (id, ancestors = new Set()) => {
     if (typeof id !== "string" || !idPattern.test(id) || ancestors.has(id)) throw fail(403, "只允许调用已开放分类的数据接口");
     // 只缓存公共目录详情；最终允许与否仍按当前目录和所有路由子接口核对。
@@ -222,8 +220,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       if (path === "/mcp/" || path === "/mcp") { await mcp(req, res, user); return true; }
       if (path === "/usage" && req.method === "GET" && !url.search) json(res, 200, await usage(user));
       else if (path === "/catalog/platforms" && req.method === "GET" && !url.search) {
-        const value = await catalog(); if (!value) throw fail(503, "数据目录暂时无法读取");
-        json(res, 200, { platforms: value.categories.flatMap((category) => category.platforms) });
+        json(res, 200, { platforms: await readPlatforms() });
       } else if (path === "/catalog/search" && req.method === "GET" && [...url.searchParams.keys()].every((key) => ["q", "limit"].includes(key))) {
         json(res, 200, await search(url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 8)));
       } else if (path.startsWith("/catalog/endpoints/") && req.method === "GET" && !url.search) {

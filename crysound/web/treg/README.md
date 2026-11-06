@@ -1,12 +1,12 @@
-# 兆华数据：网关与市场
+# 兆华数据：网关与插件
 
-需求 #73 的网关与界面代码已提供，默认关闭。归属实测、实际插件安装、目标平台桌面构建与上线验收仍须由伙伴助理完成；截图只用于界面送审。插件由独立的 `@crysound/data` 提供，本仓库不复制插件。
+需求 #73 提供网关，以及原生市场卡片的“使用”入口，默认关闭。插件由独立仓库的 `@crysound/data` 提供，本仓库不复制技能。真实网关费用归属、插件安装、桌面构建与上线验收仍须由伙伴助理完成。
 
 ## 身份、目录与调用
 
-`/_zp/treg/` 只接受现有已开通用户的 zpd Bearer 通行证（容器的 `.zp-market-token` 或桌面通行证），不接受网页 Cookie。市场的 `GET /_zp/market/data.json` 是只读展示接口，可使用通行证或网关验证的网页身份。
+`/_zp/treg/` 只接受现有已开通用户的 zpd Bearer 通行证（容器的 `.zp-market-token` 或桌面通行证），不接受网页 Cookie。不提供 `/_zp/market/data.json` 或独立数据标签、分类卡片和市场目录缓存。
 
-网关启动时取一次公共 `https://treg.to/catalog/platforms`，15 秒超时、2 MiB 上限、不跟随重定向、不附带凭据。七个中文分类、例子和草稿在 `gateway/treg-categories.mjs`，只展示配置中已知分类；AI generation 和未知分类均排除。起步价是该类 `price_from.usd` 的最小值，未知为 null，不解释成免费。计价单位可能是调用、结果或字符，界面明确提示实际费用以所选接口为准。
+受控调用按需读取公共 `https://treg.to/catalog/platforms` 校验平台白名单：15 秒超时、2 MiB 上限、不跟随重定向、不附凭据。只允许已知数据分类，AI generation 和未知分类仍被拒绝；这一服务端限制不依赖市场页面或技能。
 
 开放的 REST 路径：
 
@@ -44,9 +44,9 @@ usage/by-tag 不支持历史起止日期，本功能仅返回本月，不提供�
 
 ## 市场与原生交互
 
-`config/patch-data-market.mjs` 对已发布的插件管理器客户端注入原生 plugins.tab；补丁同时供网页版镜像与桌面打包使用，重复运行不改变，入口不唯一时停止构建。应先合入市场基础 #61 / PR #64；数据补丁与其可任意顺序运行，分类卡片接在相同标签结构中。
+市场标签沿用 #61 / PR #64 的“兆华市场 / 第三方 / 已安装”。`@crysound/data` 通过原有发布审批进入同一市场索引，声明分类“数据”；官方身份及作者使用 #61 的受控发布者和包名单，不改变权限或审批。七类分组、说明、示例提问和小额价格表达均在独立插件内部。
 
-每类一张卡片，显示中文说明、主要平台、起步价和按钮。插件未装时从已批准公司索引取确切版本，进入原生安装流程；已装但停用时进入插件页；启用后调用原生 uiWorkspace.startSession，填入示例草稿并保留已有草稿，不自动发送、不付费调用。公司索引尚无兆华数据时禁用安装。桌面协议只代理这两个固定目录 GET 到公网网关，由主进程附本人通行证，渲染层得不到令牌。
+`config/patch-data-use.mjs` 修补原生市场卡片；重复运行不改变，入口不唯一则停止构建。未安装仍使用原生安装流程；已安装的兆华数据卡片显示“使用”。点击时查询本人插件状态，启用后调用 uiWorkspace.startSession 填入分类引导草稿、保留已有草稿，不发送、不付费；停用或状态读取失败时打开原生设置。网页镜像和桌面打包使用同一补丁，不新增目录代理。该补丁不修改 #61 的市场标签模块。
 
 ## 配置、部署与回退
 
@@ -72,17 +72,17 @@ TREG_CALL_MAX_USD=1
 
 只允许 dailyUsd、monthlyUsd、callMaxUsd，未填字段沿用全局，金额为非负数且精确到微美元；配置错误停止启动。改额度或覆盖文件后重建网关。
 
-由伙伴助理在界面审查和凭据核实后执行：
+由伙伴助理在 #61 合入和凭据核实后执行：
 
 ```sh
 # 按 .env 指定源配置并部署（须先核对 token、org 和状态备份）
 docker compose --env-file crysound/web/.env -f crysound/web/compose.yml build gateway
 docker compose --env-file crysound/web/.env -f crysound/web/compose.yml up -d --force-recreate gateway
-# 卡片补丁在用户运行时内，需另构建 partner-image；空闲时换镜像。
+# 原生卡片使用按钮在用户运行时内，需构建 partner-image；空闲时换镜像。
 docker compose --env-file crysound/web/.env -f crysound/web/compose.yml --profile build build partner-image
 ```
 
-市场数据卡片依赖 plugin-data 的发布，安装包随下一次正常桌面构建携带补丁与固定目录代理。不能仅重建网关后声称所有界面已上线。
+兆华数据卡片依赖独立插件发布、审批与 #61 官方插件配置；默认官方名单必须包含 @crysound/data（或已有 @crysound/*），不自动预装。安装包随下一次正常桌面构建携带使用按钮补丁；本轮不触发构建。
 
 回退首选 TREG_ENABLED=0 后重建网关；移走令牌并重建也关闭功能。保留已有状态及备份（含先前测试账本，不删除文件），不删除同事数据。若需只停止付费验证，可先设 TREG_ATTRIBUTION_VERIFIED=0。伙伴助理已确认付款卡和自动充值恢复；本 PR 未再次操作充值或凭据。
 
@@ -92,9 +92,10 @@ Node 24 轻量检查：
 
 ```sh
 node --test crysound/web/gateway/tests/treg.test.mjs crysound/web/gateway/tests/treg-catalog.test.mjs crysound/web/gateway/tests/notifications.test.mjs
+DATA_MARKET_CLIENT=<已发布原生市场client.js副本> node --test crysound/config/patch-data-use.test.mjs
 node crysound/web/tests/compose-config.mjs
 ```
 
-测试使用真实 HTTP 与临时文件，注入假上游和假通知；覆盖签名身份、路径与工具白名单、AI/管理/路由子接口拦截、原生日/月预算、重启、UTC 月初与北京 08:00 界线、实际与未知费用、仅本人用量、预算失败及公司报错脱敏。截图与预览说明见 `evidence/README.md`；browser-preview.mjs 可在 Skill 指定的持久浏览器自有标签页重复观察真实发布运行时的卡片和交互参数，不执行安装/新建会话。
+测试使用真实 HTTP 与临时文件，注入假上游和假通知；覆盖签名身份、路径与工具白名单、AI/管理/路由子接口拦截、原生日/月预算、重启、UTC 月初与北京 08:00 界线、实际与未知费用、仅本人用量、预算失败及公司报错脱敏。原生卡片补丁已用真实发布客户端检查幂等性、入口变化和硬链接隔离；浏览器预览使用 Skill 指定的持久浏览器自有标签页，不安装或发送对话。截图与限制见 `evidence/README.md`。
 
-伙伴助理已实测确认：服务端令牌就位、REST/MCP 的 user 标签归属、原生日/月预算执行，以及自动充值恢复。以上是上游直连结论，不能替代本 PR 网关验收。尚待伙伴助理核实：zptest 经部署后网关 REST 与 MCP 调用的归属与实扣、网关中文限额提示、本人用量与账单、真实管理员通知、实际插件安装/启用及新对话草稿、目标平台 Electron 与桌面打包、#61 合入后的最终整页。开发本轮未进行付费调用、上线部署或全员开放。
+伙伴助理已实测确认：服务端令牌就位、REST/MCP 的 user 标签归属、原生日/月预算执行，以及自动充值恢复。以上是上游直连结论，不能替代本 PR 网关验收。尚待伙伴助理核实：zptest 经部署后网关 REST 与 MCP 调用的归属与实扣、网关中文限额提示、本人用量与账单、真实管理员通知、兆华市场官方数据卡片、实际插件安装/启用及七类引导草稿、目标平台 Electron 与桌面打包、#61 合入后的最终整页。开发本轮未进行付费调用、上线部署或全员开放。

@@ -53,7 +53,6 @@ services:
       - ./gateway/treg-catalog.mjs:/app/treg-catalog.mjs:ro
       - ./gateway/treg.mjs:/app/treg.mjs:ro
       - ./gateway/treg-state.mjs:/app/treg-state.mjs:ro
-      - ./gateway/treg-categories.mjs:/app/treg-categories.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
       - ./gateway/feishu.mjs:/app/feishu.mjs:ro
       - ../feishu:/feishu:ro

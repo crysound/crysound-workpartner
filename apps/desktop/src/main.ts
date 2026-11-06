@@ -71,7 +71,7 @@ import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import {
-  PARTNER_ORIGIN, BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
+  BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
   openLoginWindow, openPreparingWindow, partnerHostEnvironment, type PreparingWindow,
 } from './crysound/partner.ts'
 import { prepareCompanyWorkspace } from './crysound/workspace.ts'
@@ -828,16 +828,6 @@ async function main(): Promise<void> {
       url.pathname === '/design-platform.css' ? 'lib/welcome' : 'renderer'))
     if (url.hostname === 'app') {
       if (BRAND_FILES.has(url.pathname)) return serveWebDocument(request, join(crysoundResources(), 'brand'))
-      // CRYSOUND: only these public catalog GETs use the local signed-in identity; no token reaches the renderer.
-      if (['/_zp/market/data.json', '/_zp/market/index.json'].includes(url.pathname)) {
-        if (request.method !== 'GET' || url.search !== '') return new Response(null, { status: 405 })
-        return readPartnerSession().then(signedIn => signedIn === undefined
-          ? new Response(null, { status: 401 })
-          : fetch(`${PARTNER_ORIGIN}${url.pathname}`, {
-            headers: { authorization: `Bearer ${signedIn.token}` },
-            redirect: 'error', signal: AbortSignal.timeout(15000),
-          })).catch(() => Response.json({ error: '数据目录暂时无法读取，请稍后重试' }, { status: 503 }))
-      }
       // The brand layer shows the signed-in Feishu name and avatar; the web version gets the same answer from the gateway.
       if (url.pathname === '/_zp/me') {
         return readPartnerSession().then(signedIn => signedIn === undefined

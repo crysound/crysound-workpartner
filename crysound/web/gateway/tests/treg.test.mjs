@@ -12,7 +12,7 @@ import { issueToken, tokenUser } from "../market-auth.mjs";
 
 const key = "fake-signing-key", alice = { slug: "alice", unionId: "fake-alice" }, bob = { slug: "bob", unionId: "fake-bob" };
 const headers = { authorization: `Bearer ${issueToken(key, alice)}`, "content-type": "application/json" };
-const catalog = { categories: [{ platforms: [{ slug: "web", name: "Web" }] }] };
+const catalog = [{ slug: "web", name: "Web" }];
 const ep = (id = "provider.web.search", extra = {}) => ({ id, platform: "web", kind: "data", method: "POST", platform_eligible: true, ...extra });
 async function fixture(t, options = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "treg-gateway-"));
@@ -20,9 +20,11 @@ async function fixture(t, options = {}) {
   const nativeBudgets = new Map();
   let callStarted; const started = new Promise((resolve) => { callStarted = resolve; });
   let time = Date.parse("2026-10-31T15:59:00Z"), notifications = 0, response = () => Response.json({ results: ["ok"] }, { headers: { "x-treg-cost-micro": "1000" } });
+  let platformRows = [{ slug: "web", label: "Web", category: "SEO/AEO" }];
   let lookup = (id) => ep(id), budgetFailure = false, reportResponse;
   const fetcher = async (url, init) => {
     calls.push({ url, ...init });
+    if (url.endsWith("/catalog/platforms")) return Response.json({ platforms: platformRows });
     if (url.includes("/catalog/endpoints/")) return Response.json({ endpoint: lookup(decodeURIComponent(url.split("/").pop())) });
     if (url.includes("/catalog/search")) return Response.json({ results: [ep(), ep("provider.ai.generate", { platform: "ai" })] });
     if (url.includes("/budgets/")) {
@@ -73,6 +75,7 @@ async function fixture(t, options = {}) {
   const call = (init = {}) => request("/call/provider.web.search", { method: "POST", body: '{"q":"company"}', ...init });
   return { dir, calls, spendRows, started, request, mcp, call, notifications: () => notifications, now: () => time,
     setTime: (next) => { time = Date.parse(next); }, setResponse: (next) => { response = next; },
+    setPlatforms: (next) => { platformRows = next; },
     lookup: (next) => { lookup = next; }, failBudget: (value = true) => { budgetFailure = value; }, setReport: (next) => { reportResponse = next; }, restart: () => { handle = createTreg(config); } };
 }
 
@@ -232,5 +235,20 @@ test("上游用量失败或本人金额无效时不显示零用量，不泄漏�
     const result = await f.request("/usage");
     assert.ok(result.status >= 500); assert.equal(result.body.daily, undefined);
     assert.doesNotMatch(result.text, /company-balance|private-invalid-json|charged_micro/);
+  }
+});
+
+
+test("无市场目录缓存：真实调用按当前公共平台白名单校验，不向目录附凭据", async (t) => {
+  const f = await fixture(t, { catalog: undefined });
+  assert.equal((await f.call()).status, 200);
+  const listing = await f.request("/catalog/platforms");
+  assert.deepEqual(listing.body.platforms, [{ slug: "web", name: "Web", category: "SEO/AEO" }]);
+  f.setPlatforms([{ slug: "web", label: "Web", category: "AI generation" }]);
+  assert.equal((await f.call()).status, 403);
+  assert.equal(f.calls.filter((call) => call.url.includes("/call/")).length, 1);
+  for (const call of f.calls.filter((call) => call.url.endsWith("/catalog/platforms"))) {
+    assert.deepEqual(call.headers, { accept: "application/json" });
+    assert.equal(call.redirect, "error");
   }
 });

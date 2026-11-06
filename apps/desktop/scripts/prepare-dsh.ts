@@ -34,7 +34,7 @@ import {
 } from './macos-runtime.ts'
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
-import { patchDataMarketFile } from '../../../crysound/config/patch-data-market.mjs'
+import { patchDataUseFile } from '../../../crysound/config/patch-data-use.mjs'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
@@ -152,8 +152,8 @@ async function main(): Promise<void> {
         filter: source => desktopRuntimeFileExclusion(relative(modules, source), target, officeEngine) === undefined,
       })
     })
-    // CRYSOUND: include the data tab in the final runtime bytes before recording hashes.
-    patchDataMarketFile(join(DSH_OUTPUT_ROOT, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-manager/lib/client.js'))
+    // CRYSOUND: native market card opens the data plugin without adding a tab.
+    patchDataUseFile(join(DSH_OUTPUT_ROOT, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-market/lib/client.js'))
     writeFileSync(join(DSH_OUTPUT_ROOT, 'package.json'), `${JSON.stringify({
       name: '@deepseek-ai/dsh-desktop-runtime', private: true, version: release.version, type: 'module',
       dependencies: Object.fromEntries(packageSet.packages.map(entry => [entry.name, entry.version])),

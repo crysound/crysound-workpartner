@@ -133,11 +133,11 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       if (!versions.length) continue;
       const manifest = doc.versions[(versions.find((v) => semver.prerelease(v.version) === null) ?? versions[0]).version];
       plugins.push({ name, description: manifest.description, author: users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
-        metadata: { keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: [], sortKeys: {} },
+        metadata: { ...(name === "@crysound/data" ? { category: "data" } : {}), keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: [], sortKeys: {} },
         versions,
       });
     }
-    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories: {}, labels: {}, sortKeys: {} }, plugins });
+    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories: { data: { title: { zh: "数据", en: "Data" } } }, labels: {}, sortKeys: {} }, plugins });
   }
 
   async function admin(req, res) {
