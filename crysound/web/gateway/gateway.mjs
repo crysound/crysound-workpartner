@@ -248,9 +248,12 @@ async function login(req, res, url) {
 const DOWNLOADS = "/downloads";
 const PLATFORMS = [["mac-arm64", "Mac（Apple 芯片）"], ["mac-x64", "Mac（Intel 芯片）"], ["win-x64", "Windows"]];
 function download(res, file) {
-  const files = (() => { try { return fs.readdirSync(DOWNLOADS).filter((f) => !f.startsWith(".")); } catch { return []; } })();
+  // 安装包可以放在 R2：下载目录里放“<文件名>.url”，内容是 R2 公开地址，下载时跳过去；没有就从本机目录发。
+  const entries = (() => { try { return fs.readdirSync(DOWNLOADS).filter((f) => !f.startsWith(".")); } catch { return []; } })();
+  const files = [...new Set(entries.map((f) => f.replace(/\.url$/, "")))];
   if (file) {
     if (!files.includes(file)) { res.writeHead(404); return res.end(); }
+    if (entries.includes(`${file}.url`)) return redirect(res, fs.readFileSync(`${DOWNLOADS}/${file}.url`, "utf8").trim());
     const st = fs.statSync(`${DOWNLOADS}/${file}`);
     res.writeHead(200, { "content-type": "application/octet-stream", "content-length": st.size, "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file)}` });
     return fs.createReadStream(`${DOWNLOADS}/${file}`).pipe(res);
@@ -287,7 +290,11 @@ const server = http.createServer(async (req, res) => {
     // 网页左下角用：本人的飞书姓名和头像，以及客户端下载（只给已开通的同事）。
     if (url.pathname === "/_zp/me" || url.pathname.startsWith("/_zp/download")) {
       const { who, user } = userFor(req);
-      if (!user) { res.writeHead(401); return res.end(); }
+      if (!user) {
+        if (url.pathname === "/_zp/me") { res.writeHead(401); return res.end(); }
+        // 从聊天里点开的下载链接常在没登录的浏览器里打开：先飞书登录，再回到下载。
+        return redirect(res, `/_zp/login?next=${encodeURIComponent(url.pathname)}`);
+      }
       if (url.pathname === "/_zp/me") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); return res.end(JSON.stringify({ name: who.name, avatar: who.avatar })); }
       return download(res, decodeURIComponent(url.pathname.slice("/_zp/download".length).replace(/^\//, "")));
     }

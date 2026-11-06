@@ -55,12 +55,14 @@
 部署（在仓库 `main` 的检出里执行）：
 ```sh
 docker compose -f crysound/web/compose.yml --profile build build partner-image   # 新镜像
-docker compose -f crysound/web/compose.yml up -d gateway                         # 网关改动
+docker compose -f crysound/web/compose.yml up -d --force-recreate gateway        # 网关改动（单文件挂载，必须重建才读到新文件）
 for s in $(PARTNER_DATA=/srv/xiaoman/zhaohua-partner crysound/web/bin/partner-user list | cut -d' ' -f1); do
   crysound/web/bin/upgrade-when-idle.sh "$s" &                                     # 每人空闲时换新镜像
 done
 ```
 只改品牌层时，镜像里的文件版本号随内容变化，浏览器会取新文件。
+
+客户端安装包放公司 Cloudflare 账号的 R2 存储桶 `crysound-workpartner-downloads`（亚太位置，公开域名 `partner-dl.corp.crysound.com`，对象键带随机段）。在数据目录 `downloads/` 里放 `<文件名>.url`，内容是该对象的公开地址；下载页按文件名列出，点下载时跳到 R2。文件名含 `mac-arm64`、`mac-x64`、`win-x64` 才会出现在下载页上，不含的只能直链下载（用于测试包）。
 
 ## 合并上游新版本
 1. `git fetch upstream && git merge upstream/master`（上游默认分支名以实际为准，标签 `dsh-v*` 也可合并）。

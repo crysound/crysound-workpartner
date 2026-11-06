@@ -1,7 +1,7 @@
 # 兆华工作伙伴：网关（按飞书身份路由到每人一个 dsh 容器）+ 每人容器所用镜像。
 # 每人容器由网关自助开通（或 bin/partner-user 手工建）；公网入口 partner.corp.crysound.com（网关自己做飞书登录，无 Cloudflare Access）→ 网关 127.0.0.1:3090。
 # 代码取自本仓库；名单、每人数据、下载文件在 PARTNER_DATA（默认 /srv/xiaoman/zhaohua-partner），钥匙在 PARTNER_SECURE，都不进仓库。
-# 部署：docker compose -f crysound/web/compose.yml --profile build build partner-image && docker compose -f crysound/web/compose.yml up -d gateway
+# 部署：docker compose -f crysound/web/compose.yml --profile build build partner-image && docker compose -f crysound/web/compose.yml up -d --force-recreate gateway
 name: zhaohua-partner
 services:
   gateway:
