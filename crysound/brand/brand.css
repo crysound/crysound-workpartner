@@ -26,3 +26,82 @@
 .zp-avatar { width: 18px; height: 18px; border-radius: 50%; flex: none; object-fit: cover; display: inline-grid; place-items: center; background: #170057; color: #fff; font-size: 9px; line-height: 1; }
 a.zp-download { text-decoration: none; color: inherit; display: flex; width: 100%; box-sizing: border-box; align-items: center; gap: 6px; margin-bottom: 2px; }
 .zp-account-item[disabled] { opacity: 1; cursor: default; color: inherit; }
+
+/* Approved animated logo, shared by web and desktop. */
+.zp-pet{border:0;padding:0;background:transparent;font:inherit;position:relative;display:inline-block;width:var(--size);height:var(--size);flex:none;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+  .zp-pet svg{display:block;width:100%;height:100%;overflow:visible}
+  .zp-pet .tile{transform-box:view-box;transform-origin:32px 40px}
+  .zp-pet .body{transform-box:view-box;transform-origin:32px 60px;transition:transform .35s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet .face{transform:translate(calc(var(--lx,0) * 1px),calc(var(--ly,0) * 1px));transition:transform .26s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet .eye{fill:#170057;transform-box:fill-box;transform-origin:50% 60%;transition:transform .08s}
+  .zp-pet .f-happy,.zp-pet .f-x,.zp-pet .f-sleep{fill:none;stroke:#170057;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+  .zp-pet .f-open,.zp-pet .f-happy,.zp-pet .f-x,.zp-pet .f-sleep{opacity:0;transition:opacity .08s}
+  .zp-pet[data-face=open] .f-open,.zp-pet[data-face=happy] .f-happy,.zp-pet[data-face=x] .f-x,.zp-pet[data-face=sleep] .f-sleep{opacity:1}
+  .zp-pet .blush{fill:#ff8fb1;opacity:0;transition:opacity .25s}
+  .zp-pet[data-face=happy] .blush{opacity:.75}
+  .zp-pet .shine{opacity:0}
+
+  /* 各状态的身体动作 */
+  .zp-pet[data-state=idle] .body{animation:zp-breathe 3.4s ease-in-out infinite}
+  .zp-pet[data-state=thinking] .body{animation:zp-ponder 2.4s ease-in-out infinite}
+  .zp-pet[data-state=working] .body{animation:zp-bob .42s ease-in-out infinite}
+  .zp-pet[data-state=working] .shine{opacity:1;animation:zp-shine 1.6s linear infinite}
+  .zp-pet[data-state=waiting] .body{animation:zp-perk 1.3s ease-in-out infinite}
+  .zp-pet[data-state=waiting] .eye{transform:scale(1.1,1.12)}
+  .zp-pet[data-state=done] .body{animation:zp-hop .9s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet[data-state=error] .body{transform:translateY(2.5px);animation:zp-shake .5s ease-in-out}
+  .zp-pet[data-state=sleep] .body{transform:translateY(8px);animation:zp-snore 3.8s ease-in-out infinite}
+  .zp-pet[data-state=listening] .body{transform:translateY(-1px)}
+  .zp-pet.nod .body{animation:zp-nod .22s ease-out}
+  .zp-pet.peek .body{animation:zp-peek .6s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet.squish .tile{animation:zp-squish .5s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet.dizzy .tile{animation:zp-dizzy .7s ease-in-out}
+  .zp-pet.blink .eye{transform:scaleY(.1)}
+
+  @keyframes zp-breathe{0%,100%{transform:none}50%{transform:scale(1.012,1.03)}}
+  @keyframes zp-ponder{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+  @keyframes zp-bob{0%,100%{transform:none}50%{transform:translateY(1.6px) scale(1.02,.975)}}
+  @keyframes zp-perk{0%,55%,100%{transform:none}18%{transform:translateY(-1px) scale(.96,1.1)}34%{transform:scale(1.04,.95)}}
+  @keyframes zp-hop{0%{transform:none}15%{transform:translateY(1px) scale(1.09,.9)}42%{transform:translateY(-8px) scale(.95,1.08)}66%{transform:translateY(0) scale(1.07,.92)}82%{transform:scale(.98,1.03)}100%{transform:none}}
+  @keyframes zp-shake{0%,100%{transform:translate(0,2.5px)}20%{transform:translate(-2.4px,2.5px)}40%{transform:translate(2.4px,2.5px)}60%{transform:translate(-1.6px,2.5px)}80%{transform:translate(1.2px,2.5px)}}
+  @keyframes zp-snore{0%,100%{transform:translateY(8px)}50%{transform:translateY(7px) scale(1.02,1.035)}}
+  @keyframes zp-nod{0%,100%{transform:translateY(-1px)}45%{transform:translateY(1.2px) scale(1.02,.97)}}
+  @keyframes zp-peek{0%{transform:none}35%{transform:translateY(-3.5px) scale(.97,1.06)}70%{transform:scale(1.03,.97)}100%{transform:none}}
+  @keyframes zp-squish{0%{transform:none}25%{transform:scale(1.1,.86)}55%{transform:scale(.95,1.06)}80%{transform:scale(1.02,.98)}100%{transform:none}}
+  @keyframes zp-dizzy{0%,100%{transform:none}25%{transform:rotate(-10deg)}50%{transform:rotate(8deg)}75%{transform:rotate(-5deg)}}
+  @keyframes zp-shine{0%{transform:translateX(0)}100%{transform:translateX(118px)}}
+
+  /* 气泡、星星、Z、汗滴 */
+  .zp-pet .fx{position:absolute;inset:0;pointer-events:none}
+  .zp-pet[data-fx=off] .fx,.zp-pet[data-fx=off] .shine{display:none}
+  .zp-pet .bubble{position:absolute;left:78%;bottom:86%;white-space:nowrap;background:#fff;color:#170057;border:1.5px solid #e4e1f2;border-radius:12px 12px 12px 3px;padding:3px 10px;font-size:max(12px,calc(var(--size) * .09));font-weight:600;box-shadow:0 4px 14px rgba(23,0,87,.08);opacity:0;transform:translateY(6px) scale(.8);transform-origin:0 100%;transition:.2s cubic-bezier(.3,.7,.4,1)}
+  .zp-pet .bubble.show{opacity:1;transform:none}
+  .zp-pet .bubble.warn{background:#ffb020;border-color:#ffb020;color:#fff}
+  .zp-pet .bubble .dots i{display:inline-block;font-style:normal;animation:zp-dot 1.2s infinite}
+  .zp-pet .bubble .dots i:nth-child(2){animation-delay:.15s}
+  .zp-pet .bubble .dots i:nth-child(3){animation-delay:.3s}
+  @keyframes zp-dot{0%,60%,100%{transform:none;opacity:.35}30%{transform:translateY(-3px);opacity:1}}
+  .zp-pet .zzz{position:absolute;left:72%;bottom:70%;opacity:0}
+  .zp-pet[data-state=sleep] .zzz{opacity:1}
+  .zp-pet .zzz i{position:absolute;font-style:normal;font-weight:700;color:#8a84b8;font-size:max(10px,calc(var(--size) * .1));animation:zp-z 3s ease-out infinite;opacity:0}
+  .zp-pet .zzz i:nth-child(2){animation-delay:1s}
+  .zp-pet .zzz i:nth-child(3){animation-delay:2s}
+  @keyframes zp-z{0%{transform:translate(0,0) scale(.6);opacity:0}20%{opacity:1}100%{transform:translate(calc(var(--size) * .22),calc(var(--size) * -.35)) scale(1.2);opacity:0}}
+  .zp-pet .drop{position:absolute;right:6%;top:4%;width:calc(var(--size) * .1);height:calc(var(--size) * .14);background:#6ec3ff;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;opacity:0}
+  .zp-pet[data-state=error] .drop{animation:zp-drop 1.6s ease-in .2s infinite}
+  @keyframes zp-drop{0%{opacity:0;transform:translateY(-4px)}20%{opacity:1}100%{opacity:0;transform:translateY(calc(var(--size) * .22))}}
+  .zp-pet .spark{position:absolute;left:50%;top:50%;width:calc(var(--size) * .1);height:calc(var(--size) * .1);margin:calc(var(--size) * -.05);background:var(--c,#ffc93c);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:zp-burst .95s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes zp-burst{0%{transform:translate(0,0) scale(.2) rotate(0);opacity:1}70%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1) rotate(160deg);opacity:0}}
+
+
+/* Reveal only a successfully mounted pet; the existing SVG image remains the fallback. */
+[data-slot="sidebar.brand.mark"] > .zp-pet,
+[data-slot="conversation.hero.brand.mark"] > .zp-pet { display: inline-block !important; vertical-align: middle; }
+[data-slot][data-zp-pet-ready]::after { display: none; }
+.zp-pet[data-fx=off] { cursor: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  .zp-pet .body, .zp-pet .tile, .zp-pet .shine { animation: none !important; transform: none !important; }
+  .zp-pet .face { transform: none !important; }
+  .zp-pet .fx, .zp-pet .shine { display: none !important; }
+  .zp-pet *, .zp-pet { transition: none !important; }
+}

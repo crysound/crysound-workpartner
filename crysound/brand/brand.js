@@ -1,6 +1,10 @@
 // 兆华工作伙伴品牌层：把首页大标题和标签页标题换成“兆华工作伙伴”，隐藏首页的预览版角标，插件的英文名换成中文名，侧栏按公司顺序排列；
 // 左下角账号按钮显示本人飞书头像和姓名（账号由飞书登录，不用 DeepSeek 账号），上方加“下载客户端”（桌面客户端里不显示）。
 (() => {
+  // Load the same optional component in both shells; keep the image if it fails.
+  const petScript = document.createElement("script");
+  petScript.src = new URL("./pet.js" + new URL(document.currentScript.src).search, document.currentScript.src).href;
+  document.head.appendChild(petScript);
   const NAME = "兆华工作伙伴";
   const TITLES = new Set(["探索未至之境", "Into the Unknown"]);
   const BADGES = new Set(["预览版", "Preview"]);
