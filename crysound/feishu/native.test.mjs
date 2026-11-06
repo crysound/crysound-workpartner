@@ -49,9 +49,17 @@ test('设置入口注册原生页和图标，授权回跳打开同一原生设�
     inject:(_key,work)=>work(), register:(options,component)=>entries.push({options,component}),
     entries:()=>[{store:{create:()=>({actions:{openSection:id=>actions.push(id)}})}}], subscribe:()=>()=>{},
   }});
-  assert.deepEqual(entries.map(entry=>entry.options.name),['settings.section','settings.section.icon']);
-  assert.equal(entries[0].options.id,entries[1].options.id);
+  assert.deepEqual(entries.map(entry=>entry.options.name),['settings.section','conversation.header.leading','settings.section.icon']);
+  assert.equal(entries[0].options.id,entries[2].options.id);
   assert.deepEqual(actions,['crysound-feishu']); assert.equal(location.search,'');
+  // Same-page authorization from the home reminder returns home, without opening settings.
+  location.search = '?zp-settings=feishu';
+  storage.set('zp-feishu-home-return', '1'); storage.set('zp-feishu-return', '1');
+  plugin.apply({effect:work=>work(),locale:{register:()=>()=>{},bind:()=>key=>key,getSnapshot:()=>({active:'en'})},slots:{
+    inject:()=>{}, entries:()=>[], subscribe:()=>()=>{},
+  }});
+  assert.deepEqual(actions,['crysound-feishu']); assert.equal(location.search,'');
+  assert.equal(storage.size,0);
 });
 
 function panelFixture(t, { saved, respond } = {}) {
