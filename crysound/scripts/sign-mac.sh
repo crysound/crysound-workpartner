@@ -8,7 +8,8 @@ out=$2
 root=$(cd "$(dirname "$0")/../.." && pwd)
 entitlements="$root/apps/desktop/scripts/macos-entitlements.plist"
 mkdir -p "$out"
-work=$(mktemp -d)
+# Physical path: /var is a link to /private/var, and mount(8) lists mount points by their physical path.
+work=$(cd "$(mktemp -d)" && pwd -P)
 keychain="$work/signing.keychain-db"
 password=$(uuidgen)
 cleanup() { security delete-keychain "$keychain" >/dev/null 2>&1 || true; rm -rf "$work"; }
@@ -65,7 +66,7 @@ ditto "$target" "$mount/$name"
 test -L "$mount/Applications"
 # The volume stays busy for a while after a large copy, and a detach that reports failure can still
 # finish a moment later; what matters is that the mount is gone.
-mounted() { mount | grep -qF " on $mount ("; }
+mounted() { mount | grep -F " on $mount (" >/dev/null; }
 for attempt in 1 2 3 4 5 6 7 8 9 10; do mounted || break; hdiutil detach "$mount" -quiet || sleep 5; done
 if mounted; then hdiutil detach "$mount" -force; fi
 mounted && { echo "could not detach $mount" >&2; exit 1; }
