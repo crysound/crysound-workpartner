@@ -1,0 +1,162 @@
+/** Company anonymous fetch adapter and bounded Chromium fallback. */
+import { publicRequest, USER_AGENT, LANGUAGE, webError } from "./network.mjs";
+
+/** Detect login destinations or forms. @param url Final destination. @param html Page HTML, absent before navigation. @returns Whether login is required. */
+export function loginPage(url, html = "") {
+  const path = new URL(url).pathname;
+  return /^(?:login|signin|passport|sso)\./i.test(new URL(url).hostname)
+    || /(?:^|\/)(?:login|log-in|signin|sign-in|passport|oauth|authorize)(?:[/.;-]|$)/i.test(path)
+    || /<input\b[^>]*type\s*=\s*["']?password\b/i.test(html)
+    || /<title[^>]*>[^<]*(?:登录|登入|sign\s*in|log\s*in)[^<]*<\/title>/i.test(html);
+}
+
+/** Identify a short script-driven shell. @param html Decoded HTML. @returns Whether one render should be attempted. */
+export function needsRendering(html) {
+  const text = html.replace(/<(script|style|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<[^>]*>/g, "").replace(/\s|&(?:nbsp|#160);/g, "");
+  return text.length < 240 && /<script\b|enable\s+javascript|需要.{0,5}JavaScript/i.test(html);
+}
+
+/** Flatten HTTP redirects using checked transport. @param url Initial URL. @param signal Optional cancellation. @param request Checked request function. @param maxHops Redirect limit. @param main Check login paths when true. @returns Final response and URL. */
+export async function followPublic(url, signal, request, maxHops = 5, main = false) {
+  for (let hop = 0; ; hop++) {
+    if (main && loginPage(url)) throw webError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
+    const response = await request(url, signal);
+    if (![301, 302, 303, 307, 308].includes(response.status)) return { response, url };
+    await response.body?.cancel();
+    if (hop >= maxHops) throw webError("网页跳转超过上限", "WEB_REDIRECT_BLOCKED");
+    const location = response.headers.get("location");
+    if (!location) throw webError("网页跳转缺少目标地址", "WEB_PROVIDER_ERROR");
+    url = new URL(location, url).href;
+  }
+}
+
+async function cappedBytes(response, maxBytes) {
+  if (Number(response.headers.get("content-length")) > maxBytes) {
+    await response.body?.cancel();
+    throw webError("网页资源过大", "WEB_FETCH_TOO_LARGE");
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader(), chunks = [];
+  let length = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) return Buffer.concat(chunks);
+      length += value.length;
+      if (length > maxBytes) throw webError("网页资源过大", "WEB_FETCH_TOO_LARGE");
+      chunks.push(Buffer.from(value));
+    }
+  } finally { await reader.cancel(); }
+}
+
+/** Create a provider with owned render slots and no waiting queue. @param Base Released HTTP provider class. @param WebError Released error class. @param limits Resolved provider limits. @param options Optional local transport/runtime overrides. @returns Company fetch provider. */
+export function companyFetcher(Base, WebError, limits, {
+  request = publicRequest,
+  loadRuntime = () => import(process.env.SLIDESTUDIO_PLAYWRIGHT_RUNTIME),
+  maxConcurrent = 1,
+  renderTimeoutMs = 15_000,
+} = {}) {
+  let rendering = 0;
+  return new class extends Base {
+
+    async followAndRead(initialUrl, signal) {
+      try {
+        const { response, url } = await followPublic(initialUrl, signal, request, Math.min(5, limits.maxRedirects), true);
+        const result = await super.readBody(response, new URL(url), signal);
+        if (loginPage(url, result.body.content)) throw new WebError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
+        if (result.body.kind !== "html" || result.statusCode >= 400 || result.truncated || !needsRendering(result.body.content)) return result;
+        if (rendering >= maxConcurrent) throw new WebError("网页渲染正忙，请稍后重试", "WEB_PROVIDER_ERROR");
+        rendering++;
+        try { return await this.render(result, signal); }
+        finally { rendering--; }
+      } catch (error) {
+        if (signal.aborted) throw new WebError(
+          signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "网页抓取超时，请稍后重试" : "网页抓取已取消",
+          signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "WEB_FETCH_TIMEOUT" : "WEB_ABORTED", { cause: error },
+        );
+        if (error instanceof WebError) throw error;
+        throw new WebError(error.code?.startsWith("WEB_") ? error.message : "网页请求失败，请稍后重试",
+          error.code?.startsWith("WEB_") ? error.code : "WEB_PROVIDER_ERROR", { cause: error });
+      }
+    }
+
+    async render(result, parentSignal) {
+      const stop = new AbortController();
+      const signal = AbortSignal.any([parentSignal, stop.signal, AbortSignal.timeout(renderTimeoutMs)]);
+      const requests = new Set();
+      let browser;
+      try {
+        const runtime = await loadRuntime();
+        signal.throwIfAborted();
+        // The image supplies this browser; never download a runtime during a tool call.
+        browser = await runtime.launchPinnedChromium({ timeout: renderTimeoutMs, env: { PATH: process.env.PATH, LANG: "zh_CN.UTF-8" } });
+        const abort = () => { void browser.close().catch(error => { /* Awaited again in finally. */ }); };
+        signal.addEventListener("abort", abort, { once: true });
+        try {
+          signal.throwIfAborted();
+          const context = await browser.newContext({ userAgent: USER_AGENT, locale: "zh-CN", extraHTTPHeaders: { "Accept-Language": LANGUAGE }, serviceWorkers: "block", acceptDownloads: false });
+          let resourceCount = 0, navigationCount = 0, totalBytes = 0, mainStatus = result.statusCode, mainError, finalUrl = result.url;
+          await context.routeWebSocket("**/*", socket => socket.close());
+          await context.route("**/*", route => {
+            const operation = (async () => {
+              const incoming = route.request();
+              const isMain = incoming.isNavigationRequest() && incoming.frame() === page.mainFrame();
+              try {
+                if (incoming.method() !== "GET" || ["image", "media", "font"].includes(incoming.resourceType())) return await route.abort();
+                if (++resourceCount > 64 || requests.size >= 8) throw webError("网页请求数量超过上限", "WEB_PROVIDER_ERROR");
+                if (isMain && ++navigationCount > 6) throw webError("网页跳转超过上限", "WEB_REDIRECT_BLOCKED");
+                if (isMain && loginPage(incoming.url())) throw webError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
+                const { response, url } = await followPublic(incoming.url(), signal, request, Math.min(5, limits.maxRedirects), isMain);
+                let body = await cappedBytes(response, limits.maxResponseBytes);
+                totalBytes += body.length;
+                if (totalBytes > limits.maxResponseBytes * 4) throw webError("网页资源总量过大", "WEB_FETCH_TOO_LARGE");
+                if (isMain) {
+                  finalUrl = url;
+                  if (/html/i.test(response.headers.get("content-type") ?? "")) {
+                    const base = `<base href="${url.replaceAll("&", "&amp;").replaceAll('"', "&quot;")}">`;
+                    const charset = /charset\s*=\s*["']?([^;"'\s]+)/i.exec(response.headers.get("content-type"))?.[1] ?? "utf-8";
+                    const html = new TextDecoder(charset).decode(body);
+                    body = Buffer.from(/<head\b[^>]*>/i.test(html) ? html.replace(/<head\b[^>]*>/i, match => match + base) : base + html);
+                  }
+                }
+                const headers = Object.fromEntries(response.headers);
+                if (isMain && /html/i.test(headers["content-type"] ?? "")) headers["content-type"] = "text/html; charset=utf-8";
+                // Fresh anonymous context: neither accept cookies nor forward them to the network.
+                for (const key of ["set-cookie", "content-encoding", "content-length", "transfer-encoding", "connection"]) delete headers[key];
+                if (isMain) mainStatus = response.status;
+                await route.fulfill({ status: response.status, headers, body });
+              } catch (error) {
+                if (isMain) mainError = error;
+                await route.abort();
+              }
+            })();
+            requests.add(operation);
+            operation.finally(() => requests.delete(operation)).catch(error => { /* Page teardown may cancel route actions; goto reports navigation failure. */ });
+            return operation;
+          });
+          const page = await context.newPage();
+          try {
+            await page.goto(result.url, { waitUntil: "networkidle", timeout: renderTimeoutMs });
+          } catch (error) {
+            if (mainError) throw mainError;
+            throw error;
+          }
+          if (mainError) throw mainError;
+          signal.throwIfAborted();
+          const html = await page.content();
+          if (loginPage(finalUrl, html)) throw webError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
+          if (mainStatus >= 400 || needsRendering(html)) throw webError("网页渲染后仍无法读取正文", "WEB_PROVIDER_ERROR");
+          return { ...result, url: finalUrl, statusCode: mainStatus, body: { kind: "html", content: html.slice(0, limits.maxBodyChars) }, truncated: html.length > limits.maxBodyChars };
+        } finally {
+          signal.removeEventListener("abort", abort);
+        }
+      } catch (error) {
+        throw new WebError(error.code ? error.message : "网页需要动态渲染，但本次渲染未完成，请稍后重试", parentSignal.aborted ? "WEB_ABORTED" : error.code ?? "WEB_PROVIDER_ERROR", { cause: error });
+      } finally {
+        stop.abort();
+        if (browser) await browser.close();
+        await Promise.allSettled([...requests]);
+      }
+    }
+  }(limits);
+}

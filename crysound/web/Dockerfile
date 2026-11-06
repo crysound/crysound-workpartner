@@ -30,6 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg util-lin
 ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ffprobe \
     HYPERFRAMES_BROWSER_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell \
     PUPPETEER_EXECUTABLE_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
+# 公司搜索与抓取适配只改固定版本的发布产物；未命中即停止构建。
+COPY web/web-tools/ /opt/partner/web-tools/
+RUN node /opt/partner/web-tools/patch.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # 公司动效复用同一份浏览器；口播和采样下载不随插件启用。
 ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell OM_SAMPLES=off
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
