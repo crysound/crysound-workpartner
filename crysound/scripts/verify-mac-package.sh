@@ -28,11 +28,14 @@ grep -q "partner.corp.crysound.com/_zp/llm/v1" "$res/crysound/config/partner.pat
 
 asar="$res/app.asar"
 has "$asar"
-list=$(npx --yes @electron/asar@3 list "$asar")
+tools=$(mktemp -d)
+npm install --prefix "$tools" --silent @electron/asar@3
+asarcli="$tools/node_modules/.bin/asar"
+list=$("$asarcli" list "$asar")
 echo "$list" | grep -q "^/dsh/node_modules/@deepseek-ai/dsh/package.json$" && echo "ok    dsh runtime inside app.asar" || { echo "FAIL  dsh runtime missing"; fail=1; }
 echo "$list" | grep -q "^/lib/main.js$" && echo "ok    lib/main.js" || { echo "FAIL  lib/main.js"; fail=1; }
 tmp=$(mktemp -d)
-npx --yes @electron/asar@3 extract-file "$asar" lib/main.js >/dev/null 2>&1 && mv main.js "$tmp/main.js" || true
+(cd "$tmp" && "$asarcli" extract-file "$asar" lib/main.js) >/dev/null 2>&1 || true
 if [ -f "$tmp/main.js" ]; then
   grep -q "crysound-workpartner" "$tmp/main.js" && echo "ok    main.js registers crysound-workpartner:// protocol" || { echo "FAIL  protocol string"; fail=1; }
   grep -q "desktop-login\|partner.corp.crysound.com" "$tmp/main.js" && echo "ok    main.js carries company login" || { echo "FAIL  login string"; fail=1; }
