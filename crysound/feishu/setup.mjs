@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-/** Extract the pinned, bundled official skills once into an immutable version directory.
+/** Extract the pinned, bundled official skills once, publishing the directory before making its root read-only.
  * @param parent Company-managed directory outside personal skills and AGENTS.md.
  * @returns Versioned read-only skill root.
  */
@@ -17,16 +17,25 @@ export function prepareSkills(parent) {
   fs.mkdirSync(parent, { recursive: true });
   const temp = `${target}.${crypto.randomBytes(12).toString("hex")}`;
   fs.mkdirSync(temp);
+  let directory = temp;
   try {
     const r = spawnSync("tar", ["-xzf", source, "-C", temp], { encoding: "utf8" });
     if (r.status !== 0) throw new Error("无法展开公司飞书技能，请检查系统 tar 命令");
     fs.writeFileSync(path.join(temp, ".complete"), hash, { mode: 0o444 });
     for (const entry of fs.readdirSync(temp, { recursive: true, withFileTypes: true }).reverse()) fs.chmodSync(path.join(entry.parentPath, entry.name), entry.isDirectory() ? 0o555 : 0o444);
-    fs.chmodSync(temp, 0o555);
+    // macOS needs the directory itself writable while updating its parent link.
     fs.renameSync(temp, target);
+    directory = target;
+    fs.chmodSync(target, 0o555);
   } catch (error) {
-    // 临时目录可能已设为只读，先恢复目录写权限再删除。
-    if (fs.existsSync(temp)) { fs.chmodSync(temp, 0o755); for (const e of fs.readdirSync(temp, { recursive: true, withFileTypes: true })) if (e.isDirectory()) fs.chmodSync(path.join(e.parentPath, e.name), 0o755); fs.rmSync(temp, { recursive: true, force: true }); }
+    // 清理本次创建的目录（可能已经移动）；Windows 删除前还需恢复文件写权限。
+    if (fs.existsSync(directory)) {
+      fs.chmodSync(directory, 0o755);
+      for (const entry of fs.readdirSync(directory, { recursive: true, withFileTypes: true })) {
+        if (!entry.isSymbolicLink()) fs.chmodSync(path.join(entry.parentPath, entry.name), entry.isDirectory() ? 0o755 : 0o644);
+      }
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
     throw error;
   }
   return target;

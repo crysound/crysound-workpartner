@@ -28,6 +28,8 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 菜单“退出登录”：删令牌、清登录窗口的飞书会话，重启后进入登录窗口。
 
 ### 首次启动自动就位（`src/crysound/workspace.ts`，数据在 `crysound/config/`）
+飞书技能由 `crysound/feishu/setup.mjs` 解压到公司版本目录：先重命名到最终位置，再将根目录设为只读，兼容 macOS；失败时恢复本次副本的目录及文件写权限后清理，已有 `.complete` 的版本直接复用。
+
 1. 5 个插件按 `plugins.json` 的固定版本就位。构建时 `apps/desktop/scripts/prepare-plugin-template.ts` 用打包用的 dsh 运行时把它们装进临时 profile，结果（`package.json`、`pnpm-lock.yaml`、`modules/` 即 `node_modules`）随包放在 `Resources/crysound/plugin-template`；首次启动在 profile 里还没有这 5 个插件、`node_modules` 为空时，把模板复制进去并写入插件记录，几秒内完成。模板缺失、版本不符、profile 里已有旧版插件或复制失败时，退回联网执行包内 `dsh plugin --profile desktop add`（已记录同版本则跳过）。模板只在与构建机同架构的 macOS 目标上生成。
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
