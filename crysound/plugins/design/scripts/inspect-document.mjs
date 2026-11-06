@@ -13,3 +13,15 @@ export function inspectDocument() {
     title: document.title,
   };
 }
+
+/**
+ * Load deferred images before taking a final health reading.
+ * @returns {Promise<void>} Settles when fonts and current image decodes finish; failed images remain inspectable.
+ */
+export async function prepareDocument() {
+  await document.fonts.ready;
+  await Promise.allSettled([...document.images].map(image => {
+    image.loading = 'eager';
+    return image.decode();
+  }));
+}

@@ -3,7 +3,7 @@ import { mkdir, writeFile, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { withBrowser } from './browser-runtime.mjs';
-import { inspectDocument } from './inspect-document.mjs';
+import { inspectDocument, prepareDocument } from './inspect-document.mjs';
 
 const [input, output, ...args] = process.argv.slice(2);
 if (!input || !output) throw new Error('Usage: node scripts/render.mjs <local.html> <output-dir> [--viewports 1440x900,375x812]');
@@ -31,7 +31,7 @@ const results = await withBrowser(async browser => {
       await page.route(/^https?:\/\//, route => { blocked.push(route.request().url()); return route.abort(); });
       await page.routeWebSocket(/.*/, socket => { blocked.push(socket.url()); socket.close(); });
       await page.goto(pathToFileURL(source).href, { waitUntil: 'load', timeout: 30_000 });
-      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(prepareDocument);
       const checks = await page.evaluate(inspectDocument);
       const screenshot = join(destination, `${viewport.width}x${viewport.height}.png`);
       await page.screenshot({ path: screenshot, fullPage: true, timeout: 30_000 });
