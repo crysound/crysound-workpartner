@@ -60,13 +60,15 @@ mkdirSync(out, { recursive: true })
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { name?: string; dependencies?: Record<string, string> }
 writeFileSync(join(out, 'package.json'), `${JSON.stringify({ dependencies: manifest.dependencies ?? {} }, null, 2)}\n`)
 cpSync(join(profile, 'pnpm-lock.yaml'), join(out, 'pnpm-lock.yaml'))
-if (nativeWindows && manifest.name) {
-  // pnpm links the workspace to itself using an absolute Windows junction. It is not a dependency.
-  const self = join(profile, 'node_modules', manifest.name)
-  if (existsSync(self) && lstatSync(self).isSymbolicLink() && realpathSync(self) === realpathSync(profile)) rmSync(self)
-}
-// Windows junctions retain absolute build-machine paths. Ship their files so the template can move twice.
-cpSync(join(profile, 'node_modules'), join(out, 'modules'), { recursive: true, dereference: nativeWindows, verbatimSymlinks: !nativeWindows })
+const modules = join(profile, 'node_modules')
+if (nativeWindows) {
+  // pnpm's workspace self-reference is not a dependency. Other Windows junctions must become portable files.
+  const self = manifest.name ? join(modules, manifest.name) : undefined
+  cpSync(modules, join(out, 'modules'), {
+    recursive: true, dereference: true,
+    filter: source => !(source === self && lstatSync(source).isSymbolicLink() && realpathSync(source) === realpathSync(profile)),
+  })
+} else cpSync(modules, join(out, 'modules'), { recursive: true, verbatimSymlinks: true })
 // pnpm's own state files record this machine's store path; the user's pnpm writes its own on the next install.
 for (const name of readdirSync(join(out, 'modules'))) {
   if (name === '.modules.yaml' || name.startsWith('.pnpm-workspace-state')) rmSync(join(out, 'modules', name), { force: true })
