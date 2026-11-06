@@ -1,7 +1,7 @@
 name: CRYSOUND WorkPartner · macOS arm64 desktop
 
-# Builds the company desktop app (apps/desktop) for Apple Silicon. Without signing secrets the installer is
-# unsigned (ad-hoc signed); with them the signing and notarization step below re-signs it. Nothing is published.
+# Builds the company desktop app (apps/desktop) for Apple Silicon. The unsigned installer is always uploaded; when
+# all signing secrets exist, it is also re-signed, notarized and uploaded as a second artifact. Nothing is published.
 on:
   workflow_dispatch:
   push:
@@ -63,9 +63,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
-      - name: First-run workspace smoke test (plugins, patches, default configuration)
-        run: crysound/scripts/smoke-workspace.sh "${{ steps.dmg.outputs.path }}"
-      - name: Sign and notarize (reserved; runs only when all signing secrets exist)
+      - name: Sign and notarize (runs only when all signing secrets exist)
         if: env.HAS_SIGNING == 'true'
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -74,6 +72,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: crysound/scripts/sign-mac.sh "${{ steps.dmg.outputs.path }}" signed
+      - name: Verify signed installer (stapler, spctl, codesign)
+        if: env.HAS_SIGNING == 'true'
+        run: crysound/scripts/verify-signed.sh "$(ls signed/*.dmg | head -n1)"
       - name: Upload signed installer
         if: env.HAS_SIGNING == 'true'
         uses: actions/upload-artifact@v7.0.1
@@ -83,3 +84,5 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
+      - name: First-run workspace smoke test (plugins, patches, default configuration)
+        run: crysound/scripts/smoke-workspace.sh "${{ steps.dmg.outputs.path }}"

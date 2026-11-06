@@ -56,7 +56,8 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
   for (const plugin of list.plugins) {
     if ((await recorded())[plugin.name] === plugin.want) continue
     const code = await run(execPath, ['--expose-internals', cliEntry, 'plugin', '--profile', 'desktop', 'add', plugin.spec], environment)
-    if (code !== 0) console.warn(`CRYSOUND: plugin ${plugin.name} failed to install; starting without it`)
+    // pnpm 11 exits 1 after a successful add when dependency build scripts were not approved; the manifest is the truth.
+    if ((await recorded())[plugin.name] !== plugin.want) console.warn(`CRYSOUND: plugin ${plugin.name} failed to install (exit ${String(code)}); starting without it`)
   }
 
   const patches = join(assets, 'config', 'plugin-patches.mjs')
