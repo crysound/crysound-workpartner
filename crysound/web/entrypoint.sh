@@ -10,7 +10,7 @@ while read NAME SPEC WANT; do
   grep -qF "\"$NAME\": \"$WANT\"" "$DSH_HOME/profiles/web/package.json" 2>/dev/null \
     || dsh plugin --profile web add "$SPEC" </dev/null >/dev/null 2>&1 || echo "插件 $NAME 安装失败，本次不带它启动"
 done
-# 第三方插件的本地修补（SlideStudio 兼容、飞书机器人自动新建会话等），清单和原因见 plugin-patches.mjs。
+# 第三方插件的本地修补（SlideStudio 兼容），清单和原因见 plugin-patches.mjs。
 node /opt/partner/plugin-patches.mjs "$DSH_HOME/profiles/web/node_modules"
 # 语音模型用镜像里的共用一份，不再每人下载。
 mkdir -p "$DSH_HOME/speech-to-text/sensevoice" && ln -sfn /opt/sensevoice/models "$DSH_HOME/speech-to-text/sensevoice/models"
