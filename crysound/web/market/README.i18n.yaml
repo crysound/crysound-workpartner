@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write crysound/web/market/README.md
 /zhaohua-market-phase-one:
-  en: 27b2617d4bd4bcf5
-  zh: a0fc86d285a29f3c
+  en: 959e40e6a355f474
+  zh: 6793c60cb6438bcb
 /zhaohua-market-phase-one/deployment-configuration:
   en: 5791da2663322c85
   zh: 22b8558f7a07151e
 /zhaohua-market-phase-one/publishing-and-approval:
-  en: 10e985cf90dc03c5
-  zh: cbd725071c1d301f
+  en: 9714e0a6c0edf031
+  zh: 8a6d6854666b5127
 /zhaohua-market-phase-one/local-verification:
   en: 0d0087ace491fc68
-  zh: 24b4c0175d657d24
+  zh: 9b8482896e28a6fc

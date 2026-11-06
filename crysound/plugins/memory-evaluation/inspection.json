@@ -1,0 +1,472 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-06T20:30:04Z",
+  "method": "Verified published archives, read as data; no installation or plugin execution.",
+  "runtimeTrials": "not performed",
+  "candidates": [
+    {
+      "name": "@fooxe/dsh-memory",
+      "version": "0.13.10",
+      "tarball": "https://registry.npmjs.org/@fooxe/dsh-memory/-/dsh-memory-0.13.10.tgz",
+      "integrity": "sha512-LtgwueIekKnFJBGyZM07OBWyL+3K+6yClKsQ08Qz4FClJurgkkBjnioqAY7TGGAi4UooZDe2BloKKESPXKu/Xg==",
+      "published": "2026-10-20T13:28:35.737Z",
+      "license": "MIT",
+      "archiveSha256": "f656189c9c88df79f1985813b530fa852dfa8f81fbb28c1d244d716e727db786",
+      "archiveFiles": 9,
+      "unpackedBytes": 122471,
+      "shippedJs": {
+        "files": 2,
+        "bytes": 97714,
+        "nonemptyPhysicalLinesIncludingComments": 2035
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": ">=4.0.0",
+        "@deepseek-ai/dsh-tools": ">=0.0.1-rc.1"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "lifecycleScripts": {
+        "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && npm run build:client",
+        "test": "node --test tests/basic.test.mjs tests/smoke.plugin.mjs tests/detection.test.mjs tests/pathedge.test.mjs tests/atomic.test.mjs tests/anchorless.test.mjs tests/touch.test.mjs tests/host.real.mjs",
+        "build:client": "tsdown"
+      },
+      "externalImportSpecifiersHeuristic": [
+        "@deepseek-ai/dsh-tools",
+        "react"
+      ],
+      "releaseCountInPrevious30DaysIncludingPrereleases": 42,
+      "lastFiveReleasesBeforeCutoff": [
+        {
+          "version": "0.13.6",
+          "at": "2026-10-13T08:32:13.870Z"
+        },
+        {
+          "version": "0.13.7",
+          "at": "2026-10-19T02:40:41.550Z"
+        },
+        {
+          "version": "0.13.8",
+          "at": "2026-10-19T06:59:29.832Z"
+        },
+        {
+          "version": "0.13.9",
+          "at": "2026-10-20T08:08:58.837Z"
+        },
+        {
+          "version": "0.13.10",
+          "at": "2026-10-20T13:28:35.737Z"
+        }
+      ],
+      "sourceFiles": {
+        "client/client.js": {
+          "sha256": "1749439ce5812a0f41dce3c137a72bb4ed58b337a8887032d489d78a7117dc2c",
+          "lines": 499
+        },
+        "lib/index.js": {
+          "sha256": "50f1fd746ee29b7eefd0e996558f70660eaa59bfdb6fe05756d51c9f8584f2fe",
+          "lines": 1536
+        }
+      }
+    },
+    {
+      "name": "dsh-memory-palace",
+      "version": "1.8.4",
+      "tarball": "https://registry.npmjs.org/dsh-memory-palace/-/dsh-memory-palace-1.8.4.tgz",
+      "integrity": "sha512-nEVmncYhalq36C5pYYU6Mb3hxWNpjTr65VNn2P4wnnL3iaDIiarWcyVMAwyiA6tH4GZuvCXmpu9KA0IZyXkLtA==",
+      "published": "2026-11-05T16:12:24.718Z",
+      "license": "MIT",
+      "archiveSha256": "f5cdffa9f570d852272d754fb1843deff6ba6e9a45e37114b91c6a61e63469a3",
+      "archiveFiles": 23,
+      "unpackedBytes": 274314,
+      "shippedJs": {
+        "files": 18,
+        "bytes": 254635,
+        "nonemptyPhysicalLinesIncludingComments": 4164
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/schemastery": "^3.18.5-alpha.1"
+      },
+      "engines": {
+        "dsh": "^0.2.1-rc.5"
+      },
+      "lifecycleScripts": {
+        "build": "node scripts/build.mjs",
+        "selftest": "node scripts/selftest.mjs",
+        "prepublishOnly": "npm run build"
+      },
+      "externalImportSpecifiersHeuristic": [
+        "@deepseek-ai/dsh-client-runtime/client",
+        "@deepseek-ai/dsh-llm",
+        "@deepseek-ai/dsh-tools",
+        "@deepseek-ai/schemastery",
+        "react"
+      ],
+      "releaseCountInPrevious30DaysIncludingPrereleases": 8,
+      "lastFiveReleasesBeforeCutoff": [
+        {
+          "version": "1.8.3-alpha.1",
+          "at": "2026-10-21T16:35:07.598Z"
+        },
+        {
+          "version": "1.8.3-alpha.2",
+          "at": "2026-10-26T09:38:45.076Z"
+        },
+        {
+          "version": "1.8.4-alpha.1",
+          "at": "2026-10-30T13:59:42.597Z"
+        },
+        {
+          "version": "1.8.4-alpha.2",
+          "at": "2026-10-30T14:33:14.423Z"
+        },
+        {
+          "version": "1.8.4",
+          "at": "2026-11-05T16:12:24.718Z"
+        }
+      ],
+      "sourceFiles": {
+        "lib/api.mjs": {
+          "sha256": "4501a3f8240deda710f8ab37bc860969cc1117e236acf73e6e12de6ed0d2b930",
+          "lines": 187
+        },
+        "lib/client.js": {
+          "sha256": "bb9594e475f059a5761d1f2d1885b79cb3720118ce3129e5a9c33980067c880b",
+          "lines": 902
+        },
+        "lib/common/logger.mjs": {
+          "sha256": "4e1796248ddb6096c6dc7e12081a5254dfa6bbce0d6329e8c0e7414916fc424b",
+          "lines": 150
+        },
+        "lib/common/paths.mjs": {
+          "sha256": "49a46ec70132f3f6813d063e31def51a05282e3aa45e1aad86ae29c564f88657",
+          "lines": 84
+        },
+        "lib/common/planmode.mjs": {
+          "sha256": "d1f21a0968c395dd6ac87cb4041dc22b2105d1d97757c82a029b9e0c08eb70e4",
+          "lines": 32
+        },
+        "lib/common/prompts.mjs": {
+          "sha256": "e9c93c88a7b5dc0e47b94bc51ec7e0482df34621939d55916738b3d2984cc08b",
+          "lines": 52
+        },
+        "lib/common/records.mjs": {
+          "sha256": "9aa2b2a5c59444d17d6807b3f22bf0bf99c8b2d45d50651ad34e763c309886ed",
+          "lines": 99
+        },
+        "lib/common/sections.mjs": {
+          "sha256": "55ec8aa8b0a7bce7afecdb7aac800eb08e2a543dd95e02bed37d719be52caf39",
+          "lines": 221
+        },
+        "lib/common/session.mjs": {
+          "sha256": "215e1733e0dabd303d4e822c9b6787915ef86183b60874aaa87177a2151ad059",
+          "lines": 11
+        },
+        "lib/common/text.mjs": {
+          "sha256": "2782f9ec5aed9df771c600f24ee455d82b45861f74967d7562bdbcce272ba6c5",
+          "lines": 181
+        },
+        "lib/common/user-commands.mjs": {
+          "sha256": "4cd93a7e97f845890c237db8901a235b78ecd2c6a8c4cb8bcbe466d669ef2ab7",
+          "lines": 84
+        },
+        "lib/hybrid/index.mjs": {
+          "sha256": "064d242118fb14012fc84d9c57ae12c67054cbd56ab4d4b798ae12984a7e60d0",
+          "lines": 17
+        },
+        "lib/hybrid/prompts.mjs": {
+          "sha256": "b2a4c5187ed0c46a2cfb839ed2e1cc1ce4f7ff4ca8871e8a4905ab4a7168b733",
+          "lines": 75
+        },
+        "lib/hybrid/subagent.mjs": {
+          "sha256": "d6bdc2f25c0190cbbe5d1c864cf955a7b832a403174402b89af8536175a08cc6",
+          "lines": 446
+        },
+        "lib/hybrid/tools.mjs": {
+          "sha256": "ad9c95c2842d300d039071b5a2ba617ac9c7b13f5717eb255c158cc38fae7dfd",
+          "lines": 408
+        },
+        "lib/index.js": {
+          "sha256": "27c999b621612858c896eb7cb4391e7a1fb01878d5ff32e5ed2c13ab813ae511",
+          "lines": 730
+        },
+        "lib/projection.mjs": {
+          "sha256": "87900509c813200c46b10a5acf80f1152781d3ccec655cf802addc789743107c",
+          "lines": 198
+        },
+        "lib/tools.mjs": {
+          "sha256": "b35c14b17443ce50868f3e0d357893bb3538322d2f7f92bd878b5a64c83d5047",
+          "lines": 487
+        }
+      }
+    },
+    {
+      "name": "@jipika/dsh-memory",
+      "version": "0.9.4",
+      "tarball": "https://registry.npmjs.org/@jipika/dsh-memory/-/dsh-memory-0.9.4.tgz",
+      "integrity": "sha512-o7/1/V1Ojc2cD28dYHNFrMwUYlksrHq2bq/uOwO3qjK4stKipy0Lt+CkgCkIAsZ+tnjjAAQEYvXMyuqWlynu+Q==",
+      "published": "2026-10-27T08:26:24.823Z",
+      "license": "MIT",
+      "archiveSha256": "313011121840d66dc801a1bd78c8bd4a9c088cbf1eeb2d38c19f5f354a4feb53",
+      "archiveFiles": 10,
+      "unpackedBytes": 357705,
+      "shippedJs": {
+        "files": 3,
+        "bytes": 217605,
+        "nonemptyPhysicalLinesIncludingComments": 4193
+      },
+      "dependencies": {},
+      "peerDependencies": {},
+      "engines": {},
+      "lifecycleScripts": {},
+      "externalImportSpecifiersHeuristic": [
+        "react"
+      ],
+      "releaseCountInPrevious30DaysIncludingPrereleases": 2,
+      "lastFiveReleasesBeforeCutoff": [
+        {
+          "version": "0.9.2",
+          "at": "2026-10-23T10:48:42.534Z"
+        },
+        {
+          "version": "0.9.4",
+          "at": "2026-10-27T08:26:24.823Z"
+        }
+      ],
+      "sourceFiles": {
+        "client.js": {
+          "sha256": "7ae22e0e507d5dc6ec80902abfcb83bcd890deb705c8133c545ab02b32b4dbd6",
+          "lines": 995
+        },
+        "index.js": {
+          "sha256": "8cc167e0eda5f17cf5014c67cad4e2c89291de02db6b86b0ca19642509ea7eda",
+          "lines": 3297
+        },
+        "tools/migrate-to-shards.mjs": {
+          "sha256": "9aa9a630c685eed267059f7093e50c42804fc1c3bb1d91762d044d52c10f3b87",
+          "lines": 159
+        }
+      }
+    },
+    {
+      "name": "@restregular/dsh-memory",
+      "version": "0.30.1",
+      "tarball": "https://registry.npmjs.org/@restregular/dsh-memory/-/dsh-memory-0.30.1.tgz",
+      "integrity": "sha512-bHjN/NlvIzkfzHTgiN7+VCuyUFPxBKTFZ4WbuP0FTWXujAv2VDQblgRqFPQIGKLIk6me+va9ayM5denhkCw6Bg==",
+      "published": "2026-10-31T19:41:07.737Z",
+      "license": "MIT",
+      "archiveSha256": "c865f36f4543d114708132b7aafcba8c508524c0202b4a6b3d4397574eb72f73",
+      "archiveFiles": 48,
+      "unpackedBytes": 1379763,
+      "shippedJs": {
+        "files": 40,
+        "bytes": 1178488,
+        "nonemptyPhysicalLinesIncludingComments": 21203
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "*",
+        "@deepseek-ai/dsh-tools": "*",
+        "@deepseek-ai/dsh-llm": "*"
+      },
+      "engines": {
+        "node": ">=22.13.0"
+      },
+      "lifecycleScripts": {},
+      "externalImportSpecifiersHeuristic": [
+        "@deepseek-ai/cordis",
+        "@deepseek-ai/dsh-llm",
+        "@deepseek-ai/dsh-tools",
+        "react",
+        "react-dom"
+      ],
+      "releaseCountInPrevious30DaysIncludingPrereleases": 106,
+      "lastFiveReleasesBeforeCutoff": [
+        {
+          "version": "0.27.0",
+          "at": "2026-10-27T09:19:11.076Z"
+        },
+        {
+          "version": "0.28.0",
+          "at": "2026-10-29T05:21:38.367Z"
+        },
+        {
+          "version": "0.29.0",
+          "at": "2026-10-29T05:36:52.039Z"
+        },
+        {
+          "version": "0.30.0",
+          "at": "2026-10-29T06:02:26.383Z"
+        },
+        {
+          "version": "0.30.1",
+          "at": "2026-10-31T19:41:07.737Z"
+        }
+      ],
+      "sourceFiles": {
+        "lib/client.js": {
+          "sha256": "87c8ee4823b730596fa3ac374fc73428ff8bd06033284903a3b552f55cddd894",
+          "lines": 6236
+        },
+        "lib/index.js": {
+          "sha256": "100bbb06380953f2b4a42b96529815b62a7007b188577bcfe9b376656c004e73",
+          "lines": 72
+        },
+        "lib/inject/apply.js": {
+          "sha256": "8bfa5a63814aa275044de53802a99a89344a24f77123c138891624e5b1c00a82",
+          "lines": 1401
+        },
+        "lib/inject/audit-types.js": {
+          "sha256": "acb335b1533864ba2b6423c3776d0d62455723d464d292c9f9bea97e6242a054",
+          "lines": 226
+        },
+        "lib/inject/audit.js": {
+          "sha256": "0026b797c35a4a0e18e34619039f3e5160488446b2981bdeea13ba7694ed85e2",
+          "lines": 330
+        },
+        "lib/inject/digest.js": {
+          "sha256": "df71949607bd05f07efd4924ce56f8fe542095411971909f8f91666a543295f3",
+          "lines": 327
+        },
+        "lib/inject/inject.js": {
+          "sha256": "6eed1a269b1f4e3285c059a21c72be9f090ed1869bcdc79d249c29d8ebd5efb9",
+          "lines": 565
+        },
+        "lib/inject/policy.js": {
+          "sha256": "b0c6256a8cc909d7b4d40f64580dd92230e01ddd444e6558641fdb58880e43ed",
+          "lines": 39
+        },
+        "lib/inject/procedures.js": {
+          "sha256": "77e68596cff88d6339a53a8442a0fad8f5f59198b8a9a5dfb799c36f1da85820",
+          "lines": 188
+        },
+        "lib/inject/rules-delta.js": {
+          "sha256": "78be2b0830de9b6861108e1bfb5ed488aad1c0acb44a35e790bae4f9a4d2b98b",
+          "lines": 156
+        },
+        "lib/inject/rules.js": {
+          "sha256": "ebfcdf8df265dca54e8cf3a655af0c8d8f56de2a20a0c503a0e6430c2643599e",
+          "lines": 289
+        },
+        "lib/inject/session-state-store.js": {
+          "sha256": "860d8982562dbe5aa95318270379c838140f7d1a8d305ee32bea2d7c00134ccd",
+          "lines": 334
+        },
+        "lib/inject/signals.js": {
+          "sha256": "5b7b9bff6ea29450fe1ab6ef4998c44e00805a0b6cafba61f2989f7c3fabd740",
+          "lines": 491
+        },
+        "lib/inject/state.js": {
+          "sha256": "2f3e1196b0a3b6d84267a5a222a1d6a2a6917aafbcc2c41beeec3d63fe550b41",
+          "lines": 338
+        },
+        "lib/panel.js": {
+          "sha256": "039e32ce0803030ae47e88db5d416c731c4653eee3b8951ccd1871dafc2b7f82",
+          "lines": 1348
+        },
+        "lib/provider/apply.js": {
+          "sha256": "3df2fd63b856a415d4fe4bb7050ad854b077483a92072ab4394f0121b8fe547d",
+          "lines": 524
+        },
+        "lib/provider/approval-audit.js": {
+          "sha256": "c791507eacbcbf991e56d9d6deca286744a652b5497c4b5987f626fc17054cfd",
+          "lines": 77
+        },
+        "lib/provider/authorize.js": {
+          "sha256": "d58dd46ed8a4762d4d1a68f55027bdfbfbb72f2c87eb56f058389930ef67fe6a",
+          "lines": 127
+        },
+        "lib/provider/embed-install.js": {
+          "sha256": "3cc0ddc32619043f50e127e6eef5bd94ee4daea714bc7c1e8d6b568ac351d02e",
+          "lines": 1151
+        },
+        "lib/provider/embed-server.js": {
+          "sha256": "e45db02e1732a00203bf61ceb2615a10bcf47d83d0ba68f6b354be873b61ff92",
+          "lines": 310
+        },
+        "lib/provider/embed.js": {
+          "sha256": "8043bd9906dc713927cb923b78f89695515e75ddca310411796704d85a031021",
+          "lines": 105
+        },
+        "lib/provider/grants.js": {
+          "sha256": "6dec253fe25ec15332d1cd3c19e718e51efd82a4035af229709a023f79f22bea",
+          "lines": 255
+        },
+        "lib/provider/hardware.js": {
+          "sha256": "81339c12fbd00e8918e22fb7d4e2435ca0ad1cef041d1b0637516650e478b0ed",
+          "lines": 225
+        },
+        "lib/provider/index.js": {
+          "sha256": "5fe3bb9e6094e6c917b5c7b08adcce95d387ba843a25264978e44717b6c0bf19",
+          "lines": 3704
+        },
+        "lib/provider/inject-settings.js": {
+          "sha256": "a1f66033cecd665b02ab173e1ffae2fbe653c412d733c53378af7ba3273ec7d5",
+          "lines": 246
+        },
+        "lib/provider/models.js": {
+          "sha256": "bafc4daf8406ae9949ea62d570dfdf55de2898b060cd58b45f9e6ebb7a765b5d",
+          "lines": 253
+        },
+        "lib/provider/recommend.js": {
+          "sha256": "fe5f9a709863905efface7c9f5b0d916dc506c4eeeb8ee5d10f1c1cc92b65ef3",
+          "lines": 187
+        },
+        "lib/provider/rerank-cache.js": {
+          "sha256": "3f29574b2ce45d41d2a394aca02d24bb27d4cac17ff898663ef121c9968e24d9",
+          "lines": 64
+        },
+        "lib/provider/rerank.js": {
+          "sha256": "427aba9fedef57cdf13f169322aa2cde3fa9c2872da46bab27d45ff463f44766",
+          "lines": 169
+        },
+        "lib/provider/scope-meta.js": {
+          "sha256": "53d62cbca144486b69fe59da3e05287e489f8627fe04cdff1ce7750ddeec4db1",
+          "lines": 215
+        },
+        "lib/provider/scope-names.js": {
+          "sha256": "109ae15f1df14d7351ee62c12ddc92d38997929c172df96d235743c490bd351d",
+          "lines": 105
+        },
+        "lib/provider/scope.js": {
+          "sha256": "85bed28ba76b074c496e50994550050302ac626e6bf6f8368bec8ffa2cc051b8",
+          "lines": 543
+        },
+        "lib/provider/scoring.js": {
+          "sha256": "2c4f2c7a71763d2c197c4d0ddf52811902d5d809324eff6c0a9f5a3a5bc20b1d",
+          "lines": 145
+        },
+        "lib/provider/secrets.js": {
+          "sha256": "009ab336cd9db5c1676a90046ba5f9796d164e7ceb1c402314caf185ec2df55c",
+          "lines": 57
+        },
+        "lib/provider/session-visibility.js": {
+          "sha256": "fd193251fb0ba2d76a9bd5bc0bbb6a56bd0820aded583fd211924863fbcdb6cd",
+          "lines": 223
+        },
+        "lib/provider/store.js": {
+          "sha256": "defe47d8a4b49b372d01cc6b926d4caec5747c1730012989cfd35f5ed8fc01d2",
+          "lines": 899
+        },
+        "lib/provider/workspace-bindings.js": {
+          "sha256": "7e69641b2dcf572c1138d91b00cf996967afe252ee8216d3fa7298fe97724ca8",
+          "lines": 128
+        },
+        "lib/tools/apply.js": {
+          "sha256": "eb057b974a16b63ebcbabb49334a97dd3ae82c6f31c42ae04d5f5d4963246507",
+          "lines": 172
+        },
+        "lib/tools/index.js": {
+          "sha256": "56faa246ab7e202dabbda99901b40b10169e85f2ac7ad48d1834999f6310adb5",
+          "lines": 1927
+        },
+        "lib/tools/render.js": {
+          "sha256": "04b533cb2d7a0040042211a0b6c1d6bb4c45155b50a00971f8e2eddb8e774f59",
+          "lines": 293
+        }
+      }
+    }
+  ]
+}

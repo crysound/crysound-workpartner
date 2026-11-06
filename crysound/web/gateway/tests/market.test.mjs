@@ -26,7 +26,7 @@ const doc = (version = "1.0.0", packageName = name) => ({ name: packageName, des
 const listen = async (server) => { server.listen(0, "127.0.0.1"); await once(server, "listening"); return `http://127.0.0.1:${server.address().port}`; };
 const close = (server) => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); });
 
-async function fixture(t) {
+async function fixture(t, official = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "zp-market-test-"));
   const packages = new Map();
   const requests = [];
@@ -58,7 +58,7 @@ async function fixture(t) {
     authenticate: (req) => tokenUser(req, key, users),
     readUsers: () => users,
     sessionUser: (req) => req.headers.cookie === "test-session=admin" ? users[2] : req.headers.cookie === "test-session=alice" ? users[0] : null,
-    admins: ["admin"], notify: async (notice) => { notices.push(notice); },
+    admins: ["admin"], notify: async (notice) => { notices.push(notice); }, ...official,
   };
   let handler = createMarket(options);
   const server = http.createServer(async (req, res) => { if (!await handler(req, res, new URL(req.url, publicOrigin))) { res.writeHead(404); res.end(); } });
@@ -83,6 +83,104 @@ test("令牌检查 zpd 签名、期限与开通状态", () => {
   assert.equal(tokenUser(req(token("alice")), key, []), null);
   assert.equal(tokenUser(req(token("alice").slice(0, -2) + "xx"), key, users), null);
   for (const value of ["", "zpd.invalid.☃", "zpd.a.a", "Basic fake"]) assert.equal(tokenUser(req(value), key, users), null);
+});
+
+test("公司官方显示名、作者和标识来自管理员指定的账号与包；普通同事不能自称官方", async (t) => {
+  const f = await fixture(t, { officialPublishers: ["alice"], officialPackages: ["@crysound/*"] });
+  for (const [packageName, publisher, displayName] of [
+    ["@crysound/design", "alice", undefined], ["@crysound/motion", "alice", undefined],
+    ["@crysound/colleague", "bob", "同事工具"], ["@crysound/custom", "alice", "兆华示例工具"],
+  ]) {
+    const body = doc("1.0.0", packageName);
+    Object.assign(body.versions["1.0.0"], { ...(displayName ? { displayName } : {}), author: "兆华工作伙伴", official: true, metadata: { labels: ["crysound-official"] } });
+    assert.equal((await f.request(`/_zp/npm/${encodeURIComponent(packageName)}`, { method: "PUT", headers: bearer(publisher), body: JSON.stringify(body) })).status, 201);
+    assert.equal((await f.request("/_zp/market/admin", { method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin }, body: new URLSearchParams({ name: packageName, version: "1.0.0", action: "approved" }) })).status, 303);
+  }
+  const parsed = parseMarketIndex(await f.index(), `${publicOrigin}/_zp/market/index.json`);
+  for (const [packageName, title] of [["@crysound/design", "兆华设计"], ["@crysound/motion", "兆华动效"], ["@crysound/custom", "兆华示例工具"]]) {
+    const entry = parsed.plugins.find((p) => p.name === packageName);
+    assert.equal(entry.title, title);
+    assert.equal(entry.author, "兆华工作伙伴");
+    assert.deepEqual(entry.metadata.labels, ["crysound-official", "crysound-maintainer:alice"]);
+    assert.equal(marketInstallTarget(entry.name, entry.versions[0]).spec, `${packageName}@1.0.0`);
+  }
+  assert.deepEqual(parsed.metadata.labels["crysound-official"].title, { zh: "兆华官方", en: "CRYSOUND official" });
+  assert.deepEqual(parsed.metadata.labels["crysound-maintainer:alice"].title, { zh: "维护：测试发布者", en: "Maintained by 测试发布者" });
+  const colleague = parsed.plugins.find((p) => p.name === "@crysound/colleague");
+  assert.equal(colleague.title, "同事工具");
+  assert.equal(colleague.author, "bob");
+  assert.deepEqual(colleague.metadata.labels, []);
+  // 换成精确包名单后，发布账号本身不足以使其余包成为官方。
+  f.options.officialPackages = ["@crysound/design"];
+  f.restart();
+  assert.deepEqual((await f.index()).plugins.find((p) => p.name === "@crysound/motion").metadata.labels, []);
+});
+
+test("官方维护姓名独立于发布账号；分类、包内图片及最新顺序经原生索引解析保留", async (t) => {
+  const f = await fixture(t, { officialPublishers: ["alice"], officialPackages: ["@crysound/*"], officialMaintainers: { "@crysound/data": ["admin"] } });
+  const preview = "data:image/png;base64,iVBORw0KGgo=";
+  for (const [packageName, publisher, fields] of [
+    ["@crysound/older", "bob", { keywords: ["文档与报告", 5] }],
+    ["@crysound/data", "alice", { keywords: ["销售与市场"], dsh: { bundle: { patch: "./cordis.patch.yml" }, market: { preview } } }],
+    ["@crysound/newer", "bob", { labels: ["设计"], dsh: { bundle: { patch: "./cordis.patch.yml" }, market: { preview: "https://private.example.test/picture?token=secret" } } }],
+  ]) {
+    const body = doc("1.0.0", packageName);
+    Object.assign(body.versions["1.0.0"], fields);
+    assert.equal((await f.request(`/_zp/npm/${encodeURIComponent(packageName)}`, { method: "PUT", headers: bearer(publisher), body: JSON.stringify(body) })).status, 201);
+    assert.equal((await f.request("/_zp/market/admin", { method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin }, body: new URLSearchParams({ name: packageName, version: "1.0.0", action: "approved" }) })).status, 303);
+  }
+  const state = JSON.parse(fs.readFileSync(f.stateFile, "utf8"));
+  state.packages["@crysound/older"].versions["1.0.0"].publishTimestamp = 100;
+  state.packages["@crysound/newer"].versions["1.0.0"].publishTimestamp = 200;
+  fs.writeFileSync(f.stateFile, JSON.stringify(state));
+  f.restart();
+  const parsed = parseMarketIndex(await f.index(), `${publicOrigin}/_zp/market/index.json`);
+  assert.deepEqual(parsed.plugins.map((p) => p.name), ["@crysound/data", "@crysound/newer", "@crysound/older"]);
+  const [data, newer, older] = parsed.plugins;
+  assert.equal(data.title, "兆华数据");
+  assert.equal(data.author, "兆华工作伙伴");
+  assert.equal(data.metadata.category, "data");
+  assert.equal(data.icon, preview);
+  assert.deepEqual(data.metadata.labels, ["crysound-official"]); // Unnamed accounts never leak a slug as a name.
+  assert.equal(newer.metadata.category, "design");
+  assert.equal(newer.icon, undefined);
+  assert.equal(older.metadata.category, "documents");
+  assert.deepEqual(older.metadata.keywords, ["文档与报告"]);
+  assert.equal(Object.keys(parsed.metadata.categories).length, 7);
+  const manifest = f.packages.get("@crysound/data").versions["1.0.0"];
+  const maxPreview = "data:image/png;base64," + Buffer.alloc(32 * 1024).toString("base64");
+  manifest.dsh.market.preview = maxPreview;
+  assert.equal(parseMarketIndex(await f.index(), publicOrigin).plugins[0].icon, maxPreview);
+  for (const invalid of ["data:image/png;base64,a", "data:image/png;base64," + Buffer.alloc(32 * 1024 + 1).toString("base64")]) {
+    manifest.dsh.market.preview = invalid;
+    assert.equal(parseMarketIndex(await f.index(), publicOrigin).plugins[0].icon, undefined);
+  }
+  f.options.officialMaintainers["@crysound/data"] = ["alice"];
+  f.restart();
+  assert.deepEqual((await f.index()).plugins[0].metadata.labels, ["crysound-official", "crysound-maintainer:alice"]);
+});
+
+test("显示名优先 displayName，其次 title；旧包仍显示包名，非法显示名拒绝发布", async (t) => {
+  const f = await fixture(t);
+  for (const [version, fields, title] of [
+    ["1.0.0", {}, undefined], ["1.1.0", { title: "中文工具" }, "中文工具"],
+    ["1.2.0", { title: "备用标题", displayName: "首选标题" }, "首选标题"],
+  ]) {
+    const body = doc(version);
+    Object.assign(body.versions[version], fields);
+    assert.equal((await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) })).status, 201);
+    await f.review(version);
+    const entry = (await f.index()).plugins[0];
+    assert.equal(entry.title, title);
+    assert.deepEqual(entry.metadata.labels, []);
+  }
+  for (const field of ["displayName", "title"]) {
+    for (const value of ["", " ", 3, {}, "字".repeat(81)]) {
+      const body = doc("2.0.0");
+      body.versions["2.0.0"][field] = value;
+      assert.equal((await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) })).status, 400);
+    }
+  }
 });
 
 test("容器令牌写到本人数据卷，权限 600，重复签发仍能校验", (t) => {

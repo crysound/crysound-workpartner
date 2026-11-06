@@ -13,6 +13,7 @@
 - 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
+- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 左下角账号按钮显示飞书头像和姓名，菜单里的“登录”项换成姓名（不可点）。`brand.js` 向 `/_zp/me` 取 `{name, avatar}`：网页版由网关按登录会话回答，桌面版由 `src/main.ts` 按本机保存的登录回答。网页版在账号按钮上方多一个“下载客户端”入口，指向网关的 `/_zp/download`。
 
 ### 断开 DeepSeek 服务
@@ -101,6 +102,8 @@ done
 - `config/patch-data-use.mjs` 为原生卡片增加“使用”：已启用时打开分类引导草稿、保留已有草稿、不自动发送；停用时进入原生设置。网页镜像与桌面打包共用幂等补丁，无额外桌面目录代理。部署配置、回退与待验收项见 `crysound/web/treg/README.md`。
 
 ## 公司维护的插件（`crysound/plugins/`）
+
+- `memory`（`@crysound/memory`，个人记忆）：独立最小实现，主对话模型主动保存稳定的个人事实，在新会话中按总预算召回；中文设置页支持个人开关、添加、编辑、确认删除和清空，显示来源及时间；随机编号支持原条目更新，满额经用户同意原子合并再新增，拒存证件和银行卡号。数据仅在个人 DSH home 的插件专属 SQLite 文件，使用 DELETE 日志模式，不接新模型或服务，不加入预装。中文页和存储方案已获分诊确认，交伙伴助理测试账号验收；正式网关、桌面版、备份恢复、长期并发及提取率仍未验收。评估见 `crysound/plugins/memory-evaluation/`；Node 实验性 SQLite 的升级复查、镜像版本和备份恢复步骤见插件 README，验收后征得负责人同意才预装。
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。

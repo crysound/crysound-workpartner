@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import vm from "node:vm";
 import { patchDataUse, patchDataUseFile, useData } from "./patch-data-use.mjs";
+import { patchMarketCatalog } from "../scripts/patch-market-catalog.mjs";
 
 function fixture({ enabled = true, rowEnabled = true, error } = {}) {
   const calls = [];
@@ -22,6 +24,27 @@ test("启用的数据插件只打开分类引导草稿、保留旧草稿，不�
   assert.equal(calls[0][1].whenDraftExists, "append");
   assert.match(calls[0][1].prompt, /七类.*示例提问/);
   assert.match(calls[0][1].prompt, /不要发起付费/);
+});
+
+test("与市场 PR A 组合后，原生安装及数据使用按钮在两种修补顺序下保持可用", { skip: !process.env.DATA_MARKET_CLIENT }, () => {
+  const original = fs.readFileSync(process.env.DATA_MARKET_CLIENT, "utf8");
+  for (const text of [patchDataUse(patchMarketCatalog(original)), patchMarketCatalog(patchDataUse(original))]) {
+    let exports;
+    new vm.Script(text.replace('exports.apply = apply;', 'exports.apply = apply; exports.testEntryAction = EntryAction;')).runInNewContext({
+      window: { __ModuleLoader__: { load({ factory }) { exports = factory((name) => name === 'react/jsx-runtime' ? { jsx: (type, props) => ({ type, props }) } : {}); } } },
+    });
+    for (const name of ["@crysound/data", "@crysound/design"]) {
+      const t = (key) => ({ zpUse: "使用", zpUseData: "使用", install: "安装" })[key] || key;
+      let opened = 0;
+      const button = exports.testEntryAction({ entry: { name, installation: { status: "installed" } }, title: name, t,
+        onOpenInstalled: () => { opened++; } });
+      assert.equal(button.props.children, "使用");
+      button.props.onClick();
+      assert.equal(opened, 1);
+    }
+    assert.equal(patchDataUse(text), text);
+    assert.equal(patchMarketCatalog(text), text);
+  }
 });
 
 test("未启用、行停用、加载失败或断线时只进入设置", async () => {

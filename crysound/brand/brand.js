@@ -9,16 +9,6 @@
   const TITLES = new Set(["探索未至之境", "Into the Unknown"]);
   const BADGES = new Set(["预览版", "Preview"]);
   const RENAME = new Map([["dsh-video-editor", "视频剪辑"]]);
-  // 侧栏顺序：演示文稿、视频剪辑、插件在前，其余保持原有先后排在后面。
-  const SIDEBAR_ORDER = [["演示文稿", "Slides"], ["视频剪辑"], ["插件", "Plugins"]];
-  const orderSidebar = () => {
-    for (const nav of document.querySelectorAll("nav")) {
-      const items = [...nav.children];
-      const rank = (el) => SIDEBAR_ORDER.findIndex((names) => names.includes(el.textContent.trim()));
-      if (!items.some((el) => rank(el) >= 0)) continue;
-      items.forEach((el) => { const r = rank(el); const v = String(r >= 0 ? r : SIDEBAR_ORDER.length); if (el.style.order !== v) el.style.order = v; });
-    }
-  };
   const DESKTOP = location.protocol === "dsh-app:";
   let me = null;
   const avatar = () => {
@@ -57,7 +47,6 @@
 
   const apply = () => {
     if (document.title !== NAME) document.title = NAME;
-    orderSidebar();
     const settingsNav = document.querySelector('[data-shortcut-modal="settings"] nav > div');
     if (settingsNav && !settingsNav.querySelector('.zp-feishu-settings')) {
       const a = document.createElement('a');

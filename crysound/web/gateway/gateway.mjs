@@ -106,6 +106,9 @@ const market = createMarket({
   readUsers: users,
   sessionUser: (req) => userFor(req).user,
   admins: marketAdmins,
+  officialPublishers: (process.env.MARKET_OFFICIAL_PUBLISHERS || "").split(",").map((s) => s.trim()).filter(Boolean),
+  officialMaintainers: JSON.parse(process.env.MARKET_OFFICIAL_MAINTAINERS || "{}"),
+  officialPackages: (process.env.MARKET_OFFICIAL_PACKAGES || "").split(",").map((s) => s.trim()).filter(Boolean),
   notify: notifyMarketAdmins,
   internalOrigin: "http://zhaohua-partner-gateway:3090",
 });

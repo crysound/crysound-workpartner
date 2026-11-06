@@ -36,6 +36,7 @@ import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetB
 import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
 import { patchDataUseFile } from '../../../crysound/config/patch-data-use.mjs'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
+import { patchCompanyMarketRuntime } from '../../../crysound/scripts/patch-market-ui.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
@@ -151,6 +152,10 @@ async function main(): Promise<void> {
         recursive: true, dereference: true,
         filter: source => desktopRuntimeFileExclusion(relative(modules, source), target, officeEngine) === undefined,
       })
+    })
+    // CRYSOUND: descriptor hashes and all subsequent checks cover the final company UI bytes.
+    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:company-market-ui', async () => {
+      patchCompanyMarketRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
     })
     // CRYSOUND: native market card opens the data plugin without adding a tab.
     patchDataUseFile(join(DSH_OUTPUT_ROOT, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-market/lib/client.js'))
