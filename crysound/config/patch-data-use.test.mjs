@@ -7,11 +7,11 @@ import vm from "node:vm";
 import { patchDataUse, patchDataUseFile, useData } from "./patch-data-use.mjs";
 import { patchMarketCatalog } from "../scripts/patch-market-catalog.mjs";
 
-function fixture({ enabled = true, rowEnabled = true, error } = {}) {
+function fixture({ enabled = true, rowEnabled = true, fiberPhase = "active", error } = {}) {
   const calls = [];
   const ctx = { remote: { pluginManager: {
-    listBundles: async () => [{ name: "@crysound/data", enabled, error, rows: [{ entryId: "skill" }] }],
-    listPlugins: async () => [{ entryId: "skill", enabled: rowEnabled }],
+    listBundles: async () => [{ name: "@crysound/data", enabled, error, rows: [{ entryId: "skill", moduleName: "@crysound/data" }, { entryId: "mcp", moduleName: "@deepseek-ai/dsh-mcp-client" }] }],
+    listPlugins: async () => [{ entryId: "skill", enabled: rowEnabled, fiberPhase }, { entryId: "mcp", enabled: true, fiberPhase: "active" }],
   } }, uiWorkspace: { startSession: (...args) => calls.push(args) } };
   return { ctx, calls };
 }
@@ -47,8 +47,9 @@ test("与市场 PR A 组合后，原生安装及数据使用按钮在两种修�
   }
 });
 
-test("未启用、行停用、加载失败或断线时只进入设置", async () => {
-  for (const options of [{ enabled: false }, { rowEnabled: false }, { error: "load failed" }, { offline: true }]) {
+test("技能未启用、运行失败或尚未就绪时只进入设置，即使连接行已运行", async () => {
+  for (const options of [{ enabled: false }, { rowEnabled: false }, { error: "load failed" }, { offline: true },
+    ...["failed", "pending", "loading", "unloading", null].map((fiberPhase) => ({ fiberPhase }))]) {
     const { ctx, calls } = fixture(options);
     if (options.offline) ctx.remote.pluginManager.listBundles = async () => { throw new Error("offline"); };
     let opened = 0;
@@ -62,6 +63,7 @@ test("真实发布的卡片补丁幂等，入口变化拒绝，副本不修改�
   const original = fs.readFileSync(process.env.DATA_MARKET_CLIENT, "utf8");
   const next = patchDataUse(original);
   assert.equal(patchDataUse(next), next);
+  assert.throws(() => patchDataUse(next.replace("data use v2", "data use v1")), /未唯一命中/);
   assert.throws(() => patchDataUse(original.replace('const { t, install, openPackage } = props;', 'changed')));
   assert.doesNotMatch(next, /zp-data|data\.json/);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "data-use-"));

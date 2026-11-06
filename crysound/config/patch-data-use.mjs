@@ -3,15 +3,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-/** 点使用只打开草稿；插件停用或状态读取失败时进入原生设置，不安装、不自动发送。 */
+/** 点使用只打开草稿；技能尚未运行或状态读取失败时进入原生设置，不安装、不自动发送。 */
 export async function useData(ctx, openSettings) {
   try {
     const [bundles, plugins] = await Promise.all([
       ctx.remote.pluginManager.listBundles(), ctx.remote.pluginManager.listPlugins(),
     ]);
     const bundle = bundles.find((item) => item.name === "@crysound/data");
-    const active = bundle?.enabled && !bundle.error && bundle.rows.some((row) =>
-      plugins.some((plugin) => plugin.entryId === row.entryId && plugin.enabled));
+    const active = bundle?.enabled && !bundle.error && bundle.rows.some((row) => row.moduleName === "@crysound/data"
+      && plugins.some((plugin) => plugin.entryId === row.entryId && plugin.enabled && plugin.fiberPhase === "active"));
     if (!active) return openSettings();
     ctx.uiWorkspace.startSession(undefined, {
       prompt: "使用兆华数据。请先列出插件内的七类数据和示例提问，供我选择；先不要发起付费查询。",
@@ -25,7 +25,7 @@ export async function useData(ctx, openSettings) {
 
 /** 修补已发布的原生市场卡片；入口变化则失败，重复执行不改变结果。 */
 export function patchDataUse(text) {
-  const marker = "/* CRYSOUND data use v1 */";
+  const marker = "/* CRYSOUND data use v2 */";
   if (text.includes(marker)) return text;
   const replace = (needle, value) => {
     if (text.split(needle).length !== 2) throw new Error("数据使用按钮补丁未唯一命中，请核对 dsh 版本");
