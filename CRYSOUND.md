@@ -8,7 +8,7 @@
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
 ### 品牌
-- 兆华数据目录准备：`gateway/treg-catalog.mjs` 启动缓存 TR-EG 公共平台目录，按七个中文分类提供只读市场数据，过滤 AI 生成及未知分类；`TREG_ENABLED=0` 默认关闭。付费转发、额度管理和市场卡片尚未完成，不能作为已开放功能部署，见 `crysound/web/treg/README.md`。
+- 兆华数据目录准备：`gateway/treg-catalog.mjs` 启动缓存 TR-EG 公共平台目录，按七个中文分类提供只读市场数据，过滤 AI 生成及未知分类；`TREG_ENABLED=0` 默认关闭。付费转发、额度账本与市场卡片已提供，仍须真实验收及界面送审，默认不能作为已开放功能部署，见 `crysound/web/treg/README.md`。
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
 - 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
@@ -94,6 +94,12 @@ done
 轻量自查：在已有运行时镜像中按 `crysound/web/README.md` 的隔离方式运行，额外设置 `DSH_CLI_ENTRY=/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js`，测试文件为 `crysound/web/gateway/tests/feishu.test.mjs`、`crysound/feishu/tests.mjs`、`crysound/web/gateway/tests/config.test.mjs`、`crysound/web/gateway/tests/notifications.test.mjs` 和 `crysound/tests/company-config.test.mjs`；本机另跑 `node crysound/web/tests/compose-config.mjs`。全部使用假令牌和临时目录，无网络、限一核、512 MiB，不读取部署配置、安装依赖或构建镜像。设置页外观示例见 `crysound/feishu/settings-preview.png`（本机 HTTP 预览、假授权状态）。
 
 上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
+
+## 兆华数据（网关与市场）
+
+- 网关 `/_zp/treg/` 使用现有个人通行证，受控 MCP 与 REST 共用分类白名单、归属、金额上限和北京时间逐笔账本；缺组织令牌自动关闭，真实费用归属验证前不开放付费入口。不依赖 UTC 汇总判断本地月额度。
+- 公司市场通过 `config/patch-data-market.mjs` 注入“数据”标签，七类卡片使用同一兆华数据插件，复用原生安装与新对话草稿；不自动发送。网页版镜像和桌面打包应用同一补丁，桌面主进程只为两个固定目录 GET 附本人通行证。
+- 桌面入口 `apps/desktop/src/main.ts` 新增固定公司目录代理，未改上游插件源码。部署配置、状态备份、回退与尚待真实验收的项目见 `crysound/web/treg/README.md`。默认关闭，界面截图经伙伴助理送审后再交付。
 
 ## 公司维护的插件（`crysound/plugins/`）
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。

@@ -128,12 +128,12 @@ export function provision(docker, { unionId, name }) {
 }
 
 // 卡片只打开网关审批页；审批必须重新验证管理员飞书会话和 POST 来源。
-/** 给配置的管理员发送审批卡片；部分投递失败仍尝试其余收件人，最后报告失败。
- * @param notice 包名、版本、发布者和管理员 slug 列表。
+/** 给配置的管理员发送审批或数据额度卡片；部分投递失败仍尝试其余收件人，最后报告失败。
+ * @param notice 审批的包名/版本/发布者，或 quota 数据额度提醒；以及管理员 slug 列表。
  * @param dependencies 飞书请求、配置和用户读取器；测试注入假值。
- * @returns 全部卡片投递成功时完成；拒绝表示可以从审批页重发。
+ * @returns 全部卡片投递成功时完成；拒绝交由调用者记录或重发。
  */
-export async function notifyMarketAdmins({ name, version, publisher, admins }, {
+export async function notifyMarketAdmins({ name, version, publisher, admins, quota = false }, {
   request = feishu, loadUsers = readUsers, appSecret = secret, appId = APP_ID, publicHost = PUBLIC_HOST,
 } = {}) {
   if (!admins.length) throw new Error("没有配置市场管理员");
@@ -146,10 +146,10 @@ export async function notifyMarketAdmins({ name, version, publisher, admins }, {
   const failed = [];
   const card = {
     config: { wide_screen_mode: true },
-    header: { title: { tag: "plain_text", content: "兆华市场 · 插件待审批" }, template: "blue" },
+    header: { title: { tag: "plain_text", content: quota ? "兆华数据 · 公司额度提醒" : "兆华市场 · 插件待审批" }, template: "blue" },
     elements: [
-      { tag: "div", text: { tag: "plain_text", content: `${name}@${version}\n发布者：${publisher}` } },
-      { tag: "action", actions: [{ tag: "button", type: "primary", text: { tag: "plain_text", content: "查看并审批" }, url: `https://${publicHost}/_zp/market/admin` }] },
+      { tag: "div", text: { tag: "plain_text", content: quota ? "公司数据额度暂时用完，同事的数据调用已暂停。请核对公司余额和团队每日额度后恢复。" : `${name}@${version}\n发布者：${publisher}` } },
+      { tag: "action", actions: [{ tag: "button", type: "primary", text: { tag: "plain_text", content: quota ? "查看数据服务" : "查看并审批" }, url: quota ? "https://treg.to/app" : `https://${publicHost}/_zp/market/admin` }] },
     ],
   };
   for (const slug of admins) {

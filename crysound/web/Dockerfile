@@ -60,3 +60,7 @@ ENV CRYSOUND_MARKET_REGISTRY=http://zhaohua-partner-gateway:3090/_zp/npm/ CRYSOU
 ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
 WORKDIR /data
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# 公司数据专栏：与桌面版使用同一幂等补丁，入口变化时构建失败。
+COPY config/patch-data-market.mjs /opt/partner/patch-data-market.mjs
+RUN node /opt/partner/patch-data-market.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"

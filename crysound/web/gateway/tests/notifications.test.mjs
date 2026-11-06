@@ -33,3 +33,17 @@ test("某位管理员不可达仍通知其他人，汇总失败供审批页重�
   } }), /missing, admin/);
   assert.deepEqual(recipients, ["fake-admin", "fake-backup"]);
 });
+
+
+test("数据额度提醒复用管理员渠道，只包含中文处置说明和官方后台链接", async () => {
+  const messages = [];
+  await notifyMarketAdmins({ quota: true, admins: ["admin"] }, { ...settings, request: async (path, init) => {
+    if (path.startsWith("/auth/")) return { tenant_access_token: "fake-tenant" };
+    messages.push(JSON.parse(init.body)); return { code: 0 };
+  } });
+  const card = JSON.parse(messages[0].content);
+  assert.equal(card.header.title.content, "兆华数据 · 公司额度提醒");
+  assert.match(card.elements[0].text.content, /公司数据额度暂时用完/);
+  assert.equal(card.elements[1].actions[0].url, "https://treg.to/app");
+  assert.doesNotMatch(messages[0].content, /undefined|fake-tenant|fake-secret/);
+});
