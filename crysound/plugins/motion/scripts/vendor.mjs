@@ -60,6 +60,9 @@ for (const file of [...files].sort()) {
   if (file === 'cli/lib/cdp.js') {
     // All helpers stay in the supervised job group, including Chrome's subprocesses.
     output = Buffer.from(input.toString()
+      .replace("// Chrome refuses to run as root with its sandbox (containers, CI); nothing else about the render changes\n  const root = process.platform === 'linux' && process.getuid?.() === 0 ? ['--no-sandbox'] : [];",
+        "// Linux containers cannot rely on Chrome's sandbox or writable /dev/shm, even for non-root users.\n  const linux = process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : [];")
+      .replace('...CHROME_FLAGS, ...root,', '...CHROME_FLAGS, ...linux,')
       .replaceAll("detached: process.platform !== 'win32'", 'detached: false')
       .replace('// keeping Node alive: the browser runs in its own process group and the whole group is killed.',
         '// keeping Node alive: the company supervisor stops the inherited job group after this worker exits.')

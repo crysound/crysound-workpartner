@@ -21,7 +21,7 @@
     },
     "cli/lib/cdp.js": {
       "upstream": "313d260d1dc50bec7a9b9063292e89bad3a2498046c9328c121eb9a4597d4b97",
-      "shipped": "bb54efdbcfcd2af8246bbefeb483653dbc17037ea3b9bd74df3313149965c5a2"
+      "shipped": "05ad98686fc98d54ee216324298bafb7289c4897a4e7a921f4206d59376684c0"
     },
     "cli/lib/check.js": {
       "upstream": "d112421c8056f07910b78f49aabae286b73a7e87640592eb9d937661992ef606",

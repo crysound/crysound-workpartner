@@ -45,9 +45,9 @@ export function cleanupOnInterrupt(fn) {
 export async function launch(exe, { transport = 'pipe', args = [], timeout = 30_000 } = {}) {
   const profile = mkdtempSync(join(tmpdir(), 'om-chrome-'));
   writeFileSync(join(profile, 'Local State'), JSON.stringify(LOCAL_STATE));
-  // Chrome refuses to run as root with its sandbox (containers, CI); nothing else about the render changes
-  const root = process.platform === 'linux' && process.getuid?.() === 0 ? ['--no-sandbox'] : [];
-  const flags = [...CHROME_FLAGS, ...root, `--user-data-dir=${profile}`, ...args, 'about:blank'];
+  // Linux containers cannot rely on Chrome's sandbox or writable /dev/shm, even for non-root users.
+  const linux = process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : [];
+  const flags = [...CHROME_FLAGS, ...linux, `--user-data-dir=${profile}`, ...args, 'about:blank'];
   const conn = transport === 'websocket' ? await viaWebSocket(exe, flags, timeout) : viaPipe(exe, flags);
   conn.profile = profile;
   const forget = cleanupOnInterrupt(() => { conn._reap(); rmSync(profile, { recursive: true, force: true }); });
