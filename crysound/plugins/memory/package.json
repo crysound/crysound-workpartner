@@ -1,0 +1,18 @@
+{
+  "name": "@crysound/memory",
+  "version": "0.1.0",
+  "description": "个人记忆：自动记住稳定的个人事实与偏好，跨会话召回，支持开关、编辑与清空。",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": { ".": "./index.mjs", "./client": "./client.js", "./package.json": "./package.json" },
+  "files": ["index.mjs", "store.mjs", "panel.mjs", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
+  "license": "MIT",
+  "engines": { "node": ">=24.9.0", "dsh": ">=0.2.2-rc.1" },
+  "peerDependencies": { "@deepseek-ai/cordis": ">=4.0.0", "@deepseek-ai/dsh-tools": "0.2.2-rc.1", "@deepseek-ai/schemastery": "*" },
+  "scripts": { "test": "node --test tests/*.test.mjs" },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-tool"] }
+  },
+  "keywords": ["dsh-plugin", "memory", "crysound"]
+}
