@@ -22,7 +22,7 @@ if (!origin) throw new Error('Set APP_ORIGIN to the existing authenticated app o
 const output = fileURLToPath(new URL('./evidence/', import.meta.url));
 fs.mkdirSync(output, { recursive: true });
 const original = fs.readFileSync(new URL('./native/client.js', import.meta.url), 'utf8');
-let mode = 'web', connected = false;
+let mode = 'web', connected = false, projectMinutes = 4350;
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 await page.route('**/*', async route => {
@@ -31,7 +31,7 @@ await page.route('**/*', async route => {
   if (url.pathname === '/manifest.webmanifest') return route.fulfill({ json: { name: 'Settings preview', start_url: '/' } });
   if (url.pathname.startsWith('/_zp/feishu/')) {
     if (url.pathname.endsWith('/disconnect')) { connected = false; return route.fulfill({ json: { connected: false } }); }
-    if (url.pathname.endsWith('/project/status')) return route.fulfill({ json: { connected } });
+    if (url.pathname.endsWith('/project/status')) return route.fulfill({ json: { connected, expiresInMinutes: projectMinutes } });
     if (url.pathname.endsWith('/status')) return route.fulfill({ json: { enabled: true, connected, name: connected ? '测试同事' : undefined, authorizedAt: connected ? '2026-11-07T00:00:00Z' : undefined } });
     return route.fulfill({ status: 409, json: { message: '测试预览不发起真实授权' } });
   }
@@ -56,6 +56,7 @@ async function status(value) {
   connected = value;
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await panel.getByText(value ? /已连接 · 测试同事/ : '未连接', { exact: !value }).first().waitFor();
+  await panel.locator('.zp-feishu-row').last().getByRole('status').getByText(value ? '已连接 · 还剩 3 天有效' : '未连接', { exact: true }).waitFor();
 }
 async function shot(name) { console.log('capture', name); await panel.screenshot({ path: `${output}/${name}.png`, timeout: 15000, animations: 'disabled' }); }
 try {
@@ -75,6 +76,13 @@ try {
     await status(true);
     await shot(mode + (mode === 'web' ? '-wide' : '') + '-connected');
     if (mode !== 'web') continue;
+    const projectStatus = panel.locator('.zp-feishu-row').last().getByRole('status');
+    for (const [minutes, expected] of [[1439, '已连接 · 还剩不到 1 天有效'], [1440, '已连接 · 还剩 1 天有效'], [null, '已连接']]) {
+      projectMinutes = minutes;
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await projectStatus.getByText(expected, { exact: true }).waitFor();
+    }
+    projectMinutes = 4350; await status(true);
     await page.setViewportSize({ width: 390, height: 844 });
     await shot('web-narrow-connected'); await status(false); await shot('web-narrow-disconnected');
     await page.setViewportSize({ width: 1440, height: 1000 });

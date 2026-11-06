@@ -38,12 +38,16 @@ window.__ModuleLoader__.load({
       if (!response.ok) throw new Error(data.message || copy.retry);
       return data;
     }
-    function description(state) {
+    function description(state, kind) {
       if (state === null) return copy.checking;
       if (state.error) return copy.unknown;
       if (state.enabled === false) return copy.disabled;
       if (state.revoking) return copy.revoking;
       if (!state.connected) return copy.disconnected;
+      if (kind === 'project') {
+        const minutes = state.expiresInMinutes;
+        return copy.connected + (Number.isFinite(minutes) && minutes >= 0 ? ' · 还剩' + (minutes < 1440 ? '不到 1 天' : ' ' + Math.floor(minutes / 1440) + ' 天') + '有效' : '');
+      }
       const at = state.authorizedAt ? new Date(state.authorizedAt) : null;
       return [copy.connected, state.name, at && Number.isFinite(at.getTime()) ? '授权于 ' + at.toLocaleString('zh-CN') : '授权时间未记录'].filter(Boolean).join(' · ');
     }
@@ -161,7 +165,7 @@ window.__ModuleLoader__.load({
       function row(kind) {
         const state = states[kind], connected = state?.connected, revoking = state?.revoking;
         return h('div', { className: 'zp-feishu-row', key: kind },
-          h('div', { className: 'zp-feishu-text' }, h('h3', null, copy[kind]), h('p', { className: 'zp-feishu-muted', role: 'status' }, description(state)),
+          h('div', { className: 'zp-feishu-text' }, h('h3', null, copy[kind]), h('p', { className: 'zp-feishu-muted', role: 'status' }, description(state, kind)),
             kind === 'project' ? h('p', { className: 'zp-feishu-muted' }, desktop ? copy.localNote : copy.cloudNote) : null),
           h('div', { className: 'zp-feishu-actions' },
             confirmation === kind ? h('div', null, h('p', null, copy.confirm),

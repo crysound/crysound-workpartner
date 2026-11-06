@@ -1,7 +1,7 @@
 // 同一份飞书项目设备授权供容器与桌面版使用；CLI 的长期凭证始终保留在执行命令的个人环境。
 /** Create a per-user Device Code adapter; run returns only CLI JSON and never logs stdout.
  * @param options CLI runner and optional clock (Date.now by default).
- * @returns Status, connect, poll and disconnect operations.
+ * @returns Status (including CLI remaining minutes when available), connect, poll and disconnect operations.
  */
 export function createProject({ run, now = Date.now }) {
   const key = (id) => typeof id === "string" ? id : id.unionId;
@@ -19,7 +19,7 @@ export function createProject({ run, now = Date.now }) {
     const r = await run(id, ["auth", "status", "--format", "json"]);
     if (typeof r.authenticated !== "boolean") throw new Error("无法确认飞书项目授权，请稍后重试");
     if (!r.authenticated && !["no local token", "token rejected by server"].includes(r.reason)) throw new Error("暂时连不上飞书项目，授权状态尚未核实");
-    return { connected: r.authenticated };
+    return { connected: r.authenticated, ...(r.authenticated && Number.isFinite(r.expires_in_minutes) && r.expires_in_minutes >= 0 ? { expiresInMinutes: r.expires_in_minutes } : {}) };
   };
   const connect = (id) => serial(id, async () => {
     let r = pending.get(key(id));
