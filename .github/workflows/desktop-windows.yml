@@ -32,7 +32,11 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Package win-x64 (unsigned)
-        run: pnpm run package:desktop:win:x64:unsigned
+        env:
+          PUBLIC_HOST: ${{ vars.PUBLIC_HOST }}
+        run: |
+          node crysound/scripts/configure-public-host.mjs
+          pnpm run package:desktop:win:x64:unsigned
       - name: Locate installer
         id: exe
         run: |

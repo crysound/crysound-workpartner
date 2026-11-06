@@ -1,0 +1,8 @@
+{
+  "name": "crysound-partner-gateway",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "semver": "7.8.5"
+  }
+}

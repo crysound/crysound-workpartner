@@ -1,0 +1,21 @@
+# 只有网关内部账号能读写，不代理公网包。
+storage: /verdaccio/storage
+listen: 0.0.0.0:4873
+auth:
+  htpasswd:
+    file: /verdaccio/conf/htpasswd
+    max_users: -1
+uplinks: {}
+packages:
+  '@crysound/*':
+    access: zp-gateway
+    publish: zp-gateway
+    unpublish: zp-gateway
+  '**':
+    access: []
+    publish: []
+    unpublish: []
+web:
+  enable: false
+max_body_size: 64mb
+log: { type: stdout, format: pretty, level: warn }

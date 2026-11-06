@@ -20,11 +20,12 @@ check URLScheme "$(plutil -extract CFBundleURLTypes.0.CFBundleURLSchemes.0 raw "
 check zh_CN-name "$(grep -o '兆华工作伙伴' "$res/zh_CN.lproj/InfoPlist.strings" | head -n1)" "兆华工作伙伴"
 if grep -q "DeepSeek" "$plist"; then echo "FAIL  Info.plist mentions DeepSeek"; fail=1; else echo "ok    Info.plist has no DeepSeek text"; fi
 
-for f in brand/brand.css brand/brand.js brand/welcome.js brand/zp-mark.svg config/plugins.json config/partner.patch.yml config/plugin-patches.mjs host-hook.mjs; do has "$res/crysound/$f"; done
+for f in brand/brand.css brand/brand.js brand/welcome.js brand/zp-mark.svg config/plugins.json config/partner.patch.yml config/plugin-patches.mjs config/public-host.json config/market-profile.mjs config/skills/publish-zhaohua-market/SKILL.md host-hook.mjs; do has "$res/crysound/$f"; done
 has "$res/icon.png"
 has "$res/runtime/cli/bin/dsh"
 if [ -e "$res/app-update.yml" ]; then echo "FAIL  app-update.yml present (update feed configured)"; fail=1; else echo "ok    no app-update.yml (updates off)"; fi
-grep -q "workpartner.corp.crysound.com/_zp/llm/v1" "$res/crysound/config/partner.patch.yml" && echo "ok    seed points at company gateway" || { echo "FAIL  seed baseURL"; fail=1; }
+grep -q "https://partner.invalid/_zp/llm/v1" "$res/crysound/config/partner.patch.yml" && echo "ok    seed has runtime gateway placeholder" || { echo "FAIL  seed baseURL"; fail=1; }
+node -e 'const fs=require("node:fs"),c=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(Object.keys(c).length!==1 || typeof c.PUBLIC_HOST!=="string" || !/^[a-z0-9.-]+(?::[0-9]+)?$/i.test(c.PUBLIC_HOST) || new URL(`https://${c.PUBLIC_HOST}`).host!==c.PUBLIC_HOST.toLowerCase()) process.exit(1)' "$res/crysound/config/public-host.json" && echo "ok    packaged PUBLIC_HOST is valid" || { echo "FAIL  packaged PUBLIC_HOST"; fail=1; }
 
 asar="$res/app.asar"
 has "$asar"
@@ -38,6 +39,6 @@ tmp=$(mktemp -d)
 (cd "$tmp" && "$asarcli" extract-file "$asar" lib/main.js) >/dev/null 2>&1 || true
 if [ -f "$tmp/main.js" ]; then
   grep -q "crysound-workpartner" "$tmp/main.js" && echo "ok    main.js registers crysound-workpartner:// protocol" || { echo "FAIL  protocol string"; fail=1; }
-  grep -q "desktop-login\|workpartner.corp.crysound.com" "$tmp/main.js" && echo "ok    main.js carries company login" || { echo "FAIL  login string"; fail=1; }
+  grep -q "desktop-login" "$tmp/main.js" && echo "ok    main.js carries company login" || { echo "FAIL  login string"; fail=1; }
 fi
 exit $fail
