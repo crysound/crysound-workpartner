@@ -38,6 +38,12 @@ const PATCHES = [
     find: '[${NAV_ICON_MARKER}] > svg { display: none; }',
     replace: '[${NAV_ICON_MARKER}] > :first-child { display: none; }',
   },
+  // The native narrow settings shell owns its horizontal navigation and grid.
+  {
+    file: "dshmarket/client/client.js",
+    find: '@media (max-width:560px){[role=dialog]:has([data-dsh-market-root])>nav{display:none}[role=dialog]:has([data-dsh-market-root])>div{flex:100%;width:100%;min-width:0}}',
+    replace: '/* CRYSOUND: keep native narrow settings navigation */',
+  },
   // dsh 0.2.2-rc.1: company adapter applies to both iframe and Electron Browser providers.
   {
     file: "@deepseek-ai/dsh-client-ui-sidebar-browser/lib/client.js",

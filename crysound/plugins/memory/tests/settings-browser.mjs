@@ -134,7 +134,8 @@ const init = `(()=>{
       if(registration.id==='@crysound/memory'){registration={...registration,factory:replacement.factory};window.__memoryBranchLoaded=true;}
       if(registration.id==='dshmarket'){
         const before=registration.factory.toString();
-        const after=before.replace('[\u0024{NAV_ICON_MARKER}] > svg { display: none; }','[\u0024{NAV_ICON_MARKER}] > :first-child { display: none; }');
+        const after=before.replace('[\u0024{NAV_ICON_MARKER}] > svg { display: none; }','[\u0024{NAV_ICON_MARKER}] > :first-child { display: none; }')
+          .replace('@media (max-width:560px){[role=dialog]:has([data-dsh-market-root])>nav{display:none}[role=dialog]:has([data-dsh-market-root])>div{flex:100%;width:100%;min-width:0}}','/* CRYSOUND: keep native narrow settings navigation */');
         if(before===after)throw new Error('Market navigation patch did not match');
         registration={...registration,factory:(0,eval)('('+after+')')};
       }
@@ -245,6 +246,7 @@ try {
   // Native selection is exercised across memory, market, and General without navigating the external Feishu link.
   await click(`document.querySelector('[data-dsh-market-nav-icon]')`);
   await until(`document.querySelector('[data-dsh-market-nav-icon]').getAttribute('aria-current')==='true'`);
+  assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('[data-shortcut-modal=settings] nav')).display`), 'none');
   await screenshot('navigation-market-selected');
   await click(`[...document.querySelectorAll('[data-shortcut-modal=settings] nav button')].find(x=>['General','通用设置','通用'].includes(x.textContent.trim()))`);
   await screenshot('navigation-memory-unselected');
