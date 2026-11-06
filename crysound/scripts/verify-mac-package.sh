@@ -20,7 +20,7 @@ check URLScheme "$(plutil -extract CFBundleURLTypes.0.CFBundleURLSchemes.0 raw "
 check zh_CN-name "$(grep -o '兆华工作伙伴' "$res/zh_CN.lproj/InfoPlist.strings" | head -n1)" "兆华工作伙伴"
 if grep -q "DeepSeek" "$plist"; then echo "FAIL  Info.plist mentions DeepSeek"; fail=1; else echo "ok    Info.plist has no DeepSeek text"; fi
 
-for f in brand/brand.css brand/brand.js brand/pet.js brand/welcome.js brand/zp-mark.svg config/plugins.json config/partner.patch.yml config/plugin-patches.mjs config/profile-upgrades.mjs config/public-host.json config/market-profile.mjs config/skills/publish-zhaohua-market/SKILL.md host-hook.mjs; do has "$res/crysound/$f"; done
+for f in brand/brand.css brand/brand.js brand/pet.js brand/welcome.js brand/zp-mark.svg config/plugins.json config/partner.patch.yml config/plugin-patches.mjs config/profile-upgrades.mjs config/public-host.json config/market-profile.mjs config/skills/publish-zhaohua-market/SKILL.md host-hook.mjs plugin-artifacts.mjs company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz; do has "$res/crysound/$f"; done
 has "$res/icon.png"
 tpl="$res/crysound/plugin-template"
 has "$tpl/package.json"

@@ -42,7 +42,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 
 ## 打包
 
-本地开发桌面版前，先设置 `PUBLIC_HOST` 为公司网关域名（不带协议或路径），再运行 `pnpm run dev:desktop`。
+本地开发桌面版前，先用 Node 24 执行 `node crysound/plugin-artifacts.mjs download crysound/company-plugins` 准备固定插件包（生成目录不提交），再设置 `PUBLIC_HOST` 为公司网关域名（不带协议或路径），再运行 `pnpm run dev:desktop`。
 
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
 - CI：`.github/workflows/desktop-mac.yml`，只手动触发，输入正式版本号 `version` 与更新目录 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`），在 `macos-15`（Apple 芯片）上构建。正式版本通过打包元数据注入，源 manifest 与运行时版本不变。依次做：更新自查、打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、npm 源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
@@ -93,7 +93,8 @@ done
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
-- 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；`crysound/config/plugins.json` 里该插件的 `spec` 与 `want` 都写这个地址（pnpm 按地址记录依赖，已装同一地址就跳过）。网页版同步服务器配置后空闲重启生效，桌面版启动时从网关刷新，断网用包内版本。
+- 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。桌面准备按 assets 资源目录加载共用脚本，不依赖源码或编译后文件的相对层级。
+- 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；飞书版本更新同时修改 `plugin-artifacts.mjs` 的文件名、下载地址和校验值，以及 `plugins.json` 的本地 spec/want。重建网页镜像并同步配置，逐人空闲时换镜像；桌面随下一安装包携带归档。不要只同步本地路径清单而沿用缺归档的旧镜像或旧桌面包。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。
 
 ## 合并上游新版本
