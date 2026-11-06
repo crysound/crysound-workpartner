@@ -9,12 +9,30 @@
   const TITLES = new Set(["探索未至之境", "Into the Unknown"]);
   const BADGES = new Set(["预览版", "Preview"]);
   const RENAME = new Map([["dsh-video-editor", "视频剪辑"]]);
-  // 侧栏顺序：演示文稿、视频剪辑、插件在前，其余保持原有先后排在后面。
-  const SIDEBAR_ORDER = [["演示文稿", "Slides"], ["视频剪辑"], ["插件", "Plugins"]];
+  // 侧栏顺序：演示文稿、视频剪辑、市场在前，其余保持原有先后排在后面。
+  const SIDEBAR_ORDER = [["演示文稿", "Slides"], ["视频剪辑"], ["市场", "Market"]];
+  const marketSidebar = () => {
+    const { zpMarketPanel, zpMarketHint } = document.documentElement.dataset;
+    for (const button of document.querySelectorAll("nav button[aria-label]")) {
+      const primary = [...button.children].find((el) => el.tagName === "SPAN" && !el.hasAttribute("aria-hidden") && !el.classList.contains("zp-market-hint"));
+      const isMarket = !!zpMarketPanel && button.getAttribute("aria-label") === zpMarketPanel;
+      const hint = button.querySelector(":scope > .zp-market-hint");
+      button.classList.toggle("zp-market-entry", isMarket);
+      if (!isMarket || !primary || !zpMarketHint) { hint?.remove(); continue; }
+      if (hint) { if (hint.textContent !== zpMarketHint) hint.textContent = zpMarketHint; }
+      else {
+        const text = document.createElement("span");
+        text.className = "zp-market-hint";
+        text.setAttribute("aria-hidden", "true");
+        text.textContent = zpMarketHint;
+        button.appendChild(text);
+      }
+    }
+  };
   const orderSidebar = () => {
     for (const nav of document.querySelectorAll("nav")) {
       const items = [...nav.children];
-      const rank = (el) => SIDEBAR_ORDER.findIndex((names) => names.includes(el.textContent.trim()));
+      const rank = (el) => el.classList.contains("zp-market-entry") ? 2 : SIDEBAR_ORDER.findIndex((names) => names.includes(el.getAttribute("aria-label")) || names.includes(el.textContent.trim()));
       if (!items.some((el) => rank(el) >= 0)) continue;
       items.forEach((el) => { const r = rank(el); const v = String(r >= 0 ? r : SIDEBAR_ORDER.length); if (el.style.order !== v) el.style.order = v; });
     }
@@ -57,6 +75,7 @@
 
   const apply = () => {
     if (document.title !== NAME) document.title = NAME;
+    marketSidebar();
     orderSidebar();
     const settingsNav = document.querySelector('[data-shortcut-modal="settings"] nav > div');
     if (settingsNav && !settingsNav.querySelector('.zp-feishu-settings')) {
@@ -85,6 +104,7 @@
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) { const to = RENAME.get(n.data.trim()); if (to) n.data = to; }
   };
+  document.addEventListener("zp-market-copy", apply);
   new MutationObserver((records) => {
     for (const r of records) {
       if (r.type === "characterData") rename(r.target);

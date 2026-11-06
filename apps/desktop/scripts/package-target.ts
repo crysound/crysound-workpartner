@@ -523,8 +523,6 @@ export async function packageTarget(
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime'], electronBuilderEnv)
   await execute(['run', 'prepare:packages'], targetEnv)
   await execute(['run', 'prepare:dsh', ...(signPrimaryRuntime ? ['--defer-runtime-smoke'] : [])], downloadEnv)
-  // CRYSOUND: patch the packaged client before signing; shared with the web image.
-  await execute(['exec', 'node', '../../crysound/scripts/patch-market-ui.mjs', join(buildPaths.dsh, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-manager/lib/client.js')], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime', '--dsh'], electronBuilderEnv)
   // CRYSOUND: both desktop platforms carry the same verified local archive.
   await execute(['exec', 'node', '../../crysound/plugin-artifacts.mjs', 'download', join(buildPaths.root, 'company-plugins')], downloadEnv)
