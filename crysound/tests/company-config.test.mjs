@@ -46,6 +46,31 @@ async function server(t, handler) {
 const load = (text) => yaml.parse(text, { customTags: [{ tag: "tag:yaml.org,2002:js", resolve: value => value }] });
 const provider = (rows) => rows.findLast(row => row.id === "llm-pi-ai").config.providers;
 
+test("new and existing company profiles declare image input for both GPT models", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  const { Config } = await import(createRequire(runtime).resolve("@deepseek-ai/dsh-llm-pi-ai"));
+  for (const existing of [false, true]) {
+    const file = join(root, existing ? "existing.yml" : "new.yml");
+    if (existing) {
+      const legacy = load(await readFile(seed, "utf8"));
+      for (const model of provider(legacy).magpie.models) delete model.input;
+      provider(legacy).personal = { api: "openai-completions", models: [{ id: "personal-text-model" }] };
+      await writeFile(file, yaml.stringify(legacy));
+    }
+    refreshProfile(file, seed, yaml, !existing);
+    const after = await readFile(file, "utf8");
+    const profiles = Config({ providers: provider(load(after)) }).providers.get();
+    assert.equal(profiles.magpie.api, "openai-completions");
+    assert.deepEqual(profiles.magpie.models.map(model => [model.id, model.input]), [
+      ["codex/gpt-6.1-sol", ["text", "image"]],
+      ["codex/gpt-6.1-terra", ["text", "image"]],
+    ]);
+    if (existing) assert.deepEqual(profiles.personal.models[0].input, [], "personal model capabilities stay unchanged");
+    refreshProfile(file, seed, yaml);
+    assert.equal(await readFile(file, "utf8"), after, "second refresh is byte-identical");
+  }
+});
+
 test("refresh replaces the whole company provider and keeps personal providers, comments, expressions and chosen default", async (t) => {
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   await writeFile(file, `# personal configuration\n- id: "llm-pi-ai"\n  config:\n    providers:\n      magpie: {models: [{id: retired-model}], stale: true}\n      mine: {baseURL: 'https://personal.example/v1', models: [{id: personal}]}\n- id: agent-default-model\n  config: {provider: mine, model: personal, reasoningEffort: high}\n- id: expression\n  config:\n    value: !!js process.env.TEST_VALUE\n`);
