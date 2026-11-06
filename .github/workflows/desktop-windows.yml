@@ -41,7 +41,10 @@ jobs:
           DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://partner.corp.crysound.com
           DSH_DESKTOP_WINDOWS_COMPRESSION_LEVEL=3
           ENV
+      # PowerShell, not Git Bash: the packaging scripts call tar with D:\ paths, which GNU tar from Git Bash
+      # reads as a remote host; Windows' own tar handles them.
       - name: Package win-x64 (unsigned)
+        shell: pwsh
         run: pnpm run package:desktop:win:x64:unsigned
       - name: Locate installer
         id: exe
