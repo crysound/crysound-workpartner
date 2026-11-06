@@ -11,6 +11,7 @@ import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmi
 
 import { issueToken, tokenUser, writeContainerToken } from "./market-auth.mjs";
 import { createMarket } from "./market.mjs";
+import { createDataCatalog } from "./treg-catalog.mjs";
 import { createFeishu } from "./feishu.mjs";
 import { createSettingsHandler } from "../../feishu/settings.mjs";
 import { createContainerProject } from "../../feishu/container-project.mjs";
@@ -107,6 +108,16 @@ const market = createMarket({
   admins: marketAdmins,
   notify: notifyMarketAdmins,
   internalOrigin: "http://zhaohua-partner-gateway:3090",
+});
+
+const dataCatalog = createDataCatalog({
+  // 只读目录先准备好；付费转发未完成前不在部署中启用。
+  enabled: process.env.TREG_ENABLED === "1" && (() => {
+    try { return Boolean(fs.readFileSync("/secure/treg-token", "utf8").trim()); }
+    catch (error) { if (error.code === "ENOENT") return false; throw error; }
+  })(),
+  authenticate: desktopUser,
+  sessionUser: (req) => userFor(req).user,
 });
 
 const feishu = createFeishu({
@@ -374,6 +385,7 @@ const server = http.createServer(async (req, res) => {
     if (await feishu.handle(req, res, url)) return;
     if (url.pathname.startsWith("/_zp/feishu/") && !userFor(req).user) return redirect(res, "/_zp/login?next=%2F_zp%2Ffeishu%2F");
     if (await feishuSettings(req, res, url)) return;
+    if (await dataCatalog(req, res, url)) return;
     if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
     if (url.pathname.startsWith("/_zp/config/")) return await serveCompanyConfig(req, res, url.pathname, desktopUser);

@@ -8,6 +8,7 @@
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
 ### 品牌
+- 兆华数据目录准备：`gateway/treg-catalog.mjs` 启动缓存 TR-EG 公共平台目录，按七个中文分类提供只读市场数据，过滤 AI 生成及未知分类；`TREG_ENABLED=0` 默认关闭。付费转发、额度管理和市场卡片尚未完成，不能作为已开放功能部署，见 `crysound/web/treg/README.md`。
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
 - 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
