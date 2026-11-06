@@ -2,16 +2,76 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, rmSync, chmodSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { apply } from '../index.mjs';
 import { runJob } from '../cli/job.mjs';
 
 const cli = fileURLToPath(new URL('../cli/om.mjs', import.meta.url));
-const worker = fileURLToPath(new URL('../cli/worker.mjs', import.meta.url));
+const sandbox = fileURLToPath(new URL('./workspace-sandbox.py', import.meta.url));
 const temporary = () => mkdtempSync(join(tmpdir(), 'motion-behavior-'));
 const command = (cwd, ...args) => spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', timeout: 10_000 });
+
+test('workspace-write permits first use with read-only HOME and falls back when system temp is read-only', (t) => {
+  const root = temporary();
+  const home = join(root, 'home');
+  mkdirSync(home, { mode: 0o500 });
+  t.after(() => { chmodSync(home, 0o700); rmSync(root, { recursive: true, force: true }); });
+  for (const systemTempWritable of [true, false]) {
+    const cwd = join(root, systemTempWritable ? 'normal' : 'fallback');
+    mkdirSync(cwd);
+    const allowed = systemTempWritable ? [cwd, '/tmp'] : [cwd];
+    const run = (argv) => {
+      const result = spawnSync('python3', [sandbox, JSON.stringify(allowed), process.execPath, ...argv],
+        { cwd, encoding: 'utf8', timeout: 10_000, env: { ...process.env, HOME: home,
+          TMPDIR: home, OM_HOME: home, XDG_CACHE_HOME: home, XDG_CONFIG_HOME: home } });
+      assert.ifError(result.error);
+      assert.equal(result.signal, null);
+      return result;
+    };
+    const denied = run(['-e', "require('node:fs').writeFileSync(process.env.HOME + '/probe', '')"]);
+    assert.equal(denied.status, 1, 'HOME is genuinely read-only');
+    if (!systemTempWritable) {
+      assert.equal(run(['-e', "require('node:fs').writeFileSync('/tmp/motion-denied-' + process.pid, '')"]).status, 1);
+    }
+    for (const args of [['new', 'proj', '--template', 'company'], ['check', 'proj', '--source'], ['--version']]) {
+      const result = run([cli, ...args]);
+      assert.equal(result.status, 0, result.stderr);
+      if (args[0] === '--version') assert.equal(result.stdout.trim(), '0.1.1');
+    }
+    assert.ok(existsSync(join(cwd, 'proj/assets/fonts/NotoSansSC-500.woff')));
+    // The history writer is exercised in the real worker environment, without rendering a full soundtrack.
+    const probe = join(cwd, 'history.mjs');
+    writeFileSync(probe, `import { remember } from ${JSON.stringify(new URL('../cli/lib/soundprint.js', import.meta.url).href)};
+import { writeFileSync } from 'node:fs';
+remember(process.cwd(), { band: ['piano'] });
+writeFileSync(process.argv[2], JSON.stringify({ home: process.env.OM_HOME, temp: process.env.TMPDIR,
+  cache: process.env.XDG_CACHE_HOME, config: process.env.XDG_CONFIG_HOME }));\n`);
+    const environment = spawnSync('python3', [sandbox, JSON.stringify(allowed), process.execPath,
+      '--input-type=module', '-e', `import { runJob } from ${JSON.stringify(new URL('../cli/job.mjs', import.meta.url).href)};
+process.exitCode = await runJob(${JSON.stringify(probe)}, ['paths.json']);`],
+      { cwd, encoding: 'utf8', timeout: 10_000, env: { ...process.env, HOME: home, TMPDIR: cwd, OM_HOME: home } });
+    assert.ifError(environment.error);
+    assert.equal(environment.signal, null);
+    assert.equal(environment.status, 0, environment.stderr);
+    assert.ok(existsSync(join(cwd, '.crysound-motion/soundtracks.jsonl')));
+    const paths = JSON.parse(readFileSync(join(cwd, 'paths.json'), 'utf8'));
+    for (const key of ['home', 'temp', 'cache', 'config']) assert.ok(paths[key].startsWith(cwd + '/'), key);
+  }
+});
+
+test('unwritable system temp and workspace report an actionable Chinese error', (t) => {
+  const cwd = temporary();
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const result = spawnSync('python3', [sandbox, '[]', process.execPath, cli, 'new', 'proj'],
+    { cwd, encoding: 'utf8', timeout: 10_000 });
+  assert.ifError(result.error);
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /系统临时目录和当前工作区均不可写或不安全/);
+  assert.ok(!existsSync(join(cwd, 'proj')));
+});
 
 test('registers the complete workflow for model and slash-command invocation', () => {
   let skill;
@@ -87,41 +147,43 @@ while (true) {}\n`);
   assert.ok(!state || state.startsWith('Z'), `helper ${pid} still running: ${state}`);
 });
 
-test('second CLI job is rejected while a first job holds the OS lock, and works after release', async (t) => {
-  const directory = join((await import('node:os')).homedir(), '.cache/crysound-motion');
-  mkdirSync(directory, { recursive: true });
-  const holder = spawn('flock', ['--no-fork', join(directory, 'job.lock'), process.execPath,
-    '-e', "process.stdout.write('ready'); setInterval(() => {}, 1000)"], { stdio: ['ignore', 'pipe', 'ignore'] });
-  t.after(() => holder.kill('SIGKILL'));
-  await new Promise((resolve, reject) => { holder.stdout.once('data', resolve); holder.once('error', reject); });
-  assert.equal(command(dirname(worker), 'help').status, 75);
-  const closed = new Promise((resolve) => holder.once('close', resolve));
-  holder.kill('SIGTERM');
-  await closed;
-  assert.equal(command(dirname(worker), 'help').status, 0);
-});
-
-test('cancelling the CLI stops its browser child and releases the job lock', async (t) => {
+test('two real CLI jobs share the lock across workspaces and TMPDIR values; cancellation stops helpers and releases it', async (t) => {
   const cwd = temporary();
-  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  let child, other;
+  t.after(async () => {
+    if (child?.pid && child.exitCode === null && child.signalCode === null) {
+      const closed = new Promise((resolve) => child.once('close', resolve));
+      child.kill('SIGTERM');
+      await closed;
+    }
+    rmSync(cwd, { recursive: true, force: true });
+    if (other) rmSync(other, { recursive: true, force: true });
+  });
   assert.equal(command(cwd, 'new', 'film').status, 0);
   const browser = join(cwd, 'fake-browser');
   const pidFile = join(cwd, 'browser.pid');
   writeFileSync(browser, `#!/usr/bin/env node\nimport { writeFileSync } from 'node:fs';
 writeFileSync(process.env.MOTION_TEST_PID_FILE, String(process.pid)); setInterval(() => {}, 1000);\n`);
   chmodSync(browser, 0o700);
-  const child = spawn(process.execPath, [cli, 'still', 'film'], {
+  child = spawn(process.execPath, [cli, 'still', 'film'], {
     cwd, stdio: 'ignore', env: { ...process.env, OM_CHROME: browser, MOTION_TEST_PID_FILE: pidFile },
   });
-  t.after(() => child.kill('SIGTERM'));
   for (let i = 0; !existsSync(pidFile) && i < 100; i++) await new Promise((resolve) => setTimeout(resolve, 20));
   assert.ok(existsSync(pidFile), 'browser child started');
+  other = temporary();
+  const conflict = spawnSync(process.execPath, [cli, 'new', 'proj'], { cwd: other,
+    encoding: 'utf8', timeout: 10_000, env: { ...process.env, TMPDIR: other, HOME: other } });
+  assert.ifError(conflict.error);
+  assert.equal(conflict.signal, null);
+  assert.equal(conflict.status, 75);
+  assert.match(conflict.stderr, /另一项任务正在运行/);
+  assert.ok(!existsSync(join(other, 'proj')));
   const closed = new Promise((resolve) => child.once('close', resolve));
   child.kill('SIGTERM');
   assert.equal(await closed, 143);
   const state = spawnSync('ps', ['-o', 'stat=', '-p', readFileSync(pidFile, 'utf8')], { encoding: 'utf8' }).stdout.trim();
   assert.ok(!state || state.startsWith('Z'), `browser still running: ${state}`);
-  assert.equal(command(cwd, 'help').status, 0);
+  assert.equal(command(other, 'new', 'proj').status, 0);
 });
 
 const pngHeader = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);

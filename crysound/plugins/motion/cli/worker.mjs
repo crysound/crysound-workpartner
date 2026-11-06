@@ -1,5 +1,5 @@
 // Deliberately small company CLI: no server, narration, sample download, sharing or asset-grabbing command.
-import { cpSync, existsSync, mkdirSync, realpathSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openProject, readSource, scan } from './lib/project.js';
@@ -45,7 +45,7 @@ function insideWorkspace(path) {
 async function main() {
   const [command = 'help', ...args] = process.argv.slice(2);
   if (['help', '--help', '-h'].includes(command)) return console.log(help);
-  if (['version', '--version'].includes(command)) return console.log('0.1.0');
+  if (['version', '--version'].includes(command)) return console.log(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version);
   if (command === 'templates') return console.log('company — 24 second CRYSOUND product film, Chinese fonts and synthesized music');
   const allowed = { new: ['template'], scan: [], check: ['source'], still: ['at', 'out'], sound: [], render: ['format', 'fps', 'workers'] };
   if (!Object.hasOwn(allowed, command)) throw new Error(`Command disabled or unknown: ${command}. Run om help.`);
