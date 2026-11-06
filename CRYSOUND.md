@@ -39,7 +39,7 @@
 
 ## 打包
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
-- CI：`.github/workflows/desktop-mac.yml`，手动触发或推送 `desktop/**` 分支，在 `macos-15`（Apple 芯片）上构建，依次做：打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、模型源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
+- CI：`.github/workflows/desktop-mac.yml`，手动触发或推送 `desktop/**` 分支，在 `macos-15`（Apple 芯片）上构建，依次做：打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、npm 源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
 - 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签（含 `plugin-template` 里的全部 Mach-O 文件）、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；缺任何一项就跳过。
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
