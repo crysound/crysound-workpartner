@@ -41,7 +41,8 @@ function run(command: string, args: readonly string[], environment: NodeJS.Proce
 
 /**
  * Install the company plugins that the profile does not record yet, patch them, enable the experimental
- * bundles once, seed defaults once, and refresh the company provider, market settings and publishing skill.
+ * bundles once, seed defaults once, and refresh company models, market settings and skills.
+ * Prepares user-only Feishu wrappers and the read-only pinned skills using packaged company resources.
  * Uses a complete gateway snapshot or the packaged fallback while the Host is stopped. A failed plugin
  * install is logged; invalid gateway settings, failed config refresh or a failed skill copy reject preparation.
  * @param options - Paths and environment of this run.

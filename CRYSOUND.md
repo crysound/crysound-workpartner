@@ -82,7 +82,7 @@ done
 
 部署前：负责人给现有飞书应用开通并发布所需用户权限，沿用现有回调；`.env` 设置 `FEISHU_USER_AUTH_ENABLED=1` 和 `MEEGLE_HOST`。重建 gateway、构建 partner-image，再让每人空闲时换镜像；桌面版下次正常打包带上。设 `FEISHU_USER_AUTH_ENABLED=0` 并重建网关可同时停用所有人的飞书令牌领取与刷新，仍能完成撤销。不要给 3091 增加端口映射或公网转发。
 
-轻量自查：Node 24 执行 `node --test crysound/web/gateway/tests/feishu.test.mjs crysound/feishu/tests.mjs crysound/web/gateway/tests/config.test.mjs crysound/web/gateway/tests/notifications.test.mjs`，以及 `node crysound/web/tests/compose-config.mjs`。全部使用假令牌和临时目录；不需要读取部署配置、安装依赖或启动 Docker。设置页外观示例见 `crysound/feishu/settings-preview.png`（本机 HTTP 预览、假授权状态）。
+轻量自查：在已有运行时镜像中按 `crysound/web/README.md` 的隔离方式运行，额外设置 `DSH_CLI_ENTRY=/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js`，测试文件为 `crysound/web/gateway/tests/feishu.test.mjs`、`crysound/feishu/tests.mjs`、`crysound/web/gateway/tests/config.test.mjs`、`crysound/web/gateway/tests/notifications.test.mjs` 和 `crysound/tests/company-config.test.mjs`；本机另跑 `node crysound/web/tests/compose-config.mjs`。全部使用假令牌和临时目录，无网络、限一核、512 MiB，不读取部署配置、安装依赖或构建镜像。设置页外观示例见 `crysound/feishu/settings-preview.png`（本机 HTTP 预览、假授权状态）。
 
 上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
 
