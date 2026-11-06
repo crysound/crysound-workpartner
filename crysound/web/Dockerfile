@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-cer
 COPY scripts/patch-market-*.mjs /opt/partner/scripts/
 COPY brand/market-locales.mjs /opt/partner/brand/market-locales.mjs
 RUN node /opt/partner/scripts/patch-market-ui.mjs --runtime "$(npm root -g)/@deepseek-ai/dsh/node_modules"
+# Web containers use Auto review for an unset personal default; desktop artifacts are never patched here.
+COPY scripts/patch-web-auto-review.mjs /opt/partner/scripts/
+RUN node /opt/partner/scripts/patch-web-auto-review.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # 固定公司插件包在构建时下载并校验；profile 只依赖本地文件。
 COPY plugin-artifacts.mjs /opt/partner/plugin-artifacts.mjs
 RUN node /opt/partner/plugin-artifacts.mjs download /opt/company-plugins \
