@@ -37,7 +37,7 @@ fs.writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$DSH_HOME/profiles/web/packa
 SEED_MARK="$DSH_HOME/.zp-seed-v1"
 if [ -f "$SEED_MARK" ]; then SEED_ARG=; else SEED_ARG=--seed; fi
 node "$CONFIG/profile-upgrades.mjs" "$DSH_HOME/profiles/web/cordis.patch.yml" \
-  "$CONFIG/partner.patch.yml" "$(readlink -f "$(command -v dsh)")" $SEED_ARG || { echo "公司模型配置刷新失败，停止启动" >&2; exit 1; }
+  "$CONFIG/partner.patch.yml" "$(readlink -f "$(command -v dsh)")" $SEED_ARG --web-preview || { echo "公司模型配置刷新失败，停止启动" >&2; exit 1; }
 touch "$SEED_MARK"
 mkdir -p "$DSH_HOME/skills"
 cp -R "$CONFIG/skills/publish-zhaohua-market" "$DSH_HOME/skills/" || echo "警告：市场发布技能复制失败，继续启动" >&2

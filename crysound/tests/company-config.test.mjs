@@ -71,6 +71,38 @@ test("new and existing company profiles declare image input for both GPT models"
   }
 });
 
+test("new and existing company profiles enable the Sidebar Browser before plugin loading", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  const scenarios = [
+    undefined,
+    "# existing workspace\n- id: ui-sidebar-terminal\n  disabled: true\n",
+    "- id: ui-sidebar-browser\n  disabled: true\n",
+    "- id: ui-sidebar-browser\n  disabled: !!js ctx.get('profileContext')?.name !== 'desktop'\n",
+    "- id: ui-sidebar-browser\n  disabled: false\n- id: ui-sidebar-browser\n  disabled: true\n",
+  ];
+  for (const [index, before] of scenarios.entries()) {
+    const file = join(root, `browser-${index}.yml`);
+    if (before !== undefined) await writeFile(file, before);
+    refreshProfile(file, seed, yaml, before === undefined, true);
+    const after = await readFile(file, "utf8"), rows = load(after);
+    assert.equal(rows.findLast(row => row.id === "ui-sidebar-browser")?.disabled, false,
+      `scenario ${index} must override the upstream desktop-only disabled expression`);
+    if (index === 1) {
+      assert.equal(rows.find(row => row.id === "ui-sidebar-terminal").disabled, true);
+      assert.match(after, /# existing workspace/);
+    }
+    refreshProfile(file, seed, yaml, false, true);
+    assert.equal(await readFile(file, "utf8"), after, "second refresh is byte-identical");
+  }
+});
+
+test("shared refresh preserves an existing desktop Browser choice", async (t) => {
+  const root = await temp(t), file = join(root, "desktop.yml"), seed = join(assets, "config/partner.patch.yml");
+  await writeFile(file, "- id: ui-sidebar-browser\n  disabled: true\n");
+  refreshProfile(file, seed, yaml);
+  assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "ui-sidebar-browser").disabled, true);
+});
+
 test("refresh replaces the whole company provider and keeps personal providers, comments, expressions and chosen default", async (t) => {
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   await writeFile(file, `# personal configuration\n- id: "llm-pi-ai"\n  config:\n    providers:\n      magpie: {models: [{id: retired-model}], stale: true}\n      mine: {baseURL: 'https://personal.example/v1', models: [{id: personal}]}\n- id: agent-default-model\n  config: {provider: mine, model: personal, reasoningEffort: high}\n- id: expression\n  config:\n    value: !!js process.env.TEST_VALUE\n`);
@@ -231,7 +263,9 @@ test("self-service onboarding passes a read-only host config mount and model URL
   const module = new SourceTextModule(await readFile(join(assets, "web/gateway/onboard.mjs"), "utf8"), { context });
   await module.link((name) => name === "./market-auth.mjs"
     ? new SyntheticModule(["writeContainerToken"], function () { this.setExport("writeContainerToken", () => {}); }, { context })
-    : new SyntheticModule(["default"], function () { this.setExport("default", name === "node:fs" ? filesystem : crypto); }, { context }));
+    : name === "../preview/gateway.mjs"
+      ? new SyntheticModule(["writeRelayKey"], function () { this.setExport("writeRelayKey", () => {}); }, { context })
+      : new SyntheticModule(["default"], function () { this.setExport("default", name === "node:fs" ? filesystem : crypto); }, { context }));
   await module.evaluate();
   const calls = [];
   const docker = async (method, path, body) => {
@@ -272,6 +306,11 @@ test("configuration refresh resolves a source-only dependency tree without any g
     join(assets, "config/partner.patch.yml"), cliEntry, "--seed"], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(provider(load(await readFile(patch, "utf8"))).magpie.models[0].id, "codex/gpt-6.1-sol");
+  await writeFile(patch, "- id: ui-sidebar-browser\n  disabled: !!js ctx.get('profileContext')?.name !== 'desktop'\n");
+  const web = spawnSync(process.execPath, [join(assets, "config/profile-upgrades.mjs"), patch,
+    join(assets, "config/partner.patch.yml"), cliEntry, "--web-preview"], { encoding: "utf8" });
+  assert.equal(web.status, 0, web.stderr);
+  assert.equal(load(await readFile(patch, "utf8")).find(row => row.id === "ui-sidebar-browser").disabled, false);
   for (const [directory] of packages) assert.ok(!(await readdir(join(root, directory))).includes("lib"));
 });
 

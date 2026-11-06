@@ -56,3 +56,8 @@
   config:
     indexes:
       - https://partner.invalid/_zp/market/index.json
+
+# 上游只默认启用桌面 Browser；公司网页也需要它承接容器服务预览。
+- id: ui-sidebar-browser
+  name: '@deepseek-ai/dsh-client-ui-sidebar-browser'
+  disabled: false
