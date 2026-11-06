@@ -11,6 +11,7 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { MemoryStore } from '../store.mjs';
 import { registerPanel } from '../panel.mjs';
+import { browserValue } from './browser-values.mjs';
 
 const tab = process.env.CDP_TAB;
 assert.ok(tab, 'Create an owned tab with the configured cdp.mjs newtab first');
@@ -33,7 +34,9 @@ const server = createServer((req, res) => {
     conflictNextSwitch = false;
     store.setEnabled({ revision: store.snapshot().revision, enabled: true });
   }
-  void routes.get(req.url)(req, res);
+  const handle = routes.get(req.url);
+  if (typeof handle !== 'function') { res.writeHead(404); res.end(); return; }
+  void handle(req, res);
 });
 server.listen(0, '127.0.0.1');
 await once(server, 'listening');
@@ -55,7 +58,7 @@ const send = (method, params = {}) => new Promise((resolve, reject) => {
 });
 ws.addEventListener('message', async event => {
   const message = JSON.parse(event.data);
-  if (message.id) { const done = pending.get(message.id); pending.delete(message.id); done?.(message); return; }
+  if (message.id) { const done = pending.get(message.id); pending.delete(message.id); if (typeof done === 'function') done(message); return; }
   if (message.method === 'Runtime.exceptionThrown') failures.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
   if (message.method !== 'Fetch.requestPaused') return;
   const { requestId, request } = message.params;
@@ -111,7 +114,7 @@ const click = async expression => {
   await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
   await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
 };
-const button = (label, scope = 'document') => `[...${scope}.querySelectorAll('button')].find(x=>x.textContent.trim()===${JSON.stringify(label)})`;
+const button = (label, scope = 'document') => `[...${scope}.querySelectorAll('button')].find(x=>x.textContent.trim()===${browserValue(label)})`;
 const panel = `document.querySelector('.zp-memory')`;
 const focus = () => evaluate(`window.dispatchEvent(new Event('focus'))`);
 const screenshot = async name => {
@@ -137,7 +140,7 @@ const seed = count => {
 };
 const refreshCount = async count => { await focus(); await until(`${panel}?.textContent.includes('已记 ${count} 条')`); };
 const type = async (label, value) => {
-  await evaluate(`(()=>{const input=[...document.querySelectorAll('#zp-memory-editor label')].find(x=>x.textContent.startsWith(${JSON.stringify(label)})).querySelector('input');input.focus();input.select()})()`);
+  await evaluate(`(()=>{const input=[...document.querySelectorAll('#zp-memory-editor label')].find(x=>x.textContent.startsWith(${browserValue(label)})).querySelector('input');input.focus();input.select()})()`);
   await send('Input.insertText', { text: value });
 };
 const client = readFileSync(new URL('../client.js', import.meta.url), 'utf8');
@@ -163,7 +166,7 @@ const init = `window.__ModuleLoader__={load(value){window.__memoryBranchRegistra
 })()`;
 let injection;
 try {
-  await send('Runtime.enable'); await send('Page.enable'); await send('Page.bringToFront');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Network.setCacheDisabled', { cacheDisabled: true });
   await send('Fetch.enable', { patterns: [
     { urlPattern: '*/crysound-memory/api/*' }, { urlPattern: '*/brand.js*' }, { urlPattern: '*/brand.css*' },
@@ -296,6 +299,7 @@ try {
   writeFileSync(join(directory, 'result.json'), JSON.stringify(proof, null, 2) + '\n');
   if (injection) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: injection }).catch(() => {});
   await send('Fetch.disable').catch(() => {});
+  await send('Emulation.setFocusEmulationEnabled', { enabled: false }).catch(() => {});
   await send('Emulation.clearDeviceMetricsOverride').catch(() => {});
   ws.close();
   server.closeAllConnections(); await new Promise(done => server.close(done));
