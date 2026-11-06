@@ -8,7 +8,7 @@
       magpie:
         displayName: ChatGPT
         api: openai-completions
-        baseURL: https://partner.corp.crysound.com/_zp/llm/v1
+        baseURL: https://workpartner.corp.crysound.com/_zp/llm/v1
         apiKeyEnv: MAGPIE_API_KEY
         models:
           - id: codex/gpt-6.1-sol

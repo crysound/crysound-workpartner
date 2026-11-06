@@ -24,7 +24,7 @@ for f in brand/brand.css brand/brand.js brand/welcome.js brand/zp-mark.svg confi
 has "$res/icon.png"
 has "$res/runtime/cli/bin/dsh"
 if [ -e "$res/app-update.yml" ]; then echo "FAIL  app-update.yml present (update feed configured)"; fail=1; else echo "ok    no app-update.yml (updates off)"; fi
-grep -q "partner.corp.crysound.com/_zp/llm/v1" "$res/crysound/config/partner.patch.yml" && echo "ok    seed points at company gateway" || { echo "FAIL  seed baseURL"; fail=1; }
+grep -q "workpartner.corp.crysound.com/_zp/llm/v1" "$res/crysound/config/partner.patch.yml" && echo "ok    seed points at company gateway" || { echo "FAIL  seed baseURL"; fail=1; }
 
 asar="$res/app.asar"
 has "$asar"
@@ -38,6 +38,6 @@ tmp=$(mktemp -d)
 (cd "$tmp" && "$asarcli" extract-file "$asar" lib/main.js) >/dev/null 2>&1 || true
 if [ -f "$tmp/main.js" ]; then
   grep -q "crysound-workpartner" "$tmp/main.js" && echo "ok    main.js registers crysound-workpartner:// protocol" || { echo "FAIL  protocol string"; fail=1; }
-  grep -q "desktop-login\|partner.corp.crysound.com" "$tmp/main.js" && echo "ok    main.js carries company login" || { echo "FAIL  login string"; fail=1; }
+  grep -q "desktop-login\|workpartner.corp.crysound.com" "$tmp/main.js" && echo "ok    main.js carries company login" || { echo "FAIL  login string"; fail=1; }
 fi
 exit $fail

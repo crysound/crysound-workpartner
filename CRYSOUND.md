@@ -19,8 +19,8 @@
 - DeepSeek 账号：不显示欢迎/登录窗口，`PLATFORM_IPC.open`（DeepSeek 用量与充值页）直接拒绝。
 
 ### 登录与模型
-- 启动时 `src/crysound/partner.ts` 读取 `userData/partner-session.json`（权限 600）；没有令牌，或网关对令牌返回 401 时，打开窗口加载 `https://partner.corp.crysound.com/_zp/desktop-login`，拦截跳到 `/_zp/desktop-done#token=…&name=…&avatar=…` 的那一步，存令牌后关窗进入工作区。
-- Host 环境：`MAGPIE_API_KEY`、`DEEPSEEK_API_KEY` 为令牌，`DEEPSEEK_BASE_URL=https://partner.corp.crysound.com/_zp/llm/v1`。
+- 启动时 `src/crysound/partner.ts` 读取 `userData/partner-session.json`（权限 600）；没有令牌，或网关对令牌返回 401 时，打开窗口加载 `https://workpartner.corp.crysound.com/_zp/desktop-login`，拦截跳到 `/_zp/desktop-done#token=…&name=…&avatar=…` 的那一步，存令牌后关窗进入工作区。
+- Host 环境：`MAGPIE_API_KEY`、`DEEPSEEK_API_KEY` 为令牌，`DEEPSEEK_BASE_URL=https://workpartner.corp.crysound.com/_zp/llm/v1`。
 - 运行中模型请求返回 401：`crysound/host-hook.mjs`（Host 以 `--import` 预加载）包装 `fetch`，通过 IPC 通知壳层，壳层打开登录窗口，成功后重启应用。
 - 菜单“退出登录”：删令牌、清登录窗口的飞书会话，重启后进入登录窗口。
 
@@ -44,7 +44,7 @@
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
 ## 网页版（`crysound/web`）
-每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://partner.corp.crysound.com`。
+每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
 - `Dockerfile`：每人容器的镜像。dsh 与 5 个插件按 `crysound/config/plugins.json` 固定版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；默认配置用共用的 `partner.patch.yml`，构建时把模型地址换成内部 magpie。

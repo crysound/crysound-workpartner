@@ -35,7 +35,7 @@ const patch = readFileSync(join(profile, 'cordis.patch.yml'), 'utf8')
 for (const id of ['llm-pi-ai', 'agent-default-model', 'ui-settings-general']) {
   check(new RegExp(`^- id: ${id}\\s*$`, 'mu').test(patch) && patch.split(`- id: ${id}`).length === 2, `seed entry ${id}`)
 }
-check(patch.includes('https://partner.corp.crysound.com/_zp/llm/v1'), 'seed baseURL is the company gateway')
+check(patch.includes('https://workpartner.corp.crysound.com/_zp/llm/v1'), 'seed baseURL is the company gateway')
 const feishu = join(profile, 'node_modules', '@aiwayds', 'dsh-feishu', 'lib', 'bot.js')
 check(readFileSync(feishu, 'utf8').includes('auto-new failed'), 'feishu plugin patch applied')
 process.exit(failed ? 1 : 0)

@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST:?在 .env 设置 PUBLIC_HOST}
+      OLD_HOSTS: ${OLD_HOSTS:-}
       MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
       HOST_PARTNER_DATA: ${PARTNER_DATA:?在 .env 设置 PARTNER_DATA}
       HOST_PARTNER_SECURE: ${PARTNER_SECURE:?在 .env 设置 PARTNER_SECURE}
