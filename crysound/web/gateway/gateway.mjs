@@ -287,7 +287,11 @@ const server = http.createServer(async (req, res) => {
     // 网页左下角用：本人的飞书姓名和头像，以及客户端下载（只给已开通的同事）。
     if (url.pathname === "/_zp/me" || url.pathname.startsWith("/_zp/download")) {
       const { who, user } = userFor(req);
-      if (!user) { res.writeHead(401); return res.end(); }
+      if (!user) {
+        if (url.pathname === "/_zp/me") { res.writeHead(401); return res.end(); }
+        // 从聊天里点开的下载链接常在没登录的浏览器里打开：先飞书登录，再回到下载。
+        return redirect(res, `/_zp/login?next=${encodeURIComponent(url.pathname)}`);
+      }
       if (url.pathname === "/_zp/me") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); return res.end(JSON.stringify({ name: who.name, avatar: who.avatar })); }
       return download(res, decodeURIComponent(url.pathname.slice("/_zp/download".length).replace(/^\//, "")));
     }
