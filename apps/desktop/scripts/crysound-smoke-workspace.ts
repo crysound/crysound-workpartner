@@ -21,10 +21,12 @@ await prepareCompanyWorkspace(options)
 await prepareCompanyWorkspace(options)
 
 const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
-  plugins: { name: string; want: string }[]; defaultBundles: string[]
+  plugins: { name: string; want: string }[]
+  defaultBundles: string[]
 }
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
-  dependencies?: Record<string, string>; dsh?: { profile?: { bundles?: string[] } }
+  dependencies?: Record<string, string>
+  dsh?: { profile?: { bundles?: string[] } }
 }
 let failed = false
 const check = (ok: boolean, message: string): void => { console.log(`${ok ? 'ok  ' : 'FAIL'}  ${message}`); if (!ok) failed = true }
@@ -35,7 +37,7 @@ const patch = readFileSync(join(profile, 'cordis.patch.yml'), 'utf8')
 for (const id of ['llm-pi-ai', 'agent-default-model', 'ui-settings-general']) {
   check(new RegExp(`^- id: ${id}\\s*$`, 'mu').test(patch) && patch.split(`- id: ${id}`).length === 2, `seed entry ${id}`)
 }
-check(patch.includes('https://workpartner.corp.crysound.com/_zp/llm/v1'), 'seed baseURL is the company gateway')
+check(patch.includes(process.env.CRYSOUND_LLM_BASE as string), 'seed baseURL is the company gateway')
 const feishu = join(profile, 'node_modules', '@aiwayds', 'dsh-feishu', 'lib', 'bot.js')
 check(readFileSync(feishu, 'utf8').includes('auto-new failed'), 'feishu plugin patch applied')
 process.exit(failed ? 1 : 0)

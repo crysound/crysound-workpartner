@@ -5,8 +5,13 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, session } from 'electron'
+import { resolveDesktopPaths } from '../paths.ts'
+import { writeMarketNpmrc } from './npmrc.ts'
+import { companyOrigin } from './origin.ts'
 
-export const PARTNER_ORIGIN = 'https://workpartner.corp.crysound.com'
+/** HTTPS gateway origin selected by PUBLIC_HOST. */
+export const PARTNER_ORIGIN = companyOrigin(join(crysoundResources(), 'config'))
+/** Company model gateway for authenticated desktop requests. */
 export const LLM_BASE_URL = `${PARTNER_ORIGIN}/_zp/llm/v1`
 const LOGIN_URL = `${PARTNER_ORIGIN}/_zp/desktop-login`
 const DONE_URL = `${PARTNER_ORIGIN}/_zp/desktop-done`
@@ -40,6 +45,7 @@ export async function readPartnerSession(): Promise<PartnerSession | undefined> 
 }
 
 async function writePartnerSession(value: PartnerSession): Promise<void> {
+  await writeMarketNpmrc(resolveDesktopPaths().profile, PARTNER_ORIGIN, value.token)
   await mkdir(app.getPath('userData'), { recursive: true })
   await writeFile(tokenFile(), JSON.stringify(value), { mode: 0o600 })
   await chmod(tokenFile(), 0o600)
@@ -47,6 +53,7 @@ async function writePartnerSession(value: PartnerSession): Promise<void> {
 
 /** Forget the stored token and the Feishu cookies of the login window, so the next login can use another account. */
 export async function clearPartnerSession(): Promise<void> {
+  await writeMarketNpmrc(resolveDesktopPaths().profile, PARTNER_ORIGIN)
   await rm(tokenFile(), { force: true })
   await session.fromPartition(LOGIN_PARTITION).clearStorageData()
 }
@@ -114,7 +121,10 @@ export function openLoginWindow(): Promise<PartnerSession | undefined> {
 export async function ensurePartnerSession(): Promise<PartnerSession | undefined> {
   const stored = await readPartnerSession()
   if (stored !== undefined) {
-    if (await tokenAccepted(stored.token)) return stored
+    if (await tokenAccepted(stored.token)) {
+      await writeMarketNpmrc(resolveDesktopPaths().profile, PARTNER_ORIGIN, stored.token)
+      return stored
+    }
     await clearPartnerSession()
   }
   return openLoginWindow()
@@ -127,6 +137,8 @@ export function partnerHostEnvironment(partner: PartnerSession): NodeJS.ProcessE
     DEEPSEEK_API_KEY: partner.token,
     DEEPSEEK_BASE_URL: LLM_BASE_URL,
     CRYSOUND_LLM_BASE: LLM_BASE_URL,
+    CRYSOUND_MARKET_REGISTRY: `${PARTNER_ORIGIN}/_zp/npm/`,
+    CRYSOUND_NPM_USERCONFIG: join(resolveDesktopPaths().profile, '.npmrc'),
     CRYSOUND_HOST_HOOK: pathToFileURL(join(crysoundResources(), 'host-hook.mjs')).href,
     DSH_TELEMETRY_DISABLED: '1',
   }

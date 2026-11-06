@@ -8,7 +8,7 @@
       magpie:
         displayName: ChatGPT
         api: openai-completions
-        baseURL: https://workpartner.corp.crysound.com/_zp/llm/v1
+        baseURL: https://partner.invalid/_zp/llm/v1
         apiKeyEnv: MAGPIE_API_KEY
         models:
           - id: codex/gpt-6.1-sol
@@ -42,3 +42,9 @@
   name: '@deepseek-ai/dsh-client-ui-settings-general'
   config:
     welcomeNoticeVersion: 2026-09-28.1
+
+# 公司私有插件索引，安装源由 @crysound 的 .npmrc scope 映射决定。
+- id: plugin-market
+  config:
+    indexes:
+      - https://partner.invalid/_zp/market/index.json

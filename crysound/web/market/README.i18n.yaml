@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write crysound/web/market/README.md
+/zhaohua-market-phase-one:
+  en: 27b2617d4bd4bcf5
+  zh: a0fc86d285a29f3c
+/zhaohua-market-phase-one/deployment-configuration:
+  en: 5791da2663322c85
+  zh: 22b8558f7a07151e
+/zhaohua-market-phase-one/publishing-and-approval:
+  en: 10e985cf90dc03c5
+  zh: cbd725071c1d301f
+/zhaohua-market-phase-one/local-verification:
+  en: 0d0087ace491fc68
+  zh: 24b4c0175d657d24
