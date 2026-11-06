@@ -1,0 +1,22 @@
+/* 兆华工作伙伴品牌层：只换 logo 插槽，不动 dsh 其他样式。 */
+[data-slot="sidebar.brand.mark"] > *,
+[data-slot="sidebar.brand.name"] > *,
+[data-slot="conversation.hero.brand.mark"] > * { display: none !important; }
+
+[data-slot="sidebar.brand.mark"]::after,
+[data-slot="conversation.hero.brand.mark"]::after {
+  content: "";
+  display: inline-block;
+  background: url("./zp-mark.svg") center / contain no-repeat;
+}
+[data-slot="sidebar.brand.mark"]::after { width: 22px; height: 22px; vertical-align: middle; }
+[data-slot="conversation.hero.brand.mark"]::after { width: 40px; height: 40px; vertical-align: middle; }
+
+[data-slot="sidebar.brand.name"]::after {
+  content: "兆华工作伙伴";
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}

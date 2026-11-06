@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    { "name": "@aiwayds/dsh-feishu", "spec": "@aiwayds/dsh-feishu@0.17.0", "want": "0.17.0" },
+    { "name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12" },
+    { "name": "dsh-slidestudio", "spec": "dsh-slidestudio@0.2.9", "want": "0.2.9" },
+    { "name": "dsh-oil-ui", "spec": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528", "want": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528" },
+    { "name": "dsh-video-editor", "spec": "dsh-video-editor@1.0.0", "want": "1.0.0" }
+  ],
+  "defaultBundles": [
+    "@deepseek-ai/dsh-experimental-voice-input-bundle",
+    "@deepseek-ai/dsh-experimental-auto-review",
+    "@deepseek-ai/dsh-experimental-cot-translation-bundle",
+    "@deepseek-ai/dsh-experimental-session-titles-bundle"
+  ]
+}

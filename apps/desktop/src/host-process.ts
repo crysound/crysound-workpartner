@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { z } from 'zod'
 import type { PlatformSession } from '@deepseek-ai/dsh-deepseek-account'
 import { desktopNodeEnvironment } from './node-environment.ts'
+import { emitPartnerAuthExpired } from './crysound/auth-events.ts'
 import { parsePluginOperationRecord, type PluginOperationRecord, type PluginOperationRunId } from '@deepseek-ai/dsh-plugin-manager/diagnostic'
 
 interface ReadyEvent {
@@ -28,7 +29,7 @@ interface PlatformSessionEvent {
 type DesktopHostEvent = ReadyEvent | FatalEvent | PlatformSessionEvent | {
   readonly type: 'starting'
   readonly runId: PluginOperationRunId
-} | { readonly type: 'shutdown-complete' } | {
+} | { readonly type: 'shutdown-complete' } | { readonly type: 'crysound-auth-expired' } | {
   readonly type: 'file-drag-resource'
   readonly requestId: number
   readonly resource: { readonly path: string; readonly sha256: string; readonly size: number } | null
@@ -68,6 +69,7 @@ function isDesktopHostEvent(message: unknown): message is DesktopHostEvent {
     case 'starting':
       return runIdSchema.safeParse(candidate.runId).success
     case 'shutdown-complete':
+    case 'crysound-auth-expired':
       return true
     case 'ready':
       return typeof candidate.url === 'string'
@@ -209,8 +211,10 @@ export class DesktopHostProcess {
   async start(): Promise<DesktopHostReady> {
     if (this.child !== undefined) return this.readyPromise
     const entry = join(this.runtimeDir, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'index.js')
+    const hook = this.environment.CRYSOUND_HOST_HOOK
     const child = spawn(this.node, [
       '--expose-internals',
+      ...(hook === undefined || hook === '' ? [] : ['--import', hook]),
       ...(this.inspectPort === undefined ? [] : [`--inspect=127.0.0.1:${String(this.inspectPort)}`]),
       entry,
       this.runtimeDir,
@@ -246,6 +250,7 @@ export class DesktopHostProcess {
       if (message.type === 'starting') this.runId = message.runId
       else if (message.type === 'ready') this.readyResolve({ url: message.url, injections: message.injections })
       else if (message.type === 'platform-session') this.onPlatformSession?.(message.session)
+      else if (message.type === 'crysound-auth-expired') emitPartnerAuthExpired()
       else if (message.type === 'shutdown-complete') {
         if (this.stopping) this.shutdownCompleted = true
         else this.fail(new Error('dsh desktop host acknowledged an unrequested shutdown'))
