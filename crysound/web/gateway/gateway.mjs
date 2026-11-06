@@ -2,6 +2,7 @@
 // 容器停了就启动；dsh 的一次性口令在这里换成登录 cookie，浏览器只和网关打交道。
 import { serveCompanyConfig } from "./company-config.mjs";
 import { serveMacUpdate } from "./updates.mjs";
+import { createPreview, writeRelayKey } from "../preview/gateway.mjs";
 import http from "node:http";
 import net from "node:net";
 import fs from "node:fs";
@@ -80,8 +81,22 @@ if (!marketAdmins.length || marketAdmins.some((slug) => !users().some((user) => 
   throw new Error("在 .env 配置已开通的市场管理员 slug（首期 Jason），然后重建网关");
 }
 
+const preview = createPreview({
+  publicHost: PUBLIC_HOST, previewHost: process.env.PREVIEW_HOST || "", key: SESSION_KEY,
+  users, upstream,
+  sessionUser: (req) => {
+    const { user } = userFor(req);
+    if (!user) return null;
+    const [data] = cookieOf(req, "zp_sid").split(".");
+    return { user, expires: JSON.parse(Buffer.from(data, "base64url").toString()).e };
+  },
+});
+
 // 令牌随数据卷进入容器；旧容器在重建后由入口脚本写入 .npmrc。
-for (const user of users()) writeContainerToken(SESSION_KEY, user);
+for (const user of users()) {
+  writeContainerToken(SESSION_KEY, user);
+  if (process.env.PREVIEW_HOST) writeRelayKey(SESSION_KEY, user);
+}
 const market = createMarket({
   stateFile: "/state/market.json", registry: "http://verdaccio:4873",
   authorization: `Basic ${Buffer.from(fs.readFileSync("/secure/market-npm-auth", "utf8").trim()).toString("base64")}`,
@@ -347,7 +362,15 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `https://${PUBLIC_HOST}`);
     const host = String(req.headers.host || "").toLowerCase();
+    if (await preview.handle(req, res, url)) return;
+    // A preview is untrusted code, even when it is a sibling on the same registrable domain.
+    if (req.headers.origin && preview.isPreviewHost(new URL(req.headers.origin).host)) {
+      res.writeHead(403); return res.end();
+    }
     const oldHost = OLD_HOSTS.includes(host);
+    if (host !== PUBLIC_HOST && host !== `${PUBLIC_HOST}:443` && !oldHost && host !== "zhaohua-partner-gateway:3090") {
+      res.writeHead(403); return res.end();
+    }
     if (oldHost && !servedOnOldHost(url)) return redirect(res, `https://${PUBLIC_HOST}${req.url}`);
     if (url.pathname === "/_zp/feishu") return redirect(res, "/_zp/feishu/");
     if (await feishu.handle(req, res, url)) return;
@@ -409,6 +432,8 @@ const server = http.createServer(async (req, res) => {
 
 server.on("upgrade", async (req, socket, head) => {
   try {
+    if (preview.isPreviewHost(String(req.headers.host || "").toLowerCase())) return await preview.upgrade(req, socket, head);
+    if (req.headers.origin && preview.isPreviewHost(new URL(req.headers.origin).host)) return socket.destroy();
     const r = await resolve(req);
     if (!r.cookie) return socket.destroy();
     const up = net.connect(3080, r.up.ip, () => {

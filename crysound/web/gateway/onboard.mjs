@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
+import { writeRelayKey } from "../preview/gateway.mjs";
 import { writeContainerToken } from "./market-auth.mjs";
 
 const APP_ID = process.env.FEISHU_APP_ID;
@@ -112,6 +113,7 @@ export function provision(docker, { unionId, name }) {
   if (!running.has(slug)) {
     running.set(slug, (async () => {
       await magpieKey(docker, slug);
+      if (process.env.PREVIEW_HOST) writeRelayKey(fs.readFileSync("/secure/gateway-session.key", "utf8").trim(), { slug });
       writeContainerToken(fs.readFileSync("/secure/gateway-session.key", "utf8").trim(), { slug, unionId });
       await container(docker, slug);
       const list = readUsers().filter((x) => x.slug !== slug);

@@ -13,6 +13,7 @@
         models:
           - id: codex/gpt-6.1-sol
             name: GPT-6.1 Sol
+            input: [text, image]
             contextWindow: 272000
             reasoningEfforts:
               low: low
@@ -22,6 +23,7 @@
               max: max
           - id: codex/gpt-6.1-terra
             name: GPT-6.1 Terra
+            input: [text, image]
             contextWindow: 272000
             reasoningEfforts:
               low: low
@@ -54,3 +56,8 @@
   config:
     indexes:
       - https://partner.invalid/_zp/market/index.json
+
+# 上游只默认启用桌面 Browser；公司网页也需要它承接容器服务预览。
+- id: ui-sidebar-browser
+  name: '@deepseek-ai/dsh-client-ui-sidebar-browser'
+  disabled: false

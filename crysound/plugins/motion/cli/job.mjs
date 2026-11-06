@@ -15,7 +15,9 @@ export async function runJob(worker, args, { timeoutMs = 300_000, env = process.
   const scratch = mkdtempSync(join(tmpdir(), 'crysound-motion-'));
   const cleanEnv = Object.fromEntries(Object.entries(env).filter(([key]) => !/KEY|SECRET|TOKEN|PASSWORD/i.test(key)));
   const child = spawn(process.execPath, [worker, ...args], {
-    detached: true, stdio, env: { ...cleanEnv, OM_SAMPLES: 'off', TMPDIR: scratch },
+    detached: true, stdio, env: { ...cleanEnv, OM_SAMPLES: 'off', TMPDIR: scratch,
+      OM_HOME: join(process.cwd(), '.crysound-motion'),
+      XDG_CACHE_HOME: join(scratch, 'cache'), XDG_CONFIG_HOME: join(scratch, 'config') },
   });
   let stopped = 0;
   const kill = (signal) => {

@@ -1,6 +1,6 @@
 {
   "name": "@crysound/motion",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "公司产品动效：中文品牌模板、静帧校对、合成配乐与 MP4/GIF 导出；每次最多 2 个渲染浏览器。",
   "type": "module",
   "main": "index.mjs",

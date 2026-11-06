@@ -37,12 +37,17 @@ fs.writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$DSH_HOME/profiles/web/packa
 SEED_MARK="$DSH_HOME/.zp-seed-v1"
 if [ -f "$SEED_MARK" ]; then SEED_ARG=; else SEED_ARG=--seed; fi
 node "$CONFIG/profile-upgrades.mjs" "$DSH_HOME/profiles/web/cordis.patch.yml" \
-  "$CONFIG/partner.patch.yml" "$(readlink -f "$(command -v dsh)")" $SEED_ARG || { echo "公司模型配置刷新失败，停止启动" >&2; exit 1; }
+  "$CONFIG/partner.patch.yml" "$(readlink -f "$(command -v dsh)")" $SEED_ARG --web-preview || { echo "公司模型配置刷新失败，停止启动" >&2; exit 1; }
 touch "$SEED_MARK"
 mkdir -p "$DSH_HOME/skills"
 cp -R "$CONFIG/skills/publish-zhaohua-market" "$DSH_HOME/skills/" || echo "警告：市场发布技能复制失败，继续启动" >&2
 node "$CONFIG/market-profile.mjs" "$DSH_HOME/profiles/web/cordis.patch.yml" "$DSH_HOME/profiles/web/package.json" "${CRYSOUND_MARKET_ORIGIN:-http://zhaohua-partner-gateway:3090}/_zp/market/index.json" || echo "警告：市场 profile 配置失败，继续启动" >&2
 export CRYSOUND_COMPANY_SKILLS="$(cat /opt/partner/feishu-skills-path)"
 node /opt/partner/feishu/container-setup.mjs || echo "警告：飞书命令或技能准备失败，请联系管理员" >&2
-exec dsh --profile web --no-open --host "$(hostname -i | cut -d' ' -f1)" --port 3080 \
+if [ -r /data/.zp-preview-relay-key ]; then
+  set -- node /opt/partner/preview/launch.mjs
+else
+  set -- dsh --profile web
+fi
+exec "$@" --no-open --host "$(hostname -i | cut -d' ' -f1)" --port 3080 \
   --public-url "https://${PUBLIC_HOST}/" --trusted-host "${PUBLIC_HOST}" --trusted-host 127.0.0.1:3080

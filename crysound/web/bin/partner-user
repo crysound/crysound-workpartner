@@ -70,6 +70,15 @@ def market_token(slug, union_id):
     with os.fdopen(fd, 'wb') as out:
         out.write(b'zpd.' + data + b'.' + mac + b'\n')
     temp.chmod(0o600); os.chown(temp, 1001, 1001); temp.replace(target)
+    if os.environ.get('PREVIEW_HOST'):
+        relay = hmac.new(key, f'preview-relay-v1:{slug}'.encode(), hashlib.sha256).hexdigest() + '\n'
+        target = directory / '.zp-preview-relay-key'
+        if not target.exists() or target.read_text() != relay:
+            temp = directory / ('.zp-preview-relay-key.' + secrets.token_hex(12))
+            fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w') as out:
+                out.write(relay)
+            os.chown(temp, 1001, 1001); temp.replace(target)
 
 
 def require_config():
