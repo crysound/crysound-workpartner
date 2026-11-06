@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>公司产品动效</title>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/om.js"></script>
+<style>
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-500.woff") format("woff"); font-weight: 500; }
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-900.woff") format("woff"); font-weight: 900; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+#film { position: relative; width: 1280px; height: 720px; background: #170057; color: #fff; font: 500 32px "Noto Sans SC", sans-serif; overflow: hidden; }
+.scene { position: absolute; inset: 0; padding: 80px; box-sizing: border-box; }
+#product, #value, #close { opacity: 0; }
+.wordmark { font-size: 24px; letter-spacing: 5px; opacity: .7; }
+h1 { font-size: 76px; line-height: 1.25; margin: 60px 0 24px; max-width: 1000px; font-weight: 900; }
+p { line-height: 1.6; max-width: 1000px; }
+.logo { position: absolute; right: 80px; top: 65px; width: 100px; height: 100px; }
+.line { width: 120px; height: 6px; background: #b9a4ff; margin-top: 40px; transform-origin: left; }
+#product { background: #f6f3ff; color: #170057; }
+.panel { border-left: 6px solid #170057; padding: 28px 40px; margin-top: 50px; background: #fff; }
+#close { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#close .logo { position: static; width: 128px; height: 128px; }
+#close h1 { margin: 28px 0 0; font-size: 56px; }
+</style>
+</head>
+<body>
+<div id="film" data-composition-id="film" data-width="1280" data-height="720" data-fps="24" data-om-signature="off">
+  <section id="open" class="scene" data-om-id="opening">
+    <div class="wordmark">CRYSOUND</div>
+    <img class="logo" src="assets/zp-mark.svg" alt="兆华工作伙伴">
+    <h1 data-om-id="headline">让声音，清晰可见</h1>
+    <p data-om-id="opening-copy">公司产品片 · 请替换为已核实的产品名称与卖点</p>
+    <div class="line"></div>
+  </section>
+  <section id="product" class="scene" data-om-id="product">
+    <div class="wordmark">PRODUCT / 产品</div>
+    <h1 data-om-id="product-name">在这里展示你的产品</h1>
+    <div class="panel" data-om-id="product-detail">放入已获授权的产品照片或截图<br>一次只讲清一个卖点</div>
+  </section>
+  <section id="value" class="scene" data-om-id="value">
+    <div class="wordmark">CRYSOUND</div>
+    <h1 data-om-id="value-title">把复杂，讲清楚</h1>
+    <p data-om-id="value-detail">用真实场景说明价值。<br>参数与结论以产品资料为准。</p>
+    <div class="line"></div>
+  </section>
+  <section id="close" class="scene" data-om-id="closing">
+    <img class="logo" src="assets/zp-mark.svg" alt="兆华工作伙伴">
+    <h1>CRYSOUND</h1><p data-om-id="closing-copy">兆华工作伙伴 · 让想法成为作品</p>
+  </section>
+</div>
+<script>
+// Every motion comes from the paused timeline. Frame seeking never depends on a random blink or wall clock.
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+tl.addLabel('scene:open', 0)
+  .fromTo('#open .logo', { y: 6, rotation: -3 }, { y: 0, rotation: 0, duration: .8 }, 0)
+  .fromTo('#open h1', { y: 28, opacity: 1 }, { y: 0, opacity: 1, duration: .8 }, 0)
+  .fromTo('#open .line', { scaleX: .2 }, { scaleX: 1, duration: 1 }, .3)
+  .to('#open', { opacity: 0, duration: .4 }, 3.6)
+  .addLabel('scene:product', 4)
+  .to('#product', { opacity: 1, duration: .4 }, 4)
+  .fromTo('#product .panel', { x: 32 }, { x: 0, duration: .8 }, 4)
+  .to('#product', { opacity: 0, duration: .4 }, 12)
+  .addLabel('scene:value', 12.4)
+  .to('#value', { opacity: 1, duration: .4 }, 12.4)
+  .fromTo('#value .line', { scaleX: .1 }, { scaleX: 1, duration: 1 }, 12.4)
+  .to('#value', { opacity: 0, duration: .4 }, 20)
+  .addLabel('scene:close', 20.4)
+  .to('#close', { opacity: 1, duration: .4 }, 20.4)
+  .fromTo('#close .logo', { y: 6, scale: .96 }, { y: 0, scale: 1, duration: .6 }, 20.4)
+  .to({}, { duration: 3 }, 21);
+window.__timelines.film = tl;
+OM.music({ style: 'pulse', bpm: 100, brand: 'CRYSOUND', drop: 'product', ending: 'button', end: 23.8,
+  energy: { open: .25, product: .6, value: .45, close: .25 } });
+</script>
+</body>
+</html>
