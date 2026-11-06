@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""兆华工作伙伴加人：每人一把 magpie 钥匙、一个容器、一行名单。不打印钥匙。
+  partner-user add <代号> <姓名> <飞书 union_id>   建钥匙（已有就沿用）、建并启动容器、写进名单
+  partner-user list                              列出名单和容器状态
+  partner-user upgrade [代号…]                   用当前镜像重建容器（默认全部；数据和钥匙不动）
+AI工作台群成员可在网页上自助开通，本命令只用于给群外的人开通。"""
+import json, os, re, subprocess, sys
+from pathlib import Path
+
+ROOT = Path(os.environ.get('PARTNER_DATA', '/srv/xiaoman/zhaohua-partner'))
+SECURE = Path(os.environ.get('PARTNER_SECURE', '/srv/xiaoman/secure/zhaohua-partner'))
+USERS = ROOT / 'users.json'
+IMAGE = os.environ.get('PARTNER_IMAGE', 'zhaohua-partner:0.2.2-rc.1')
+IA = '/srv/xiaoman/jstack/host/infisical/infisical-admin.py'
+
+
+def sh(*a, **k):
+    return subprocess.run(a, capture_output=True, text=True, **k)
+
+
+def magpie_key(slug):
+    path = SECURE / f'magpie-{slug}.key'
+    if path.exists():
+        return path
+    name = f'zhaohua-partner-{slug}'
+    out = sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'add', name).stdout
+    key = re.findall(r'sk-magpie-key-[A-Za-z0-9_-]+', out)
+    if not key:
+        sys.exit(f'magpie 没有返回钥匙：{name}')
+    path.write_text(key[0]); path.chmod(0o400)
+    sh('python3', IA, 'put', 'xiaoman', '/zhaohua-partner', f'MAGPIE_KEY_{slug.upper().replace("-", "_")}',
+       '--comment', f'兆华工作伙伴 {slug} 容器的 magpie 网关钥匙', input=key[0])
+    kid = next(l.split()[0] for l in sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'list').stdout.splitlines() if f' {name} ' in l)
+    sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'models', kid, 'codex/*', 'deepseek/*')
+    return path
+
+
+def container(slug, key):
+    name = f'zhaohua-partner-{slug}'
+    if sh('docker', 'inspect', name).returncode == 0:
+        sh('docker', 'start', name); return
+    data = ROOT / 'users' / slug
+    data.mkdir(parents=True, exist_ok=True)
+    r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
+           '--user', '1001:1001', '-e', 'PUBLIC_HOST=partner.corp.crysound.com',
+           '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
+           '--memory', '2g', '--cpus', '2', '--pids-limit', '512',
+           '--label', f'zhaohua-partner.user={slug}', IMAGE)
+    if r.returncode:
+        sys.exit(r.stderr.strip())
+
+
+def main():
+    users = json.loads(USERS.read_text()) if USERS.exists() else []
+    if sys.argv[1:2] == ['list']:
+        for u in users:
+            st = sh('docker', 'inspect', '-f', '{{.State.Status}}', f'zhaohua-partner-{u["slug"]}').stdout.strip() or '无容器'
+            print(u['slug'], u['name'], u.get('unionId', '-'), st)
+        return
+    if sys.argv[1:2] == ['upgrade']:
+        for u in users:
+            if sys.argv[2:] and u['slug'] not in sys.argv[2:]:
+                continue
+            sh('docker', 'rm', '-f', f'zhaohua-partner-{u["slug"]}')
+            container(u['slug'], SECURE / f'magpie-{u["slug"]}.key')
+            print('已升级', u['slug'])
+        return
+    if sys.argv[1:2] != ['add'] or len(sys.argv) != 5:
+        sys.exit(__doc__)
+    slug, name, union_id = sys.argv[2], sys.argv[3], sys.argv[4].strip()
+    if not re.fullmatch(r'[a-z][a-z0-9-]{1,30}', slug):
+        sys.exit('代号只用小写字母、数字和短横线')
+    key = magpie_key(slug)
+    container(slug, key)
+    old = next((u for u in users if u['slug'] == slug), {})
+    users = [u for u in users if u['slug'] != slug] + [{**old, 'slug': slug, 'name': name, 'unionId': union_id}]
+    with open(USERS, 'r+') as f:  # 原地改写：网关以单文件挂载它，换 inode 会让网关看不到新内容
+        f.seek(0); f.write(json.dumps(users, ensure_ascii=False, indent=1)); f.truncate()
+    USERS.chmod(0o644)
+    print(f'已开通 {name}（{slug}）')
+
+
+if __name__ == '__main__':
+    main()

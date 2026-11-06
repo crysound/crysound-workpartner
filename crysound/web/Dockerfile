@@ -1,0 +1,43 @@
+FROM node:24-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates python3 ripgrep iproute2 librsvg2-bin \
+ && rm -rf /var/lib/apt/lists/* \
+ && npm i -g @deepseek-ai/dsh@0.2.2-rc.1 pnpm@10 && npm cache clean --force
+# 语音输入的识别模型（SenseVoice int8 + 静音检测）装进镜像，所有人共用这一份；地址与校验值取自 dsh 自带的模型清单。
+RUN set -e; a=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-experimental-speech-to-text-sensevoice/runtime/assets.json; \
+ get() { mkdir -p "$1"; node -e 'const a=require(process.argv[1]);const x=process.argv[2].split(".").reduce((o,k)=>o[k],a);console.log(x.url,x.name,x.sha256)' "$a" "$2" \
+   | { read url name sha; curl -fsSL --retry 3 "$url" -o "$1/$name"; echo "$sha  $1/$name" | sha256sum -c -; }; }; \
+ get /opt/sensevoice/models/sensevoice-onnx models.int8; get /opt/sensevoice/models/sensevoice-onnx tokens; get /opt/sensevoice/models/silero vad; \
+ chmod -R a+rX /opt/sensevoice
+# SlideStudio 做幻灯片用的渲染浏览器（Playwright 1.61.1 + Chromium Headless Shell 1228，与插件固定版本一致）和中文字体，所有人共用这一份。
+COPY web/slidestudio-runtime/ /opt/slidestudio-runtime/
+RUN set -e; cd /opt/slidestudio-runtime; npm i --no-save --no-package-lock playwright@1.61.1; \
+ PLAYWRIGHT_BROWSERS_PATH=/opt/slidestudio-runtime/browsers npx playwright install --with-deps --only-shell chromium; \
+ apt-get install -y --no-install-recommends fonts-noto-cjk; rm -rf /var/lib/apt/lists/* /root/.npm; chmod -R a+rX /opt/slidestudio-runtime
+ENV SLIDESTUDIO_PLAYWRIGHT_RUNTIME=/opt/slidestudio-runtime/runtime.mjs
+# 视频剪辑（dsh-video-editor / hyperframes）用的 ffmpeg、ffprobe，浏览器复用上面那份共用的。
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ffprobe \
+    HYPERFRAMES_BROWSER_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell \
+    PUPPETEER_EXECUTABLE_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
+# 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
+COPY brand/ /tmp/brand/
+RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
+ cp /tmp/brand/zp-mark.svg $d/zp-mark.svg; cp /tmp/brand/zp-mark.svg $d/favicon.svg; cp /tmp/brand/zp-mark.svg $d/favicon-dark.svg; \
+ cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark.svg $d/favicon*.svg $d/brand.* $d/welcome.js; \
+ rsvg-convert -w 180 -h 180 /tmp/brand/zp-mark.svg -o $d/apple-touch-icon.png; \
+ rsvg-convert -w 192 -h 192 /tmp/brand/zp-mark.svg -o $d/icon-192.png; \
+ rsvg-convert -w 512 -h 512 /tmp/brand/zp-mark.svg -o $d/icon-512.png; \
+ rsvg-convert -w 512 -h 512 /tmp/brand/zp-mark.svg -o $d/icon-maskable-512.png; \
+ sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
+        -e 's#content="DSH"#content="兆华工作伙伴"#' \
+        -e 's#</head>#  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
+ sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
+ grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
+# 公司配置与桌面版共用：插件清单、插件修补、默认配置（网页版把模型地址换成内部 magpie）。
+COPY config/plugins.json config/plugin-patches.mjs config/partner.patch.yml /opt/partner/
+RUN sed -i 's#https://partner.corp.crysound.com/_zp/llm/v1#http://magpie:3425/v1#' /opt/partner/partner.patch.yml \
+ && grep -q 'baseURL: http://magpie:3425/v1' /opt/partner/partner.patch.yml && chmod 644 /opt/partner/*
+COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
+WORKDIR /data
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

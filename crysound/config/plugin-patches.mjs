@@ -56,12 +56,6 @@ const PATCHES = [
             await this.replyLong(roundText);
         if (false) {`,
   },
-  // 11-06 上午版本把结束原因当成对象判断，正常完成也会发“完成”卡；已打过那版的就地改正。
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: "if (this.runState.turnEndReason?.kind !== 'completed')",
-    replace: "if (this.runState.turnEndReason !== 'completed')",
-  },
   {
     file: "@aiwayds/dsh-feishu/lib/bot.js",
     find: `            // vanishing entirely. Round bodies already went out per round.
@@ -69,6 +63,12 @@ const PATCHES = [
     replace: `            // vanishing entirely. Round bodies already went out per round.
             if (this.runState.turnEndReason !== 'completed')
                 await this.lark.sendCard(chatId, card);`,
+  },
+  // 11-06 上午版本把结束原因当成对象判断，正常完成也会发“完成”卡；已打过那版的就地改正。
+  {
+    file: "@aiwayds/dsh-feishu/lib/bot.js",
+    find: "if (this.runState.turnEndReason?.kind !== 'completed')",
+    replace: "if (this.runState.turnEndReason !== 'completed')",
   },
   // 飞书机器人：剩下的“未绑定”提示改成先推荐 /new。
   ...[

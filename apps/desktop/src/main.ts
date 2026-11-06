@@ -68,7 +68,7 @@ import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import {
-  BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone,
+  BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
   openLoginWindow, partnerHostEnvironment,
 } from './crysound/partner.ts'
 import { prepareCompanyWorkspace } from './crysound/workspace.ts'
@@ -792,6 +792,12 @@ async function main(): Promise<void> {
       url.pathname === '/design-platform.css' ? 'lib/welcome' : 'renderer'))
     if (url.hostname === 'app') {
       if (BRAND_FILES.has(url.pathname)) return serveWebDocument(request, join(crysoundResources(), 'brand'))
+      // The brand layer shows the signed-in Feishu name and avatar; the web version gets the same answer from the gateway.
+      if (url.pathname === '/_zp/me') {
+        return readPartnerSession().then(signedIn => signedIn === undefined
+          ? new Response(null, { status: 401 })
+          : Response.json({ name: signedIn.name, avatar: signedIn.avatar }))
+      }
       if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname.startsWith('/assets/')
         || ['/favicon.svg', '/manifest.webmanifest'].includes(url.pathname)) {
         return serveWebDocument(request, join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-web-frontend', 'dist'), brandIndex)

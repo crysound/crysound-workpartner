@@ -19,6 +19,7 @@ export const BRAND_FILES: ReadonlySet<string> = new Set(['/brand.css', '/brand.j
 export interface PartnerSession {
   readonly token: string
   readonly name: string
+  readonly avatar: string
 }
 
 /** Company assets (brand layer, default configuration, plugin list, Host hook) shipped beside the application. */
@@ -31,10 +32,9 @@ const tokenFile = (): string => join(app.getPath('userData'), 'partner-session.j
 /** @returns the stored session, or undefined when the user is signed out. */
 export async function readPartnerSession(): Promise<PartnerSession | undefined> {
   try {
-    const value: unknown = JSON.parse(await readFile(tokenFile(), 'utf8'))
-    if (typeof value === 'object' && value !== null && 'token' in value && typeof value.token === 'string' && value.token !== '') {
-      return { token: value.token, name: 'name' in value && typeof value.name === 'string' ? value.name : '' }
-    }
+    const value = JSON.parse(await readFile(tokenFile(), 'utf8')) as Partial<Record<keyof PartnerSession, unknown>> | null
+    const text = (field: unknown): string => typeof field === 'string' ? field : ''
+    if (value !== null && text(value.token) !== '') return { token: text(value.token), name: text(value.name), avatar: text(value.avatar) }
   } catch { /* A missing or unreadable file means signed out. */ }
   return undefined
 }
@@ -72,7 +72,7 @@ function sessionFromDoneUrl(url: string): PartnerSession | undefined {
   const params = new URLSearchParams(fragment)
   const token = params.get('token')
   if (token === null || token === '') return undefined
-  return { token, name: params.get('name') ?? '' }
+  return { token, name: params.get('name') ?? '', avatar: params.get('avatar') ?? '' }
 }
 
 /**

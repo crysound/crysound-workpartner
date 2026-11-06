@@ -20,3 +20,8 @@
   white-space: nowrap;
   vertical-align: middle;
 }
+
+/* 左下角：飞书头像、下载客户端入口、已登录菜单项 */
+.zp-avatar { width: 18px; height: 18px; border-radius: 50%; flex: none; object-fit: cover; display: inline-grid; place-items: center; background: #170057; color: #fff; font-size: 9px; line-height: 1; }
+a.zp-download { text-decoration: none; color: inherit; display: flex; width: 100%; box-sizing: border-box; align-items: center; gap: 6px; margin-bottom: 2px; }
+.zp-account-item[disabled] { opacity: 1; cursor: default; color: inherit; }
