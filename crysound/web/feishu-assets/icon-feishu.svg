@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs>
-    <clipPath id="zp-left"><circle cx="24" cy="32" r="13.6"/></clipPath>
-  </defs>
-  <rect width="64" height="64" fill="#170057"/>
-  <circle cx="40" cy="32" r="13.6" fill="#2fb4c4" clip-path="url(#zp-left)"/>
-  <circle cx="24" cy="32" r="13.6" fill="none" stroke="#ffffff" stroke-width="4"/>
-  <circle cx="40" cy="32" r="13.6" fill="none" stroke="#ffffff" stroke-width="4"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title"><title id="title">兆华工作伙伴</title><path fill="#170057" d="M0 0H64V64H0Z"/><path fill="#ffffff" d="M10.35 46.12A22 22 0 0 1 53.65 46.12A5 5 0 0 1 48.73 52H15.27A5 5 0 0 1 10.35 46.12Z"/><path fill="#170057" d="M27.5 33.5H27.5A3.25 3.25 0 0 1 30.75 36.75V41.25A3.25 3.25 0 0 1 27.5 44.5H27.5A3.25 3.25 0 0 1 24.25 41.25V36.75A3.25 3.25 0 0 1 27.5 33.5ZM40.5 33.5H40.5A3.25 3.25 0 0 1 43.75 36.75V41.25A3.25 3.25 0 0 1 40.5 44.5H40.5A3.25 3.25 0 0 1 37.25 41.25V36.75A3.25 3.25 0 0 1 40.5 33.5Z"/></svg>
