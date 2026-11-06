@@ -7,7 +7,12 @@ import crypto from "node:crypto";
 import { authorizeUrl, identify, provision, readUsers, slugFor } from "./onboard.mjs";
 
 const PORT = 3090;
-const PUBLIC_HOST = process.env.PUBLIC_HOST || "partner.corp.crysound.com";
+const PUBLIC_HOST = process.env.PUBLIC_HOST || "workpartner.corp.crysound.com";
+// 旧网址：已装的桌面版按旧网址登录和调模型，这几处照常服务；其余访问跳到正式网址。
+const OLD_HOSTS = String(process.env.OLD_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean);
+const servedOnOldHost = (url) => url.pathname.startsWith("/_zp/llm/v1/")
+  || ["/_zp/callback", "/_zp/desktop-login", "/_zp/desktop-done"].includes(url.pathname)
+  || (url.pathname === "/_zp/login" && String(url.searchParams.get("next") || "").startsWith("/_zp/desktop-login"));
 const USERS_FILE = "/etc/partner/users.json";
 const COOKIE_FILE = "/state/cookies.json";
 const NETWORK = "partner-net";
@@ -211,12 +216,12 @@ const redirect = (res, location, cookie) => { res.writeHead(302, { location, "ca
 const PREPARING = ["正在准备你的工作伙伴", "第一次开通大约需要半分钟，页面会自动进入。"];
 
 // 登录与开通：/_zp/login 去飞书授权（?onboard=1 时多要查群权限）→ /_zp/callback 发登录凭证，开通时检查试用群并建空间。
-async function login(req, res, url) {
+async function login(req, res, url, host) {
   if (url.pathname === "/_zp/login") {
     const state = crypto.randomBytes(16).toString("hex");
     const onboard = url.searchParams.get("onboard") === "1";
     const next = onboard ? "/_zp/preparing" : (url.searchParams.get("next") || "/").replace(/^(?!\/(?!\/)).*/, "/");
-    return redirect(res, authorizeUrl(state, onboard), `zp_state=${state}|${onboard ? 1 : 0}|${encodeURIComponent(next)}; Path=/_zp; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
+    return redirect(res, authorizeUrl(state, onboard, host), `zp_state=${state}|${onboard ? 1 : 0}|${encodeURIComponent(next)}; Path=/_zp; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
   }
   // /_zp/callback
   const [state, onboard, next] = String(cookieOf(req, "zp_state") || "").split("|");
@@ -225,7 +230,7 @@ async function login(req, res, url) {
   }
   let who;
   try {
-    who = await identify(url.searchParams.get("code"), onboard === "1");
+    who = await identify(url.searchParams.get("code"), onboard === "1", host);
   } catch (e) {
     console.log("登录回调出错", e.message);
     // 已登录的人（多半是刷新了回调页）直接进去；其他人重新走一遍飞书登录，授权码只能用一次。
@@ -281,7 +286,10 @@ function welcomeNew(res, who) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `https://${PUBLIC_HOST}`);
-    if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url);
+    const host = String(req.headers.host || "").toLowerCase();
+    const oldHost = OLD_HOSTS.includes(host);
+    if (oldHost && !servedOnOldHost(url)) return redirect(res, `https://${PUBLIC_HOST}${req.url}`);
+    if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
     if (url.pathname.startsWith("/_zp/llm/v1/")) {
       const user = desktopUser(req);
       if (!user) { res.writeHead(401, { "content-type": "application/json" }); return res.end('{"error":{"message":"桌面版登录已失效，请重新登录"}}'); }

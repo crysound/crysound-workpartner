@@ -8,7 +8,7 @@ const CHAT_ID = process.env.PILOT_CHAT_ID;
 const PUBLIC_HOST = process.env.PUBLIC_HOST;
 const IMAGE = process.env.PARTNER_IMAGE;
 const USERS_FILE = "/etc/partner/users.json";
-const REDIRECT = `https://${PUBLIC_HOST}/_zp/callback`;
+const redirectUri = (host) => `https://${host}/_zp/callback`;
 // 宿主路径（建容器时 Docker 按宿主路径挂载）与网关内看到的路径
 const HOST_USERS = `${process.env.HOST_PARTNER_DATA}/users`;
 const HOST_SECURE = process.env.HOST_PARTNER_SECURE;
@@ -21,8 +21,9 @@ export const readUsers = () => JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
 const writeUsers = (list) => fs.writeFileSync(USERS_FILE, JSON.stringify(list, null, 1));
 
 // 平时登录只要基本身份（飞书内免确认）；开通时多要“查看群成员”，用来确认他在试用群里。
-export function authorizeUrl(state, onboard) {
-  const q = new URLSearchParams({ client_id: APP_ID, response_type: "code", redirect_uri: REDIRECT, state, ...(onboard ? { scope: "im:chat.members:read" } : {}) });
+// host 是这次登录所在的网址，飞书回调回到同一个网址（登录状态的 cookie 按网址存）。
+export function authorizeUrl(state, onboard, host = PUBLIC_HOST) {
+  const q = new URLSearchParams({ client_id: APP_ID, response_type: "code", redirect_uri: redirectUri(host), state, ...(onboard ? { scope: "im:chat.members:read" } : {}) });
   return `https://accounts.feishu.cn/open-apis/authen/v1/authorize?${q}`;
 }
 
@@ -32,10 +33,10 @@ async function feishu(path, init) {
 }
 
 // 用授权码换这个人的身份；开通时再用他自己的令牌问飞书“他在不在试用群里”。
-export async function identify(code, onboard) {
+export async function identify(code, onboard, host = PUBLIC_HOST) {
   const tok = await feishu("/authen/v2/oauth/token", {
     method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ grant_type: "authorization_code", client_id: APP_ID, client_secret: secret(), code, redirect_uri: REDIRECT }),
+    body: JSON.stringify({ grant_type: "authorization_code", client_id: APP_ID, client_secret: secret(), code, redirect_uri: redirectUri(host) }),
   });
   if (!tok.access_token) throw new Error(`飞书授权失败：${tok.error_description || tok.msg || tok.code}`);
   const auth = { headers: { authorization: `Bearer ${tok.access_token}` } };

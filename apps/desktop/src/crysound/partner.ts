@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, session } from 'electron'
 
-export const PARTNER_ORIGIN = 'https://partner.corp.crysound.com'
+export const PARTNER_ORIGIN = 'https://workpartner.corp.crysound.com'
 export const LLM_BASE_URL = `${PARTNER_ORIGIN}/_zp/llm/v1`
 const LOGIN_URL = `${PARTNER_ORIGIN}/_zp/desktop-login`
 const DONE_URL = `${PARTNER_ORIGIN}/_zp/desktop-done`

@@ -61,7 +61,7 @@ def container(slug, key):
     data = ROOT / 'users' / slug
     data.mkdir(parents=True, exist_ok=True)
     r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
-           '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ.get('PUBLIC_HOST', 'partner.corp.crysound.com')}",
+           '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ.get('PUBLIC_HOST', 'workpartner.corp.crysound.com')}",
            '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
            '--memory', '2g', '--cpus', '2', '--pids-limit', '512',
            '--label', f'zhaohua-partner.user={slug}', IMAGE)
