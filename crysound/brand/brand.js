@@ -42,6 +42,8 @@
       a.className = `${trigger.className} zp-download`;
       a.href = "/_zp/download";
       a.target = "_blank";
+      a.title = "下载客户端";
+      a.setAttribute("aria-label", "下载客户端");
       a.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2v8m0 0 3-3m-3 3L5 7M3 13h10"/></svg><span>下载客户端</span>';
       (trigger.closest(".yHnPSG_anchor") || trigger).before(a);
     }
