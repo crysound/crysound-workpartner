@@ -50,9 +50,18 @@
     const settingsNav = document.querySelector('[data-shortcut-modal="settings"] nav > div');
     if (settingsNav && !settingsNav.querySelector('.zp-feishu-settings')) {
       const a = document.createElement('a');
-      a.className = (settingsNav.querySelector('button')?.className || '') + ' zp-feishu-settings';
+      // Selected classes belong to the current section, never to this external link.
+      const template = settingsNav.querySelector('button:not([aria-current])');
+      a.className = (template?.className || '') + ' zp-feishu-settings';
       a.href = '/_zp/feishu/';
-      a.textContent = '飞书授权';
+      const icon = document.createElement('span');
+      icon.className = template?.firstElementChild?.className || '';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.innerHTML = '<svg width="16" height="16" data-icon="dsw-icon-link-outline-medium"><use href="#dsw-icon-link-outline-medium"></use></svg>';
+      const label = document.createElement('span');
+      label.className = template?.lastElementChild?.className || '';
+      label.textContent = '飞书授权';
+      a.append(icon, label);
       settingsNav.appendChild(a);
     }
     showAccount();

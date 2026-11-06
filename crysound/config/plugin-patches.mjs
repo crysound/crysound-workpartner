@@ -32,6 +32,12 @@ const PREVIEW_CLICKS = `
 `;
 
 const PATCHES = [
+  // dshmarket 1.73.12: dsh now wraps the fallback gear in the native icon seat.
+  {
+    file: "dshmarket/client/client.js",
+    find: '[${NAV_ICON_MARKER}] > svg { display: none; }',
+    replace: '[${NAV_ICON_MARKER}] > :first-child { display: none; }',
+  },
   // dsh 0.2.2-rc.1: company adapter applies to both iframe and Electron Browser providers.
   {
     file: "@deepseek-ai/dsh-client-ui-sidebar-browser/lib/client.js",
