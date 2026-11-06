@@ -74,10 +74,16 @@ mounted && { echo "could not detach $mount" >&2; exit 1; }
 # Even with the mount point gone the image can stay attached for a while ("Resource temporarily
 # unavailable"), so wait until hdiutil no longer lists it and retry the conversion.
 for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do hdiutil info | grep -F "$rw" >/dev/null || break; sleep 5; done
+# On GitHub's macOS runners XProtect keeps scanning a freshly detached image and holds it open, which
+# is what makes the conversion fail as busy; stop it first. If the image is still held, convert a copy.
+stop_xprotect() { sudo -n pkill -9 XProtect >/dev/null 2>&1 || true; for i in 1 2 3 4 5; do pgrep XProtect >/dev/null || break; sleep 2; done; }
 for attempt in 1 2 3 4 5 6; do
-  hdiutil convert "$rw" -format ULMO -ov -o "$signed" && break
+  stop_xprotect
+  src="$rw"
+  if [ "$attempt" -gt 2 ]; then src="$work/copy-$attempt.dmg"; cp "$rw" "$src"; fi
+  hdiutil convert "$src" -format ULMO -ov -o "$signed" && break
   [ "$attempt" -lt 6 ] || exit 1
-  sleep 15
+  sleep 10
 done
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
