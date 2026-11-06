@@ -36,15 +36,32 @@ function defaultEffortMedium(lines) {
   return true;
 }
 
+// 网页搜索经网关：补上搜索条目，地址沿用本人模型配置里的网关地址（网页版是内部 magpie，桌面版是公开网关）。
+function searchViaGateway(lines) {
+  if (lines.some((line) => /^- id: ["']?web-search-deepseek["']?\s*$/.test(line))) return false;
+  const start = lines.findIndex((line) => /^- id: ["']?llm-pi-ai["']?\s*$/.test(line));
+  if (start < 0) return false;
+  let base;
+  for (let i = start + 1; i < lines.length && !/^- /.test(lines[i]); i++) {
+    base = /^\s+baseURL: (\S+\/v1)\s*$/.exec(lines[i])?.[1];
+    if (base) break;
+  }
+  if (!base) return false;
+  while (lines.length && lines.at(-1) === "") lines.pop();
+  lines.push("", "- id: web-search-deepseek", "  config:", `    baseURL: ${base}`, "    model: deepseek/deepseek-flash", "");
+  return true;
+}
+
 const file = process.argv[2];
 if (!file) throw new Error("用法：node profile-upgrades.mjs <cordis.patch.yml>");
 if (fs.existsSync(file)) {
   const lines = fs.readFileSync(file, "utf8").split("\n");
   const levels = gptReasoningLevels(lines);
   const effort = defaultEffortMedium(lines);
-  if (levels || effort) {
+  const search = searchViaGateway(lines);
+  if (levels || effort || search) {
     fs.writeFileSync(`${file}.tmp`, lines.join("\n"), { mode: 0o600 });
     fs.renameSync(`${file}.tmp`, file);
-    console.log(`配置升级：${[levels && "GPT-6.1 推理等级补到 xhigh、max", effort && "默认推理等级设为中"].filter(Boolean).join("；")}`);
+    console.log(`配置升级：${[levels && "GPT-6.1 推理等级补到 xhigh、max", effort && "默认推理等级设为中", search && "网页搜索改经网关"].filter(Boolean).join("；")}`);
   }
 }
