@@ -63,7 +63,10 @@ async function applyPluginTemplate(assets: string, profile: string, list: Plugin
     if (missing.length > 0) throw new Error(`template lacks ${missing.map(plugin => plugin.name).join(', ')}`)
     const started = Date.now()
     await rm(staging, { recursive: true, force: true })
-    await cp(join(template, 'modules'), staging, { recursive: true, verbatimSymlinks: true })
+    // ditto copies tens of thousands of small files several times faster than fs.cp.
+    if (process.platform === 'darwin') {
+      if (await run('/usr/bin/ditto', ['--noextattr', '--noqtn', join(template, 'modules'), staging], process.env) !== 0) throw new Error('ditto failed')
+    } else await cp(join(template, 'modules'), staging, { recursive: true, verbatimSymlinks: true })
     await rm(modules, { recursive: true, force: true })
     await rename(staging, modules)
     if (!existsSync(join(profile, 'pnpm-lock.yaml'))) await copyFile(join(template, 'pnpm-lock.yaml'), join(profile, 'pnpm-lock.yaml'))
