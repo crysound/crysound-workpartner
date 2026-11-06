@@ -377,7 +377,11 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 async function main(): Promise<void> {
   const desktopSettings = readDesktopSettings(app.getPath('userData'))
   // Company login comes first: the Host needs the user's gateway token in its environment.
+  // The login window can be the only window. Without a listener Electron quits when it closes, before the workspace opens.
+  const keepRunning = (): void => undefined
+  app.on('window-all-closed', keepRunning)
   const partner = await ensurePartnerSession()
+  app.off('window-all-closed', keepRunning)
   if (partner === undefined) { app.quit(); return }
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
