@@ -30,7 +30,7 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
  grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
 # 公司配置与桌面版共用：插件清单、插件修补、默认配置（网页版把模型地址换成内部 magpie）。
-COPY config/plugins.json config/plugin-patches.mjs config/partner.patch.yml /opt/partner/
+COPY config/plugins.json config/plugin-patches.mjs config/partner.patch.yml config/profile-upgrades.mjs /opt/partner/
 RUN sed -i 's#https://partner.corp.crysound.com/_zp/llm/v1#http://magpie:3425/v1#' /opt/partner/partner.patch.yml \
  && grep -q 'baseURL: http://magpie:3425/v1' /opt/partner/partner.patch.yml && chmod 644 /opt/partner/*
 # 检出目录的权限随 umask 变化，这里统一放开，容器内的普通用户才能读和执行。

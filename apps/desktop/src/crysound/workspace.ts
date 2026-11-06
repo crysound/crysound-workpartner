@@ -86,4 +86,7 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     await writeFile(target, mine, { mode: 0o600 })
     await writeFile(seedMark, '')
   }
+
+  const upgrades = join(assets, 'config', 'profile-upgrades.mjs')
+  if (existsSync(upgrades)) await run(execPath, [upgrades, join(profile, 'cordis.patch.yml')], environment)
 }

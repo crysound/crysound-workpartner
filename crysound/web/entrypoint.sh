@@ -32,5 +32,7 @@ for (const e of fs.readFileSync(seed,"utf8").split(/^(?=- id: )/m).filter(e=>e.s
   if (!new RegExp("^- id: [\"\x27]?"+id+"[\"\x27]?\\s*$","m").test(mine)) mine=mine.replace(/\n*$/,"\n")+e.replace(/\n*$/,"\n");
 }
 fs.writeFileSync(dst,mine,{mode:0o600})' /opt/partner/partner.patch.yml "$DSH_HOME/profiles/web/cordis.patch.yml" && touch "$SEED_MARK"
+# 公司默认值变了时，把已开通用户仍是旧默认值的条目升到新值（用户改过的不动）。
+node /opt/partner/profile-upgrades.mjs "$DSH_HOME/profiles/web/cordis.patch.yml"
 exec dsh --profile web --no-open --host "$(hostname -i | cut -d' ' -f1)" --port 3080 \
   --public-url "https://${PUBLIC_HOST}/" --trusted-host "${PUBLIC_HOST}" --trusted-host 127.0.0.1:3080
