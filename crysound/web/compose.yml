@@ -23,7 +23,7 @@ services:
       TREG_ORG_SLUG: ${TREG_ORG_SLUG:-}
       TREG_ATTRIBUTION_VERIFIED: ${TREG_ATTRIBUTION_VERIFIED:-0}
       TREG_DAILY_USD: ${TREG_DAILY_USD:-1}
-      TREG_MONTHLY_USD: ${TREG_MONTHLY_USD:-10}
+      TREG_MONTHLY_USD: ${TREG_MONTHLY_USD:-5}
       TREG_CALL_MAX_USD: ${TREG_CALL_MAX_USD:-1}
       MEEGLE_HOST: ${MEEGLE_HOST:-}
       MARKET_ADMINS: ${MARKET_ADMINS:?在 .env 设置市场管理员（首期 Jason 的已开通 slug）}
@@ -52,7 +52,7 @@ services:
       - ./gateway/market.mjs:/app/market.mjs:ro
       - ./gateway/treg-catalog.mjs:/app/treg-catalog.mjs:ro
       - ./gateway/treg.mjs:/app/treg.mjs:ro
-      - ./gateway/treg-ledger.mjs:/app/treg-ledger.mjs:ro
+      - ./gateway/treg-state.mjs:/app/treg-state.mjs:ro
       - ./gateway/treg-categories.mjs:/app/treg-categories.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
       - ./gateway/feishu.mjs:/app/feishu.mjs:ro

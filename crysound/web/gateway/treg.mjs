@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { createTregLedger, tregLimits, tregFailure as fail, dailyMessage, monthlyMessage } from "./treg-ledger.mjs";
+import { createTregNotices, tregLimits, tregFailure as fail, dailyMessage, monthlyMessage, blockedMessage } from "./treg-state.mjs";
 
 const origin = "https://treg.to";
 const prefix = "/_zp/treg";
@@ -49,7 +49,7 @@ function queryString(value) {
 export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified = false, stateDir,
   authenticate, catalog, env = {}, overrides = {}, notify = async () => {}, fetcher = fetch, now = Date.now }) {
   const limitsFor = tregLimits(env, overrides);
-  const ledger = enabled ? createTregLedger({ dir: stateDir, now }) : null;
+  const claimNotice = enabled ? createTregNotices({ dir: stateDir, now }) : null;
   const endpointCache = new Map(), budgets = new Map();
   const fetchJson = async (path) => {
     const response = await fetcher(origin + path, { headers: { accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(15000) });
@@ -91,26 +91,55 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     }
     return { query: q, count: results.length, results };
   };
-  const authHeaders = (user) => ({ authorization: `Bearer ${token()}`, "x-treg-org": orgSlug,
-    "x-treg-meta": `user=${user.slug}`, accept: "application/json" });
-  const budget = (user, limits) => {
-    const cacheKey = `${user.slug}:${limits.daily}`;
+  const orgHeaders = () => ({ "x-treg-token": token(), "x-treg-org": orgSlug, accept: "application/json" });
+  const authHeaders = (user) => ({ ...orgHeaders(), "x-treg-meta": `user=${user.slug}` });
+  // 普通用户共用默认标签预算；只为配置了例外的人写个人覆盖。
+  // PUT 不发送 status/calls_per_day，保留管理员暂停和次数限制。
+  const setBudget = (slug, limits) => {
+    const cacheKey = `${slug}:${limits.daily}:${limits.monthly}`;
     if (!budgets.has(cacheKey)) {
       const pending = (async () => {
-        const response = await fetcher(`${origin}/orgs/${orgId}/budgets/user/${encodeURIComponent(user.slug)}`, {
-          method: "PUT", headers: { ...authHeaders(user), "content-type": "application/json" },
-          body: JSON.stringify({ daily_cap_micro: limits.daily }), redirect: "error", signal: AbortSignal.timeout(15000),
+        const suffix = slug ? `/${encodeURIComponent(slug)}` : "";
+        const response = await fetcher(`${origin}/orgs/${orgId}/budgets/user${suffix}`, {
+          method: "PUT", headers: { ...orgHeaders(), "content-type": "application/json" },
+          body: JSON.stringify({ daily_cap_micro: limits.daily, monthly_cap_micro: limits.monthly }),
+          redirect: "error", signal: AbortSignal.timeout(15000),
         });
         await response.body?.cancel();
         if (!response.ok) throw fail(503, "个人数据限额尚未配置好，请联系管理员");
       })();
       budgets.set(cacheKey, pending);
-      pending.catch((error) => { budgets.delete(cacheKey); }); // 失败由本次请求处理，后续可重试。
+      pending.catch(() => { budgets.delete(cacheKey); });
     }
     return budgets.get(cacheKey);
   };
+  const budget = async (user) => {
+    await setBudget("", limitsFor(""));
+    if (Object.hasOwn(overrides, user.slug)) await setBudget(user.slug, limitsFor(user.slug));
+  };
+  const usage = async (user) => {
+    if (!/^[1-9]\d*$/.test(String(orgId))) throw fail(503, "数据服务尚待管理员完成验证");
+    const date = new Date(now()), day = date.toISOString().slice(0, 10);
+    const spend = async (days) => {
+      const response = await fetcher(`${origin}/orgs/${orgId}/usage/by-tag?key=user&days=${days}`, {
+        headers: orgHeaders(), redirect: "error", signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) { await response.body?.cancel(); throw fail(503, "数据用量暂时无法读取，请稍后再试"); }
+      const value = JSON.parse((await readBytes(response.body, 2 * 1024 * 1024)).toString());
+      if (value.key !== "user" || !Array.isArray(value.rows)) throw fail(502, "数据用量格式无效");
+      const rows = value.rows.filter((row) => row?.value === user.slug);
+      if (rows.length > 1 || (rows.length && (!Number.isSafeInteger(rows[0].charged_micro) || rows[0].charged_micro < 0))) throw fail(502, "数据用量格式无效");
+      return (rows[0]?.charged_micro ?? 0) / 1e6;
+    };
+    const [daily, monthly] = await Promise.all([spend(1), spend(date.getUTCDate())]);
+    const limits = limitsFor(user.slug);
+    return { timezone: "UTC", date: day, month: day.slice(0, 7),
+      resetMessage: "北京时间每天 08:00、每月 1 日 08:00 重置额度",
+      daily: { usedUsd: daily, limitUsd: limits.daily / 1e6 },
+      monthly: { usedUsd: monthly, limitUsd: limits.monthly / 1e6 } };
+  };
   const alert = async () => {
-    if (!ledger.claimNotice()) return;
+    if (!claimNotice()) return;
     try { await notify(); } catch (error) { console.warn("数据额度管理员通知未送达，请检查数据服务"); }
   };
   const call = async (user, id, method, query, body, idempotencyKey) => {
@@ -121,13 +150,11 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (body !== undefined && !object(body) && !Array.isArray(body)) throw fail(400, "调用内容必须是 JSON 对象或数组");
     const qs = queryString(query);
     const limits = limitsFor(user.slug);
-    // 先看本地额度，避免已封顶的人仍触发任何上游请求。
-    const usage = ledger.usage(user.slug, limits);
-    if (usage.monthly.usedUsd >= usage.monthly.limitUsd) throw fail(429, monthlyMessage);
-    if (usage.daily.usedUsd >= usage.daily.limitUsd) throw fail(429, dailyMessage);
-    await budget(user, limits);
-    const reservation = ledger.reserve(user.slug, `/call/${id}`, limits);
-    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String(reservation.reservedMicro / 1e6), "content-type": "application/json" };
+    if (limits.monthly === 0) throw fail(429, monthlyMessage);
+    if (limits.daily === 0) throw fail(429, dailyMessage);
+    if (limits.call === 0) throw fail(429, "单次数据额度为零，请联系管理员");
+    await budget(user);
+    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String(limits.call / 1e6), "content-type": "application/json" };
     // 上游幂等键是组织级命名空间；把本人加入，避免拿另一人的缓存结果。
     if (idempotencyKey) headers["idempotency-key"] = crypto.createHash("sha256").update(`${user.slug}\0${idempotencyKey}`).digest("hex");
     let response, bytes;
@@ -137,10 +164,9 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
         redirect: "error", signal: AbortSignal.timeout(60000),
       });
       bytes = await readBytes(response.body ?? [], 16 * 1024 * 1024);
-    } catch (error) { throw fail(502, "数据调用结果未知，已按本次预留上限计入额度，请勿自动重试"); }
+    } catch (error) { throw fail(502, "数据调用结果未知，请查询本人用量确认费用，请勿自动重试"); }
     const rawCost = response.headers.get("x-treg-cost-micro");
     const actual = rawCost !== null && /^\d+$/.test(rawCost) ? Number(rawCost) : null;
-    ledger.settle(reservation, actual);
     let value;
     try { value = bytes.length ? JSON.parse(bytes.toString()) : null; } catch (error) { throw fail(502, "数据接口未返回可读取的 JSON，请缩小查询范围"); }
     if (!response.ok) {
@@ -148,11 +174,13 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       if ((response.status === 402 && code === "insufficient_balance") || code === "platform_daily_cap_reached") {
         await alert(); throw fail(503, companyMessage);
       }
-      if (["tag_spend_cap_reached", "tag_blocked"].includes(code)) throw fail(429, value.period === "month" ? monthlyMessage : dailyMessage);
+      if (code === "tag_spend_cap_reached") throw fail(429, (value?.detail?.period ?? value?.period) === "month" ? monthlyMessage : dailyMessage);
+      if (code === "tag_blocked") throw fail(429, blockedMessage);
+      if (code === "tag_call_cap_reached") throw fail(429, dailyMessage);
       throw fail(response.status === 429 ? 429 : 502, "数据接口暂未返回结果，请检查参数、额度或联系管理员");
     }
     return { status: response.status, endpoint_id: id, body: value,
-      cost_usd: (Number.isSafeInteger(actual) ? actual : reservation.reservedMicro) / 1e6,
+      cost_usd: Number.isSafeInteger(actual) ? actual / 1e6 : null,
       costEstimated: !Number.isSafeInteger(actual) };
   };
   const mcp = async (req, res, user) => {
@@ -192,7 +220,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       if (!enabled || !token()) throw fail(503, "数据服务尚未开放");
       const path = url.pathname.slice(prefix.length);
       if (path === "/mcp/" || path === "/mcp") { await mcp(req, res, user); return true; }
-      if (path === "/usage" && req.method === "GET" && !url.search) json(res, 200, ledger.usage(user.slug, limitsFor(user.slug)));
+      if (path === "/usage" && req.method === "GET" && !url.search) json(res, 200, await usage(user));
       else if (path === "/catalog/platforms" && req.method === "GET" && !url.search) {
         const value = await catalog(); if (!value) throw fail(503, "数据目录暂时无法读取");
         json(res, 200, { platforms: value.categories.flatMap((category) => category.platforms) });

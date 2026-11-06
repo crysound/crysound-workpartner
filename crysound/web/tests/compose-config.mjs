@@ -16,6 +16,11 @@ try {
   const config = JSON.parse(result.stdout);
   const gateway = config.services.gateway;
   assert.equal(gateway.environment.HOST_PARTNER_CONFIG, `${root}/company-config`);
+  assert.equal(gateway.environment.TREG_MONTHLY_USD, "5");
+  assert.ok(gateway.volumes.some((v) => v.target === "/app/treg-state.mjs" && v.read_only));
+  for (const volume of gateway.volumes.filter((v) => v.type === "bind" && /^\/app\/.*\.mjs$/.test(v.target))) {
+    assert.ok(fs.statSync(volume.source).isFile(), `gateway module mount missing: ${volume.target}`);
+  }
   assert.equal(gateway.environment.MAGPIE_BASE_URL, "http://models.example.test/v1");
   const mount = gateway.volumes.find(volume => volume.target === "/opt/partner-config");
   assert.equal(mount.source, `${root}/company-config`);
