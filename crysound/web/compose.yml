@@ -33,6 +33,7 @@ services:
       - ./gateway/gateway.mjs:/app/gateway.mjs:ro
       - ./gateway/onboard.mjs:/app/onboard.mjs:ro
       - ./gateway/company-config.mjs:/app/company-config.mjs:ro
+      - ./gateway/updates.mjs:/app/updates.mjs:ro
       - type: bind
         source: ${PARTNER_CONFIG:?在 .env 设置 PARTNER_CONFIG}
         target: /opt/partner-config

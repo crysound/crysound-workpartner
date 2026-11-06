@@ -1,6 +1,7 @@
 // 兆华工作伙伴网关：网关自己对接飞书登录（飞书内免确认），按飞书 union_id 把每个人带到自己的 dsh 容器。
 // 容器停了就启动；dsh 的一次性口令在这里换成登录 cookie，浏览器只和网关打交道。
 import { serveCompanyConfig } from "./company-config.mjs";
+import { serveMacUpdate } from "./updates.mjs";
 import http from "node:http";
 import net from "node:net";
 import fs from "node:fs";
@@ -24,6 +25,7 @@ if (!PUBLIC_HOST || !/^[a-z0-9.-]+(?::[0-9]+)?$/i.test(PUBLIC_HOST) || new URL(`
 // 旧网址：已装的桌面版按旧网址登录和调模型，这几处照常服务；其余访问跳到正式网址。
 const OLD_HOSTS = String(process.env.OLD_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean);
 const servedOnOldHost = (url) => url.pathname.startsWith("/_zp/config/") || url.pathname.startsWith("/_zp/llm/v1/")
+  || url.pathname.startsWith("/_zp/updates/mac/")
   || ["/_zp/callback", "/_zp/desktop-login", "/_zp/desktop-done"].includes(url.pathname)
   || (url.pathname === "/_zp/login" && String(url.searchParams.get("next") || "").startsWith("/_zp/desktop-login"));
 const USERS_FILE = "/etc/partner/users.json";
@@ -352,6 +354,7 @@ const server = http.createServer(async (req, res) => {
     if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
     if (url.pathname.startsWith("/_zp/config/")) return await serveCompanyConfig(req, res, url.pathname, desktopUser);
+    if (url.pathname.startsWith("/_zp/updates/mac/")) return await serveMacUpdate(req, res, url.pathname, desktopUser);
     if (url.pathname.startsWith("/_zp/llm/v1/")) {
       const user = desktopUser(req);
       if (!user) { res.writeHead(401, { "content-type": "application/json" }); return res.end('{"error":{"message":"桌面版登录已失效，请重新登录"}}'); }
