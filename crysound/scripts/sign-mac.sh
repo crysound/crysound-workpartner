@@ -14,6 +14,7 @@ keychain="$work/signing.keychain-db"
 password=$(uuidgen)
 cleanup() { security delete-keychain "$keychain" >/dev/null 2>&1 || true; rm -rf "$work"; }
 trap cleanup EXIT
+trap 'echo "sign-mac.sh: line $LINENO failed: $BASH_COMMAND" >&2' ERR
 
 security create-keychain -p "$password" "$keychain"
 security set-keychain-settings -lut 21600 "$keychain"
@@ -70,7 +71,7 @@ mounted() { mount | grep -F " on $mount (" >/dev/null; }
 for attempt in 1 2 3 4 5 6 7 8 9 10; do mounted || break; hdiutil detach "$mount" -quiet || sleep 5; done
 if mounted; then hdiutil detach "$mount" -force; fi
 mounted && { echo "could not detach $mount" >&2; exit 1; }
-hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet
+hdiutil convert "$rw" -format ULMO -ov -o "$signed"
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
 result="$work/notarize.txt"
