@@ -1,0 +1,78 @@
+{
+  "name": "@aiwayds/dsh-feishu",
+  "version": "0.17.0-crysound.1",
+  "description": "dsh plugin: drive an existing dsh session from Feishu/Lark — round cards, interactive resume, ask-user cards, steer (outbound-only WebSocket bot)",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "icon": "./icon.svg",
+  "license": "Apache-2.0",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "feishu",
+    "lark",
+    "bot",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fan56/dsh-feishu.git"
+  },
+  "homepage": "https://github.com/fan56/dsh-feishu",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "files": [
+    "lib",
+    "scripts",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "icon.svg",
+    "locale/*.json",
+    "NOTICE",
+    "CHANGELOG.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "link-closure": "node scripts/link-dsh-closure.mjs",
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "precheck": "node scripts/link-dsh-closure.mjs",
+    "pretest": "npm run build",
+    "test": "node --test test/*.test.mjs",
+    "smoke": "node scripts/smoke-boot.mjs",
+    "e2e": "bash e2e/web-profile-compat.sh",
+    "postinstall": "node scripts/link-dsh-closure.mjs"
+  },
+  "dependencies": {
+    "@larksuiteoapi/node-sdk": "^1.73.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-skill": ">=0.2.2-rc.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-skill": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-skill": "0.2.2-rc.1",
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "author": "fan56",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

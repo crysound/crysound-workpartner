@@ -1,0 +1,282 @@
+本目录是兆华声学（CRYSOUND）维护的修改版，源自 fan56/dsh-feishu 的 5e5555d（npm 0.17.0），保留 Apache-2.0 许可。
+未选会话的普通消息会自动新建会话；关闭进度和轮次卡，逐轮发送回复正文，仅出错或停止时发状态卡，并统一推荐 /new 的提示。
+
+# dsh-feishu — 用飞书驾驶 dsh
+
+> [English](README.md) | 简体中文
+
+> [dsh](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）伴生插件：
+> 把**已存在的** dsh 会话接到手机上——派活、答问询、收回复。
+> 只出站 WebSocket，不开端口、不要内网穿透。
+
+**要求 dsh >= 0.2.0-rc.2** — 本插件只跟随 dsh RC/stable 线（CI 与发版在运行时解析 latest/next 中更新的 dist-tag）。**不再支持 alpha 线。**
+
+---
+
+## ✨ 亮点
+
+- **一条命令完成接入**：桌面端 `/feishu-onboard` —— 扫码创建应用、自动写入凭证与管理员、热激活免重启
+- **自助配对**：白名单为空时，第一个私聊者点一下确认卡即成为管理员
+- **自动新建会话**：未选会话时，普通文本消息按默认工作目录和模型新建会话并派活；创建失败记 warn 日志，并提示 `/new` / `/resume`。
+- **逐轮回复正文**：每轮非空回答作为独立正文分段发送；关闭进度卡和轮次状态卡，仅出错或停止时发回合结束状态卡。
+- **权限审批卡**：宿主审批瀑布（沙箱提权等）发问时，手机弹 **✅ 允许一次 / ❌ 拒绝** 卡——
+  人不在电脑前，长任务不再卡死在权限提示上（会话审批策略须为 `ask`；过期即拒绝，绝不默认放行）
+- **交互式问询**：agent 调 ask_user_question 时，手机弹**交互卡**（下拉/多选/文本输入 + 提交），
+  答完即回传；配 [ask-router](https://www.npmjs.com/package/@aiwayds/dsh-ask-router) 可与
+  桌面 TUI **双端同弹、先答先得**
+- **群聊支持**：把机器人拉进飞书群——@它 即可派活、执行命令（仅白名单成员可触发，其余人完全隐身）；
+  在机器人正驱动的群里，发图**无需 @** 直接进会话
+- **图片派活**：私聊直接发图——自动下载、嗅探格式、落成持久附件引用，以图像块注入会话
+  （会话的模型路由需支持图像输入）
+- **后台完成推送**（`backgroundPush`）：给手机**未绑定**的会话发完成卡——cron 投递与子代理结算
+  （`cron` 模式），或每个回合结束（`all` 模式）；默认关闭，不主动打扰
+- **交互式 /model**：手机上按 provider 分类选模型，bot 建的会话实时切换
+- **桌面选择器上手机**：`/think`（思考档位）、`/permission`（权限 preset）、
+  `/select-skill`（技能激活）、`/profile-switch`（模型 profile）——桌面端的选择器
+  在手机上变成一键点选卡
+- **交互式 /resume**：会话列表卡片上直接**下拉选择 → 点进入**，也可以回复 `/resume N`
+- **坏日志一键修复**：/resume 遇到损坏的会话日志（多为历史双写者写入所致）时，手机上弹修复确认卡——原地重建日志（原件保留为备份）并直接进入会话
+- **`/new` 开新会话**：自动继承旧会话的工作目录、模型和推理档位
+- **手机派活**：turn 进行中发消息默认 **steer**（并入当前 turn，纠偏即时生效）
+- **远程急停**：`/stop` 随时中止；白名单外的人私聊 bot 完全隐身
+- **顺带一问**：`/btw` 在主线跑着的时候旁路提问，答案流式打进独立卡片——主线完全无感（与 dsh-tui-pi 的 `/btw` 同功能，刻意复制而非共享依赖）
+
+## 🎬 Demo
+
+**`/new` 开新会话，手机直接派活：**
+
+https://github.com/user-attachments/assets/177e8839-523b-487e-b3d1-6d725cd8aba5
+
+**`/resume` 交互式进入会话 + 问询卡答题：**
+
+https://github.com/user-attachments/assets/c0d7092f-deda-4443-b75a-2bc93bd30d86
+
+## 🚀 安装与配置
+
+### 第一步：安装插件到 profile（≈2 分钟）
+
+**从 npm 安装（推荐）：**
+
+```bash
+dsh plugin --profile <你的 profile> add @aiwayds/dsh-feishu
+```
+
+**或从 git 检出安装**（需要改插件源码时）：
+
+```bash
+git clone git@github.com:fan56/dsh-feishu.git ~/github/dsh-feishu
+cd ~/github/dsh-feishu && npm install && npm run link-closure
+```
+
+编辑 `~/.dsh/profiles/<你的 profile>/package.json`：
+
+```jsonc
+{
+  "dsh": { "profile": { "bundles": [
+    // …现有 bundles…
+    "@aiwayds/dsh-feishu"          // ← 新增
+  ]}},
+  "dependencies": {
+    // …现有依赖…
+    "@aiwayds/dsh-feishu": "link:/path/to/dsh-feishu"   // ← 新增
+  }
+}
+```
+
+```bash
+cd ~/.dsh/profiles/<你的 profile> && pnpm install
+```
+
+### 第二步：配置 bot——三选一
+
+`/feishu-onboard` 在 TUI 和 Web UI 里都能运行（手机端运行只会收到指引）。命令通过 dsh 原生问询逐问引导——web 端问询卡直接弹在浏览器里（锚定你当前打开的会话）；没有 ask 提供方或没有活跃会话时自动降级为纯文字指南。三个方案与命令提供的三条路径一一对应：
+
+#### 方案 A —— `/feishu-onboard`（推荐，≈2 分钟，无需碰飞书控制台）
+
+运行 `/feishu-onboard`。命令逐问引导（没配 ask 提供方时自动降级为纯文字指南），并和你一起选路径：
+
+- **扫码一键创建应用**——全程不进飞书后台
+- **绑定已有应用**——见方案 B
+- **手动指南**——见方案 C
+
+扫码路径下，创建链接会以**问询卡**送达——web 端直接弹在浏览器里（TTY 同时在终端渲染二维码）→ 手机或电脑打开链接、在飞书里确认创建 → 回来点「我已完成确认」→ 插件基于飞书官方「扫码创建应用」能力（OAuth device flow，官方 SDK registerApp）自动创建企业自建应用，并预置好本插件需要的一切：
+
+- 机器人能力
+- 长连接事件：`im.message.receive_v1`、`card.action.trigger`
+- 权限：`im:message:send_as_bot`、`im:message.p2p_msg:readonly`、
+  `im:message.group_at_msg:readonly`、`im:message.resources:readonly`、
+  `im:message.reactions:write`、`im:chat:readonly`
+
+随后一步到位：`app_id`/`app_secret` 自动写入 dsh 凭据服务（refs：`DSH_FEISHU_APP_ID` / `DSH_FEISHU_APP_SECRET`），扫码用户自动设为管理员（operators），插件在**同一进程内热激活**——不用重启 dsh。扫码、私聊机器人，配置就此完成。
+
+> 小字：预置权限依赖平台灰度。灰度未覆盖时，命令会自动验证并用「权限预选深链」引导补开。要让**其他同事**使用机器人，还需到开放平台「版本管理与发布」创建版本并发布（自己用不需要）。
+
+#### 方案 B —— 已有飞书应用
+
+两种方式把凭证交给插件：
+
+- **跑 `/feishu-onboard` 选「已有应用」**：输入 App ID / App Secret（只写入本地凭据文件，不进会话日志）→ 命令当场调 API 验证；凭据错误会让你重新输入；应用没开机器人能力（错误码 `11205`）时凭据仍会保存，并给出控制台修复清单。也可以在这一步把自己的 open_id 加入管理员。
+- **或者手动写两个文件**：
+
+```yaml
+# ~/.dsh/.credentials.yaml （权限 600；改完重启 dsh 生效）
+DSH_FEISHU_APP_ID: cli_xxxxxxxxxx
+DSH_FEISHU_APP_SECRET: xxxxxxxxxxxxxxxx
+```
+
+只有白名单内的飞书用户能使用 bot，其余人私聊完全隐身：
+
+```yaml
+# ~/.dsh/cordis.patch.yml
+- id: dsh-feishu
+  config:
+    operators:
+      - ou_xxxxxxxxxxxxxx     # 你的 open_id（管理后台成员详情页可查）
+```
+
+生效白名单是三者并集：这里的 `operators` ∪ dsh 主目录 `dsh-feishu-state.json` 的
+`dsh-feishu.pairedOperators`（配对模式与 `/feishu-onboard` 写入）∪ 环境变量
+`DSH_FEISHU_OPERATORS`（逗号分隔 open_id，本地快速测试免改 patch）。
+
+#### 方案 C —— 手动控制台配置
+
+想自己在 [open.feishu.cn](https://open.feishu.cn) 控制台点一遍？六步（≈10 分钟）；做完回到**方案 B** 把凭证交给插件。
+
+1. **创建应用**：登录 open.feishu.cn → 创建「企业自建应用」，记下 `App ID`（`cli_` 开头）和 `App Secret`
+2. **添加机器人**：「添加应用能力」→ **机器人**
+3. **权限**（「权限管理」）：`im:message:send_as_bot`、`im:message.p2p_msg:readonly`、`im:message.group_at_msg:readonly`（群聊 @派活）、`im:message.resources:readonly`（图片下载）、`im:message.reactions:write`、`im:chat:readonly`。捷径：权限预选深链 `https://open.feishu.cn/app/{AppID}/auth?q=...&op_from=openapi` 会替你把这些权限勾好——灰度未覆盖时 `/feishu-onboard` 给你的就是这条链接
+4. **事件与回调**：订阅方式选**长连接**，添加事件 `im.message.receive_v1`（收消息）和 `card.action.trigger`（卡片交互——问询卡与 /resume 选择卡需要）
+5. **可用范围 → 版本发布**：可用范围加自己 → **创建版本并发布**（不发布事件不通，最常见的卡点）
+6. **凭证**：落到 `~/.dsh/.credentials.yaml`（权限 600；改完重启 dsh 生效）——照方案 B 的 yaml 手写，或跑 `/feishu-onboard` 选「已有应用」让它代存并验证
+
+### 第三步：启动并验证
+
+```bash
+dsh --profile <你的 profile>
+# 日志出现 dsh-feishu: armed (1 operator(s), feishu) 即成功
+```
+
+私聊 bot 发 `/help` → 回命令清单；`/resume` 看会话列表；发文本即派活。
+
+**管理员名单还是空的？** bot 不再完全休眠：有凭证但没有 operators 时，它保持在线进入**配对模式**——任何私聊它的人都会收到一张「管理员配对」确认卡，点一下即成为管理员（先到先得；持久化到 dsh 主目录 `dsh-feishu-state.json` 的 `pairedOperators`，立即生效、无需重启）。群聊永不触发配对；名单里有了管理员之后，名单外的人依旧完全隐身。共享租户下这意味着：第一个私聊 bot 的同事就会成为它的管理员——不希望如此的话，自己先私聊点卡，或按方案 B 预先配好 `operators`。
+
+## 🔀 推荐加装 ask-router（多端问询）
+
+```bash
+npm install -g @aiwayds/dsh-ask-router
+```
+
+bundles 里加 `@aiwayds/dsh-ask-router`，放在 **dsh-base 之后、所有 UI 之前**。
+装了它：手机问询卡与桌面 TUI 面板**双端同弹、先答先得**。不装也能用——
+手机独占问询（无其它 UI 时），或桌面 TUI 面板优先。
+
+## 🗑️ 卸载
+
+从 profile 移除插件：
+
+```sh
+dsh plugin --profile <name> remove @aiwayds/dsh-feishu
+```
+
+宿主会自动收敛：`dsh.profile.bundles` 条目被移除，patch 层（`dsh-feishu` 插入项及其配置）随包消失。
+
+以下内容有意保留在磁盘上（删除数据是破坏性的；重装后会继续复用）：
+
+- dsh 主目录的 `dsh-feishu-state.json` 运行态文件 —— 绑定的会话 id、picker 样式、手机端偏好，以及 `pairedOperators`（配对管理员名单，由配对模式 / `/feishu-onboard` 写入）；想重置配对（含管理员名单）就删掉这个文件。
+- 会话目录里的修复产物：`*.corrupt-bak*` 是损坏日志修复前的唯一副本 —— 请保留；`*.repaired.*` 是修复后重写的日志。
+- `/tmp/dsh-feishu-bot.lock` 只在 SIGKILL 后可能残留；下次启动的 stale-pid 检查会自动接管，无需手动处理。
+
+插件卸载（reload、disable、进程退出）会结算手机端所有进行中的交互：未回答的提问/审批/选择卡片会被补丁到终态，宿主侧等待方快速失败而不是悬挂。
+
+## 📱 使用
+
+| 命令 | 说明 |
+| --- | --- |
+| `/resume` | 交互式会话选择卡（下拉+进入；也可回复 `/resume N`），列表按最近更新排序 |
+| `/new` | 开一个全新会话并接入（继承工作目录、模型和推理档位） |
+| `/stop` | 停止当前 turn（排队消息保留） |
+| `/btw <问题>` | **顺带一问**：主线任务运行中发起旁路提问——一次无工具的模型调用（带最近对话快照），答案流式打进独立卡片，主线完全无感。不进会话记录；主线空闲时拒绝；`--model provider/model` 临时换模型；空参 `/btw` 重发上一条问答（`btwContextMessages` 配置快照条数） |
+| `/status` | 绑定与运行状态 |
+| `/sub N` | 查看第 N 个子代理近况 |
+| `/model` | **交互式模型选择**（两步：选 provider → 选该 provider 下的模型）；bot 建的会话实时切换，否则存为手机默认（/new 生效） |
+| `/think` | **交互式思考档位选择**（当前模型的推理档位 + provider 默认）；bot 建的会话实时切换，否则存为手机默认 |
+| `/permission` | **交互式权限 preset 选择**；选中后以 `/permission <name>` 走 dsh 命令注册表执行 |
+| `/select-skill` | **交互式技能选择**（当前工作区用户可调用的技能）；激活走 dsh 原生 `/name` 技能手势 |
+| `/profile-switch` | **交互式模型 profile 切换**（读 `$DSH_HOME/model-profiles.json`）；应用该 profile 的 provider/model/effort（agent frontmatter 更新仍在电脑端） |
+| `/feishu-plugin think on\|off` | 开关活动区的思考尾行（默认开） |
+| `/settings` `/preset` `/theme` `/reload` `/hotkeys` `/model-sync` `/export` `/agents` `/subagents` `/profile-cfg` `/login` `/logout` `/skills` | 桌面端 **dsh-tui-pi** 插件提供（交互面板）——手机端会拒绝并引导去电脑端（有手机侧替代的附提示，如 `/skills` → `/select-skill`） |
+| `/goal` `/dcp` | dsh 运行时存在但暂未适配——拒绝并引导去电脑端 |
+| `/session` | 镜像为 `/status` |
+| 任何图片消息 | 下载后以图像块注入当前会话（私聊直接生效；群聊仅在该群是当前活跃派活面时）。模型路由需支持图像输入 |
+| 其它任何文本 | 作为 prompt 注入当前会话（运行中则 steer 进当前 turn）；未选会话时按默认值新建 |
+
+**群聊用法**：把机器人拉进飞书群后 @它 即可——`@dsh 帮我跑一下测试` 与私聊派活完全一致；
+命令（`/resume`、`/stop` …）同样先 @ 再发。只有白名单成员能触发机器人，其余成员完全隐身。
+卡片会发进派活的群；绑定本身仍是 bot 全局唯一的一个会话（同一时间一个会话，跟随最近派活的聊天）。
+
+典型流程：
+
+```
+电脑上会话跑到一半 → 地铁上打开飞书 → /resume 选会话
+→ 发消息接着干（自动 steer）→ agent 问询时手机点选 → /stop 随时叫停
+```
+
+## ⚙️ 配置参考（`config:` 块）
+
+| key | 默认 | 说明 |
+| --- | --- | --- |
+| `operators` | `[]` | open_id 白名单——生效名单为三者并集：本项 ∪ `dsh-feishu-state.json` 的 `pairedOperators` ∪ 环境变量 `DSH_FEISHU_OPERATORS`（逗号分隔 open_id）；为空时 bot 以配对模式启动 |
+| `mode` | `"on"` | `"off"` 完全停用 |
+| `domain` | `"feishu"` | `"feishu"`（国内）或 `"lark"`（国际版） |
+| `statusIntervalMs` | `5000` | 状态刷新节拍（本版本关闭自动进度卡），范围 [5000, 600000] |
+| `bodySegmentChars` | `3500` | 独立轮次回复的长正文分段阈值；超出 [500, 30000] 报错停用 |
+| `resumeListStyle` | `"auto"` | `/resume` 列表：`auto`/`table`/`list` |
+| `backgroundPush` | `"off"` | 手机未绑定会话的完成推送（发到最后活跃的聊天）：`off` / `cron`（带 cron 投递或子代理结算通知的回合）/ `all`（所有回合结束）。环境变量覆盖：`DSH_FEISHU_BACKGROUND_PUSH` |
+| `roundButtons` | `"off"` | round 卡底部的快捷按钮：`on` 在出错或停止的结束卡渲染 ▶️ 继续，自动进度卡关闭；`off` 两个都不渲染——停止走 `/stop` 命令（自带确认卡）。环境变量覆盖：`DSH_FEISHU_ROUND_BUTTONS` |
+| `appIdRef` / `appSecretRef` | `DSH_FEISHU_APP_ID/SECRET` | credentials ref 名 |
+
+凭证解析优先级：patch 明文 > 环境变量 `DSH_FEISHU_APP_ID/SECRET` > credentials 服务。
+
+## 🧩 内置技能
+
+插件随包内置了一个 skill（`dsh-feishu-config`）：直接让 agent「帮我配飞书机器人 / 配置
+feishu」，指南会自动加载——先核查前置条件（飞书应用、凭证），再用 ask_user_question
+逐项收集（operators 白名单、backgroundPush 档位），代写上面的 `config:` 段，并引导
+手机端配对。指南还覆盖 config 全键表、`DSH_FEISHU_*` 环境变量，以及运行态
+（dsh 主目录 `dsh-feishu-state.json` 运行态文件）与配置的区别。
+
+## 🧯 故障排查
+
+| 现象 | 处理 |
+| --- | --- |
+| 日志出现 `pairing mode` | 属预期：已配凭证但白名单为空——bot 以配对模式运行，首个私聊者点确认卡即成为管理员；想跳过配对，按方案 B 预配 `operators` |
+| 其他人用不了机器人 | 没有覆盖到他们的已发布版本：到「版本管理与发布」创建版本并发布，并把对方加进可用范围 |
+| `no Lark credentials` | 凭证没配（方案 B），改后需重启 |
+| `startup failed` | App ID/Secret 错误或网络不通；应用未发布版本 |
+| 私聊不回 | open_id 与白名单不符（非白名单静默忽略） |
+| 问询卡点了没反应 | 后台未订阅 `card.action.trigger`（方案 C 第 4 条） |
+| `/resume N` 报过期 | 列表 5 分钟有效，重发 `/resume` |
+
+## 开发
+
+```bash
+npm run check    # tsc --noEmit
+npm test         # 构建 + node --test（230+ 个纯逻辑单测）
+```
+
+## 边界
+
+- dsh 0.1.6 兼容性（上游 B-21）：恢复 dsh 0.1.5-rc.2 时代保存、且 subagent 完成通知携带
+  reasoning 内容的会话时，首个模型请求会序列化失败（宿主数据问题，非插件缺陷）。
+  飞书端 `/resume` 恢复 rc.2 旧会话遇到首个请求失败时，改用 `/new` 开新会话。
+- 单写者保证（dsh 0.1.5 起由宿主内核写租约原生保障）：另一进程正驱动某会话时，冷恢复会在宿主处被拒（`SessionAlreadyOwnedError`），从根上杜绝两套 seq 交错导致的日志损坏；同进程 attach（共享 agent 实例）不会开第二个写句柄，行为不变；被拒的 `/resume` 自动降级为**只读旁观**——轮询对端落盘日志，最终 LLM 回复照常同步到手机（有延迟、无流式过程），排队消息会在对端释放会话后自动接管
+- 群聊以 @提及为门控，且与 bot 的全局唯一绑定共享：同一时间一个会话，卡片跟随最近派活的聊天；
+  群图片仅在该群是当前活跃派活面时接收
+- 审批卡走宿主 `approval/request` 瀑布，沿用选择器 10 分钟 TTL；过期或投递失败的审批一律
+  fail-closed 返回 `unavailable`——绝不隐式放行
+- resume 附着后不回放历史；turn 进行中附着时计数从附着时刻起算
+- web profile 请勿安装 ask-router（上游 apiproxy 不容忍重复注册）
+
+---
+
+*License: Apache-2.0. 作者 fan56.*

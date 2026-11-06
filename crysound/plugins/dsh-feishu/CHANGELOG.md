@@ -1,0 +1,175 @@
+# Changelog
+
+All notable changes to dsh-feishu are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Fixed
+- **Adapted to the dsh 0.2.2-rc.1 host wave.** The host dissolved the bot-owned mutable `ModelSelectionRef` (`{ current, assembled }`): `installModelSelection` is now single-argument (dsh-agent `model-selection.d.ts:56`, was `(agentCtx, selection: ModelSelectionRef)` at `:49`), and live model switching moved onto the agent-owned `Model` surface (`current()` / `select()`, dsh-agent `runtime-types.d.ts:47-64`) that the loop's concrete agent always exposes as `.model`. `/new` passes the full selection — including the reasoning effort, which `AgentOptions` now carries natively — through `agentOptions`, arms the switch notice via `installModelSelection(agentCtx)`, and hands the bot the captured `Model` surface; `/model`, `/think`, and `/profile-switch` live-switch through `surface.select()` with the same absent-effort-clears semantics as before, and every read goes through `surface.current()`. A structural accessor (`modelSurfaceOf`) degrades to `undefined` when a future host moves the surface again, falling back to the phone-default branch instead of crashing.
+
+### Changed
+- Peer-dependency floor `@deepseek-ai/dsh-skill` raised `>=0.2.0-rc.2` → `>=0.2.2-rc.1`: the adaptation genuinely consumes new-host-only API — the single-argument `installModelSelection` call TypeErrors inside prompt assembly on ≤ 0.2.1 hosts (the old implementation dereferences `selection.current` of the now-removed ref argument, `model-selection.js:47`), and the `/model` live-switch rides the loop-owned `agent.model` surface that does not exist before 0.2.2-rc.1. devDependency `@deepseek-ai/dsh-skill` re-pinned `0.2.1-rc.5` → `0.2.2-rc.1`; `.npmrc` gained `legacy-peer-deps` + `auto-install-peers=false` (the devDeps' cross-package peer ranges cannot resolve from the public registry alone; the postinstall linker replaces every `@deepseek-ai/*` entry with closure symlinks anyway). ci.yml dsh install was already newest-of(latest,next) runtime resolution; release.yml still carried a `sort -V` pick, now switched to the same prerelease-aware compare (see below).
+- **release.yml picks the host closure with ci.yml's prerelease-aware compare** — the leftover `sort -V` decision (which ranks an rc above a same-version stable once one lands on `latest`, so the release would ride the older rc after a stable 0.2.x lands on `latest`) is replaced by the same node comparator ci.yml uses, so the release gates against exactly the closure CI installs. Review hardening on top: the rc segments compare NUMERICALLY per dot segment (`rc.10` > `rc.2` — the plain string compare would pick the OLDER rc once an index reaches two digits; latent only, `latest` has always been a stable, and the pre-existing ci.yml copies keep the string form, so the two agree in practice today).
+- **Repoint the last legacy package-lock mirror URL at registry.npmjs.org** — `qrcode-terminal 0.12.0` (`package-lock.json` `resolved`) still pointed at registry.npmmirror.com; same tarball, integrity pre-verified against registry.npmjs.org (`npm view dist.integrity` matches the lock's `sha512-EXtzRZmC…Q==`).
+- Switch license from MIT to Apache-2.0
+
+## [0.16.2] - 2026-10-30
+
+### Fixed
+- **The queue-and-take-over channel actually works now.** The 3c39cda feature ("phone follow-ups queue and take over") shipped as machinery with no wiring: `queueRemoteFollowup` was never called by any commit (spectating prompts bounced off the read-only notice), the promote-success hook was registered but never invoked (the takeover announce + queue drain were unreachable), `remoteWatchId` was cleared but never assigned (so nothing could arm the poll or detect an explicit takeover), and a lost promote re-watched with a blank callback (the phone would have stopped painting). The full contract is now live: a prompt typed while spectating QUEUES (with a 第 N 条 notice + seen-reaction) instead of bouncing; the poll probes the bind every second and, on winning, fires the registered hook (store binding, reset run view, drain the queue into the fresh agent, 「已自动接管」announce); a lost probe re-enters the watch with the ORIGINAL view callback; an explicit `/resume` of the watched session is the takeover (reports 「排队 N 条已随接管发送」) and `/resume` of a different session drops the stale queue with a note (`droppedQueued` on `BindResult`); `/new` drops the stranded queue with a log line. The degrade announce wording now matches the behavior. Tests cover the won promote (hook + drain into the fresh agent), the lost promote (original callback preserved), the explicit takeover, the stale-queue drop, and the queueing prompt. Verified: typecheck, the full unit suite (516 pass), and the real-host boot smoke.
+
+## [0.16.1] - 2026-10-30
+
+### Fixed
+- **A single read-only degrade no longer poisons every later session.** When the host's single-writer guard refused a cold resume (`SessionAlreadyOwnedError` — the session was live in another dsh process), the bot degraded to the read-only remote view, and NOTHING ever cleared that view again: `isReadOnlyView()` is backed by the watcher tail, which only `detach()`/teardown stopped, while every successful `bind()`/`createNew()` left it running. From then on every drive was refused with 「当前为只读旁观（该会话正由另一进程驱动）」 — resuming ANY session (even ones nobody held) and even a freshly `/new`-created session all stayed read-only until the plugin reloaded. Both bind arms and the create arm now stop the remote watch first (the promote path already did), so resuming the watched session is the takeover, resuming anything else is a clean switch away, and `/new` starts unpoisoned. Regression tests cover the takeover arm, the switch arm, and the `/new` arm. Verified: full unit suite (511 pass), typecheck, and the real-host boot smoke.
+
+### Changed
+- **0.2.1 wave verification (`chore(deps)`)**: devDependency `@deepseek-ai/dsh-skill` re-pinned `0.2.0-rc.2` → `0.2.1-rc.2`; peer-dependency floor `>=0.2.0-rc.2` untouched. CI dsh install restored to newest-of(latest/next) runtime resolution (reverting the 2026-10-17 pin). Verified against an isolated 0.2.1-rc.2 host closure via `DSH_CLOSURE_DIR` (`dsh-skill` .d.ts surface unchanged on the rc.2 line): tsc check clean, 509 pass / 0 fail, real-host smoke boot PASS.
+
+## [0.16.0] - 2026-10-12
+
+### Added
+- **`toolDetail` — surface tool arguments on the round card's activity section (#3, proposal by @clhui).** `foldBoundEvent`'s `tool/call` branch kept only the tool name and discarded the raw `arguments` JSON the host delivers on the same event. The new config key (`off | brief | full`, default `off` — byte-for-byte identical to today's output) plus the `DSH_FEISHU_TOOL_DETAIL` env override control the digest: `brief` folds the JSON to one clipped line (80 chars) under the tool's bullet; `full` keeps the multi-line shape, clipped at 600 chars. The key is registered in `CONFIG_KEYS` (the strict unknown-key check keeps guarding typos) and documented in README + the `-config` skill. Verified: typecheck, the full unit suite (new `test/tool-detail.test.mjs` covers the resolver, both digest modes, the empty-arguments edge, and the rendered card), and the real-host boot smoke.
+
+## [0.15.1] - 2026-10-12
+
+### Fixed
+- **The stored binding re-attaches when the session goes live after startup (#4, by @clhui).** The startup-only attach ran before the desktop opened the bound session, so the attach was skipped forever: `binder.getSessionId()` stayed undefined, which drops every card (`onSessionEvent` early-returns) and fails every claim — the phone went silent until manually poked. The logic is extracted into `attachStoredBindingIfLive()`, invoked at startup and again from the global `session/event` firehose (the stored session's first event is a reliable second chance). It binds only an already-live agent — it never resumes, so it cannot occupy the registry ahead of the desktop — and guards re-entry with `storedAttachInFlight`.
+- **The settled selector card keeps the caller-supplied description (#4, by @clhui).** A decided approval card no longer collapses to a bare status row: the "what was decided and why" line survives.
+
+Both fixes came from real-device testing (Windows + dsh 0.2.0-rc.2 + the Feishu mobile client) and ship with tests; verified locally with build, typecheck, the full unit suite, and the real-host boot smoke.
+
+## [0.15.0] - 2026-09-29
+
+
+### Changed
+- **dsh 0.2.0-rc.2 compatibility.** Host floor raised to `@deepseek-ai/dsh-skill >=0.2.0-rc.2` (devDeps pinned `0.2.0-rc.2`). 0.2.0 is a digestion wave for this plugin — every host surface it rides (message block types, the approval/request waterfalls, user-questions, image offload, `SessionAlreadyOwnedError`) breaks nothing here, and the new optional `AskUserQuestionRequestEvent.wait` field is pure additive (compile-safe; an ask-card countdown UI on `wait.timed` is a possible follow-up, not in this release). Verified: typecheck + full unit suite + the 13-scenario web-profile compat e2e against the real 0.2.0-rc.2 host.
+- **`/btw` snapshot reads the derived history.** `buildBtwSnapshot` switches from the soft-deprecated raw `snapshotEvents()` scan to `session.deriveMessages()` — the surface-driven history — with role/source filtering moved inside (real user prompts + assistant text; tool results, developer and system messages are not dialog turns) and compaction-replaced turns correctly dropping off, so the side call sees the history the main agent actually holds. Mirrors the tui-pi twin, following its release.
+- **dsh 0.1.7-rc.1 compatibility.** Dependency floor raised to `@deepseek-ai/dsh-skill >=0.1.7-rc.1` (devDeps pinned `0.1.7-rc.1`).
+  - **Bot state moved out of settings.** The pre-0.1.7 backend (`settings.register('dsh-feishu', …)`) no longer exists in dsh 0.1.7 — the settings system only projects user-editable plugin `Config` fields, and machine state (pickers, cursors, pairing claims) must never be volatile. `StateStore` now persists to a small JSON file in the dsh home, `<home>/dsh-feishu-state.json` (`$DSH_HOME` / profile home aware), with the same in-memory mirror + write-through semantics and atomic tmp+rename writes. **Upgrade path:** on first run with no state file, the 0.1.5-era remnants are absorbed from `settings.yaml.imported` (or `settings.yaml`) — the host renames the old document on first 0.1.7 boot — via a deliberately conservative flat-scalar reader (folded/long JSON payloads degrade to defaults rather than half-read: a very long `pairedOperators` list may need a one-time re-pair). The absorption now **persists immediately** (the state file is written the moment the takeover happens, before any mutation — no silent window where the upgrade rode only on memory) and **logs once**: an `info` line summarizing every absorbed key (`absorbed legacy settings state (settings.yaml.imported): pairedOperators=3, boundSessionId=yes, displayThink=no`) plus a `warn` line naming any keys that degraded (folded-across-lines scalars — the re-pair cases); the store takes an optional `logger` (falls back to the plugin context's, silent on bare test contexts). Pairing/reset instructions and README/skill wording now point at the state file.
+  - **`/btw` question messages carry a first-class producer source.** dsh 0.1.7 removed the shared catch-all `plugin` source kind; the plugin now declares its own `'dsh-feishu'` entry in the merge-extensible `MessageSourceMap` (the same pattern the host's `dsh-schedule`/`dsh-tool-jobs` use).
+  - **/new preset picker label.** The roster's removed `trust` dimension no longer renders (0.1.7 agent-preset-registry dropped it); the picker shows the shipped roster with the default marker only.
+  - No preset-mechanics changes required: the binder's `agentPresets` resolve/mount seams, the `agentPreset` session-projection read, and the `meta.agentPreset` create path are byte-compatible with the 0.1.7 registry (regression-tested: /new card preset pick, cold-resume preset rejoin, and the bare-degradation paths all green).
+
+### Added
+- Compatibility note (README): `/resume` of a session saved under dsh 0.1.5-rc.2
+  with reasoning content in subagent completion notices fails to serialize the
+  first model request on a dsh 0.1.6 host (upstream B-21, host-side data issue) —
+  when a remote resume fails this way, start a new session (`/new`).
+- **Plugin Manager metadata.** Added `icon.svg` and `locale/{en,zh}.json` (`meta.title`/`meta.description` per the official `readPluginMeta` contract); `package.json` now declares the `icon` and ships both in the tarball.
+
+### Fixed
+- **The stored binding is re-attached once its session is live.** A session the desktop opens *after* the plugin started is not live at `start()`, so the restore was skipped, `binder.getSessionId()` stayed undefined, and the phone went silent — no round cards, no narration cards, and every claim false — until the operator happened to touch the bot. The global `session/event` firehose now finishes that attach; it never resumes (it only binds an agent that already exists), and both entry points share one `attachStoredBindingIfLive` path.
+- **Settled selection cards keep the caller's description.** `buildSelectorSettledCard`, `buildSelectorCancelledCard` and `buildSelectorExpiredCard` collapsed to a bare status line, so a decided card no longer showed *what* was decided — the approval card lost its `工具 …：理由` line the moment it settled. All three now render the status followed by `spec.description`.
+
+## [0.13.1] - 2026-09-19
+
+### Fixed
+- **Default credential ref names are now valid for the host credentials service.** The host grammar (`REF_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/`) rejects hyphenated names — and while `/feishu-onboard` could *write* the v0.13.0 defaults (`dsh-feishu-app-id` / `dsh-feishu-app-secret`) at runtime, the next dsh boot died parsing the credentials document (`plugin tree failed to load`). Defaults are now `DSH_FEISHU_APP_ID` / `DSH_FEISHU_APP_SECRET`; configured ref names outside the host grammar are swapped for the legal defaults instead of being written. **Migration for 0.13.0 users:** rename the two keys in `~/.dsh/.credentials.yaml` to `DSH_FEISHU_APP_ID:` / `DSH_FEISHU_APP_SECRET:` (values unchanged) — the previous spelling prevents dsh from booting.
+
+## [0.13.0] - 2026-09-18
+
+### Added
+- **`/feishu-onboard` — one-command onboarding from the desktop TUI or the web UI.** An interactive, question-by-question guide whose asks ride the invoking session's live root agent — the web profile's native ask prompt pops right in the browser (the web bridge only forwards agent-scoped waterfall requests; an agent-less ask would die as `NO_PROVIDER` there); no ask provider or no live session degrades to a plain printed guide. Three paths: **scan-to-create** — the launcher link arrives as a question card (web: right in the browser; a QR code still renders in the terminal), open it, confirm in Feishu, tap 「我已完成确认」 and the plugin creates the enterprise custom app itself via Feishu's official scan-to-create flow (OAuth device flow, official SDK `registerApp`), pre-provisioned with the bot capability, long-connection events (`im.message.receive_v1`, `card.action.trigger`) and the six scopes (`im:message:send_as_bot`, `im:message.p2p_msg:readonly`, `im:message.group_at_msg:readonly`, `im:message.resources:readonly`, `im:message.reactions:write`, `im:chat:readonly`); **bind an existing app** — App ID/Secret entered once, written only to the local credentials file (never into session logs) and auto-verified against the API, with wrong credentials re-asked and a missing bot capability (error `11205`) still saving the credentials plus a console fix checklist; or a **six-step manual console guide** (with the permission-preselection deep link for the scopes). Either path ends the same way: `app_id`/`app_secret` land in the credentials service (`dsh-feishu-app-id` / `dsh-feishu-app-secret` refs), the onboarding user is set as operator, and the plugin **hot-activates in the same process** — no dsh restart. Fine print: the preset scopes ride a platform gray release — uncovered tenants get automatic verification plus the preselection deep link to top up; colleagues need a published version (Version Management & Release), self-use does not.
+- **Pairing mode (self-serve first admin).** With valid credentials but an empty allowlist the bot no longer sleeps: it stays connected, and anyone who **DMs** it receives an 「管理员配对」 confirmation card — one tap claims admin, first come first served. The claim persists to `settings.yaml` `dsh-feishu.pairedOperators`, takes effect immediately (no restart), never triggers from group chats, and once the list is non-empty, outsiders go fully invisible again. On a shared tenant that means whoever DMs the bot first becomes its admin — DM it yourself first if that matters.
+- **`DSH_FEISHU_OPERATORS` is now actually read.** Comma-separated open_ids appended to the allowlist — handy for quick local tests without editing the patch. The dormant log had been recommending this variable for a while, but no code ever read it until now.
+
+### Changed
+- **Empty `operators` with valid credentials boots into pairing mode** instead of full dormancy (see above) — the bot keeps its WebSocket, answers DMs with the pairing card, and arms itself the moment the first admin claims. The bundled `dsh-feishu-config` skill is rewritten around the new onboarding paths (scan-to-create / existing app / manual guide).
+
+### Fixed
+- **The dormant log referenced `DSH_FEISHU_OPERATORS` before it was supported** — setting the variable had no effect at all; the allowlist builder now unions it in.
+
+## [0.12.0] - 2026-09-16
+
+### Changed
+- **Round replies embed into the settle card.** When a round settles, its body no longer ships as a standalone message wedged between two status cards (easy to miss) — a body that fits one segment (`bodySegmentChars` or less) embeds into the round card itself as a `##### 💬 Round 回复` section, the last section before the `---` stats footer, so the reply grows out of the card the operator is already watching; the activity list's clipped `- 💬` preview line is retired on embedded cards (kept on live cards). Oversized bodies keep the segmented body-card path; empty bodies still ship nothing; the turn-end ✅ card stays compact.
+
+## [0.11.1] - 2026-09-15
+
+### Fixed
+- **`/resume` picker metadata through the dsh 0.1.5 persistence seam.** dsh 0.1.5-rc.1 wrapped every `sessionPersistence.list()` entry in a `{header, revision, sizeBytes}` snapshot (was a bare `SessionHeader`) and removed `inspect()` in favor of `open(id, 'read')` + a read-handle drain; the 0.1.5 migration batch missed the resume readers, so every field resolved against the wrapper and each row rendered `#N · ? · undefine · NaN-NaN-NaN NaN:NaN` (`String(undefined).slice(0,8)` plus `new Date(undefined)`) — `/resume N` could not bind either. Ports dsh-tui-pi's seam vocabulary: `headerOf` normalizes both `list()` generations, `readPersistedSession` cold-reads via `open` + drain with the legacy `inspect` as fallback. Consumers fixed alongside: the cold-resume model-route backfill and the binder's persisted-cwd lookup (both silently degrading on 0.1.5 hosts).
+
+## [0.11.0] - 2026-09-14
+
+### Added
+- **`/new` config card.** `/new` no longer mints a session outright — it presents one fill-first card (agent preset / model / reasoning effort as dropdowns, preselected from the resolved defaults) and the session is created only on submit; a green summary card replaces it in place. Every dropdown is best-effort: a source that fails just omits its field and the submit falls back to the default-resolution chain.
+- **Custom presets on `/new`.** The preset dropdown lists the full host roster — shipped four plus every user-authored preset in the harness home (`~/.dsh/.agent-presets/`), customs marked `· 自定义`, broken compositions hidden; the picked id resolves and mounts through the same host path the Web UI uses.
+- **Workspace picker on `/new`.** The first dropdown lists EXISTING workspaces from the host registry (`workspaceRegistry.list()`) — the picked path is the new session's cwd, verbatim. An empty registry replies NA (`无法创建新会话`) instead of sending a card; a profile without the registry keeps the legacy cwd fallback.
+- **Agent preset on the stats footer.** The settled round card shows the session's preset (`🧩 standard`), learned at `/new` (the operator's pick) or via the `sessionQuery` projection for attached/resumed sessions; unknown = field omitted.
+- **`roundButtons` config (default `off`).** The round card's ⛔ 停止 / ▶️ 继续 quick actions are opt-in (`on`, env `DSH_FEISHU_ROUND_BUTTONS`); off keeps the card clean — `/stop` is the stop path either way.
+- **`/stop` two-tap confirmation.** The stop gesture now sends a `⛔ 确认停止 / 返回` card (60 s auto-cancel) and only the confirm tap stops; the sweep also cancels every LIVE child subagent the run state tracks — background/continuable children previously survived the parent cancel and kept burning rounds. btw side calls die with the turn as before.
+- **Mojibake repair on body cards.** Model output that arrives UTF-8-read-as-1252 (`ðŸ˜Š`) is re-decoded at the body-card boundary (`😊`); runs that do not decode cleanly (legit European text, CJK) stay verbatim.
+
+### Fixed
+- **`/new` (and every bot-created session) now joins an agent preset** — parity with the host's own creators (`composeAgent` / webhook). A bare create composed against the empty global layer: on web/headless profiles the tool plugins load per-agent THROUGH the preset, so bot sessions published with only the `skill` tool (#2). Cold resume rejoins the session's recorded preset from the `agent-preset/selected` projection — a web-created session revived after a host restart used to land in the empty layer again. Failure paths degrade to the bare create (tui profiles load tools globally).
+- **Card buttons carry unique names.** Feishu rejects a whole card when a form-submit button shares a `name` with any other button (230099) — the `/new` submit/cancel pair and the selector buttons/confirm-cancel modes all collided; names now carry role/index suffixes with parser fallbacks. A failed `/new` card send replies instead of staying silent.
+- **Web-profile compat e2e leg C:** a probe plugin drives the real `SessionBinder` inside a real web-profile host — create joins the default preset (composed + durably projected), a restart + cold resume rejoins it, and a bare control create still detects as unjoined.
+
+## [0.10.0] - 2026-09-12
+
+### Added
+- **`agent/turn-stopping` subscription.** A stop/cancel starts reflecting on the round card the moment the loop honors it (`⛔ 停止中` header) instead of waiting for the `turn/end` settlement.
+- **`agent/request-error` subscription.** A failed model request shows a one-line `⚠️ 请求失败：…` in the card's activity section immediately, while retries are still scheduled (cleared when a message lands or a new turn starts).
+- **Round-card performance footer.** The settled round card now shows first-token latency (`⚡ ttft 200ms`) rebuilt from the embedded `AssistantStreamRecord`, plus the round's output tokens (`📤 25 tok`) from its usage snapshot — the live card stays clean.
+- **`/model` picker context windows.** Each model option appends its context window (`· 128k ctx`) when the adapter reports one, resolved in bounded-parallel and fail-open (a resolution failure degrades to the plain catalog).
+
+### Changed
+- **btw first-frame throttle.** The very first text delta patches the btw card immediately (the answer appears the moment the first token lands); later deltas still defer to the beat, so no per-delta Lark patch.
+- **Web-profile compat e2e** (`npm run e2e`). Runs on the local dsh against an isolated scratch `$DSH_HOME`: proves `dsh-base + dsh-web-app + dsh-feishu` composes and boots, and that a tui profile carrying `dsh-feishu` coexists with the web profile without crashing.
+
+### Fixed
+- **Accidental cancel taps.** Approval cards (❌ 拒绝) now require a second tap: the first tap on 取消 swaps to a `确认取消 / 返回选择` interim card, and only the confirm tap settles. Non-approval selectors keep their one-tap cancel.
+
+## [0.9.0] - 2026-09-11
+
+### Removed
+- The vendored pid-file writer lock — dsh 0.1.5 enforces cross-process single-writer at the host itself (kernel lease on `session.lock`, contention refuses with `SessionAlreadyOwnedError`), making the vendored `link(2)` pid-file lock redundant for safety and strictly worse everywhere else (pid-reuse misreads, stale residue after SIGKILL, POSIX-only, blind to non-vendoring writers).
+
+### Changed
+- **dsh support floor raised to `>= 0.1.5-rc.2`** and the closure moved to 0.1.5-rc.2 (dev pins, peer floors, locks).
+- **Live streaming rides `agent/assistant-stream` frames.** The 0.1.5 firehose delivers settlements only, so the status card's thinking marker, in-flight text tail, pending context estimate and child tail rows are now fed by stream frames routed per session id (`foldBoundStreamChunk` / `foldChildStreamChunk`); settlements still arrive on `session/event`.
+- **V3 session artifacts** (`session.v3.jsonl[.zstd]`, current generation first) in the read-only remote view, the repair script's log lookup, and the resume-table mtime walk.
+- Release: the publish-verify loop polls `npm view` for ~2 min instead of 30s — packument propagation measured ~50s on dsh-dcp v0.11.0 outran the old window and falsely failed a landed publish.
+
+
+## [0.8.1] - 2026-09-09
+
+### Changed
+- The bundled skill is renamed `dsh-feishu` → `dsh-feishu-config` (ecosystem-wide convention: config/usage-guide skills end with `-config`). Bundled skills are registered in-process with zero on-disk footprint — updating the package and restarting dsh migrates the name automatically; the old `/dsh-feishu` slash invocation stops resolving. README skill mention updated.
+
+## [0.8.0] - 2026-09-08
+
+### Added
+- **Bundled usage/config skill (`dsh-feishu`)** — the plugin now ships `skills/dsh-feishu/SKILL.md` and registers it through `ctx.skills.registerProvider` (`inject` gains the `skills` seam; registered unconditionally at the top of `apply()`, so the setup guide is served even while the bot is dormant): it documents the cordis.patch.yml `config:` block (all 12 keys with defaults and ranges), the `DSH_FEISHU_*` environment variables, the credentials priority (patch plaintext > env > credentials-service refs), the settings.yaml `dsh-feishu:` runtime-state vs config distinction, a curated phone command table, and troubleshooting — plus an interactive setup flow where the agent checks the Feishu app prerequisites, collects the operators allowlist and the `backgroundPush` mode via `ask_user_question`, and writes the patch `config:` block for the user.
+- README (en/zh) gains a "Bundled skill / 内置技能" section; the new `test/skill.test.mjs` guards the routing description against the packaged frontmatter (anti-drift) and the provider registration/get contract.
+
+## [0.7.1] - 2026-09-05
+
+### Fixed
+- **Plugin unload settles every pending phone-side flow** — `dispose()` now rejects unanswered ask questions (`ASK_ABORTED`) and cancels in-flight selector/approval flows, flushing their terminal card patches while the WebSocket is still open; previously the host-side callers hung until their own abort/turn end and the cards stayed submittable on the phone.
+- **Teardown no longer arms the bot after disposal** — the arm-after-credentials race (the seam wait is bounded, not instant) opened a WebSocket nothing would ever close and re-created the lock file the teardown had already released; a `tornDown` latch closes it.
+
+### Changed
+- Clean-uninstall documentation (Uninstall sections in both READMEs) and an uninstall leg in the boot smoke asserting `dsh plugin remove` reconciles the profile tree back to stock.
+
+## [0.7.0] - 2026-09-03
+
+### Changed
+
+- **BREAKING — dsh host floor moves to `>= 0.1.2-rc.1` (supersedes the interim alpha.3 target below)**: all rc/alpha dual paths and feature-detection are gone — single-target on the rc.1 closure
+  - ask-user answering registers on the `dsh-ask-router` surface registry when present, otherwise on the Agent-scoped `'user-questions/request'` cordis waterfall only — the rc-era `ctx.userQuestions.registerProvider` slot (and its `DUPLICATE_PROVIDER` yield, via `isDuplicateProviderError`) is deleted
+  - `/命令` passthrough calls `commands.execute(agent, line, images, signal)` with the mandatory alpha images array — the `execute.length >= 4` arity probe for the rc.7 three-argument shape is deleted
+- **CI/release ride the rolling rc/stable line — the alpha dist-tag is retired**: CI and the release workflow resolve the newest of the `latest` (stable) and `next` (rc) dist-tags at runtime (plain semver compare), never hand-pinned and never `@alpha` — the closure floor moves to the dsh 0.1.2-rc.1 line
+- **README declares rc/stable-only support**: `dsh >= 0.1.2-rc.1`, the alpha line is no longer supported
+
+### Added
+
+- **`/btw` — by-the-way side questions from the phone** (parity with dsh-tui-pi's `/btw`, deliberately duplicated with zero package dependency — `docs/adr/0001-btw-duplicated-not-shared.md`): while the bound main line is mid-turn, `/btw <question>` fires one tool-less one-shot model call over a read-only recent-conversation snapshot and streams the answer into its own Feishu card (5s beat, pseudo-streaming, settled in place). Nothing enters the session log, the inbox, or any main-line model request; single-flight with a bounded queue (5); `/new`, `/resume`, `/stop` and dispose cancel phone-side calls (per-surface semantics); the idle main line refuses (a normal message is strictly better there — tools, history, full context); bare `/btw` re-sends the last exchange; `--model provider/model` overrides the route; the `btwContextMessages` config key sizes the snapshot (default 6, clamped 0–50).
+- **Approval cards on the host's `approval/request` waterfall**: when the approval service asks for a sandbox escalation, the phone gets a ✅ 允许一次 / ❌ 拒绝 buttons card (selector FW). Claimed when the asking session is the bound one and a delivery chat exists; the request's abort signal cancels the card; expiry and undeliverable sends fail closed as `unavailable`
+- **Group chat support**: @-mention dispatch — text and commands after a mention of the bot route exactly like DM (mention placeholders stripped; only allowlisted senders ever trigger); images are accepted from the group that is the bot's current active dispatch surface while a session is bound (image messages cannot carry mentions)
+- **Background completion push** (`backgroundPush` config / `DSH_FEISHU_BACKGROUND_PUSH` env, default `off`): completion cards for sessions the phone is not bound to, delivered to the last active chat — `cron` mode pushes turns carrying a cron delivery (`source {kind: 'plugin', plugin: 'cron'}`) or a subagent-settled notice, `all` pushes every finished turn
+- **Image dispatch from Feishu**: inbound image messages are downloaded via the resource API, media-type sniffed from magic bytes (png/jpeg/webp/gif), committed through the attachment service (`saveImage`) and injected as an image-block user message through the shared steer/followup channel; size/media admission honors the attachment limits
+- **Round-card quick actions**: ⛔ 停止 on running cards, ▶️ 继续 on ended cards — one-tap stop (the /stop path) and a continue nudge injected as a prompt; parsed from the button value with the name-prefix fallback, gated by the operator allowlist
+- Boot smoke (`npm run smoke`, `scripts/smoke-boot.mjs`): mounts the packed plugin into a scratch dsh profile and boots it with the real dsh CLI — CI gates on it; CI also gains a daily schedule and installs the host from the rolling `@alpha` dist-tag (latest still points at the dropped rc line).
