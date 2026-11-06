@@ -8,22 +8,31 @@ const patches = [
   {
     package: "@deepseek-ai/dsh-tool-web",
     import: '// crysound: allow both bounded search attempts before the tool deadline.\n',
-    from: 'searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS)',
-    to: 'searchTimeoutMs: z.number().default(65_000)',
+    edits: [{
+      from: 'searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS)',
+      to: 'searchTimeoutMs: z.number().default(65_000)',
+    }],
     files: {},
   },
   {
     package: "@deepseek-ai/dsh-web-search-deepseek",
     import: 'import { searchWithFallback } from "./crysound-search.mjs";\n',
-    from: 'search: (request, signal) => provider.search(request, signal)',
-    to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
+    edits: [{
+      from: 'search: (request, signal) => provider.search(request, signal)',
+      to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
+    }],
     files: { "search.mjs": "crysound-search.mjs" },
   },
   {
     package: "@deepseek-ai/dsh-web-fetch-http",
-    import: 'import { companyFetcher } from "./crysound-fetch.mjs";\n',
-    from: 'ctx.web.registerFetchProvider(new HttpFetchProvider(limits));',
-    to: 'ctx.web.registerFetchProvider(companyFetcher(HttpFetchProvider, WebError, limits));',
+    import: 'import { companyFetcher, renderOptions } from "./crysound-fetch.mjs";\n',
+    edits: [{
+      from: 'userAgent: z.string().default(DEFAULT_USER_AGENT)\n',
+      to: 'userAgent: z.string().default(DEFAULT_USER_AGENT),\n\trenderConcurrency: z.number().default(1),\n\trenderTimeoutMs: z.number().default(15_000)\n',
+    }, {
+      from: 'ctx.web.registerFetchProvider(new HttpFetchProvider(limits));',
+      to: 'ctx.web.registerFetchProvider(companyFetcher(HttpFetchProvider, WebError, limits, renderOptions(resolved)));',
+    }],
     files: { "fetch.mjs": "crysound-fetch.mjs", "network.mjs": "network.mjs" },
   },
 ];
@@ -36,12 +45,14 @@ export function patchWebTools(root) {
     if (manifest.version !== "0.2.2-rc.1") throw new Error(`Web tools patch needs review for ${patch.package}@${manifest.version}`);
     const file = path.join(directory, "lib/index.js");
     const before = fs.readFileSync(file, "utf8");
-    let after;
-    if (before.includes(patch.import) && before.includes(patch.to) && !before.includes(patch.from)) after = before;
-    else {
-      if (before.split(patch.from).length !== 2 || before.includes(patch.import) || before.includes(patch.to)) throw new Error(`Web tools patch did not match exactly once: ${patch.package}`);
-      after = patch.import + before.replace(patch.from, patch.to);
+    let after = before;
+    const alreadyPatched = before.startsWith(patch.import);
+    for (const { from, to } of patch.edits) {
+      if (alreadyPatched && after.split(to).length === 2 && !after.includes(from)) continue;
+      if (alreadyPatched || after.split(from).length !== 2 || after.includes(to)) throw new Error(`Web tools patch did not match exactly once: ${patch.package}`);
+      after = after.replace(from, to);
     }
+    if (!alreadyPatched) after = patch.import + after;
     for (const [source, destination] of Object.entries(patch.files)) {
       const target = path.join(directory, "lib", destination);
       const content = fs.readFileSync(path.join(here, source), "utf8");

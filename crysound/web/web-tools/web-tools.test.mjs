@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, cp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import http from "node:http";
+import { gzipSync, deflateSync, brotliCompressSync } from "node:zlib";
 import { once } from "node:events";
 import { isPublicAddress, publicTarget, publicRequest, USER_AGENT, LANGUAGE } from "./network.mjs";
 import { companyFetcher, followPublic, loginPage, needsRendering } from "./fetch.mjs";
@@ -26,7 +27,7 @@ async function server(t, handle) {
   return `http://127.0.0.1:${instance.address().port}`;
 }
 
-function fixtureRequest(origin, observed = []) {
+function fixtureRequest(origin, observed = [], maxResponseBytes = limits.maxResponseBytes) {
   return (url, signal) => publicRequest(url, signal, {}, async () => [{ address: "8.8.8.8", family: 4 }], (destination, config, done) => {
     observed.push({ url: destination.href, headers: config.headers });
     config.lookup(destination.hostname, { all: true }, (error, records) => {
@@ -35,7 +36,7 @@ function fixtureRequest(origin, observed = []) {
     });
     // Only this fixture maps the checked public destination to its ephemeral loopback server.
     return http.request(new URL(destination.pathname + destination.search, origin), { ...config, lookup: undefined }, done);
-  });
+  }, maxResponseBytes);
 }
 
 test("only public IPs pass, including alternate IPv4 and IPv6 encodings", async () => {
@@ -86,6 +87,47 @@ test("real HTTP transport sends browser headers and uses the checked DNS answer"
   await assert.rejects(pending, /cancelled DNS/);
 });
 
+test("compressed responses decode before text extraction and unsupported encodings fail", async t => {
+  const compressors = { gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync, "gzip, br": value => brotliCompressSync(gzipSync(value)) };
+  let closed;
+  const connectionClosed = new Promise(resolve => { closed = resolve; });
+  const origin = await server(t, (req, res) => {
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    if (req.url === "/slow") {
+      res.setHeader("content-encoding", "gzip");
+      res.on("close", closed);
+      res.write(gzipSync(Buffer.from(content)).subarray(0, 10));
+      return;
+    }
+    if (req.url === "/broken") { res.setHeader("content-encoding", "gzip"); res.end("invalid gzip data"); return; }
+    const encoding = decodeURIComponent(req.url.slice(1));
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    res.setHeader("content-encoding", encoding);
+    res.end(compressors[encoding] ? compressors[encoding](Buffer.from(content)) : "unsupported payload");
+  });
+  const { HttpFetchProvider } = await released("dsh-web-fetch-http");
+  const fetcher = companyFetcher(HttpFetchProvider, WebError, limits, { request: fixtureRequest(origin) });
+  for (const encoding of Object.keys(compressors)) {
+    const result = await fetcher.fetch({ url: `https://public.example/${encoding}` });
+    assert.equal(result.body.content, content, encoding);
+  }
+  await assert.rejects(fetcher.fetch({ url: "https://public.example/unknown" }), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" });
+  await assert.rejects(fetcher.fetch({ url: "https://public.example/broken" }), { code: "WEB_PROVIDER_ERROR" });
+  await assert.rejects(fetcher.fetch({ url: "https://public.example/gzip,gzip,gzip" }), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" });
+  const controller = new AbortController();
+  const pendingBody = await fixtureRequest(origin)("https://public.example/slow", controller.signal);
+  const reading = pendingBody.text();
+  controller.abort();
+  await assert.rejects(reading);
+  await connectionClosed;
+  const small = companyFetcher(HttpFetchProvider, WebError, { ...limits, maxResponseBytes: 128 }, { request: fixtureRequest(origin) });
+  const truncated = await small.fetch({ url: "https://public.example/gzip" });
+  assert.equal(truncated.truncated, true, "the decoded body cap remains active");
+  assert.ok(truncated.body.content.length < content.length);
+  const wireCap = companyFetcher(HttpFetchProvider, WebError, limits, { request: fixtureRequest(origin, [], 16) });
+  await assert.rejects(wireCap.fetch({ url: "https://public.example/gzip" }), { code: "WEB_FETCH_TOO_LARGE" });
+});
+
 test("search follows each session and falls back on HTTP, network, empty-tool and timeout failures", async t => {
   for (const selected of ["codex/gpt-6.1-terra", "deepseek/chat", undefined]) for (const failure of ["http", "network", "missing", "timeout"]) {
     const calls = [], logs = [];
@@ -131,6 +173,8 @@ test("login URLs and HTML are explicit failures; static articles need no browser
   assert.equal(loginPage("https://example.com/news", "<title>请登录</title>"), true);
   assert.equal(loginPage("https://example.com/news", '<input type="password">'), true);
   assert.equal(needsRendering(shell), true);
+  assert.equal(needsRendering(`<script>${"ignored".repeat(1000)}</script><style>${"ignored".repeat(1000)}</style><main>短内容</main>`), true);
+  assert.equal(needsRendering(`<script>ignored</script><main>${content}</main>`), false);
   assert.equal(needsRendering(`<article>${content}</article><script src="/tracking.js"></script>`), false);
   const { HttpFetchProvider } = await released("dsh-web-fetch-http");
   let browserLoads = 0;
@@ -192,7 +236,14 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   assert.deepEqual(log, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
   const fetchApi = await released("dsh-web-fetch-http", { root });
   let fetcher;
-  fetchApi.apply({ web: { registerFetchProvider: value => { fetcher = value; } } }, limits);
+  const context = { web: { registerFetchProvider: value => { fetcher = value; } } };
+  const defaults = fetchApi.Config(limits);
+  assert.equal(defaults.renderConcurrency, 1);
+  assert.equal(defaults.renderTimeoutMs, 15000);
+  fetchApi.apply(context, defaults);
+  for (const invalid of [0, -1, 1.5, NaN, "2", null]) assert.throws(() => fetchApi.apply(context, { ...defaults, renderConcurrency: invalid }), /renderConcurrency/);
+  for (const invalid of [0, -1, 1.5, NaN, 2147483648, "15000", null]) assert.throws(() => fetchApi.apply(context, { ...defaults, renderTimeoutMs: invalid }), /renderTimeoutMs/);
+  fetchApi.apply(context, fetchApi.Config({ ...limits, renderConcurrency: 2, renderTimeoutMs: 750 }));
   await assert.rejects(fetcher.fetch({ url: "http://127.0.0.1/" }), { code: "WEB_BLOCKED_URL" });
   await writeFile(file, before.replace('search: (request, signal) => searchWithFallback', 'search: (input, signal) => searchWithFallback'));
   assert.throws(() => patchWebTools(root), /did not match/);
@@ -204,11 +255,13 @@ test("Chromium renders JS through checked requests, blocks private resources and
   const { chromium } = await import(process.env.PARTNER_TEST_PLAYWRIGHT);
   const { HttpFetchProvider } = await released("dsh-web-fetch-http");
   const origin = await server(t, (req, res) => {
-    if (req.url === "/app.js") { res.setHeader("content-type", "application/javascript"); return res.end(`document.getElementById('app').textContent=${JSON.stringify(content)};fetch('http://127.0.0.1/private').catch(()=>{});`); }
+    res.setHeader("content-encoding", "gzip");
+    const end = body => res.end(gzipSync(Buffer.from(body)));
+    if (req.url === "/app.js") { res.setHeader("content-type", "application/javascript"); return end(`document.getElementById('app').textContent=${JSON.stringify(content)};fetch('http://127.0.0.1/private').catch(()=>{});`); }
     res.setHeader("content-type", "text/html");
-    if (req.url === "/needs-login") return res.end('<html><head></head><body><script>location.href="/signin"</script></body></html>');
-    if (req.url === "/private-navigation") return res.end('<html><head></head><body><script>location.href="http://169.254.169.254/latest"</script></body></html>');
-    res.end(shell);
+    if (req.url === "/needs-login") return end('<html><head></head><body><script>location.href="/signin"</script></body></html>');
+    if (req.url === "/private-navigation") return end('<html><head></head><body><script>location.href="http://169.254.169.254/latest"</script></body></html>');
+    end(shell);
   });
   const observed = [], browsers = [];
   const runtime = { launchPinnedChromium: async options => {

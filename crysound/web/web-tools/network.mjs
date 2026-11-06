@@ -3,7 +3,8 @@ import { lookup } from "node:dns/promises";
 import { isIP, BlockList } from "node:net";
 import http from "node:http";
 import https from "node:https";
-import { Readable } from "node:stream";
+import { Readable, Transform, pipeline } from "node:stream";
+import { createGunzip, createInflate, createBrotliDecompress } from "node:zlib";
 
 /** Browser identification for anonymous page retrieval. */
 export const USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
@@ -62,8 +63,8 @@ export async function publicTarget(input, resolve = lookup) {
   return { url, records };
 }
 
-/** Pin checked DNS answers on a fresh socket without proxy or ambient identity. @param input URL. @param signal Optional cancellation. @param headers Optional non-secret headers. @param resolve Optional DNS implementation. @param send Optional test transport. @returns Streaming Fetch-compatible response. */
-export async function publicRequest(input, signal, headers = {}, resolve = lookup, send) {
+/** Pin checked DNS answers on a fresh socket without proxy or ambient identity. @param input URL. @param signal Optional cancellation. @param headers Optional non-secret headers. @param resolve Optional DNS implementation. @param send Optional test transport. @param maxResponseBytes Compressed-byte limit. @returns Streaming Fetch-compatible response. */
+export async function publicRequest(input, signal, headers = {}, resolve = lookup, send, maxResponseBytes = 5_000_000) {
   signal?.throwIfAborted();
   const { url, records } = await withAbort(publicTarget(input, resolve), signal);
   signal?.throwIfAborted();
@@ -85,8 +86,35 @@ export async function publicRequest(input, signal, headers = {}, resolve = looku
       const status = response.statusCode;
       // Fetch Response rejects bodies for these statuses.
       const noBody = [204, 205, 304].includes(status);
-      if (noBody) response.resume();
-      accept(new Response(noBody ? null : Readable.toWeb(response), { status, headers: responseHeaders }));
+      if (noBody) {
+        response.resume();
+        accept(new Response(null, { status, headers: responseHeaders }));
+        return;
+      }
+      const encodings = (responseHeaders.get("content-encoding") ?? "").toLowerCase().split(",").map(value => value.trim()).filter(value => value && value !== "identity");
+      const decoders = { gzip: createGunzip, "x-gzip": createGunzip, deflate: createInflate, br: createBrotliDecompress };
+      if (encodings.length > 2 || encodings.some(encoding => !Object.hasOwn(decoders, encoding))) {
+        response.destroy();
+        reject(webError("不支持的网页压缩格式", "WEB_UNSUPPORTED_CONTENT_TYPE"));
+        return;
+      }
+      let body = response;
+      if (encodings.length) {
+        let received = 0;
+        const wireLimit = new Transform({
+          transform(chunk, encoding, callback) {
+            received += chunk.length;
+            callback(received > maxResponseBytes ? webError("网页资源过大", "WEB_FETCH_TOO_LARGE") : null, chunk);
+          },
+        });
+        const streams = [response, wireLimit, ...encodings.reverse().map(encoding => decoders[encoding]())];
+        body = streams.at(-1);
+        // Pipeline propagates cancellation and decode errors to the socket and every decoder.
+        pipeline(streams, error => { /* The response reader observes stream errors. */ });
+        responseHeaders.delete("content-encoding");
+        responseHeaders.delete("content-length");
+      }
+      accept(new Response(Readable.toWeb(body), { status, headers: responseHeaders }));
     });
     request.on("error", reject);
     request.end();

@@ -12,8 +12,20 @@ export function loginPage(url, html = "") {
 
 /** Identify a short script-driven shell. @param html Decoded HTML. @returns Whether one render should be attempted. */
 export function needsRendering(html) {
-  const text = html.replace(/<(script|style|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<[^>]*>/g, "").replace(/\s|&(?:nbsp|#160);/g, "");
-  return text.length < 240 && /<script\b|enable\s+javascript|需要.{0,5}JavaScript/i.test(html);
+  // Count text tokens only. This heuristic never produces HTML for display or execution.
+  let length = 0, rawTag;
+  for (const match of html.matchAll(/<!--[\s\S]*?-->|<(\/?)([a-z][\w:-]*)\b[^>]*>|([^<]+)/gi)) {
+    const [, closing, tag, text] = match;
+    if (tag) {
+      const name = tag.toLowerCase();
+      if (closing && name === rawTag) rawTag = undefined;
+      else if (!closing && ["script", "style", "noscript"].includes(name) && !rawTag) rawTag = name;
+    } else if (text && !rawTag) {
+      length += (text.match(/&(?:nbsp|#160);|\S/g) ?? []).filter(token => token !== "&nbsp;" && token !== "&#160;").length;
+      if (length >= 240) return false;
+    }
+  }
+  return /<script\b|enable\s+javascript|需要.{0,5}JavaScript/i.test(html);
 }
 
 /** Flatten HTTP redirects using checked transport. @param url Initial URL. @param signal Optional cancellation. @param request Checked request function. @param maxHops Redirect limit. @param main Check login paths when true. @returns Final response and URL. */
@@ -49,9 +61,16 @@ async function cappedBytes(response, maxBytes) {
   } finally { await reader.cancel(); }
 }
 
+/** Validate plugin rendering settings before registration. @param config Resolved plugin config. @returns Render options for the adapter. */
+export function renderOptions(config) {
+  if (!Number.isInteger(config.renderConcurrency) || config.renderConcurrency < 1) throw new Error("web-fetch-http: renderConcurrency must be a positive integer");
+  if (!Number.isInteger(config.renderTimeoutMs) || config.renderTimeoutMs < 1 || config.renderTimeoutMs > 2_147_483_647) throw new Error("web-fetch-http: renderTimeoutMs must be a positive integer within Node's timer range");
+  return { maxConcurrent: config.renderConcurrency, renderTimeoutMs: config.renderTimeoutMs };
+}
+
 /** Create a provider with owned render slots and no waiting queue. @param Base Released HTTP provider class. @param WebError Released error class. @param limits Resolved provider limits. @param options Optional local transport/runtime overrides. @returns Company fetch provider. */
 export function companyFetcher(Base, WebError, limits, {
-  request = publicRequest,
+  request = (url, signal) => publicRequest(url, signal, {}, undefined, undefined, limits.maxResponseBytes),
   loadRuntime = () => import(process.env.SLIDESTUDIO_PLAYWRIGHT_RUNTIME),
   maxConcurrent = 1,
   renderTimeoutMs = 15_000,
@@ -74,6 +93,7 @@ export function companyFetcher(Base, WebError, limits, {
           signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "网页抓取超时，请稍后重试" : "网页抓取已取消",
           signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "WEB_FETCH_TIMEOUT" : "WEB_ABORTED", { cause: error },
         );
+        if (error.cause?.code === "WEB_FETCH_TOO_LARGE") throw new WebError(error.cause.message, "WEB_FETCH_TOO_LARGE", { cause: error });
         if (error instanceof WebError) throw error;
         throw new WebError(error.code?.startsWith("WEB_") ? error.message : "网页请求失败，请稍后重试",
           error.code?.startsWith("WEB_") ? error.code : "WEB_PROVIDER_ERROR", { cause: error });
