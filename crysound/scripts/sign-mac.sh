@@ -59,11 +59,16 @@ rw="$work/rw.dmg"
 hdiutil convert "$dmg" -format UDRW -o "$rw" -quiet
 hdiutil resize -size "$(( $(du -sm "$target" | cut -f1) + 200 ))m" "$rw"
 hdiutil attach "$rw" -mountpoint "$mount" -nobrowse -quiet
+mdutil -i off "$mount" >/dev/null 2>&1 || true
 rm -rf "$mount/$name"
 ditto "$target" "$mount/$name"
 test -L "$mount/Applications"
-# The volume is briefly busy after a large copy (indexing); retry, then force.
-for attempt in 1 2 3 4 5; do hdiutil detach "$mount" -quiet && break; [ "$attempt" = 5 ] && hdiutil detach "$mount" -force; sleep 5; done
+# The volume stays busy for a while after a large copy, and a detach that reports failure can still
+# finish a moment later; what matters is that the mount is gone.
+mounted() { mount | grep -qF " on $mount ("; }
+for attempt in 1 2 3 4 5 6 7 8 9 10; do mounted || break; hdiutil detach "$mount" -quiet || sleep 5; done
+if mounted; then hdiutil detach "$mount" -force; fi
+mounted && { echo "could not detach $mount" >&2; exit 1; }
 hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
