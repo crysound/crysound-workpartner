@@ -2,6 +2,10 @@ FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates python3 ripgrep iproute2 librsvg2-bin \
  && rm -rf /var/lib/apt/lists/* \
  && npm i -g @deepseek-ai/dsh@0.2.2-rc.1 pnpm@10 && npm cache clean --force
+# 固定公司插件包在构建时下载并校验；profile 只依赖本地文件。
+COPY plugin-artifacts.mjs /opt/partner/plugin-artifacts.mjs
+RUN node /opt/partner/plugin-artifacts.mjs download /opt/company-plugins \
+ && chmod a+r /opt/company-plugins/*.tgz /opt/partner/plugin-artifacts.mjs
 # 飞书命令放独立前缀，PATH 上只暴露公司用户身份包装器。
 RUN npm install -g --prefix /opt/partner-clis @larksuite/cli@1.0.99 @lark-project/meegle@1.0.27 && npm cache clean --force
 COPY feishu/ /opt/partner/feishu/

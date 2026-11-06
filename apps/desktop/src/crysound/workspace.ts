@@ -4,6 +4,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { cp, copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import { desktopPlugins } from '../../../../crysound/plugin-artifacts.mjs'
 import { companyConfig } from './company-config.ts'
 
 /** Inputs of one preparation run; everything is a plain path so the run can also be smoke-tested outside Electron. */
@@ -156,13 +157,16 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
   const marketOrigin = new URL(options.environment.CRYSOUND_LLM_BASE).origin
   const config = await companyConfig(options.assets, userData, options.environment)
   try {
-    const list = await readJson(join(config.directory, 'plugins.json')) as unknown as PluginList
+    const configured = await readJson(join(config.directory, 'plugins.json')) as unknown as PluginList
+    const list: PluginList = { ...configured, plugins: desktopPlugins(configured.plugins, join(assets, 'company-plugins'), profile) }
     const manifestPath = join(profile, 'package.json')
     const recorded = async (): Promise<Record<string, string>> =>
       ((await readJson(manifestPath)).dependencies ?? {}) as Record<string, string>
     const environment: NodeJS.ProcessEnv = { ...options.environment, ELECTRON_RUN_AS_NODE: '1' }
     await mkdir(userData, { recursive: true })
 
+    const repaired = await run(execPath, [join(assets, 'plugin-artifacts.mjs'), 'repair', profile, cliEntry], environment, limits.patch)
+    if (repaired !== 0) throw new Error('CRYSOUND: company plugin lockfile repair failed')
     await applyPluginTemplate(assets, profile, list, limits, onBusy)
     const deadline = Date.now() + limits.installTotal
     const skipped: string[] = []

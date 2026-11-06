@@ -4,6 +4,7 @@
  * `Resources/crysound/plugin-template`; the first launch copies it into the user's profile instead of downloading.
  * `modules/` stands for the profile's `node_modules`, because electron-builder drops a source directory's root `node_modules`.
  */
+import { desktopPlugins } from '../../../crysound/plugin-artifacts.mjs'
 import { spawn } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -45,7 +46,7 @@ const environment: NodeJS.ProcessEnv = {
 const recorded = (): Record<string, string> =>
   (JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> }).dependencies ?? {}
 
-for (const plugin of list.plugins) {
+for (const plugin of desktopPlugins(list.plugins, join(paths.root, 'company-plugins'), profile)) {
   const code = await new Promise<number>((done) => {
     const child = spawn(electron, ['--expose-internals', cli, 'plugin', '--profile', 'desktop', 'add', plugin.spec], { env: environment, stdio: 'inherit' })
     child.once('error', () => { done(1) })

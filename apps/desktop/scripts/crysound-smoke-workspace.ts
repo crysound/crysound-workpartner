@@ -1,3 +1,4 @@
+import { DESKTOP_WANT, FEISHU, WEB_SPEC, verifyArchive } from '../../../crysound/plugin-artifacts.mjs'
 import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
@@ -28,7 +29,7 @@ console.log(`first-run preparation (bundled plugins, no network): ${seconds.toFi
 await prepareCompanyWorkspace(options)
 
 const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
-  plugins: { name: string; want: string }[]
+  plugins: { name: string; spec: string; want: string }[]
   defaultBundles: string[]
 }
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
@@ -37,7 +38,11 @@ const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8'))
 }
 let failed = false
 const check = (ok: boolean, message: string): void => { console.log(`${ok ? 'ok  ' : 'FAIL'}  ${message}`); if (!ok) failed = true }
-for (const plugin of list.plugins) check(manifest.dependencies?.[plugin.name] === plugin.want, `plugin ${plugin.name} installed (${plugin.want})`)
+for (const plugin of list.plugins) {
+  const want = plugin.name === FEISHU.name && plugin.want === WEB_SPEC ? DESKTOP_WANT : plugin.want
+  check(manifest.dependencies?.[plugin.name] === want, `plugin ${plugin.name} installed (${want})`)
+}
+verifyArchive(readFileSync(join(profile, 'company-plugins', FEISHU.file)))
 const bundles = manifest.dsh?.profile?.bundles ?? []
 for (const name of list.defaultBundles) check(bundles.filter(bundle => bundle === name).length === 1, `bundle ${name} enabled once`)
 const patch = readFileSync(join(profile, 'cordis.patch.yml'), 'utf8')
@@ -55,7 +60,7 @@ if (process.env.SMOKE_ONLINE_BASELINE === '1') {
   const online = join(process.env.DSH_HOME as string, 'online-baseline')
   const onlineAssets = join(online, 'assets')
   mkdirSync(onlineAssets, { recursive: true })
-  cpSync(join(assets, 'config'), join(onlineAssets, 'config'), { recursive: true })
+  for (const part of ['config', 'company-plugins', 'feishu', 'plugin-artifacts.mjs']) cpSync(join(assets, part), join(onlineAssets, part), { recursive: true })
   const onlineProfile = join(online, 'profiles', 'desktop')
   initProfile(onlineProfile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
   const onlineStart = Date.now()

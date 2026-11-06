@@ -37,7 +37,8 @@ with tempfile.TemporaryDirectory(prefix='partner-config-smoke-', dir=REPO / '.ar
     key.write_text('fake-key-for-local-smoke')
     key.chmod(0o444)
     name = 'partner-config-smoke-' + uuid.uuid4().hex[:12]
-    mounts = ['--mount', f'type=bind,src={data},dst=/data',
+    mounts = ['--mount', f'type=bind,src={REPO / "crysound/plugin-artifacts.mjs"},dst=/opt/partner/plugin-artifacts.mjs,readonly',
+              '--mount', f'type=bind,src={data},dst=/data',
               '--mount', f'type=bind,src={config},dst=/opt/partner-config,readonly',
               '--mount', f'type=bind,src={key},dst=/etc/partner/magpie.key,readonly',
               '--mount', f'type=bind,src={REPO / "crysound/web/entrypoint.sh"},dst=/test-entrypoint.sh,readonly']

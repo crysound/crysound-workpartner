@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,6 +23,7 @@ function makeAssets(names: readonly string[]): { assets: string; profile: string
   mkdirSync(join(assets, 'config', 'skills', 'publish-zhaohua-market'), { recursive: true })
   mkdirSync(join(assets, 'feishu'), { recursive: true })
   mkdirSync(profile, { recursive: true })
+  copyFileSync(new URL('../../../crysound/plugin-artifacts.mjs', import.meta.url), join(assets, 'plugin-artifacts.mjs'))
   writeFileSync(join(assets, 'config', 'plugins.json'), JSON.stringify({
     plugins: names.map(name => ({ name, spec: `${name}@1.0.0`, want: '1.0.0' })), defaultBundles: [],
   }))
