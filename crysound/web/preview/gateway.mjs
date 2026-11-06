@@ -37,6 +37,7 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
     throw new Error("PREVIEW_HOST must be a separate sibling domain, without a scheme, port or wildcard");
   }
   const mainOrigin = `https://${publicHost}`;
+  const previewOrigin = `https://${previewHost}`;
   const scope = (user) => hmac(key, `preview-origin-v1:${user.unionId}`).slice(0, 24);
   const used = new Map();
   const pack = (purpose, value) => {
@@ -71,6 +72,12 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
     res.end(message);
   };
   const redirect = (res, location, cookies = []) => {
+    let destination;
+    try { destination = new URL(location, mainOrigin); }
+    catch (error) { reject(res, 400, "预览跳转地址无效。"); return; }
+    if (destination.origin !== mainOrigin && destination.origin !== previewOrigin) {
+      reject(res, 400, "预览跳转地址无效。"); return;
+    }
     res.writeHead(302, { location, "cache-control": "no-store", "referrer-policy": "no-referrer", "set-cookie": cookies }); res.end();
   };
   const start = (res, r, path) => {

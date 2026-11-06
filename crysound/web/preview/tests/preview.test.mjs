@@ -36,6 +36,8 @@ async function fixture(t) {
       return;
     }
     if (req.url === "/redirect") { res.writeHead(302, { location: `http://127.0.0.1:${editor.address().port}/slides/demo/?a=1` }); return res.end(); }
+    res.setHeader("content-type", "text/plain; charset=utf-8");
+    res.setHeader("x-content-type-options", "nosniff");
     res.setHeader("set-cookie", ["editor=ok; Domain=example.test; Path=/", "__Host-zp-preview=forged; Path=/; Secure"]);
     if (req.url === "/post") { const chunks = []; req.on("data", (chunk) => chunks.push(chunk)); req.on("end", () => res.end(Buffer.concat(chunks))); }
     else res.end(`editor:${req.url}`);
@@ -97,7 +99,7 @@ async function fixture(t) {
 test("port and path inputs reject the workspace control plane and non-local targets", () => {
   for (const value of [80, 443, 3080, 3090, 3091, 3092, 65536, "04710", "4710@evil", "1e4", "4710.0", "localhost:4710"]) assert.equal(previewPort(value), null, String(value));
   assert.equal(previewPort("4710"), 4710);
-  for (const value of ["//evil.test", "/\\evil", "https://evil.test", "/ok\r\nx: y"]) assert.equal(previewPath(value), null);
+  for (const value of ["//evil.test", "/\\evil", "https://evil.test", "/ok\r\nx: y", "/\t/evil.test", "/ok\x1f"]) assert.equal(previewPath(value), null);
   assert.equal(previewPath("/slides/demo/?q=1#p2"), "/slides/demo/?q=1#p2");
 });
 
@@ -124,6 +126,7 @@ test("real HTTP roundtrip preserves root paths, cookies, request bodies and redi
   assert(!page.headers["set-cookie"].some((c) => c.includes("forged")));
   const post = await f.request(b.origin + "/post", { jar: b.jar, method: "POST", body: "saved", headers: { origin: b.origin, "content-type": "text/plain" } });
   assert.equal(post.text, "saved");
+  assert.equal(post.headers["content-type"], "text/plain; charset=utf-8");
   assert.equal(f.requests.at(-1).headers.origin, `http://127.0.0.1:${f.port}`);
   assert.equal(f.requests.at(-1).headers.cookie, "editor=ok");
   const redirect = await f.request(b.origin + "/redirect", { jar: b.jar });
@@ -151,6 +154,27 @@ test("copied links, wrong-browser grants, replays and tampered bindings cannot c
   assert.equal((await f.request("/_zp/preview/open?port=3080")).status, 400);
   assert.equal((await f.request("/_zp/preview/open?port=3091")).status, 400);
   assert.equal((await f.request("/_zp/preview/open?port=4710&path=//evil.test")).status, 400);
+  const unsafePath = encodeURIComponent("/\t/evil.test");
+  assert.equal((await f.request(`/_zp/preview/open?port=${f.port}&path=${unsafePath}`)).status, 400);
+  const unsafeStart = new URL(b.open.headers.location);
+  unsafeStart.searchParams.set("path", "/\t/evil.test");
+  assert.equal((await f.request(unsafeStart.href, { jar: b.jar })).status, 400);
+  const unsafeAuth = new URL(b.start.headers.location);
+  unsafeAuth.searchParams.set("path", "/\t/evil.test");
+  assert.equal((await f.request(unsafeAuth.href, { jar: b.jar })).status, 403);
+  // A malformed signed grant must also fail at the final redirect, after URL normalization.
+  const freshStart = await f.request(b.open.headers.location, { jar: b.jar });
+  const freshAuth = await f.request(freshStart.headers.location, { jar: b.jar });
+  const redeem = new URL(freshAuth.headers.location);
+  const [grantData] = redeem.searchParams.get("ticket").split(".");
+  const grant = JSON.parse(Buffer.from(grantData, "base64url"));
+  grant.path = "/\t/evil.test";
+  const changed = Buffer.from(JSON.stringify(grant)).toString("base64url");
+  const grantSignature = crypto.createHmac("sha256", f.key).update(`grant:${changed}`).digest("hex");
+  redeem.searchParams.set("ticket", `${changed}.${grantSignature}`);
+  const deniedRedirect = await f.request(redeem.href, { jar: b.jar });
+  assert.equal(deniedRedirect.status, 400);
+  assert.equal(deniedRedirect.headers.location, undefined);
   f.users.splice(0, 1);
   assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 401);
 });

@@ -9,10 +9,10 @@ export function previewPort(value) {
   return port >= 1024 && port <= 65535 && !RESERVED.has(port) ? port : null;
 }
 
-/** Accept only a root-relative path, keeping queries and fragments. */
+/** Accept only a root-relative path without URL-normalized controls, keeping queries and fragments. */
 export function previewPath(value) {
   return typeof value === "string" && value.length <= 16384 && value.startsWith("/")
-    && !value.startsWith("//") && !/[\\\r\n\0]/.test(value) ? value : null;
+    && !value.startsWith("//") && !/[\\\x00-\x1f\x7f]/.test(value) ? value : null;
 }
 
 /** Remove gateway credentials while preserving an editor's own cookies. */
