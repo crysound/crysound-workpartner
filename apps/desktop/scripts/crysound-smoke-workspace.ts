@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
 import { PROFILE_TEMPLATES, type ProfileTemplate } from '@deepseek-ai/dsh-official-bundles'
@@ -10,13 +10,20 @@ const profile = join(process.env.DSH_HOME as string, 'profiles', 'desktop')
 const assets = join(app, 'Contents', 'Resources', 'crysound')
 initProfile(profile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
 
-const environment = { ...process.env, DSH_TELEMETRY_DISABLED: '1', MAGPIE_API_KEY: '' }
+// The registry points at a closed port: any plugin that still needed the network would fail to install.
+const environment = {
+  ...process.env, DSH_TELEMETRY_DISABLED: '1', MAGPIE_API_KEY: '',
+  npm_config_registry: 'http://127.0.0.1:9/', NPM_CONFIG_REGISTRY: 'http://127.0.0.1:9/',
+}
 const options = {
   assets, profile, userData, environment,
   execPath: join(app, 'Contents', 'MacOS', 'CRYSOUND WorkPartner'),
   cliEntry: join(app, 'Contents', 'Resources', 'app.asar', 'dsh', 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
 }
+const started = Date.now()
 await prepareCompanyWorkspace(options)
+const seconds = (Date.now() - started) / 1000
+console.log(`first-run preparation (bundled plugins, no network): ${seconds.toFixed(1)} s`)
 // A second run must not repeat the once-only steps.
 await prepareCompanyWorkspace(options)
 
@@ -40,4 +47,22 @@ for (const id of ['llm-pi-ai', 'agent-default-model', 'ui-settings-general']) {
 check(patch.includes('baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL'), 'seed baseURL uses the startup model gateway')
 const feishu = join(profile, 'node_modules', '@aiwayds', 'dsh-feishu', 'lib', 'bot.js')
 check(readFileSync(feishu, 'utf8').includes('auto-new failed'), 'feishu plugin patch applied')
+check(existsSync(join(assets, 'plugin-template', 'package.json')), 'plugin template shipped in the package')
+check(!existsSync(join(profile, 'node_modules.zp-tmp')), 'no staging directory left behind')
+
+// Reference: the same preparation without the template, installing from the registry (informational; needs network).
+if (process.env.SMOKE_ONLINE_BASELINE === '1') {
+  const online = join(process.env.DSH_HOME as string, 'online-baseline')
+  const onlineAssets = join(online, 'assets')
+  mkdirSync(onlineAssets, { recursive: true })
+  cpSync(join(assets, 'config'), join(onlineAssets, 'config'), { recursive: true })
+  const onlineProfile = join(online, 'profiles', 'desktop')
+  initProfile(onlineProfile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
+  const onlineStart = Date.now()
+  await prepareCompanyWorkspace({
+    ...options, assets: onlineAssets, profile: onlineProfile, userData: join(online, 'userdata'),
+    environment: { ...process.env, DSH_TELEMETRY_DISABLED: '1', DSH_HOME: online },
+  })
+  console.log(`first-run preparation (online install, before this change): ${((Date.now() - onlineStart) / 1000).toFixed(1)} s`)
+}
 process.exit(failed ? 1 : 0)

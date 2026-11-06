@@ -8,11 +8,13 @@ out=$2
 root=$(cd "$(dirname "$0")/../.." && pwd)
 entitlements="$root/apps/desktop/scripts/macos-entitlements.plist"
 mkdir -p "$out"
-work=$(mktemp -d)
+# Physical path: /var is a link to /private/var, and mount(8) lists mount points by their physical path.
+work=$(cd "$(mktemp -d)" && pwd -P)
 keychain="$work/signing.keychain-db"
 password=$(uuidgen)
 cleanup() { security delete-keychain "$keychain" >/dev/null 2>&1 || true; rm -rf "$work"; }
 trap cleanup EXIT
+trap 'echo "sign-mac.sh: line $LINENO failed: $BASH_COMMAND" >&2' ERR
 
 security create-keychain -p "$password" "$keychain"
 security set-keychain-settings -lut 21600 "$keychain"
@@ -39,10 +41,14 @@ sign() { codesign --force --timestamp --options runtime --entitlements "$entitle
 
 # Innermost code first: every Mach-O file, then frameworks and helper apps (deepest first), then the app.
 count=0
+template_count=0
 while IFS= read -r -d '' file; do
-  if file -b "$file" | grep -q "Mach-O"; then sign "$file"; count=$((count + 1)); fi
+  if file -b "$file" | grep -q "Mach-O"; then
+    sign "$file"; count=$((count + 1))
+    case "$file" in */Resources/crysound/plugin-template/*) template_count=$((template_count + 1));; esac
+  fi
 done < <(find "$target" -type f -print0)
-echo "signed $count Mach-O files"
+echo "signed $count Mach-O files, $template_count of them in the bundled plugin template"
 find "$target" -type d \( -name '*.framework' -o -name '*.app' \) ! -path "$target" | awk '{ print length, $0 }' | sort -rn | cut -d' ' -f2- |
   while IFS= read -r bundle; do sign "$bundle"; done
 sign "$target"
@@ -55,11 +61,30 @@ rw="$work/rw.dmg"
 hdiutil convert "$dmg" -format UDRW -o "$rw" -quiet
 hdiutil resize -size "$(( $(du -sm "$target" | cut -f1) + 200 ))m" "$rw"
 hdiutil attach "$rw" -mountpoint "$mount" -nobrowse -quiet
+mdutil -i off "$mount" >/dev/null 2>&1 || true
 rm -rf "$mount/$name"
 ditto "$target" "$mount/$name"
 test -L "$mount/Applications"
-hdiutil detach "$mount" -quiet
-hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet
+# The volume stays busy for a while after a large copy, and a detach that reports failure can still
+# finish a moment later; what matters is that the mount is gone.
+mounted() { mount | grep -F " on $mount (" >/dev/null; }
+for attempt in 1 2 3 4 5 6 7 8 9 10; do mounted || break; hdiutil detach "$mount" -quiet || sleep 5; done
+if mounted; then hdiutil detach "$mount" -force; fi
+mounted && { echo "could not detach $mount" >&2; exit 1; }
+# Even with the mount point gone the image can stay attached for a while ("Resource temporarily
+# unavailable"), so wait until hdiutil no longer lists it and retry the conversion.
+for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do hdiutil info | grep -F "$rw" >/dev/null || break; sleep 5; done
+# On GitHub's macOS runners XProtect keeps scanning a freshly detached image and holds it open, which
+# is what makes the conversion fail as busy; stop it first. If the image is still held, convert a copy.
+stop_xprotect() { sudo -n pkill -9 XProtect >/dev/null 2>&1 || true; for i in 1 2 3 4 5; do pgrep XProtect >/dev/null || break; sleep 2; done; }
+for attempt in 1 2 3 4 5 6; do
+  stop_xprotect
+  src="$rw"
+  if [ "$attempt" -gt 2 ]; then src="$work/copy-$attempt.dmg"; cp "$rw" "$src"; fi
+  hdiutil convert "$src" -format ULMO -ov -o "$signed" && break
+  [ "$attempt" -lt 6 ] || exit 1
+  sleep 10
+done
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
 result="$work/notarize.txt"

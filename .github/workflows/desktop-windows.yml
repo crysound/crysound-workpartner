@@ -31,7 +31,20 @@ jobs:
           node-version: '24'
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      # Windows packaging always reads apps/desktop/.env.windows. The company app ignores the update policy at
+      # run time, so the policy origin only has to pass validation; no signing or upload settings are set.
+      - name: Write packaging settings
+        run: |
+          cat > apps/desktop/.env.windows <<'ENV'
+          DSH_DESKTOP_APP_ID=com.crysound.workpartner
+          DSH_DESKTOP_AUTO_UPDATE_ENV=production
+          DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://partner.corp.crysound.com
+          DSH_DESKTOP_WINDOWS_COMPRESSION_LEVEL=3
+          ENV
+      # PowerShell, not Git Bash: the packaging scripts call tar with D:\ paths, which GNU tar from Git Bash
+      # reads as a remote host; Windows' own tar handles them.
       - name: Package win-x64 (unsigned)
+        shell: pwsh
         env:
           PUBLIC_HOST: ${{ vars.PUBLIC_HOST }}
         run: |
@@ -52,6 +65,36 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
+      # Smoke test on the runner: silent per-user install, launch, and check the app is still running after
+      # 90 seconds. The screenshot shows the first window (the Feishu sign-in page when nobody is signed in).
+      - name: Install and launch (smoke)
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path "${{ steps.exe.outputs.path }}"
+          Start-Process -FilePath $exe -ArgumentList '/S' -Wait
+          $app = Get-ChildItem "$env:LOCALAPPDATA\Programs", "$env:ProgramFiles" -Recurse -Filter *.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -notmatch 'Uninstall|elevate|crashpad|squirrel' -and $_.Directory.GetFiles('resources.pak').Count -gt 0 } | Select-Object -First 1
+          if (-not $app) { throw 'installed app not found' }
+          "installed: $($app.FullName)"
+          New-Item -ItemType Directory -Force smoke | Out-Null
+          $p = Start-Process -FilePath $app.FullName -PassThru -RedirectStandardOutput smoke\stdout.txt -RedirectStandardError smoke\stderr.txt
+          Start-Sleep -Seconds 90
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("smoke\screen.png")
+          Get-Process | Where-Object { $_.Path -like "$($app.DirectoryName)*" } | Format-Table Id, ProcessName, MainWindowTitle -AutoSize | Out-String -Width 200 | Tee-Object smoke\processes.txt
+          Get-ChildItem "$env:APPDATA" -Directory | Where-Object { $_.Name -match 'crysound|workpartner|兆华|dsh' } | ForEach-Object { Copy-Item $_.FullName "smoke\appdata-$($_.Name)" -Recurse -ErrorAction SilentlyContinue }
+          if ($p.HasExited) { throw "app exited with code $($p.ExitCode)" }
+      - name: Upload smoke results
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: smoke-${{ github.run_id }}
+          path: smoke/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload packaging logs
         if: always()
         uses: actions/upload-artifact@v7.0.1

@@ -22,6 +22,11 @@ if grep -q "DeepSeek" "$plist"; then echo "FAIL  Info.plist mentions DeepSeek"; 
 
 for f in brand/brand.css brand/brand.js brand/pet.js brand/welcome.js brand/zp-mark.svg config/plugins.json config/partner.patch.yml config/plugin-patches.mjs config/profile-upgrades.mjs config/public-host.json config/market-profile.mjs config/skills/publish-zhaohua-market/SKILL.md host-hook.mjs; do has "$res/crysound/$f"; done
 has "$res/icon.png"
+tpl="$res/crysound/plugin-template"
+has "$tpl/package.json"
+has "$tpl/pnpm-lock.yaml"
+for plugin in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).plugins) console.log(p.name)' "$res/crysound/config/plugins.json"); do has "$tpl/modules/$plugin/package.json"; done
+echo "info  plugin template: $(du -sh "$tpl" | cut -f1), $(find "$tpl" -type f | wc -l | tr -d ' ') files, $(find "$tpl" -type f \( -name '*.node' -o -name '*.dylib' \) | wc -l | tr -d ' ') native libraries"
 has "$res/runtime/cli/bin/dsh"
 if [ -e "$res/app-update.yml" ]; then echo "FAIL  app-update.yml present (update feed configured)"; fail=1; else echo "ok    no app-update.yml (updates off)"; fi
 grep -qF 'baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL' "$res/crysound/config/partner.patch.yml" && echo "ok    seed uses the startup model gateway" || { echo "FAIL  seed baseURL"; fail=1; }
