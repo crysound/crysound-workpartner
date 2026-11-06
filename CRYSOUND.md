@@ -4,6 +4,9 @@
 
 ## 改了什么
 
+### 工作区本地服务预览
+- `crysound/web/preview/`：每人每端口独立预览来源，经主站登录兑换短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。原生 Browser 的发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
+
 ### 品牌
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
