@@ -134,12 +134,16 @@ export async function ensurePartnerSession(): Promise<PartnerSession | undefined
   return openLoginWindow()
 }
 
-/** Environment that points every model route of the Host at the company gateway. */
-export function partnerHostEnvironment(partner: PartnerSession): NodeJS.ProcessEnv {
+/** Company Host settings, with wrappers prepended to the caller's resolved environment PATH.
+ * @param partner - Signed-in company session.
+ * @param environment - Inherited or login-shell environment selected by the Host launcher.
+ * @returns Company overrides to merge into that environment.
+ */
+export function partnerHostEnvironment(partner: PartnerSession, environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const company = join(app.getPath('userData'), 'company')
   const skillHash = createHash('sha256').update(readFileSync(join(crysoundResources(), 'feishu', 'official-skills.tar.gz'))).digest('hex').slice(0, 16)
   return {
-    PATH: `${join(company, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
+    PATH: `${join(company, 'bin')}${delimiter}${environment.PATH ?? ''}`,
     CRYSOUND_FEISHU_CONFIG: join(company, 'feishu.json'),
     CRYSOUND_COMPANY_SKILLS: join(company, `feishu-skills-${skillHash}`),
     LARKSUITE_CLI_STRICT_MODE: 'user',

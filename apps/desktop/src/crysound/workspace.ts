@@ -91,7 +91,11 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     }
     await cp(join(config.directory, 'skills', 'publish-zhaohua-market'), join(dirname(dirname(profile)), 'skills', 'publish-zhaohua-market'), { recursive: true })
 
-    const feishuPublic = await readJson(join(options.assets, 'config', 'public-host.json'))
+    const feishuPublic = await readJson(join(options.assets, 'config', 'public-host.json')).catch((error: unknown): Record<string, unknown> => {
+      // Source launches can supply PUBLIC_HOST without generating packaged settings.
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return {}
+      throw error
+    })
     let projectHost = typeof feishuPublic.MEEGLE_HOST === 'string' ? feishuPublic.MEEGLE_HOST : ''
     if (options.environment.MAGPIE_API_KEY) {
       try {
