@@ -9,6 +9,11 @@
       "name": "dshmarket",
       "spec": "dshmarket@1.73.12",
       "want": "1.73.12"
+    },
+    {
+      "name": "@crysound/memory",
+      "spec": "@crysound/memory@0.1.0",
+      "want": "0.1.0"
     }
   ],
   "defaultBundles": [
@@ -29,6 +34,10 @@
     },
     "@crysound/data": {
       "displayName": "兆华数据",
+      "maintainers": []
+    },
+    "@crysound/memory": {
+      "displayName": "兆华记忆",
       "maintainers": []
     }
   },
