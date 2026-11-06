@@ -60,7 +60,8 @@ try {
       const text = readFileSync(join(profile, 'pnpm-lock.yaml'), 'utf8');
       assert.ok(!text.includes(FEISHU.url), 'remote release is gone');
       const lock = yaml.parse(text);
-      const entries = Object.values(lock.packages).filter(pkg => pkg.resolution?.tarball === WEB_SPEC);
+      const entries = Object.values(lock.packages).filter(pkg =>
+        pkg.resolution?.tarball?.startsWith('file:') && pkg.resolution.tarball.endsWith(`/${FEISHU.file}`));
       assert.equal(entries.length, 1);
       assert.equal(entries[0].resolution.integrity, FEISHU.integrity);
     };
