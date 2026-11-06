@@ -31,6 +31,16 @@ jobs:
           node-version: '24'
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      # Windows packaging always reads apps/desktop/.env.windows. The company app ignores the update policy at
+      # run time, so the policy origin only has to pass validation; no signing or upload settings are set.
+      - name: Write packaging settings
+        run: |
+          cat > apps/desktop/.env.windows <<'ENV'
+          DSH_DESKTOP_APP_ID=com.crysound.workpartner
+          DSH_DESKTOP_AUTO_UPDATE_ENV=production
+          DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://partner.corp.crysound.com
+          DSH_DESKTOP_WINDOWS_COMPRESSION_LEVEL=3
+          ENV
       - name: Package win-x64 (unsigned)
         run: pnpm run package:desktop:win:x64:unsigned
       - name: Locate installer
