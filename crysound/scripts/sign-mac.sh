@@ -56,6 +56,8 @@ codesign --verify --deep --strict "$target"
 # Applications link that electron-builder made stay as they were.
 signed="$out/$(basename "$dmg" | sed 's/-unsigned//')"
 rw="$work/rw.dmg"
+df -h /private/var /tmp | cat
+set -x
 hdiutil convert "$dmg" -format UDRW -o "$rw" -quiet
 hdiutil resize -size "$(( $(du -sm "$target" | cut -f1) + 200 ))m" "$rw"
 hdiutil attach "$rw" -mountpoint "$mount" -nobrowse -quiet
@@ -65,6 +67,7 @@ test -L "$mount/Applications"
 hdiutil detach "$mount" -quiet
 hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
+set +x
 
 result="$work/notarize.txt"
 xcrun notarytool submit "$signed" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait 2>&1 | tee "$result"
