@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict'
 import childProcess from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire, syncBuiltinESMExports } from 'node:module'
 import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
@@ -56,6 +56,19 @@ const options = {
   cliEntry: join(resources, 'app.asar', 'dsh', 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
 }
 const report: Record<string, unknown> = { passed: false, runtime: process.execPath, platform: process.platform, arch: process.arch }
+
+/** Restore the smoke's own immutable skill copies to writable files before removing the temporary tree. */
+function removeTemporaryTree(directory: string): void {
+  if (!existsSync(directory)) return
+  chmodSync(directory, 0o755)
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const file = join(directory, entry.name)
+    if (entry.isDirectory()) removeTemporaryTree(file)
+    else if (!entry.isSymbolicLink()) chmodSync(file, 0o644)
+  }
+  rmSync(directory, { recursive: true, force: true })
+}
+
 try {
   assert.ok(existsSync(join(assets, 'plugin-template', 'plugins.json')), 'plugin template must ship in the installer')
   const started = Date.now()
@@ -115,10 +128,15 @@ try {
 } finally {
   childProcess.spawn = spawn
   syncBuiltinESMExports()
+  try {
+    // Keep the report, not the large disposable profiles, in the smoke artifact.
+    for (const directory of [home, join(root, 'negative-control'), join(root, 'userdata')]) removeTemporaryTree(directory)
+    report.cleanupPassed = true
+  } catch (error) {
+    report.passed = false
+    report.cleanupError = error instanceof Error ? error.stack : String(error)
+    process.exitCode = 1
+  }
   writeFileSync(join(root, 'plugins.json'), `${JSON.stringify(report, null, 2)}\n`)
   console.log(JSON.stringify(report, null, 2))
-  // Keep the report, not the large disposable profiles, in the smoke artifact.
-  rmSync(home, { recursive: true, force: true })
-  rmSync(join(root, 'negative-control'), { recursive: true, force: true })
-  rmSync(join(root, 'userdata'), { recursive: true, force: true })
 }
