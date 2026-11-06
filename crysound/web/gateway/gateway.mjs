@@ -4,13 +4,15 @@ import http from "node:http";
 import net from "node:net";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { desktopUser as authenticateDesktop } from "./desktop-auth.mjs";
+import { serveCompanyConfig } from "./company-config.mjs";
 import { authorizeUrl, identify, provision, readUsers, slugFor } from "./onboard.mjs";
 
 const PORT = 3090;
 const PUBLIC_HOST = process.env.PUBLIC_HOST || "workpartner.corp.crysound.com";
 // 旧网址：已装的桌面版按旧网址登录和调模型，这几处照常服务；其余访问跳到正式网址。
 const OLD_HOSTS = String(process.env.OLD_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean);
-const servedOnOldHost = (url) => url.pathname.startsWith("/_zp/llm/v1/")
+const servedOnOldHost = (url) => url.pathname.startsWith("/_zp/config/") || url.pathname.startsWith("/_zp/llm/v1/")
   || ["/_zp/callback", "/_zp/desktop-login", "/_zp/desktop-done"].includes(url.pathname)
   || (url.pathname === "/_zp/login" && String(url.searchParams.get("next") || "").startsWith("/_zp/desktop-login"));
 const USERS_FILE = "/etc/partner/users.json";
@@ -59,10 +61,7 @@ function issueDesktopToken(who) {
   return `zpd.${data}.${sign("zpd." + data)}`;
 }
 function desktopUser(req) {
-  const [p, data, mac] = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").split(".");
-  if (p !== "zpd" || !data || !mac || mac.length !== 43 || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(sign("zpd." + data)))) return null;
-  const t = JSON.parse(Buffer.from(data, "base64url").toString());
-  return t.e > Date.now() / 1000 ? users().find((x) => x.unionId === t.u) ?? null : null;
+  return authenticateDesktop(req, SESSION_KEY, users);
 }
 
 // 桌面版的模型请求：核对通行证，换成本人的 magpie 钥匙，原样流式转给 magpie。
@@ -290,6 +289,7 @@ const server = http.createServer(async (req, res) => {
     const oldHost = OLD_HOSTS.includes(host);
     if (oldHost && !servedOnOldHost(url)) return redirect(res, `https://${PUBLIC_HOST}${req.url}`);
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
+    if (url.pathname.startsWith("/_zp/config/")) return await serveCompanyConfig(req, res, url.pathname, desktopUser);
     if (url.pathname.startsWith("/_zp/llm/v1/")) {
       const user = desktopUser(req);
       if (!user) { res.writeHead(401, { "content-type": "application/json" }); return res.end('{"error":{"message":"桌面版登录已失效，请重新登录"}}'); }

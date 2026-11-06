@@ -14,6 +14,8 @@ services:
       OLD_HOSTS: ${OLD_HOSTS:-}
       MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
       HOST_PARTNER_DATA: ${PARTNER_DATA:?在 .env 设置 PARTNER_DATA}
+      HOST_PARTNER_CONFIG: ${PARTNER_CONFIG:?在 .env 设置 PARTNER_CONFIG}
+      MAGPIE_BASE_URL: ${MAGPIE_BASE_URL:?在 .env 设置 MAGPIE_BASE_URL}
       HOST_PARTNER_SECURE: ${PARTNER_SECURE:?在 .env 设置 PARTNER_SECURE}
       FEISHU_APP_ID: ${PARTNER_FEISHU_APP_ID:?在 .env 设置 PARTNER_FEISHU_APP_ID}
       # 试用名单：这个飞书群的成员可自助开通
@@ -22,6 +24,14 @@ services:
     volumes:
       - ./gateway/gateway.mjs:/app/gateway.mjs:ro
       - ./gateway/onboard.mjs:/app/onboard.mjs:ro
+      - ./gateway/company-config.mjs:/app/company-config.mjs:ro
+      - ./gateway/desktop-auth.mjs:/app/desktop-auth.mjs:ro
+      - type: bind
+        source: ${PARTNER_CONFIG:?在 .env 设置 PARTNER_CONFIG}
+        target: /opt/partner-config
+        read_only: true
+        bind:
+          create_host_path: false
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure

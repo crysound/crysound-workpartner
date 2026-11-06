@@ -28,7 +28,7 @@
 1. 5 个插件按 `plugins.json` 的固定版本，用包内 `dsh plugin --profile desktop add` 安装（已记录同版本则跳过）。
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
-4. 默认配置 `partner.patch.yml` 只写一次到 profile 的 `cordis.patch.yml`（标记 `.zp-seed-v1`，已有同 id 项不覆盖）。
+4. 启动时从网关读取四文件公司配置快照，取不到时使用包内配置。默认值首次写入，之后每次只刷新 `providers.magpie`，保留个人其他提供方和已选默认值；详见 `crysound/web/README.md`。
 插件安装需要联网；某个插件装失败只记日志，应用照常启动，下次启动会重试。
 
 ### 打包
@@ -47,8 +47,8 @@
 每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
-- `Dockerfile`：每人容器的镜像。dsh 与 5 个插件按 `crysound/config/plugins.json` 固定版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；默认配置用共用的 `partner.patch.yml`，构建时把模型地址换成内部 magpie。
-- `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置（之后本人可在设置页改）。
+- `Dockerfile`：每人容器的镜像。dsh 版本固定；5 个插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
+- `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置；每次刷新公司模型清单，个人其他提供方保留（之后本人可在设置页改）。
 - `bin/partner-user`：给群外的人手工开通、列名单、用新镜像重建；`bin/upgrade-when-idle.sh <代号>` 等本人 10 分钟没操作再重建；`bin/upgrade-and-check.sh`、`bin/try-fresh.sh` 用于核对。
 - 部署参数（域名、飞书应用、试点群、数据目录）写在 `crysound/web/.env`，照 `.env.example` 填，不进仓库。名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`，钥匙在 `PARTNER_SECURE`。
 
@@ -66,7 +66,7 @@ done
 
 ## 公司维护的插件（`crysound/plugins/`）
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
-- 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；`crysound/config/plugins.json` 里该插件的 `spec` 与 `want` 都写这个地址（pnpm 按地址记录依赖，已装同一地址就跳过）。网页版重建镜像、桌面版重新打包后生效。
+- 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；`crysound/config/plugins.json` 里该插件的 `spec` 与 `want` 都写这个地址（pnpm 按地址记录依赖，已装同一地址就跳过）。网页版同步服务器配置后空闲重启生效，桌面版启动时从网关刷新，断网用包内版本。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。
 
 ## 合并上游新版本

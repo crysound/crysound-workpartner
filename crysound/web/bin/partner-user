@@ -14,11 +14,12 @@ if ENV_FILE.exists():
         key, sep, value = line.partition('=')
         if sep and not key.lstrip().startswith('#'):
             os.environ.setdefault(key.strip(), value.strip())
-for key in ('PARTNER_DATA', 'PARTNER_SECURE'):
+for key in ('PARTNER_DATA', 'PARTNER_SECURE', 'PARTNER_CONFIG', 'MAGPIE_BASE_URL'):
     if not os.environ.get(key):
         sys.exit(f'在 {ENV_FILE} 设置 {key}')
 ROOT = Path(os.environ['PARTNER_DATA'])
 SECURE = Path(os.environ['PARTNER_SECURE'])
+CONFIG = Path(os.environ['PARTNER_CONFIG'])
 USERS = ROOT / 'users.json'
 IMAGE = os.environ.get('PARTNER_IMAGE', 'zhaohua-partner:0.2.2-rc.1')
 IA = os.environ.get('INFISICAL_ADMIN', '')
@@ -54,7 +55,14 @@ def magpie_key(slug):
     return path
 
 
+def require_config():
+    for file in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs'):
+        if not (CONFIG / file).is_file():
+            sys.exit(f'公司配置缺失：{CONFIG / file}；请先同步服务器配置目录')
+
+
 def container(slug, key):
+    require_config()
     name = f'zhaohua-partner-{slug}'
     if sh('docker', 'inspect', name).returncode == 0:
         sh('docker', 'start', name); return
@@ -62,6 +70,8 @@ def container(slug, key):
     data.mkdir(parents=True, exist_ok=True)
     r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
            '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ.get('PUBLIC_HOST', 'workpartner.corp.crysound.com')}",
+           '-e', f"MAGPIE_BASE_URL={os.environ['MAGPIE_BASE_URL']}",
+           '--mount', f'type=bind,src={CONFIG},dst=/opt/partner-config,readonly',
            '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
            '--memory', '2g', '--cpus', '2', '--pids-limit', '512',
            '--label', f'zhaohua-partner.user={slug}', IMAGE)
@@ -77,6 +87,7 @@ def main():
             print(u['slug'], u['name'], u.get('unionId', '-'), st)
         return
     if sys.argv[1:2] == ['upgrade']:
+        require_config()
         for u in users:
             if sys.argv[2:] and u['slug'] not in sys.argv[2:]:
                 continue
@@ -89,6 +100,7 @@ def main():
     slug, name, union_id = sys.argv[2], sys.argv[3], sys.argv[4].strip()
     if not re.fullmatch(r'[a-z][a-z0-9-]{1,30}', slug):
         sys.exit('代号只用小写字母、数字和短横线')
+    require_config()
     key = magpie_key(slug)
     container(slug, key)
     old = next((u for u in users if u['slug'] == slug), {})

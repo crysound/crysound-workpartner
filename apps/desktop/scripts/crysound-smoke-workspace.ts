@@ -10,7 +10,7 @@ const profile = join(process.env.DSH_HOME as string, 'profiles', 'desktop')
 const assets = join(app, 'Contents', 'Resources', 'crysound')
 initProfile(profile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
 
-const environment = { ...process.env, DSH_TELEMETRY_DISABLED: '1' }
+const environment = { ...process.env, DSH_TELEMETRY_DISABLED: '1', MAGPIE_API_KEY: '' }
 const options = {
   assets, profile, userData, environment,
   execPath: join(app, 'Contents', 'MacOS', 'CRYSOUND WorkPartner'),
@@ -35,7 +35,7 @@ const patch = readFileSync(join(profile, 'cordis.patch.yml'), 'utf8')
 for (const id of ['llm-pi-ai', 'agent-default-model', 'ui-settings-general']) {
   check(new RegExp(`^- id: ${id}\\s*$`, 'mu').test(patch) && patch.split(`- id: ${id}`).length === 2, `seed entry ${id}`)
 }
-check(patch.includes('https://workpartner.corp.crysound.com/_zp/llm/v1'), 'seed baseURL is the company gateway')
+check(patch.includes('baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL'), 'seed baseURL uses the startup model gateway')
 const feishu = join(profile, 'node_modules', '@aiwayds', 'dsh-feishu', 'lib', 'bot.js')
 check(readFileSync(feishu, 'utf8').includes('auto-new failed'), 'feishu plugin patch applied')
 process.exit(failed ? 1 : 0)

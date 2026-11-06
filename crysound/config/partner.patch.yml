@@ -1,5 +1,5 @@
-# 兆华工作伙伴的默认配置：每人第一次启动时写进本人配置，之后本人可在设置页里改。桌面版与网页版共用这一份。
-# 所有模型请求都经公司模型网关，用量按人统计：桌面版用登录令牌连下面的公开地址；网页版构建时把地址换成内部 magpie，用每人一把的钥匙。
+# 兆华工作伙伴的默认配置：首次写入默认值，每次启动刷新公司 magpie 提供方，个人其他提供方保留。
+# 模型地址由启动环境注入：桌面版连公开网关，网页版连内部模型网关；配置文件不包含部署地址。
 # 默认用 ChatGPT；DeepSeek 内置路由的地址和钥匙在启动时同样改指网关。
 - id: llm-pi-ai
   name: '@deepseek-ai/dsh-llm-pi-ai'
@@ -8,7 +8,7 @@
       magpie:
         displayName: ChatGPT
         api: openai-completions
-        baseURL: https://workpartner.corp.crysound.com/_zp/llm/v1
+        baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL
         apiKeyEnv: MAGPIE_API_KEY
         models:
           - id: codex/gpt-6.1-sol
