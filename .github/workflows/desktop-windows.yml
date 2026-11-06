@@ -82,8 +82,7 @@ jobs:
           $env:SMOKE_APP = $app.FullName
           $env:SMOKE_ROOT = Join-Path (Get-Location) 'smoke\plugins'
           $env:ELECTRON_RUN_AS_NODE = '1'
-          $loader = node -p "require.resolve('tsx/esm')"
-          & $app.FullName --import $loader apps/desktop/scripts/crysound-smoke-windows-workspace.ts 2>&1 | Tee-Object smoke\plugins.txt
+          & $app.FullName --import tsx/esm apps/desktop/scripts/crysound-smoke-windows-workspace.ts 2>&1 | Tee-Object smoke\plugins.txt
           $pluginSmokeExit = $LASTEXITCODE
           Remove-Item Env:ELECTRON_RUN_AS_NODE
           if ($pluginSmokeExit -ne 0) { throw "offline plugin preparation failed with code $pluginSmokeExit" }
