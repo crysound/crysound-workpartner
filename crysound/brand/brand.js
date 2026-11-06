@@ -44,7 +44,7 @@
     for (const item of document.querySelectorAll('[role="menuitem"]')) {
       const text = item.querySelector("span:last-child");
       if (!me || !text || !["Sign in", "登录"].includes(text.textContent.trim())) continue;
-      text.textContent = `${me.name} · 已通过飞书登录`;
+      text.textContent = me.name;
       item.disabled = true;
       item.classList.add("zp-account-item");
     }
