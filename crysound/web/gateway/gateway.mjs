@@ -248,9 +248,12 @@ async function login(req, res, url) {
 const DOWNLOADS = "/downloads";
 const PLATFORMS = [["mac-arm64", "Mac（Apple 芯片）"], ["mac-x64", "Mac（Intel 芯片）"], ["win-x64", "Windows"]];
 function download(res, file) {
-  const files = (() => { try { return fs.readdirSync(DOWNLOADS).filter((f) => !f.startsWith(".")); } catch { return []; } })();
+  // 安装包可以放在 R2：下载目录里放“<文件名>.url”，内容是 R2 公开地址，下载时跳过去；没有就从本机目录发。
+  const entries = (() => { try { return fs.readdirSync(DOWNLOADS).filter((f) => !f.startsWith(".")); } catch { return []; } })();
+  const files = [...new Set(entries.map((f) => f.replace(/\.url$/, "")))];
   if (file) {
     if (!files.includes(file)) { res.writeHead(404); return res.end(); }
+    if (entries.includes(`${file}.url`)) return redirect(res, fs.readFileSync(`${DOWNLOADS}/${file}.url`, "utf8").trim());
     const st = fs.statSync(`${DOWNLOADS}/${file}`);
     res.writeHead(200, { "content-type": "application/octet-stream", "content-length": st.size, "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file)}` });
     return fs.createReadStream(`${DOWNLOADS}/${file}`).pipe(res);
