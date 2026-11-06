@@ -4,6 +4,8 @@ export const FEISHU: Readonly<{ name: string; file: string; url: string; integri
 export const WEB_SPEC: string
 /** Relocatable desktop dependency specifier, relative to the profile. */
 export const DESKTOP_WANT: string
+/** Whether the plugin is a company registry package requiring installation after login. */
+export function isMarketPlugin(plugin: { readonly name: string; readonly spec: string }): boolean
 /** Verify the downloaded archive before packaging or staging it. */
 export function verifyArchive(bytes: Uint8Array): void
 /** Download and verify the release in the packaging directory. */
