@@ -51,7 +51,8 @@ import { DesktopUpdateJournal } from './update-journal.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
 import { DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig } from './update-schedule.ts'
 // CRYSOUND: signed Mac releases use the company feed and one background-download schedule.
-import { companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from './crysound/auto-update.ts'
+import { authenticateCompanyUpdates, companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from './crysound/auto-update.ts'
+import electronUpdater from 'electron-updater' // CRYSOUND: authenticated company update requests.
 import { desktopUpdateErrorSummary, presentDesktopUpdate } from './update-presentation.ts'
 import { desktopErrorState } from './startup-error.ts'
 import { readDesktopLoginShellEnvironment, resolveDesktopLoginShellConfig } from './login-shell-environment.ts'
@@ -783,16 +784,19 @@ async function main(): Promise<void> {
   )
 
   // CRYSOUND: reuse startup/resume checks and shutdown disposal with a single six-hour polling owner.
+  const authenticateUpdates = (): Promise<boolean> => authenticateCompanyUpdates(electronUpdater.autoUpdater, readPartnerSession)
   const updateSchedule = companyUpdateEnabled
     ? createCompanyAutoUpdateSchedule(updates, async () => {
         await windowShown()
         if (quitting) return false
         const result = await ordinaryMessageBox(companyUpdateReadyPrompt)
         return result.response === 0
-      })
+      }, authenticateUpdates)
     : new DesktopUpdateSchedule(updates, resolveDesktopUpdateScheduleConfig(process.env))
 
   const downloadUpdate = async (version: string): Promise<DesktopUpdateState> => {
+    // CRYSOUND: manual downloads also refresh the current user's passport.
+    if (companyUpdateEnabled && !await authenticateUpdates()) return updates.state
     void track('desktop_upgrade_click', {})
     updateJournal?.action('download-requested')
     const state = await updates.download(version)

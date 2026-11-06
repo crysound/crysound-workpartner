@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       update_url:
-        description: '固定 HTTPS 更新目录；留空使用仓库变量 CRYSOUND_DESKTOP_UPDATE_URL'
+        description: 'HTTPS 网关 /_zp/updates/mac/ 目录；留空使用仓库变量 CRYSOUND_DESKTOP_UPDATE_URL'
         required: false
         type: string
 
@@ -48,7 +48,7 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Company update behavior and release metadata tests
-        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/mac-update-release.test.mjs crysound/scripts/company-auto-update.test.mjs
+        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/mac-update-release.test.mjs crysound/scripts/company-auto-update.test.mjs crysound/web/gateway/tests/updates.test.mjs
       - name: Workspace preparation tests (template copy, install time bounds)
         run: pnpm exec vitest run apps/desktop/tests/crysound-workspace.spec.ts
       - name: Package mac-arm64 (unsigned)

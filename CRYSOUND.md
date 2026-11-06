@@ -18,6 +18,8 @@
 - 埋点：Host 环境固定 `DSH_TELEMETRY_DISABLED=1`，壳层 `analyticsEnabled` 恒为 `false`。
 - DeepSeek 账号：不显示欢迎/登录窗口，`PLATFORM_IPC.open`（DeepSeek 用量与充值页）直接拒绝。
 
+Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域名均用桌面通行证鉴权，文件在 `downloads/updates/mac/`。桌面版检查、下载前读取当前登录；未登录时等待下一轮。
+
 ### 登录与模型
 - 启动时 `src/crysound/partner.ts` 读取 `userData/partner-session.json`（权限 600）；没有令牌，或网关对令牌返回 401 时，打开窗口加载 `https://workpartner.corp.crysound.com/_zp/desktop-login`，拦截跳到 `/_zp/desktop-done#token=…&name=…&avatar=…` 的那一步，存令牌后关窗进入工作区。
 - Host 环境：`MAGPIE_API_KEY`、`DEEPSEEK_API_KEY` 为令牌，`DEEPSEEK_BASE_URL=https://workpartner.corp.crysound.com/_zp/llm/v1`。

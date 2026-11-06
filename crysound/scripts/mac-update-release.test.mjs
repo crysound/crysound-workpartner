@@ -11,8 +11,8 @@ test('release inputs reject versions the updater cannot order and unsafe feed UR
   for (const value of ['v0.2.3', '0.2.3-rc.1', '0.2.3+1', '01.2.3', '', '1.2', '1.2.9007199254740992']) {
     assert.throws(() => releaseVersion(value))
   }
-  assert.equal(updateDirectory('https://downloads.example.test/mac-arm64'), 'https://downloads.example.test/mac-arm64/')
-  for (const value of ['http://downloads.example.test/', 'https://user:password@example.test/', 'https://example.test/?key=x', 'https://example.test/#x', '']) {
+  assert.equal(updateDirectory('https://gateway.example.test/_zp/updates/mac'), 'https://gateway.example.test/_zp/updates/mac/')
+  for (const value of ['http://downloads.example.test/', 'https://user:password@example.test/', 'https://example.test/?key=x', 'https://example.test/#x', 'https://example.test/_zp/download/', 'https://example.test/public/mac/', '']) {
     assert.throws(() => updateDirectory(value))
   }
 })
@@ -50,9 +50,9 @@ test('signed-app configuration and feed describe the exact final ZIP bytes', asy
   t.after(() => rm(root, { recursive: true, force: true }))
   const app = join(root, 'CRYSOUND WorkPartner.app')
   await mkdir(join(app, 'Contents/Resources'), { recursive: true })
-  await configureSignedApp(app, 'https://downloads.example.test/desktop/mac-arm64')
+  await configureSignedApp(app, 'https://gateway.example.test/_zp/updates/mac')
   assert.deepEqual(JSON.parse(await readFile(join(app, 'Contents/Resources/app-update.yml'), 'utf8')), {
-    provider: 'generic', url: 'https://downloads.example.test/desktop/mac-arm64/', channel: 'latest',
+    provider: 'generic', url: 'https://gateway.example.test/_zp/updates/mac/', channel: 'latest',
     updaterCacheDirName: 'crysound-workpartner-updater',
   })
   const zip = join(root, 'crysound-workpartner-0.2.3-mac-arm64.zip')

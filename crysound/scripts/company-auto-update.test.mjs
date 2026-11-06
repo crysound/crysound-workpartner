@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
 import { test } from 'node:test'
-import { companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from '../../apps/desktop/src/crysound/auto-update.ts'
+import { authenticateCompanyUpdates, companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from '../../apps/desktop/src/crysound/auto-update.ts'
 import { DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig } from '../../apps/desktop/src/update-schedule.ts'
 
 const sixHours = 6 * 60 * 60 * 1000
@@ -43,7 +43,7 @@ test('the actual main-process wiring selects one company schedule and shows the 
   assert.ok(start >= 0 && end > start)
   const initialize = new Function('dependencies', `
     const { app, process, manifest, desktopUpdateChannel, DesktopUpdateCoordinator, publishUpdate,
-      companyUpdatesEnabled, companyUpdateReadyPrompt, createCompanyAutoUpdateSchedule,
+      authenticateCompanyUpdates, electronUpdater, readPartnerSession, companyUpdatesEnabled, companyUpdateReadyPrompt, createCompanyAutoUpdateSchedule,
       DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig, windowShown, ordinaryMessageBox, quitting } = dependencies
     ${stripTypeScriptTypes(source.slice(start, end), { mode: 'transform' })}
     return { updates, updateSchedule, updateChannel, companyUpdateEnabled }
@@ -54,12 +54,17 @@ test('the actual main-process wiring selects one company schedule and shows the 
       Object.assign(this, coordinator())
       this.channel = channel
       const check = this.check
-      this.check = async () => enabled() ? check.call(this) : this.state
+      this.check = async () => {
+        if (!enabled()) return this.state
+        assert.equal(dependencies.electronUpdater.autoUpdater.requestHeaders.Authorization, 'Bearer zpd.test-session')
+        return check.call(this)
+      }
     }
   }
   const dependencies = {
     app: { isPackaged: true }, process: { platform: 'darwin', resourcesPath: root, env: {} }, manifest: {},
     desktopUpdateChannel: () => 'nightly', DesktopUpdateCoordinator: ShellCoordinator, publishUpdate: state => state,
+    authenticateCompanyUpdates, electronUpdater: { autoUpdater: {} }, readPartnerSession: async () => ({ token: 'zpd.test-session' }),
     companyUpdatesEnabled, companyUpdateReadyPrompt, createCompanyAutoUpdateSchedule,
     DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig, quitting: false,
     windowShown: async () => {}, ordinaryMessageBox: async options => {
@@ -92,7 +97,7 @@ test('startup downloads automatically, Later never installs or repeats the same 
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const updates = coordinator()
   let prompts = 0
-  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return false })
+  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return false }, async () => true)
   t.after(() => owner.dispose())
   void owner.check()
   await setImmediate()
@@ -118,7 +123,7 @@ test('startup downloads automatically, Later never installs or repeats the same 
 
 test('explicit restart delegates to the upstream installation safety checks', async t => {
   const updates = coordinator()
-  const owner = createCompanyAutoUpdateSchedule(updates, async () => true)
+  const owner = createCompanyAutoUpdateSchedule(updates, async () => true, async () => true)
   t.after(() => owner.dispose())
   void owner.check()
   await setImmediate()
@@ -140,7 +145,7 @@ test('a failed background transfer retries on the next poll', async t => {
     return this.state
   }
   let prompts = 0
-  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return false })
+  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return false }, async () => true)
   t.after(() => owner.dispose())
   void owner.check()
   await setImmediate()
@@ -156,7 +161,7 @@ test('shutdown during download suppresses the prompt and installation', async ()
   let finish
   updates.download = async function (version) { return new Promise(resolve => { finish = () => resolve(this.state = { phase: 'ready', version }) }) }
   let prompts = 0
-  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return true })
+  const owner = createCompanyAutoUpdateSchedule(updates, async () => { prompts++; return true }, async () => true)
   void owner.check()
   await setImmediate()
   owner.dispose()
@@ -164,4 +169,71 @@ test('shutdown during download suppresses the prompt and installation', async ()
   await setImmediate()
   assert.equal(prompts, 0)
   assert.deepEqual(updates.installs, [])
+})
+
+
+test('signed-out polling sends no request; login and token changes authenticate metadata and downloads', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const updater = { requestHeaders: { Authorization: 'Bearer stale-session' } }
+  let session
+  const requests = []
+  const updates = coordinator()
+  updates.check = async function () {
+    this.checks++
+    requests.push({ file: 'latest-mac.yml', ...updater.requestHeaders })
+    session = { token: 'zpd.refreshed-before-download' }
+    return this.state = { phase: 'available', version: this.version }
+  }
+  updates.download = async function (version) {
+    requests.push({ file: 'update.zip', ...updater.requestHeaders })
+    return this.state = { phase: 'ready', version }
+  }
+  const owner = createCompanyAutoUpdateSchedule(updates, async () => false,
+    () => authenticateCompanyUpdates(updater, async () => session))
+  t.after(() => owner.dispose())
+  await owner.check()
+  assert.equal(updates.checks, 0)
+  assert.deepEqual(requests, [])
+  assert.equal(updater.requestHeaders, null)
+  session = { token: 'zpd.signed-in' }
+  t.mock.timers.tick(sixHours)
+  await setImmediate()
+  assert.deepEqual(requests, [
+    { file: 'latest-mac.yml', Authorization: 'Bearer zpd.signed-in' },
+    { file: 'update.zip', Authorization: 'Bearer zpd.refreshed-before-download' },
+  ])
+  session = undefined
+  await owner.check(false, true)
+  assert.equal(requests.length, 2)
+  assert.equal(updater.requestHeaders, null)
+})
+
+test('manual downloads use the current session and skip network work after logout', async () => {
+  const source = await readFile(new URL('../../apps/desktop/src/main.ts', import.meta.url), 'utf8')
+  const start = source.indexOf('  const downloadUpdate =')
+  const end = source.indexOf('  const windowShown =', start)
+  assert.ok(start >= 0 && end > start)
+  const updater = { requestHeaders: null }
+  let session = { token: 'zpd.current-session' }
+  const requests = []
+  const updates = coordinator()
+  updates.download = async function () {
+    requests.push({ ...updater.requestHeaders })
+    return this.state
+  }
+  const download = new Function('dependencies', `
+    const { updates, authenticateUpdates, companyUpdateEnabled, track, updateJournal } = dependencies
+    ${stripTypeScriptTypes(source.slice(start, end), { mode: 'transform' })}
+    return downloadUpdate
+  `)({ updates, authenticateUpdates: () => authenticateCompanyUpdates(updater, async () => session),
+    companyUpdateEnabled: true, track: async () => {}, updateJournal: undefined })
+  await download('0.2.3')
+  session = { token: 'zpd.replaced-session' }
+  await download('0.2.3')
+  session = undefined
+  await download('0.2.3')
+  assert.deepEqual(requests, [
+    { Authorization: 'Bearer zpd.current-session' }, { Authorization: 'Bearer zpd.replaced-session' },
+  ])
+  assert.equal(updater.requestHeaders, null)
 })

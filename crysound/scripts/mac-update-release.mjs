@@ -14,13 +14,14 @@ export function releaseVersion(value) {
   return value
 }
 
-/** Validate a fixed public HTTPS directory without credentials or query parameters. */
+/** Validate the gateway's fixed passport-authenticated HTTPS directory without embedded credentials. */
 export function updateDirectory(value) {
   const url = new URL(value)
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
     throw new Error('Update URL must be a public HTTPS directory without credentials, query, or fragment')
   }
   if (!url.pathname.endsWith('/')) url.pathname += '/'
+  if (url.pathname !== '/_zp/updates/mac/') throw new Error('Update URL must use the gateway /_zp/updates/mac/ directory')
   return url.href
 }
 
