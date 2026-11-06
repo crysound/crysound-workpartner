@@ -819,7 +819,7 @@ async function main(): Promise<void> {
   // Company brand layer: title, logo slots, and the first-run Feishu guide are injected into the index document.
   const brandIndex = (html: string): string => html
     .replace(/<title>[^<]*<\/title>/u, '<title>兆华工作伙伴</title>')
-    .replace('</head>', '<link rel="stylesheet" href="./brand.css" /><script src="./brand.js" defer></script><script src="./welcome.js" defer></script></head>')
+    .replace('</head>', '<script src="./timezone.js"></script><link rel="stylesheet" href="./brand.css" /><script src="./brand.js" defer></script><script src="./welcome.js" defer></script></head>')
 
   protocol.handle(SCHEME, (request) => {
     const url = new URL(request.url)
