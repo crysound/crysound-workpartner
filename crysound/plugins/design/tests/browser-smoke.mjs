@@ -33,19 +33,25 @@ await withBrowser(async browser => {
     let imageRequests = 0;
     await page.route('https://design-fixture.invalid/**', async route => {
       imageRequests++;
-      if (route.request().url().endsWith('/good.svg')) {
+      if (!route.request().url().endsWith('/missing.svg')) {
         await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="purple"/></svg>' });
       } else {
         await route.fulfill({ status: 404, body: 'Missing fixture' });
       }
     });
+    await page.setContent('<!doctype html><title>Normal deferred image fixture</title><div style="height:15000px">演示</div><img loading="lazy" src="https://design-fixture.invalid/normal.svg">');
+    await page.evaluate(prepareDocument);
+    const normalDeferred = await page.evaluate(inspectDocument);
+    assert.equal(normalDeferred.horizontalOverflow, false);
+    assert.deepEqual(normalDeferred.brokenImages, []);
+    assert.deepEqual(normalDeferred.smallText, []);
     await page.setContent('<!doctype html><title>Deferred image fixture</title><div style="height:15000px">演示</div><img loading="lazy" src="https://design-fixture.invalid/good.svg"><img loading="lazy" src="https://design-fixture.invalid/missing.svg">');
     const before = await page.evaluate(inspectDocument);
     assert.ok(before.brokenImages.includes('https://design-fixture.invalid/good.svg'));
     await page.evaluate(prepareDocument);
     const deferred = await page.evaluate(inspectDocument);
     assert.deepEqual(deferred.brokenImages, ['https://design-fixture.invalid/missing.svg']);
-    assert.equal(imageRequests, 2);
-    console.log(JSON.stringify({ good, bad, deferred, output }, null, 2));
+    assert.equal(imageRequests, 3);
+    console.log(JSON.stringify({ good, bad, normalDeferred, deferred, output }, null, 2));
   } finally { await page.close(); }
 });
