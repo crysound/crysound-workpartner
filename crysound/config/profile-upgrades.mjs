@@ -56,8 +56,8 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
 if (import.meta.main) {
   const [file, seed, cliEntry, flag] = process.argv.slice(2);
   if (!file || !seed || !cliEntry) throw new Error("用法：node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]");
-  // Resolve through declared runtime dependencies, including the packaged desktop's isolated dependency tree.
+  // Follow exported package manifests so both source checkouts and packaged dependency trees work without loading lib outputs.
   let require = createRequire(cliEntry);
-  for (const name of ["@deepseek-ai/dsh/lib/bin.js", "@deepseek-ai/dsh-base", "@deepseek-ai/dsh-config-editor"]) require = createRequire(require.resolve(name));
+  for (const name of ["@deepseek-ai/dsh/package.json", "@deepseek-ai/dsh-base/package.json", "@deepseek-ai/dsh-config-editor/package.json"]) require = createRequire(require.resolve(name));
   refreshProfile(file, seed, require("yaml"), flag === "--seed");
 }

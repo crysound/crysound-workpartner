@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import http from "node:http";
 import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
 import { once } from "node:events";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -17,7 +18,7 @@ import { prepareCompanyWorkspace } from "../../apps/desktop/src/crysound/workspa
 
 const runtime = process.env.DSH_CLI_ENTRY || "/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js";
 let require = createRequire(runtime);
-for (const name of ["@deepseek-ai/dsh/lib/bin.js", "@deepseek-ai/dsh-base", "@deepseek-ai/dsh-config-editor"]) require = createRequire(require.resolve(name));
+for (const name of ["@deepseek-ai/dsh/package.json", "@deepseek-ai/dsh-base/package.json", "@deepseek-ai/dsh-config-editor/package.json"]) require = createRequire(require.resolve(name));
 const yaml = require("yaml");
 const assets = resolve(import.meta.dirname, "..");
 const secret = "fake-session-secret-for-tests";
@@ -197,4 +198,32 @@ test("self-service onboarding passes a read-only host config mount and model URL
   ]);
   assert.ok(request.Env.includes("MAGPIE_BASE_URL=https://models.example.invalid/v1"));
   assert.equal(users.length, 1);
+});
+
+
+test("configuration refresh resolves a source-only dependency tree without any generated lib files", async (t) => {
+  const root = await temp(t);
+  const packages = [
+    ["cli", "@deepseek-ai/dsh", { "./lib/bin.js": "./lib/bin.js", "./package.json": "./package.json" }],
+    ["base", "@deepseek-ai/dsh-base", { ".": "./lib/index.js", "./package.json": "./package.json" }],
+    ["editor", "@deepseek-ai/dsh-config-editor", { ".": "./lib/index.js", "./package.json": "./package.json" }],
+  ];
+  for (const [directory, name, exports] of packages) {
+    await mkdir(join(root, directory, "src"), { recursive: true });
+    await writeFile(join(root, directory, "package.json"), JSON.stringify({ name, type: "module", exports }));
+  }
+  for (const [parent, dependency, target] of [["cli", "@deepseek-ai/dsh-base", "base"], ["base", "@deepseek-ai/dsh-config-editor", "editor"]]) {
+    const link = join(root, parent, "node_modules", dependency);
+    await mkdir(join(link, ".."), { recursive: true });
+    await symlink(join(root, target), link, "dir");
+  }
+  await mkdir(join(root, "editor/node_modules"), { recursive: true });
+  await symlink(join(require.resolve("yaml/package.json"), ".."), join(root, "editor/node_modules/yaml"), "dir");
+  const cliEntry = join(root, "cli/src/bin.ts"), patch = join(root, "cordis.patch.yml");
+  await writeFile(cliEntry, "// Source entry; no generated artifacts.\n");
+  const result = spawnSync(process.execPath, [join(assets, "config/profile-upgrades.mjs"), patch,
+    join(assets, "config/partner.patch.yml"), cliEntry, "--seed"], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(provider(load(await readFile(patch, "utf8"))).magpie.models[0].id, "codex/gpt-6.1-sol");
+  for (const [directory] of packages) assert.ok(!(await readdir(join(root, directory))).includes("lib"));
 });
