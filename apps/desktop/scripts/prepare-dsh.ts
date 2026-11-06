@@ -34,6 +34,7 @@ import {
 } from './macos-runtime.ts'
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
+import { patchDataUseFile } from '../../../crysound/config/patch-data-use.mjs'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
 import { patchCompanyMarketRuntime } from '../../../crysound/scripts/patch-market-ui.mjs'
 
@@ -156,6 +157,8 @@ async function main(): Promise<void> {
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:company-market-ui', async () => {
       patchCompanyMarketRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
     })
+    // CRYSOUND: native market card opens the data plugin without adding a tab.
+    patchDataUseFile(join(DSH_OUTPUT_ROOT, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-market/lib/client.js'))
     writeFileSync(join(DSH_OUTPUT_ROOT, 'package.json'), `${JSON.stringify({
       name: '@deepseek-ai/dsh-desktop-runtime', private: true, version: release.version, type: 'module',
       dependencies: Object.fromEntries(packageSet.packages.map(entry => [entry.name, entry.version])),

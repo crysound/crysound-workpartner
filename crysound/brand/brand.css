@@ -25,6 +25,15 @@
 /* 左下角：飞书头像、下载客户端入口、已登录菜单项 */
 .zp-avatar { width: 18px; height: 18px; border-radius: 50%; flex: none; object-fit: cover; display: inline-grid; place-items: center; background: #170057; color: #fff; font-size: 9px; line-height: 1; }
 a.zp-download { text-decoration: none; color: inherit; display: flex; width: 100%; box-sizing: border-box; align-items: center; gap: 6px; margin-bottom: 2px; }
+a.zp-download > span { white-space: nowrap; }
+a.zp-download > svg { flex: none; }
+/* Follow the account launcher's live rail state, including the mobile drawer. */
+[data-slot="sidebar.settings"]:has(button[data-collapsed="true"]) a.zp-download {
+  width: 36px; height: 36px; padding: 0; border-inline: 0;
+  background-clip: border-box; justify-content: center; gap: 0;
+}
+[data-slot="sidebar.settings"]:has(button[data-collapsed="true"]) a.zp-download > span { display: none; }
+[data-slot="sidebar.settings"]:has(button[data-collapsed="true"]) a.zp-download > svg { width: 18px; height: 18px; }
 .zp-account-item[disabled] { opacity: 1; cursor: default; color: inherit; }
 
 /* Approved animated logo, shared by web and desktop. */
