@@ -62,7 +62,7 @@ TREG_MONTHLY_USD=5
 TREG_CALL_MAX_USD=1
 ```
 
-管理员按已申请流程把组织令牌放在 `PARTNER_SECURE/treg-token`（网关 `/secure/treg-token`）。不得写进 .env、仓库、镜像、容器或桌面客户端。缺文件或空令牌自动关闭。组织编号和 slug 也由管理员核实；只有 zptest 经网关 REST 和网关 MCP 调用后都在上游显示 user=zptest，才把 TREG_ATTRIBUTION_VERIFIED 设为 1；为 0 时可看目录，付费调用明确拒绝。若标签实测失败，保持关闭，由同一需求分支改为已核准的身份方案，不用猜测开放。
+管理员按已申请流程把组织令牌放在 `PARTNER_SECURE/treg-token`（网关 `/secure/treg-token`）。不得写进 .env、仓库、镜像、容器或桌面客户端。缺文件或空令牌自动关闭。组织编号和 slug 也由管理员核实。伙伴助理已通过直连实测确认上游归属，试点部署时可据此把 TREG_ATTRIBUTION_VERIFIED 设为 1，再以 zptest 验收经网关 REST/MCP 的归属；这不代表网关验收已经通过。为 0 时可看目录，付费调用明确拒绝。若网关归属验收失败，恢复为 0，由同一需求分支修复，不扩大开放。
 
 可选 `PARTNER_SECURE/treg-limits.json`：
 
