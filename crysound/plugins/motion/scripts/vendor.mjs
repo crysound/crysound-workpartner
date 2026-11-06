@@ -43,6 +43,20 @@ for (const file of [...files].sort()) {
       .replace('const conn = await launch(chrome,', "if (width > 1920 || height > 1920 || width * height > 1920 * 1080) throw new OmError('Company limit: at most 1920x1080 pixels (portrait allowed)');\n  const conn = await launch(chrome,")
       .replace("const info = await page.evaluate('window.__omEngine.info()');", "const info = await page.evaluate('window.__omEngine.info()');\n  if (!Number.isFinite(info.duration) || info.duration < 0 || info.duration > 30) {\n    await conn.close();\n    throw new OmError('Company limit: film duration must be at most 30 seconds');\n  }"));
   }
+  if (file === 'cli/lib/check.js') {
+    output = Buffer.from(output.toString().replaceAll('<\\/script>', '<\\/script\\s*>'));
+  }
+  if (file === 'cli/lib/sound.js') {
+    output = Buffer.from(output.toString().replace("SOUND.test(html.replace(/<!--[\\s\\S]*?-->/g, ''))",
+      "SOUND.test(html.replace(/<!--[\\s\\S]*?-->/g, ' '))"));
+  }
+  if (file === 'cli/lib/composer.js') {
+    output = Buffer.from(output.toString().replaceAll(".replace(/^1\\//, '1/')", ''));
+  }
+  if (file === 'runtime/om-engine.js') {
+    output = Buffer.from(output.toString().replace("if (s != null && s in v && v[s] != null && el.getAttribute('src') !== String(v[s])) el.setAttribute('src', String(v[s]));",
+      "if (s != null && s in v && v[s] != null) {\n        const asset = new URL(String(v[s]), document.baseURI);\n        if (asset.protocol !== 'file:') throw new Error('Company media variables require local files');\n        if (el instanceof HTMLImageElement || el instanceof HTMLMediaElement || el instanceof HTMLSourceElement) el.src = asset.href;\n        else throw new Error('Company media variables only support image, video, audio and source elements');\n      }"));
+  }
   if (file === 'cli/lib/cdp.js') {
     // All helpers stay in the supervised job group, including Chrome's subprocesses.
     output = Buffer.from(input.toString()

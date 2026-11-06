@@ -17,7 +17,11 @@ const run = (...args) => {
 };
 run('new', 'company');
 run('check', 'company', '--source');
+run('still', 'company');
 run('still', 'company', '--at', '0,4.5,13,23');
+run('still', 'company', '--at', '4.5');
+run('still', 'company', '--at', '0,23');
+assert.equal(readFileSync(join(cwd, 'company/out/stills/index-4.50s.png')).subarray(1, 4).toString(), 'PNG');
 const firstPixel = spawnSync('ffmpeg', ['-v', 'error', '-i', join(cwd, 'company/out/stills/index-0.00s.png'),
   '-vf', 'crop=1:1:0:0,format=rgb24', '-frames:v', '1', '-f', 'rawvideo', '-'], { encoding: 'buffer' });
 assert.equal(firstPixel.status, 0);

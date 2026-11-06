@@ -75,7 +75,8 @@ async function main() {
   if (command === 'still') {
     const times = String(flags.at || '0').split(',').map(Number);
     if (times.length > 8 || times.some((t) => !Number.isFinite(t) || t < 0 || t > 30)) throw new Error('Choose at most 8 still times, between 0 and 30 seconds.');
-    const out = flags.out ? insideWorkspace(flags.out) : join(dir, 'out/stills');
+    const out = flags.out ? insideWorkspace(flags.out)
+      : times.length === 1 ? join(dir, 'out/stills', `index-${times[0].toFixed(2)}s.png`) : join(dir, 'out/stills');
     if (flags.out && (times.length !== 1 || !out.endsWith('.png') || existsSync(out))) throw new Error('--out requires one time and a new .png file.');
     mkdirSync(dirname(out), { recursive: true });
     const { still } = await import('./lib/still.js');

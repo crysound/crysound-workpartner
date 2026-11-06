@@ -346,7 +346,7 @@ const VOICE = /<audio\b[^>]*\sid\s*=\s*["']om-voice["'][^>]*>/i;
 const SOUND = /<audio\b[^>]*\sid\s*=\s*["']om-sound["'][^>]*>(?:\s*<\/audio>)?/i;
 const ROOT = /<([a-z][\w-]*)\b[^>]*\sdata-composition-id\s*=\s*["'][^"']+["'][^>]*>/i;
 
-export const hasSound = (html) => SOUND.test(html.replace(/<!--[\s\S]*?-->/g, ''));
+export const hasSound = (html) => SOUND.test(html.replace(/<!--[\s\S]*?-->/g, ' '));
 
 function attrs(tag) {
   const out = {};

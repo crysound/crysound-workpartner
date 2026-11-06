@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, rmSync, chmodSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, rmSync, chmodSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -123,3 +123,40 @@ writeFileSync(process.env.MOTION_TEST_PID_FILE, String(process.pid)); setInterva
   assert.ok(!state || state.startsWith('Z'), `browser still running: ${state}`);
   assert.equal(command(cwd, 'help').status, 0);
 });
+
+const pngHeader = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+for (const order of ['single then multiple', 'multiple then single']) {
+  test(`default still output remains a directory: ${order}`, { skip: !process.env.OM_CHROME }, (t) => {
+    const cwd = mkdtempSync(join(tmpdir(), 'motion-still-'));
+    t.after(() => rmSync(cwd, { recursive: true, force: true }));
+    const run = (...args) => {
+      const result = spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', timeout: 45_000 });
+      assert.ifError(result.error);
+      assert.equal(result.signal, null, args.join(' '));
+      assert.equal(result.status, 0, `${args.join(' ')}\n${result.stderr}`);
+      return result;
+    };
+    const png = (path) => assert.deepEqual(readFileSync(join(cwd, path)).subarray(0, 8), pngHeader);
+    run('new', '产品片');
+    const times = order === 'single then multiple' ? ['4.5', '0,4.5'] : ['0,4.5', '4.5'];
+    for (const at of times) {
+      run('still', '产品片', '--at', at);
+      assert.ok(statSync(join(cwd, '产品片/out/stills')).isDirectory());
+      png('产品片/out/stills/index-4.50s.png');
+    }
+    png('产品片/out/stills/index-0.00s.png');
+    run('still', '产品片');
+    png('产品片/out/stills/index-0.00s.png');
+    run('still', '产品片', '--at', '4.5', '--out', 'review/frame.png');
+    png('review/frame.png');
+    const before = readFileSync(join(cwd, 'review/frame.png'));
+    const duplicate = spawnSync(process.execPath, [cli, 'still', '产品片', '--out', 'review/frame.png'],
+      { cwd, encoding: 'utf8', timeout: 45_000 });
+    assert.ifError(duplicate.error);
+    assert.equal(duplicate.signal, null);
+    assert.equal(duplicate.status, 1);
+    assert.match(duplicate.stderr, /new .png file/);
+    assert.deepEqual(readFileSync(join(cwd, 'review/frame.png')), before);
+  });
+}

@@ -85,7 +85,7 @@ export function parseAbc(text) {
   const st = Object.fromEntries(order.map((v) => [v, { beat: 0, acc: {}, dyn: DYN.mf, ramp: null, tieFrom: null, repeatStart: 0, lastRepeat: -1 }]));
   const cues = [], riseOpen = {};
   const events = [], tempo = [{ beat: 0, qpm: qpmOf(head.Q) || 90 }], rits = [], breaths = [], fermatas = [], pedal = {}, ramps = [];
-  let key = keySignature(head.K), meter = [mn, md], L = head.L ? frac(head.L.replace(/^1\//, '1/'), 0.125) : (mn / md < 0.75 ? 1 / 16 : 1 / 8);
+  let key = keySignature(head.K), meter = [mn, md], L = head.L ? frac(head.L, 0.125) : (mn / md < 0.75 ? 1 / 16 : 1 / 8);
   let barLen = meter[0] * 4 / meter[1];
   let vcur = order[0], ritOpen = null;
 
@@ -127,7 +127,7 @@ export function parseAbc(text) {
         const [f, val] = [k.field[0], k.field.slice(2)];
         if (f === 'K') key = keySignature(val);
         if (f === 'M') { meter = meterOf(val); barLen = meter[0] * 4 / meter[1]; }
-        if (f === 'L') L = frac(val.replace(/^1\//, '1/'), L);
+        if (f === 'L') L = frac(val, L);
         if (f === 'Q') tempo.push({ beat: s.beat, qpm: qpmOf(val) || tempo.at(-1).qpm });
         continue;
       }

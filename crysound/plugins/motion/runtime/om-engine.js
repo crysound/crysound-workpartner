@@ -62,7 +62,12 @@
     for (const el of nodes) {
       const t = el.getAttribute('data-var-text'), s = el.getAttribute('data-var-src');
       if (t != null && t in v && el.textContent !== String(v[t])) el.textContent = String(v[t]);
-      if (s != null && s in v && v[s] != null && el.getAttribute('src') !== String(v[s])) el.setAttribute('src', String(v[s]));
+      if (s != null && s in v && v[s] != null) {
+        const asset = new URL(String(v[s]), document.baseURI);
+        if (asset.protocol !== 'file:') throw new Error('Company media variables require local files');
+        if (el instanceof HTMLImageElement || el instanceof HTMLMediaElement || el instanceof HTMLSourceElement) el.src = asset.href;
+        else throw new Error('Company media variables only support image, video, audio and source elements');
+      }
     }
   }
   // Every variable is also a CSS custom property on the root: a colour variable "clay" is var(--clay) in the stylesheet,

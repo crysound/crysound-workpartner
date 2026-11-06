@@ -25,7 +25,7 @@
     },
     "cli/lib/check.js": {
       "upstream": "d112421c8056f07910b78f49aabae286b73a7e87640592eb9d937661992ef606",
-      "shipped": "d112421c8056f07910b78f49aabae286b73a7e87640592eb9d937661992ef606"
+      "shipped": "3340bff8b2e72333606de736c8bb85e6e565c6d45a53b531d16f7644096db0ee"
     },
     "cli/lib/composed.js": {
       "upstream": "286609045ae111d0979ec27fd2c38356cae3916800b9f0b5cfaaade04319e8ac",
@@ -33,7 +33,7 @@
     },
     "cli/lib/composer.js": {
       "upstream": "c01e42e1f56cd74ec1829e9e37f3052d68500480f1ca0dc3d4bfa3fd8f46e828",
-      "shipped": "c01e42e1f56cd74ec1829e9e37f3052d68500480f1ca0dc3d4bfa3fd8f46e828"
+      "shipped": "82e9be643b74a00a5d285763d4752e06b0b17dad234a0bb534d6947d46b48b49"
     },
     "cli/lib/dsp.js": {
       "upstream": "2609e6d93ac51667f67345d3ba84d71d83c3b792656de97e95d12da57c6235fa",
@@ -69,7 +69,7 @@
     },
     "cli/lib/sound.js": {
       "upstream": "2050c684ac0db4f9277be812a8a2bc7b731a29006fca2c0c6c70b71c1fa1eb7b",
-      "shipped": "2050c684ac0db4f9277be812a8a2bc7b731a29006fca2c0c6c70b71c1fa1eb7b"
+      "shipped": "fa6b4d05a713335af12d3a3a15b2bce093e1b15b5d6e45ef0f0f11812e95347e"
     },
     "cli/lib/soundprint.js": {
       "upstream": "a4e42a7a054b53c9fe32673535dd92c3b911da831958bb4c69822f1b21bc493c",
@@ -85,7 +85,7 @@
     },
     "runtime/om-engine.js": {
       "upstream": "59d41ca9e6f1e35a1e2b8c9bbb3f7b665822b137939282cce8f6113aeb6873ce",
-      "shipped": "59d41ca9e6f1e35a1e2b8c9bbb3f7b665822b137939282cce8f6113aeb6873ce"
+      "shipped": "aacbc309787d8c57657db19c4312e76bdeec4ce90957b15289ed8fc601ab7876"
     },
     "runtime/om.js": {
       "upstream": "be8b8fc0033c022f6c9f33607df001edd1096b0b6814061a62ea030028ca77f5",

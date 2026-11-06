@@ -38,7 +38,7 @@ export function checkSource(project) {
   for (const m of noComments.matchAll(/\sdata-var-(text|src)\s*=\s*["']([^"']+)["']/g)) if (!ids.has(m[2])) add('error', 'unknown-variable', `data-var-${m[1]}="${m[2]}" — no such variable in data-composition-variables`, m.index);
 
   // scripts: syntax, and motion that is not a function of time
-  const scripts = [...noComments.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+  const scripts = [...noComments.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
   for (const m of scripts) {
     const type = (/\stype\s*=\s*["']?([^"'\s>]+)/i.exec(m[1])?.[1] || '').toLowerCase();
     const src = /\ssrc\s*=\s*["']([^"']+)["']/i.exec(m[1])?.[1];

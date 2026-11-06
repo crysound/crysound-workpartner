@@ -16,7 +16,9 @@ node <om入口> render 产品片 --format mp4 --workers 2
 node <om入口> render 产品片 --format gif --workers 2
 ```
 
-命令相对当前工作区解析项目与输出路径。模板默认 24 秒、1280×720、24 fps。修改 `index.html` 中的占位文案、产品画面和时间线，素材用本地文件。静帧在项目 `out/stills/`，配乐在 `assets/sound.wav`，成片在 `out/`；MP4 每次使用新版本文件名，失败不交付半成品。GIF 没有音频，配乐需求交 MP4。`still --out` 只接受未存在的 PNG 文件；自动静帧以时间命名，重复同一时间会刷新该静帧。
+命令相对当前工作区解析项目与输出路径。模板默认 24 秒、1280×720、24 fps。修改 `index.html` 中的占位文案、产品画面和时间线，素材用本地文件。静帧在项目 `out/stills/`，配乐在 `assets/sound.wav`，成片在 `out/`；MP4 每次使用新版本文件名，失败不交付半成品。GIF 没有音频，配乐需求交 MP4。`still --out` 只接受未存在的 PNG 文件；自动静帧以时间命名，重复同一时间会刷新该静帧。单帧与多帧使用相同命名，例如 `still 产品片 --at 4.5` 写入 `产品片/out/stills/index-4.50s.png`；省略 `--at` 时保存第 0 秒。
+
+`data-var-src` 只绑定本地文件到图片、视频、音频或 source 元素；文字变量用 `data-var-text`。
 
 ## 限额与权限
 
@@ -31,6 +33,8 @@ node <om入口> render 产品片 --format gif --workers 2
 在包目录运行 `npm pack --dry-run --json` 核对内容，按工作伙伴内置的“发布到兆华市场”技能发布。必须使用现有 `CRYSOUND_MARKET_REGISTRY` 与 `CRYSOUND_NPM_USERCONFIG`；包内不指定注册表，不读取或复制凭据。版本不能覆盖。发布会触发管理员审批，批准后才出现在市场索引。本 PR 只准备可发布的包；伙伴助理负责发布、审批和测试安装。
 
 部署只需重建网页版镜像以加入 OM_CHROME 和 flock，然后先更新测试账号。无需新增服务或端口，无需改网关、默认插件清单或用户数据。不要在本机装依赖、建镜像或运行完整上游测试；`node scripts/verify.mjs` 与 `node --test tests/*.test.mjs` 是轻量检查。真实短片冒烟脚本 `node scripts/smoke.mjs` 只生成 2 秒、320×180 的测试视频和 GIF，另截图公司模板的四个关键帧，并核对过长时间线被拒绝；`OM_CHROME` 必须指向已存在浏览器，不下载。
+
+设置 `OM_CHROME` 后，行为测试还会用真实浏览器验证先单帧后多帧、先多帧后单帧、默认第 0 秒与显式输出文件不覆盖；未设置时跳过这两条浏览器用例。
 
 ## 后续离线模型与采样预置
 
