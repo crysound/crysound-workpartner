@@ -37,7 +37,9 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
 COPY config/plugins.json config/plugin-patches.mjs config/partner.patch.yml /opt/partner/
 RUN sed -i 's#https://partner.corp.crysound.com/_zp/llm/v1#http://magpie:3425/v1#' /opt/partner/partner.patch.yml \
  && grep -q 'baseURL: http://magpie:3425/v1' /opt/partner/partner.patch.yml && chmod 644 /opt/partner/*
+# 检出目录的权限随 umask 变化，这里统一放开，容器内的普通用户才能读和执行。
 COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh
 ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
 WORKDIR /data
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
