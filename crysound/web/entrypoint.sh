@@ -1,7 +1,7 @@
 #!/bin/sh
 set -u
 CONFIG=/opt/partner-config
-for file in plugins.json partner.patch.yml profile-upgrades.mjs plugin-patches.mjs market-profile.mjs market-npmrc.mjs skills/publish-zhaohua-market/SKILL.md; do
+for file in plugins.json partner.patch.yml company-plugins.mjs profile-upgrades.mjs plugin-patches.mjs market-profile.mjs market-npmrc.mjs skills/publish-zhaohua-market/SKILL.md; do
   if [ ! -r "$CONFIG/$file" ]; then
     echo "公司配置缺失或不可读：$CONFIG/$file；请检查服务器配置目录及只读挂载" >&2
     exit 1
@@ -23,6 +23,9 @@ while read NAME SPEC WANT; do
   grep -qF "\"$NAME\": \"$WANT\"" "$DSH_HOME/profiles/web/package.json" 2>/dev/null \
     || dsh plugin --profile web add "$SPEC" </dev/null >/dev/null 2>&1 || echo "插件 $NAME 安装失败，本次不带它启动"
 done
+# One-time preinstall retirement only touches profile dependencies, never the work directory.
+node "$CONFIG/company-plugins.mjs" "$DSH_HOME/profiles/web" "$CONFIG/plugins.json" "$(readlink -f "$(command -v dsh)")" web \
+  || echo "警告：旧预装插件移出未完成，下次更新重试；保留用户文件并继续启动" >&2
 # 第三方插件的本地修补（SlideStudio 兼容），清单和原因见 plugin-patches.mjs。
 node "$CONFIG/plugin-patches.mjs" "$DSH_HOME/profiles/web/node_modules" || echo "警告：插件修补失败，继续启动" >&2
 # 语音模型用镜像里的共用一份，不再每人下载。

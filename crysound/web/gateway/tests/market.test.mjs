@@ -454,3 +454,53 @@ test("索引作者没有姓名时使用 slug", async (t) => {
   await f.review("1.0.0");
   assert.equal((await f.index()).plugins[0].author, "bob");
 });
+
+test("指定官方维护人可续发但不能覆盖，每版仍需审批；普通包仍由首发者持有", async (t) => {
+  const f = await fixture(t, { officialPlugins: { [name]: { displayName: "兆华示例", maintainers: ["bob"] } }, officialPublishers: ["alice"] });
+  assert.equal((await f.publish("admin", "1.0.0")).status, 403);
+  assert.equal((await f.publish("alice", "1.0.0")).status, 201);
+  assert.equal((await f.publish("bob", "1.1.0")).status, 201);
+  assert.equal((await f.publish("admin", "1.2.0")).status, 403);
+  assert.equal((await f.publish("bob", "1.1.0")).status, 409);
+  assert.equal((await f.index()).plugins.length, 0);
+  // The actual uploader can inspect its own pending release, including a first release by a maintainer.
+  assert.equal((await f.request(`${route}/1.1.0`, { headers: bearer("bob") })).status, 200);
+  assert.equal((await f.request(`${route}/1.1.0`, { headers: bearer("admin") })).status, 404);
+  assert.equal((await f.review("1.1.0")).status, 303);
+  let index = await f.index();
+  assert.equal(index.plugins[0].title, "兆华示例");
+  assert.deepEqual(index.plugins[0].versions.map((row) => row.version), ["1.1.0"]);
+  assert.equal(JSON.parse(fs.readFileSync(f.stateFile)).packages[name].owner, "alice");
+  f.options.officialPlugins[name].maintainers = ["admin"];
+  f.restart();
+  assert.equal((await f.publish("bob", "1.2.0")).status, 403);
+  assert.equal((await f.publish("admin", "1.2.0")).status, 201);
+  assert.equal((await f.publish("bob", "1.0.0", "@crysound/personal")).status, 201);
+  assert.equal((await f.publish("admin", "1.1.0", "@crysound/personal")).status, 403);
+});
+
+test("官方中文名和维护姓名来自配置，部署名单优先；无效官方配置启动即拒绝", async (t) => {
+  const f = await fixture(t, { officialPlugins: { [name]: { displayName: "兆华配置名", maintainers: ["bob"] } }, officialMaintainers: { [name]: ["alice"] } });
+  assert.equal((await f.publish("bob", "1.0.0")).status, 403);
+  assert.equal((await f.publish("alice", "1.0.0")).status, 201);
+  await f.review("1.0.0");
+  const index = await f.index();
+  assert.equal(index.plugins[0].title, "兆华配置名");
+  assert.equal(index.metadata.labels["crysound-maintainer:alice"].title.zh, "维护：测试发布者");
+  for (const officialPlugins of [[], { [name]: { displayName: "普通名", maintainers: [] } }, { [name]: { displayName: "兆华示例", maintainers: [3] } }]) {
+    assert.throws(() => createMarket({ ...f.options, officialPlugins }), /官方插件配置/);
+  }
+});
+
+test("非官方显示名、备用名称及包名不得以兆华开头，拒绝发生在注册表写入前", async (t) => {
+  const f = await fixture(t);
+  for (const field of ["displayName", "title"]) {
+    const body = doc(); body.versions["1.0.0"][field] = " 兆华假冒";
+    const r = await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) });
+    assert.equal(r.status, 403); assert.match(r.text, /兆华.*仅供官方/);
+  }
+  const bad = await f.publish("alice", "1.0.0", "@crysound/兆华假冒");
+  assert.equal(bad.status, 403); assert.match(bad.text, /兆华.*仅供官方/);
+  assert.equal(f.requests.length, 0);
+  assert.equal((await f.publish("alice", "1.0.0")).status, 201);
+});

@@ -1,10 +1,15 @@
 {
   "plugins": [
-    { "name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz" },
-    { "name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12" },
-    { "name": "dsh-slidestudio", "spec": "dsh-slidestudio@0.2.9", "want": "0.2.9" },
-    { "name": "dsh-oil-ui", "spec": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528", "want": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528" },
-    { "name": "dsh-video-editor", "spec": "dsh-video-editor@1.0.0", "want": "1.0.0" }
+    {
+      "name": "@aiwayds/dsh-feishu",
+      "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz",
+      "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz"
+    },
+    {
+      "name": "dshmarket",
+      "spec": "dshmarket@1.73.12",
+      "want": "1.73.12"
+    }
   ],
   "defaultBundles": [
     "@deepseek-ai/dsh-experimental-plugin-market-bundle",
@@ -12,5 +17,27 @@
     "@deepseek-ai/dsh-experimental-auto-review",
     "@deepseek-ai/dsh-experimental-cot-translation-bundle",
     "@deepseek-ai/dsh-experimental-session-titles-bundle"
-  ]
+  ],
+  "officialPlugins": {
+    "@crysound/design": {
+      "displayName": "兆华设计",
+      "maintainers": []
+    },
+    "@crysound/motion": {
+      "displayName": "兆华动效",
+      "maintainers": []
+    },
+    "@crysound/data": {
+      "displayName": "兆华数据",
+      "maintainers": []
+    }
+  },
+  "retire": {
+    "id": "market-v1",
+    "packages": [
+      "dsh-slidestudio",
+      "dsh-video-editor",
+      "dsh-oil-ui"
+    ]
+  }
 }

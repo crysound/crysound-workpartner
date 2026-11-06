@@ -35,6 +35,7 @@ import {
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
+import { patchOfficialPluginsRuntime } from '../../../crysound/scripts/patch-official-plugins.mjs'
 import { patchCompanyMarketRuntime } from '../../../crysound/scripts/patch-market-ui.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
@@ -155,6 +156,7 @@ async function main(): Promise<void> {
     // CRYSOUND: descriptor hashes and all subsequent checks cover the final company UI bytes.
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:company-market-ui', async () => {
       patchCompanyMarketRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
+      patchOfficialPluginsRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
     })
     writeFileSync(join(DSH_OUTPUT_ROOT, 'package.json'), `${JSON.stringify({
       name: '@deepseek-ai/dsh-desktop-runtime', private: true, version: release.version, type: 'module',

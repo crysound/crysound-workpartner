@@ -2,7 +2,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
-const CONFIG_FILES = ['plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'] as const
+const CONFIG_FILES = ['plugins.json', 'partner.patch.yml', 'company-plugins.mjs', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'] as const
 
 /**
  * Use a private per-run directory so incomplete downloads never replace a working configuration.

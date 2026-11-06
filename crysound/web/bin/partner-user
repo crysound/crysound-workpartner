@@ -82,7 +82,7 @@ def market_token(slug, union_id):
 
 
 def require_config():
-    for file in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'):
+    for file in ('plugins.json', 'partner.patch.yml', 'company-plugins.mjs', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'):
         if not (CONFIG / file).is_file():
             sys.exit(f'公司配置缺失：{CONFIG / file}；请先同步服务器配置目录')
 

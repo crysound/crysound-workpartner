@@ -152,7 +152,7 @@ test("桌面工作区升级实际补齐索引和可发现技能，重复启动�
   fs.mkdirSync(path.join(assets, "config"), { recursive: true });
   fs.mkdirSync(profile, { recursive: true }); fs.mkdirSync(userData);
   fs.cpSync(path.join(config, "skills"), path.join(assets, "config/skills"), { recursive: true });
-  for (const name of ["market-profile.mjs", "profile-upgrades.mjs", "partner.patch.yml"]) {
+  for (const name of ["company-plugins.mjs", "market-profile.mjs", "profile-upgrades.mjs", "partner.patch.yml"]) {
     fs.copyFileSync(path.join(config, name), path.join(assets, "config", name));
   }
   fs.cpSync(fileURLToPath(new URL("../../../feishu/", import.meta.url)), path.join(assets, "feishu"), { recursive: true });
@@ -203,7 +203,7 @@ test("可选市场配置、插件修补和技能复制失败仍启动 dsh，公�
   fs.mkdirSync(bin); fs.mkdirSync(home);
   for (const mark of [".zp-default-plugins-v1", ".zp-seed-v1"]) fs.writeFileSync(path.join(home, mark), "");
   const stub = (name, body) => fs.writeFileSync(path.join(bin, name), `#!/bin/sh\n${body}\n`, { mode: 0o700 });
-  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\ncase "$1" in *profile-upgrades.mjs) exit 0;; esac\nexit 1');
+  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\ncase "$1" in */plugin-artifacts.mjs|*profile-upgrades.mjs) exit 0;; esac\nexit 1');
   stub("cp", "exit 1");
   stub("cat", "echo fake-model-key");
   stub("mkdir", 'if [ "$2" = "/data/work" ]; then exit 1; fi\nexec /bin/mkdir "$@"');
@@ -220,7 +220,7 @@ test("可选市场配置、插件修补和技能复制失败仍启动 dsh，公�
   assert.match(result.stdout, /dsh launched: --profile web/);
   for (const step of ["市场 npm 配置", "插件修补", "市场发布技能复制", "市场 profile 配置"]) assert.ok(result.stderr.includes(`警告：${step}失败`), step);
   assert.match(result.stdout, /\n0*22\s*$/);
-  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\nexit 1');
+  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\ncase "$1" in */plugin-artifacts.mjs) exit 0;; esac\nexit 1');
   const failed = spawnSync("/bin/sh", [entrypoint], {
     cwd: root, encoding: "utf8", env: { PATH: `${bin}:${process.env.PATH}`, DSH_HOME: home, PUBLIC_HOST: "partner.example.test", MAGPIE_BASE_URL: "http://models.example.test/v1" },
   });

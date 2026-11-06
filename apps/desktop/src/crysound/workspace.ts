@@ -170,6 +170,8 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
 
     const repaired = await run(execPath, [join(assets, 'plugin-artifacts.mjs'), 'repair', profile, cliEntry], environment, limits.patch)
     if (repaired !== 0) throw new Error('CRYSOUND: company plugin lockfile repair failed')
+    const policy = await run(execPath, [join(config.directory, 'company-plugins.mjs'), profile, join(config.directory, 'plugins.json'), cliEntry, 'desktop'], environment, limits.install)
+    if (policy !== 0) console.warn('CRYSOUND: preinstall retirement incomplete; retrying at next launch')
     await applyPluginTemplate(assets, profile, list, limits, onBusy)
     const deadline = Date.now() + limits.installTotal
     const skipped: string[] = []

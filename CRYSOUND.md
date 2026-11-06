@@ -14,6 +14,7 @@
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
+- 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 在新老工作区一次性移出三款旧预装，保留作品和共用浏览器。发布与版本同步见市场说明。
 - 左下角账号按钮显示飞书头像和姓名，菜单里的“登录”项换成姓名（不可点）。`brand.js` 向 `/_zp/me` 取 `{name, avatar}`：网页版由网关按登录会话回答，桌面版由 `src/main.ts` 按本机保存的登录回答。网页版在账号按钮上方多一个“下载客户端”入口，指向网关的 `/_zp/download`。
 
 ### 断开 DeepSeek 服务
@@ -34,7 +35,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 ### 首次启动自动就位（`src/crysound/workspace.ts`，数据在 `crysound/config/`）
 飞书技能由 `crysound/feishu/setup.mjs` 解压到公司版本目录：先重命名到最终位置，再将根目录设为只读，兼容 macOS；失败时恢复本次副本的目录及文件写权限后清理，已有 `.complete` 的版本直接复用。
 
-1. 5 个插件按 `plugins.json` 的固定版本就位。构建时 `apps/desktop/scripts/prepare-plugin-template.ts` 用打包用的 dsh 运行时把它们装进临时 profile，结果（`package.json`、`pnpm-lock.yaml`、`modules/` 即 `node_modules`）随包放在 `Resources/crysound/plugin-template`；首次启动在 profile 里还没有这 5 个插件、`node_modules` 为空时，把模板复制进去并写入插件记录，几秒内完成。模板缺失、版本不符、profile 里已有旧版插件或复制失败时，退回联网执行包内 `dsh plugin --profile desktop add`（已记录同版本则跳过）。模板只在与构建机同架构的 macOS 目标上生成。
+1. 公司插件按 `plugins.json` 的固定版本就位。构建时 `apps/desktop/scripts/prepare-plugin-template.ts` 用打包用的 dsh 运行时把它们装进临时 profile，结果（`package.json`、`pnpm-lock.yaml`、`modules/` 即 `node_modules`）随包放在 `Resources/crysound/plugin-template`；首次启动在 profile 里还没有这些公司插件、`node_modules` 为空时，把模板复制进去并写入插件记录，几秒内完成。模板缺失、版本不符、profile 里已有旧版插件或复制失败时，退回联网执行包内 `dsh plugin --profile desktop add`（已记录同版本则跳过）。模板只在与构建机同架构的 macOS 目标上生成。
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
 4. 启动时从网关读取公司配置快照，取不到时使用包内配置。默认值首次写入，之后每次只刷新 `providers.magpie`，保留个人其他提供方和已选默认值；详见 `crysound/web/README.md`。
@@ -59,7 +60,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
-- `Dockerfile`：每人容器的镜像。dsh 版本固定；5 个插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
+- `Dockerfile`：每人容器的镜像。dsh 版本固定；公司插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
 - `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置；每次刷新公司模型清单，个人其他提供方保留（之后本人可在设置页改）。
 - `bin/partner-user`：给群外的人手工开通、列名单、用新镜像重建；`bin/upgrade-when-idle.sh <代号>` 等本人 10 分钟没操作再重建；`bin/upgrade-and-check.sh`、`bin/try-fresh.sh` 用于核对。
 - 部署参数（域名、飞书应用、试点群、数据目录）写在 `crysound/web/.env`，照 `.env.example` 填，不进仓库。名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`，钥匙在 `PARTNER_SECURE`。
