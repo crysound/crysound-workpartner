@@ -51,6 +51,12 @@
   config:
     welcomeNoticeVersion: 2026-09-28.1
 
+# 工作步骤默认用“标准”（上游默认“详细”）；本人在设置里改过的保留。
+- id: ui-chat
+  name: '@deepseek-ai/dsh-client-ui-chat'
+  config:
+    transcriptView: standard
+
 # 公司私有插件索引，安装源由 @crysound 的 .npmrc scope 映射决定。
 - id: plugin-market
   config:
