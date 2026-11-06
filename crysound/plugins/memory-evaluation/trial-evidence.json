@@ -1,0 +1,699 @@
+{
+  "scope": "Synthetic memory trials only. Main-model calls exclude title generation and palace background summaries. Token fields are host-reported, not billing measurements. Character counts are Unicode code points (not JS UTF-16 or tokens).",
+  "sessions": [
+    {
+      "session": "session-33773cae-ce08-49e5-a31b-7e684c8af76f",
+      "createdAt": 1793997532253,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 14326,
+            "outputTokens": 62,
+            "totalTokens": 14388
+          }
+        },
+        {
+          "seq": 21,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 180,
+            "outputTokens": 46,
+            "totalTokens": 14434,
+            "cacheReadTokens": 14208
+          }
+        },
+        {
+          "seq": 27,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 183,
+            "outputTokens": 74,
+            "totalTokens": 14593,
+            "cacheReadTokens": 14336
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 17,
+          "name": "memory_read",
+          "arguments": {}
+        },
+        {
+          "seq": 22,
+          "name": "memory_note_user",
+          "arguments": {
+            "content": "用户偏好使用简体中文沟通，回答先给结论，再给三条理由。",
+            "section": "沟通偏好"
+          }
+        }
+      ],
+      "recall": [
+        {
+          "seq": 26,
+          "source": "palace",
+          "text": "# 用户级记忆 (~/.deepseek-harness/MEMORY.md)\n## 沟通偏好\n- 用户偏好使用简体中文沟通，回答先给结论，再给三条理由。"
+        }
+      ]
+    },
+    {
+      "session": "session-6c78323a-1f5d-4f0f-ac54-cbe6ad8e47bf",
+      "createdAt": 1793997574430,
+      "modelCalls": [
+        {
+          "seq": 18,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 14454,
+            "outputTokens": 135,
+            "totalTokens": 14589
+          }
+        },
+        {
+          "seq": 26,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 268,
+            "outputTokens": 61,
+            "totalTokens": 14665,
+            "cacheReadTokens": 14336
+          }
+        },
+        {
+          "seq": 31,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 358,
+            "outputTokens": 27,
+            "totalTokens": 14849,
+            "cacheReadTokens": 14464
+          }
+        },
+        {
+          "seq": 36,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 250,
+            "outputTokens": 62,
+            "totalTokens": 15032,
+            "cacheReadTokens": 14720
+          }
+        },
+        {
+          "seq": 44,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 207,
+            "outputTokens": 59,
+            "totalTokens": 15114,
+            "cacheReadTokens": 14848
+          }
+        },
+        {
+          "seq": 51,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 172,
+            "outputTokens": 46,
+            "totalTokens": 15194,
+            "cacheReadTokens": 14976
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 27,
+          "name": "memory_read",
+          "arguments": {
+            "scope": "all"
+          }
+        },
+        {
+          "seq": 32,
+          "name": "memory_delete",
+          "arguments": {
+            "level": "daily",
+            "match": "只喝无糖拿铁"
+          }
+        },
+        {
+          "seq": 45,
+          "name": "memory_delete",
+          "arguments": {
+            "confirm": true,
+            "level": "daily",
+            "match": "只喝无糖拿铁"
+          }
+        }
+      ],
+      "recall": [
+        {
+          "seq": 9,
+          "source": "palace",
+          "text": "# 用户级记忆 (~/.deepseek-harness/MEMORY.md)\n## 沟通偏好\n- 用户偏好使用简体中文沟通，回答先给结论，再给三条理由。"
+        },
+        {
+          "seq": 10,
+          "source": "palace",
+          "text": "# 今日工作日志 (2026-11-06 @ ~/work/.deepseek-harness/memory)\n# 2026-11-06\n\n## 沟通偏好\n- **用户约定**：工作沟通使用简体中文，回答先给结论，再给三条理由。（重要）\n\n## 工作背景\n- 用户从事声学测试方案工作。\n\n## 饮品偏好\n- **用户偏好**：只喝无糖拿铁。"
+        }
+      ]
+    },
+    {
+      "session": "session-61b39647-602f-4c4c-989c-80dd480d3185",
+      "createdAt": 1793997660474,
+      "modelCalls": [
+        {
+          "seq": 18,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 14468,
+            "outputTokens": 50,
+            "totalTokens": 14518
+          }
+        },
+        {
+          "seq": 23,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 225,
+            "outputTokens": 107,
+            "totalTokens": 14668,
+            "cacheReadTokens": 14336
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 19,
+          "name": "memory_read",
+          "arguments": {}
+        }
+      ],
+      "recall": [
+        {
+          "seq": 9,
+          "source": "palace",
+          "text": "# 用户级记忆 (~/.deepseek-harness/MEMORY.md)\n## 沟通偏好\n- 用户偏好使用简体中文沟通，回答先给结论，再给三条理由。"
+        },
+        {
+          "seq": 10,
+          "source": "palace",
+          "text": "# 今日工作日志 (2026-11-06 @ ~/work/.deepseek-harness/memory)\n# 2026-11-06\n\n## 沟通偏好\n- **用户约定**：工作沟通使用简体中文，回答先给结论，再给三条理由。（重要）\n\n## 工作背景\n- 用户从事声学测试方案工作。\n\n## 饮品偏好\n- **已删除**：“只喝无糖拿铁”这条咖啡偏好记忆，沟通习惯保留。"
+        }
+      ]
+    },
+    {
+      "session": "session-affe6f92-9d0b-42ff-8567-8d9dbdfec2e3",
+      "createdAt": 1793997956190,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11414,
+            "outputTokens": 135,
+            "totalTokens": 11549
+          }
+        },
+        {
+          "seq": 23,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11960,
+            "outputTokens": 50,
+            "totalTokens": 12010
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 17,
+          "name": "memory_save",
+          "arguments": {
+            "title": "称呼周工并遵循其饮品和报告偏好",
+            "scope": "user",
+            "content": "称呼用户为周工；用户在苏州从事振动测试工作。涉及咖啡选择时，只推荐无糖冰美式。为用户编写报告时，优先使用 Markdown 表格呈现适合比较或汇总的信息。",
+            "tags": [
+              "用户背景",
+              "饮品偏好",
+              "报告格式"
+            ]
+          }
+        }
+      ],
+      "recall": []
+    },
+    {
+      "session": "session-7df9846e-0b71-45c9-b11e-7f287799c554",
+      "createdAt": 1793998079163,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11391,
+            "outputTokens": 47,
+            "totalTokens": 11438
+          }
+        },
+        {
+          "seq": 21,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 205,
+            "outputTokens": 18,
+            "totalTokens": 11487,
+            "cacheReadTokens": 11264
+          }
+        },
+        {
+          "seq": 26,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 124,
+            "outputTokens": 18,
+            "totalTokens": 11534,
+            "cacheReadTokens": 11392
+          }
+        },
+        {
+          "seq": 31,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 203,
+            "outputTokens": 51,
+            "totalTokens": 11646,
+            "cacheReadTokens": 11392
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 17,
+          "name": "memory_search",
+          "arguments": {
+            "query": "咖啡",
+            "scope": "user"
+          }
+        },
+        {
+          "seq": 22,
+          "name": "memory_search",
+          "arguments": {
+            "query": "报告"
+          }
+        },
+        {
+          "seq": 27,
+          "name": "memory_list",
+          "arguments": {
+            "limit": 20
+          }
+        }
+      ],
+      "recall": []
+    },
+    {
+      "session": "session-cc2259a0-d0aa-40e1-bbbf-abe887d94d51",
+      "createdAt": 1793998099855,
+      "modelCalls": [
+        {
+          "seq": 15,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11204,
+            "outputTokens": 43,
+            "totalTokens": 11247
+          }
+        },
+        {
+          "seq": 21,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 137,
+            "outputTokens": 42,
+            "totalTokens": 11315,
+            "cacheReadTokens": 11136
+          }
+        },
+        {
+          "seq": 28,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11418,
+            "outputTokens": 58,
+            "totalTokens": 11476
+          }
+        },
+        {
+          "seq": 35,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11650,
+            "outputTokens": 48,
+            "totalTokens": 11698
+          }
+        },
+        {
+          "seq": 42,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11907,
+            "outputTokens": 67,
+            "totalTokens": 11974
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 16,
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 22,
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户从事声学测试方案工作。",
+            "kind": "identity",
+            "revision": 0,
+            "title": "工作方向"
+          }
+        },
+        {
+          "seq": 29,
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。",
+            "kind": "preference",
+            "revision": 1,
+            "title": "工作沟通习惯"
+          }
+        },
+        {
+          "seq": 36,
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户咖啡只喝无糖拿铁。",
+            "kind": "preference",
+            "revision": 2,
+            "title": "咖啡偏好"
+          }
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 25,
+          "snapshot": {
+            "revision": 0,
+            "facts": []
+          }
+        },
+        {
+          "seq": 26,
+          "source": "crysound-memory",
+          "chars": 117,
+          "snapshot": {
+            "revision": 1,
+            "facts": [
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 33,
+          "source": "crysound-memory",
+          "chars": 228,
+          "snapshot": {
+            "revision": 2,
+            "facts": [
+              {
+                "id": "82e09c2b58f388f268e314f8",
+                "kind": "preference",
+                "title": "工作沟通习惯",
+                "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。"
+              },
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 40,
+          "source": "crysound-memory",
+          "chars": 321,
+          "snapshot": {
+            "revision": 3,
+            "facts": [
+              {
+                "id": "82e09c2b58f388f268e314f8",
+                "kind": "preference",
+                "title": "工作沟通习惯",
+                "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。"
+              },
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              },
+              {
+                "id": "e9ad70c36ccb2f42be253d9c",
+                "kind": "preference",
+                "title": "咖啡偏好",
+                "content": "用户咖啡只喝无糖拿铁。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-b2944e78-e8f5-4a0e-91e2-f24a538f0cef",
+      "createdAt": 1793998136063,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11313,
+            "outputTokens": 74,
+            "totalTokens": 11387
+          }
+        },
+        {
+          "seq": 24,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 156,
+            "outputTokens": 48,
+            "totalTokens": 11468,
+            "cacheReadTokens": 11264
+          }
+        },
+        {
+          "seq": 29,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 368,
+            "outputTokens": 40,
+            "totalTokens": 11672,
+            "cacheReadTokens": 11264
+          }
+        },
+        {
+          "seq": 36,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11747,
+            "outputTokens": 75,
+            "totalTokens": 11822
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 25,
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 30,
+          "name": "crysound_memory_forget",
+          "arguments": {
+            "id": "e9ad70c36ccb2f42be253d9c",
+            "revision": 3
+          }
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 321,
+          "snapshot": {
+            "revision": 3,
+            "facts": [
+              {
+                "id": "82e09c2b58f388f268e314f8",
+                "kind": "preference",
+                "title": "工作沟通习惯",
+                "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。"
+              },
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              },
+              {
+                "id": "e9ad70c36ccb2f42be253d9c",
+                "kind": "preference",
+                "title": "咖啡偏好",
+                "content": "用户咖啡只喝无糖拿铁。"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 34,
+          "source": "crysound-memory",
+          "chars": 228,
+          "snapshot": {
+            "revision": 4,
+            "facts": [
+              {
+                "id": "82e09c2b58f388f268e314f8",
+                "kind": "preference",
+                "title": "工作沟通习惯",
+                "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。"
+              },
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-7a9ae0ab-25fa-4e0c-9d45-310623799412",
+      "createdAt": 1793998223039,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11271,
+            "outputTokens": 66,
+            "totalTokens": 11337
+          }
+        }
+      ],
+      "memoryTools": [],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 228,
+          "snapshot": {
+            "revision": 4,
+            "facts": [
+              {
+                "id": "82e09c2b58f388f268e314f8",
+                "kind": "preference",
+                "title": "工作沟通习惯",
+                "content": "用户工作沟通习惯使用简体中文，先给结论，再给三条理由。"
+              },
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-d3ac0f9a-b8e9-4ce9-a118-21afadbd73f5",
+      "createdAt": 1793998323709,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11214,
+            "outputTokens": 73,
+            "totalTokens": 11287
+          }
+        }
+      ],
+      "memoryTools": [],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 117,
+          "snapshot": {
+            "revision": 5,
+            "facts": [
+              {
+                "id": "9b70db52557329a44cded49d",
+                "kind": "identity",
+                "title": "工作方向",
+                "content": "用户从事声学测试方案工作。"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
