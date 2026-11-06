@@ -1,0 +1,1660 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { FeishuBot } from '../lib/bot.js'
+
+/** Minimal FeishuBot with faked deps; private internals are driven directly. */
+function makeBot(lark, clock) {
+  const store = { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} }
+  return new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} } },
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500 },
+    lark,
+    binder: { isReadOnlyView: () => false },
+    store,
+    allowlist: new Set(),
+    now: () => clock.now,
+  })
+}
+
+// ------------------------------------------------ round cards + steer --
+
+function roundBot(lark, binder = { getSessionId: () => 's1', isReadOnlyView: () => false }) {
+  return new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, bodySegmentChars: 100 },
+    lark,
+    binder,
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} },
+    allowlist: new Set(),
+    now: () => 5000,
+  })
+}
+
+test('opening a turn sends no progress card', async () => {
+  const sends = []
+  const bot = roundBot({ async sendCard(_chatId, card) { sends.push(card); return 'm1' } })
+  bot.runState.running = true
+  await bot.openCard()
+  assert.deepEqual(sends, [])
+  assert.equal(bot.cardMessageId, undefined)
+})
+
+test('a settled round sends its short body without a status card', async () => {
+  const sends = []
+  const bot = roundBot({ async sendCard(_chatId, card) { sends.push(card); return 'm1' } })
+  bot.runState.running = true
+  bot.runState.rounds = 1
+  bot.runState.lastRoundText = 'round one answer'
+  bot.runState.toolHistory = [{ name: 'test tool' }]
+  await bot.settleRound()
+  assert.equal(sends.length, 1)
+  assert.equal(sends[0].header, undefined)
+  assert.equal(sends[0].body.elements[0].content, 'round one answer')
+  assert.equal(bot.cardMessageId, undefined)
+  assert.deepEqual(bot.runState.toolHistory, [])
+  assert.equal(bot.runState.lastRoundText, '')
+})
+
+test('an oversized round body ships in segments without a round card', async () => {
+  const sends = []
+  const bot = roundBot({ async sendCard(_chatId, card) { sends.push(card); return `m${sends.length}` } })
+  bot.runState.running = true
+  bot.runState.rounds = 1
+  bot.runState.lastRoundText = 'x'.repeat(120)
+  await bot.settleRound()
+  assert.equal(sends.length, 2)
+  assert.ok(sends.every(card => card.header === undefined))
+  assert.deepEqual(sends.map(card => card.body.elements[0].content), ['x'.repeat(100), 'x'.repeat(20)])
+})
+
+test('a round with no text sends nothing', async () => {
+  const sends = []
+  const bot = roundBot({ async sendCard(_chatId, card) { sends.push(card); return 'm1' } })
+  bot.runState.running = true
+  bot.runState.rounds = 2
+  bot.runState.lastRoundText = ''
+  await bot.settleRound()
+  assert.deepEqual(sends, [])
+})
+
+test('completed turns send no status card or duplicate body, but acknowledge the prompt', async () => {
+  const sends = []
+  const patches = []
+  const reactions = []
+  const bot = roundBot({
+    async sendCard(_chatId, card) { sends.push(card); return 'm1' },
+    async patchCard(id, card) { patches.push({ id, card }); return true },
+    async react(id, emoji) { reactions.push([id, emoji]) },
+  })
+  bot.runState.running = false
+  bot.runState.turnStartedAt = 1000
+  bot.runState.turnEndedAt = 4000
+  bot.runState.turnEndReason = 'completed'
+  bot.runState.rounds = 3
+  bot.runState.lastRoundText = 'the final answer'
+  bot.turnOriginMessageId = 'om_prompt'
+  await bot.finalizeTurn()
+  assert.deepEqual(sends, [])
+  assert.deepEqual(patches, [])
+  assert.equal(reactions.length, 1)
+  assert.equal(reactions[0][0], 'om_prompt')
+  assert.equal(bot.cardMessageId, undefined)
+  assert.equal(bot.turnOriginMessageId, undefined)
+})
+
+test('error and stopped turns still send a status card without resending the body', async t => {
+  for (const reason of ['error', 'stopped']) {
+    await t.test(reason, async () => {
+      const sends = []
+      const bot = roundBot({ async sendCard(_chatId, card) { sends.push(card); return 'm1' } })
+      bot.runState.running = false
+      bot.runState.turnStartedAt = 1000
+      bot.runState.turnEndedAt = 4000
+      bot.runState.turnEndReason = reason
+      bot.runState.lastRoundText = 'already sent answer'
+      await bot.finalizeTurn()
+      assert.equal(sends.length, 1)
+      assert.ok(sends[0].header)
+      assert.equal(JSON.stringify(sends[0]).includes('already sent answer'), false)
+    })
+  }
+})
+
+test('handlePrompt steers into the running turn, follows up when idle', async () => {
+  const calls = []
+  const reactions = []
+  const agent = {
+    status: 'running',
+    followup(m) { calls.push(['followup', m]) },
+    steer(m) { calls.push(['steer', m]) },
+  }
+  const bot = roundBot({
+    async sendCard() { return 'm1' },
+    async react(id, emoji) { reactions.push([id, emoji]) },
+  }, { getSessionId: () => 's1', getAgent: () => agent, isReadOnlyView: () => false })
+  await bot.handlePrompt({ messageId: 'om_1', openId: 'ou_x', chatId: 'oc_test', chatType: 'p2p', messageType: 'text', text: 'course correct' }, 'course correct')
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][0], 'steer') // running → join the current turn's next round
+  assert.equal(bot.turnOriginMessageId, undefined) // not our turn — no done-reaction binding
+  assert.deepEqual(reactions[0], ['om_1', 'EYES'])
+
+  agent.status = 'idle'
+  await bot.handlePrompt({ messageId: 'om_2', openId: 'ou_x', chatId: 'oc_test', chatType: 'p2p', messageType: 'text', text: 'new task' }, 'new task')
+  assert.equal(calls[1][0], 'followup') // idle → open the next turn
+  assert.equal(bot.turnOriginMessageId, 'om_2')
+})
+
+test('an unbound prompt creates and persists a default session before dispatch', async t => {
+  for (const usePhoneDefault of [false, true]) {
+    await t.test(usePhoneDefault ? 'phone default' : 'host default', async () => {
+      const hostSelection = { provider: 'test-provider', model: 'host-model' }
+      const phoneSelection = { provider: 'test-provider', model: 'phone-model', reasoningEffort: 'high' }
+      const selection = usePhoneDefault ? phoneSelection : hostSelection
+      const calls = []
+      const prompts = []
+      const reactions = []
+      const state = { lastChatId: 'oc_test', picker: { id: 'old-picker' }, ...(usePhoneDefault ? { phoneModel: phoneSelection } : {}) }
+      const model = { current: selection }
+      let boundId
+      const agent = { status: 'idle', followup(message) { prompts.push(message) } }
+      const bot = new FeishuBot({
+        ctx: {
+          logger: { info() {}, warn() {}, error() {} },
+          get: key => key === 'agentDefaultModel' ? { currentSelection: () => hostSelection } : undefined,
+        },
+        config: { statusIntervalMs: 30000, bodySegmentChars: 100 },
+        lark: { async react(id, emoji) { reactions.push([id, emoji]) } },
+        binder: {
+          getSessionId: () => boundId,
+          getAgent: () => boundId === undefined ? undefined : agent,
+          isReadOnlyView: () => false,
+          async createNew(cwd, route, preset) {
+            calls.push([cwd, route, preset])
+            boundId = 'fresh-session'
+            return { sessionId: boundId, model, agent, mode: 'created' }
+          },
+        },
+        store: { get: () => state, async update(patch) { Object.assign(state, patch) } },
+        allowlist: new Set(),
+      })
+      await bot.handlePrompt({ messageId: 'om_new' }, 'first task')
+      assert.deepEqual(calls, [[process.cwd(), selection, undefined]])
+      assert.equal(state.boundSessionId, 'fresh-session')
+      assert.equal(state.picker, undefined)
+      assert.equal(bot.selectionRefs.get('fresh-session'), model)
+      assert.equal(prompts.length, 1)
+      assert.deepEqual(prompts[0].content, [{ type: 'text', text: 'first task' }])
+      assert.equal(bot.turnOriginMessageId, 'om_new')
+      assert.deepEqual(reactions, [['om_new', 'EYES']])
+    })
+  }
+})
+
+test('auto-new failure logs a warning and replies with the unbound hint', async () => {
+  const replies = []
+  const warnings = []
+  const failure = new Error('creation unavailable')
+  const bot = roundBot({ async sendCard(_chatId, card) { replies.push(card.body.elements[0].content); return 'm1' } }, {
+    getSessionId: () => undefined,
+    getAgent: () => undefined,
+    isReadOnlyView: () => false,
+    async createNew() { throw failure },
+  })
+  bot.ctx.logger.warn = (...args) => warnings.push(args)
+  await bot.handlePrompt({ messageId: 'om_new' }, 'first task')
+  assert.deepEqual(warnings, [['dsh-feishu: auto-new failed: %o', failure]])
+  assert.deepEqual(replies, ['还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。'])
+})
+
+test('a refused prompt with an existing binding does not create a new session', async () => {
+  const replies = []
+  const bot = roundBot({ async sendCard(_chatId, card) { replies.push(card); return 'm1' } }, {
+    getSessionId: () => 'existing-session',
+    getAgent: () => undefined,
+    isReadOnlyView: () => false,
+    async bind() { throw new Error('session unavailable') },
+    async createNew() { assert.fail('must preserve the existing binding') },
+  })
+  await bot.handlePrompt({ messageId: 'om_existing' }, 'next task')
+  assert.equal(replies.length, 1)
+})
+
+test('handlePrompt queues while spectating instead of bouncing off the read-only notice', async () => {
+  const queued = []
+  const replies = []
+  const reactions = []
+  const bot = roundBot({
+    async sendCard(_chatId, card) { replies.push(card.body.elements[0].content); return 'm1' },
+    async react(id, emoji) { reactions.push([id, emoji]) },
+  }, {
+    getSessionId: () => 's1',
+    isReadOnlyView: () => true,
+    queueRemoteFollowup(text) { queued.push(text) },
+    outboxSize: () => queued.length,
+  })
+  await bot.handlePrompt({ messageId: 'om_1', openId: 'ou_x', chatId: 'oc_test', chatType: 'p2p', messageType: 'text', text: 'hello from the phone' }, 'hello from the phone')
+  assert.deepEqual(queued, ['hello from the phone'])
+  assert.ok(replies[0].includes('已排队（第 1 条）'), `queue notice got: ${replies[0]}`)
+  assert.deepEqual(reactions[0], ['om_1', 'EYES'])
+})
+
+// ------------------------------------------------- /resume list auto degrade --
+
+function resumeHeader(id, createdAt = 1000) {
+  return { version: 1, id, createdAt, delegationDepth: 0, cwd: '/tmp/github' }
+}
+
+function resumeBot(lark, resumeListStyle) {
+  const warnings = []
+  const store = { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} }
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn(msg, ...args) { warnings.push(msg) }, error() {} },
+      get(key) {
+        if (key !== 'sessionPersistence') return undefined
+        return {
+          async list() { return [resumeHeader('aaaaaaaa1111'), resumeHeader('bbbbbbbb2222', 2000)] },
+          // Realistic inspect: one user message (an empty-events log is the
+          // scratch-session shape the picker now filters out).
+          async inspect() {
+            return { meta: {}, events: [{ type: 'user/message', seq: 0, time: 1000, data: { content: [{ type: 'text', text: 'fix the login bug' }], source: { kind: 'user' } } }] }
+          },
+        }
+      },
+    },
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500, ...(resumeListStyle ? { resumeListStyle } : {}) },
+    lark,
+    binder: { isReadOnlyView: () => false },
+    store,
+    allowlist: new Set(),
+    now: () => 100_000,
+  })
+  return { bot, warnings }
+}
+
+test('auto mode: failed table send degrades exactly once to the markdown list', async () => {
+  const sent = []
+  let attempts = 0
+  const { bot, warnings } = resumeBot({
+    async sendCard(_chatId, card) {
+      attempts += 1
+      sent.push(card)
+      // Real client contract: swallowed API error resolves undefined.
+      return attempts === 1 ? undefined : 'm2'
+    },
+  })
+
+  await bot.handleResumeList()
+
+  assert.equal(attempts, 2)
+  // First attempt is the native table card…
+  assert.equal(sent[0].body.elements[0].tag, 'table')
+  // …the retry ships through the markdown-list channel instead of plain text.
+  assert.equal(sent[1].body.elements[0].tag, 'markdown')
+  // Rows sort by createdAt desc: bbbb (2000) lands at index 1.
+  assert.match(sent[1].body.elements[0].content, /^1\. \*\*github · \d{2}-\d{2} \d{2}:\d{2}\*\* · bbbbbbbb/)
+  assert.match(sent[1].body.elements[0].content, /回复 \/resume N 进入对应会话/)
+  // The degrade is observable: one warn names the fallback.
+  assert.equal(warnings.filter(w => w.includes('falling back')).length, 1)
+})
+
+test('forced table mode never falls back when the send fails', async () => {
+  const sent = []
+  const { bot } = resumeBot({
+    async sendCard(_chatId, card) {
+      sent.push(card)
+      return undefined
+    },
+  }, 'table')
+
+  await bot.handleResumeList()
+
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].body.elements[0].tag, 'table')
+})
+
+test('forced list mode ships only the markdown list card', async () => {
+  const sent = []
+  const { bot } = resumeBot({
+    async sendCard(_chatId, card) {
+      sent.push(card)
+      return 'm1'
+    },
+  }, 'list')
+
+  await bot.handleResumeList()
+
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].body.elements[0].tag, 'markdown')
+  const lines = sent[0].body.elements[0].content.split('\n')
+  assert.match(lines[0], /^1\. /)
+  assert.equal(lines.at(-1), '回复 /resume N 进入对应会话')
+})
+
+// ------------------------------------------------ child naming backfill --
+
+test('child discovery backfills the agent name from the child session log', async () => {
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get(key) {
+        if (key !== 'sessions') return undefined
+        return {
+          get(id) {
+            assert.equal(id, 'child-1')
+            return {
+              events: [
+                { type: 'subagent/descriptor', data: { version: 2, mode: 'one-shot', provider: 'registry', label: 'workhorse' }, time: 100, seq: 1 },
+                { type: 'tool/call', data: { callId: 'a', name: 'bash', arguments: '' }, time: 150, seq: 2 },
+                { type: 'assistant/message', data: { message: { content: [{ type: 'text', text: 'round one done' }] } }, time: 200, seq: 3 },
+              ],
+            }
+          },
+        }
+      },
+    },
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' }, async patchCard() { return true } },
+    binder: { getSessionId: () => 'parent-1' },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+
+  // A live child event mid-run discovers the child; the naming events predate
+  // the attach and never arrive on the firehose — only the log has them.
+  bot.onSessionEvent(
+    { id: 'child-1', header: { parentSession: 'parent-1', origin: 'subagent', delegationDepth: 1 } },
+    { type: 'assistant/message', data: { message: { content: [{ type: 'text', text: 'still going' }] } }, time: 900, seq: 4 },
+  )
+
+  const row = bot.runState.subagents.get('child-1')
+  assert.ok(row !== undefined)
+  assert.equal(row.label, 'workhorse') // name recovered from the log, not the hash fallback
+  assert.equal(row.rounds, 1) // corrected up to the log's true count
+  assert.equal(row.lastTool, 'bash')
+})
+
+test('child discovery without a sessions service keeps the fallback label', () => {
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined }, // no sessions service
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' } },
+    binder: { getSessionId: () => 'parent-1' },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.onSessionEvent(
+    { id: 'child-2', header: { parentSession: 'parent-1', origin: 'subagent' } },
+    { type: 'assistant/message', data: { message: { content: [{ type: 'text', text: 'x' }] } }, time: 900, seq: 1 },
+  )
+  const row = bot.runState.subagents.get('child-2')
+  assert.ok(row !== undefined)
+  assert.equal(row.label, 'subagent child-2') // hash-derived fallback survives
+})
+
+// ------------------------------------------------ route facts backfill --
+
+test('route backfill recovers model/think level/window/cache baseline from the bound log', () => {
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get(key) {
+        if (key !== 'sessions') return undefined
+        return {
+          get(id) {
+            assert.equal(id, 's1')
+            return {
+              events: [
+                { type: 'request/header', data: { header: { config: { provider: 'openrouter', model: 'stealth/ox-alpha', reasoningEffort: 'high' } } }, time: 1, seq: 1 },
+                { type: 'request/context', data: { provider: 'openrouter', model: 'stealth/ox-alpha', contextWindow: 1_048_576 }, time: 2, seq: 2 },
+                { type: 'assistant/message', data: { usage: { inputTokens: 1000, outputTokens: 200, cacheReadTokens: 8000, cacheWriteTokens: 1500 }, message: { content: [{ type: 'text', text: 'prior turn' }] } }, time: 3, seq: 3 },
+              ],
+            }
+          },
+        }
+      },
+    },
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' } },
+    binder: { getSessionId: () => 's1' },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.backfillRoute()
+  assert.equal(bot.runState.model, 'stealth/ox-alpha')
+  assert.equal(bot.runState.reasoningEffort, 'high')
+  assert.equal(bot.runState.contextWindow, 1_048_576)
+  assert.equal(bot.runState.cacheHitRate, 8000 / 10_500 * 100)
+  // Idempotent per binding: a second call never re-reads the log.
+  let reads = 1
+  bot.backfillRoute()
+  assert.equal(reads, 1)
+})
+
+test('route backfill degrades silently without a sessions service', () => {
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined }, // no sessions service
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' } },
+    binder: { getSessionId: () => 's1' },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), update: async () => {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.backfillRoute()
+  assert.equal(bot.runState.model, undefined) // no log access, no crash
+})
+
+// ------------------------------------------------ persisted /resume picker --
+
+function pickerBot(state, bindCalls) {
+  return new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, bodySegmentChars: 3500 },
+    lark: {
+      sent: [],
+      async sendCard(_chatId, card) { this.sent.push(card); return `m${this.sent.length}` },
+      async patchCard() { return true },
+    },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      async bind(id) { bindCalls.push(id); return { sessionId: id, mode: 'attached', agent: {} } },
+    },
+    store: {
+      updates: [],
+      ready: async () => {},
+      get: () => state,
+      async update(patch) { Object.assign(state, patch); this.updates.push(patch) },
+    },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+}
+
+test('a restart-stranded /resume N falls back to the persisted picker', async () => {
+  const state = {
+    lastChatId: 'oc_test',
+    displayThink: false,
+    picker: { rows: [{ index: 1, sessionId: 's-target', dir: 'repo', createdAt: 1, lastTime: undefined, preview: 'hello' }], expiresAt: 999_999 },
+  }
+  const bindCalls = []
+  const bot = pickerBot(state, bindCalls)
+  bot.pendingPicker = undefined // restart killed the in-memory copy
+
+  await bot.handleResumePick(1)
+
+  assert.deepEqual(bindCalls, ['s-target'])
+  const reply = JSON.stringify(bot.lark.sent[0])
+  assert.ok(reply.includes('已进入会话'))
+  // The consumed picker is cleared from BOTH the memory and the store.
+  assert.equal(state.picker, undefined)
+  assert.equal(bot.pendingPicker, undefined)
+})
+
+test('an expired persisted picker replies 过期 and clears itself', async () => {
+  const state = {
+    lastChatId: 'oc_test',
+    displayThink: false,
+    picker: { rows: [{ index: 1, sessionId: 's-old', dir: 'repo', createdAt: 1, lastTime: undefined, preview: 'x' }], expiresAt: 500 },
+  }
+  const bindCalls = []
+  const bot = pickerBot(state, bindCalls)
+  await bot.handleResumePick(1)
+  assert.deepEqual(bindCalls, []) // never reached bind
+  assert.ok(JSON.stringify(bot.lark.sent[0]).includes('选择已过期'))
+  assert.equal(state.picker, undefined)
+})
+
+// -------------------------------------------------------- /new flow --
+
+// -------------------------------------------------------- /new flow --
+
+/** Extract the config card's flow id (submit button value). */
+function newFlowIdOf(card) {
+  const form = card.body.elements.find(element => element.tag === 'form')
+  const submit = form.elements.find(element => element.form_action_type === 'submit')
+  return submit.value.flow_id
+}
+
+/** Submit the /new config card as the operator would. */
+function submitNew(bot, card, formValue) {
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: {
+      tag: 'button',
+      value: { action: 'dsh_feishu_new', flow_id: newFlowIdOf(card) },
+      form_value: formValue,
+    },
+  })
+}
+
+test('/new presents the config card; submit mints + binds with the inherited route', async () => {
+  const patches = []
+  const sends = []
+  const updates = []
+  const createCalls = []
+  const binder = {
+    getSessionId: () => 'old-1',
+    getAgent: () => undefined,
+    isReadOnlyView: () => false,
+    detach: async () => {},
+    async createNew(cwd, route, presetId) { createCalls.push([cwd, route, presetId]); return { sessionId: 'fresh-aaaa-bbbb', mode: 'created', agent: { status: 'idle' } } },
+  }
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 'old-1', picker: undefined }
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get(key) {
+        if (key !== 'sessions') return undefined
+        return {
+          get(id) {
+            assert.equal(id, 'old-1')
+            return {
+              events: [
+                { type: 'request/header', data: { header: { config: { provider: 'zhipu', model: 'glm-4.7', reasoningEffort: 'high' } } }, time: 1, seq: 1 },
+              ],
+            }
+          },
+        }
+      },
+    },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: {
+      async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+      async patchCard(id, card) { patches.push({ id, card }); return true },
+    },
+    binder,
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p); updates.push(p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+  bot.cardMessageId = 'm-old'
+
+  await bot.handleNew()
+  await new Promise(resolve => setTimeout(resolve, 5)) // the send rides the op chain
+
+  // The config card goes out; NOTHING is created before the submit.
+  assert.equal(sends.length, 1)
+  assert.match(sends[0].header.title.content, /新会话配置/)
+  assert.equal(createCalls.length, 0)
+  assert.equal(patches.length, 0)
+
+  submitNew(bot, sends[0], {})
+  await new Promise(resolve => setTimeout(resolve, 10))
+
+  // Old card greyed out first (the visual boundary for the old stream)…
+  assert.match(patches[0].card.header.title.content, /已解绑/)
+  // …then the config card becomes the 🆕 summary.
+  assert.equal(patches[1].card.header.template, 'green')
+  assert.match(patches[1].card.header.title.content, /🆕 新会话 · fresh-aa/)
+  // Binding switched and persisted — with the previous session's route.
+  assert.equal(state.boundSessionId, 'fresh-aaaa-bbbb')
+  // The selection carries the reasoning effort too (ox-alpha mandates it);
+  // no preset picked → the binder resolves the deployment default.
+  assert.deepEqual(createCalls[0], [process.cwd(), { provider: 'zhipu', model: 'glm-4.7', reasoningEffort: 'high' }, undefined])
+})
+
+test('/new submit carries the picked preset/model/effort into the binder', async () => {
+  const createCalls = []
+  const sends = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: undefined, picker: undefined, phoneModel: { provider: 'zhipu', model: 'glm-4.7' } }
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get(key) {
+        if (key === 'workspaceRegistry') {
+          return { list: () => [{ id: 'w1', path: '/Users/qingguee/proj', title: 'proj' }] }
+        }
+        if (key === 'agentPresets') {
+          return { remoteExportList: async () => ({ presets: [
+            { id: 'standard', name: '标准模式', isDefault: true },
+            { id: 'ptc', name: 'PTC 模式' },
+          ] }) }
+        }
+        if (key === 'llm') {
+          return {
+            async listModels() { return [{ id: 'glm-4.7', name: 'GLM-4.7' }, { id: 'glm-5.3', name: 'GLM-5.3' }] },
+            async resolveModelInfo() { return { reasoning: { efforts: [{ id: 'high', name: 'High' }] } } },
+          }
+        }
+        return undefined
+      },
+    },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async createNew(cwd, route, presetId) { createCalls.push([cwd, route, presetId]); return { sessionId: 'fresh-1', mode: 'created', agent: { status: 'idle' } } },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+
+  await bot.handleNew()
+  await new Promise(resolve => setTimeout(resolve, 5)) // the send rides the op chain
+  const card = sends[0]
+  const form = card.body.elements.find(element => element.tag === 'form')
+  const selects = form.elements.filter(element => element.tag === 'select_static')
+  assert.deepEqual(selects.map(select => select.name), ['workspace', 'preset', 'model', 'effort'])
+  assert.equal(selects[0].initial_option, '/Users/qingguee/proj')
+  assert.equal(selects[1].initial_option, 'standard')
+  assert.equal(selects[2].initial_option, 'glm-4.7')
+  assert.equal(selects[3].initial_option, 'default')
+
+  submitNew(bot, card, { workspace: '/Users/qingguee/proj', preset: 'ptc', model: 'glm-5.3', effort: 'high' })
+  await new Promise(resolve => setTimeout(resolve, 10))
+  assert.deepEqual(createCalls[0], ['/Users/qingguee/proj', { provider: 'zhipu', model: 'glm-5.3', reasoningEffort: 'high' }, 'ptc'])
+})
+
+test('/new with a present-but-empty workspace registry replies NA and never sends a card', async () => {
+  const sends = []
+  const createCalls = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: undefined, picker: undefined }
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get(key) {
+        if (key === 'workspaceRegistry') return { list: () => [] }
+        return undefined
+      },
+    },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async createNew(cwd, route, presetId) { createCalls.push([cwd, route, presetId]); return { sessionId: 'fresh-1', mode: 'created', agent: { status: 'idle' } } },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+
+  await bot.handleNew()
+  await new Promise(resolve => setTimeout(resolve, 5))
+  // The NA notice rides sendCard (reply) — but it is NOT a config card.
+  assert.equal(sends.length, 1)
+  assert.equal(JSON.stringify(sends[0]).includes('新会话配置'), false)
+  assert.match(JSON.stringify(sends[0]), /无法创建新会话/)
+  assert.equal(createCalls.length, 0)
+})
+
+test('/new creation failure leaves the bot cleanly unbound with the reason', async () => {
+  const sends = []
+  const patches = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 'old-1', picker: undefined }
+  let detached = false
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard(id, card) { patches.push({ id, card }); return true } },
+    binder: {
+      getSessionId: () => (detached ? undefined : 'old-1'),
+      getAgent: () => undefined,
+      detach: async () => { detached = true },
+      async createNew() { throw new Error('registry closed') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+  bot.cardMessageId = 'm-old'
+  await bot.handleNew()
+  await new Promise(resolve => setTimeout(resolve, 5)) // the send rides the op chain
+  submitNew(bot, sends[0], {})
+  await new Promise(resolve => setTimeout(resolve, 10))
+  // The failure lands on the config card (orange, in place) and as a reply.
+  const failed = patches.find(p => p.card.header?.title?.content?.includes('创建失败'))
+  assert.ok(failed !== undefined, 'the failed card replaced the config card')
+  assert.equal(failed.card.header.template, 'orange')
+  assert.match(JSON.stringify(failed.card), /registry closed/)
+  assert.match(JSON.stringify(sends[1]), /新会话创建失败：registry closed/)
+  assert.equal(state.boundSessionId, undefined)
+  assert.equal(detached, true)
+})
+
+// -------------------------------------------------------- ask surface --
+
+function askBot(lark, ctxExtras = {}, binder = { getSessionId: () => 's1' }) {
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 's1', picker: undefined }
+  return new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined, ...ctxExtras },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark,
+    binder,
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+}
+
+/** The question id of the ask card a fake sendCard captured. */
+function askIdOf(card) {
+  const submit = card.body.elements[0].elements.at(-1)
+  return submit.value.question_id
+}
+
+test('ask flow: card out → operator submits → answers resolve + terminal patch', async () => {
+  const sends = []
+  const patches = []
+  const bot = askBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard(id, card) { patches.push({ id, card }); return true },
+  })
+  const request = {
+    questions: [{ id: 'q1', question: 'Proceed?', header: 'Go', options: [{ label: 'yes' }, { label: 'no' }] }],
+    agent: { session: { id: 's1' } },
+  }
+  const pending = bot.askViaCard(request)
+  await new Promise(r => setTimeout(r, 5)) // card send lands on the chain
+  assert.equal(sends.length, 1)
+  assert.equal(sends[0].header.title.content, '🙋 需要你的确认')
+
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: {
+      tag: 'button',
+      value: { action: 'dsh_feishu_ask_submit', question_id: askIdOf(sends[0]) },
+      form_value: { q_0: 'yes' },
+    },
+  })
+  const answer = await pending
+  assert.deepEqual(answer.answers, [{ id: 'q1', selected: ['yes'] }])
+  assert.equal(patches.length, 1)
+  assert.equal(patches[0].card.header.template, 'green')
+})
+
+test('ask flow: incomplete submit keeps the card live and reminds what is missing', async () => {
+  const sends = []
+  const bot = askBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  })
+  const request = { questions: [{ id: 'q1', question: 'A?', header: 'A' }, { id: 'q2', question: 'B?', header: 'B' }] }
+  const pending = bot.askViaCard(request)
+  await new Promise(r => setTimeout(r, 5))
+  const questionId = askIdOf(sends[0])
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_ask_submit', question_id: questionId }, form_value: { q_0: 'x' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  // The missing-item reminder arrived as a body card…
+  assert.equal(sends.length, 2)
+  assert.match(JSON.stringify(sends[1]), /B/)
+  // …and a complete submit afterwards resolves.
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_ask_submit', question_id: questionId }, form_value: { q_0: 'x', q_1: 'y' } },
+  })
+  const answer = await pending
+  assert.equal(answer.answers.length, 2)
+})
+
+test('ask flow: non-operator submits are ignored, the ask stays pending', async () => {
+  const sends = []
+  const bot = askBot({ async sendCard(_c, card) { sends.push(card); return 'm1' }, async patchCard() { return true } })
+  const request = { questions: [{ id: 'q1', question: 'A?' }] }
+  const pending = bot.askViaCard(request)
+  await new Promise(r => setTimeout(r, 5))
+  bot.onCardAction({
+    operator: { open_id: 'ou_stranger' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_ask_submit', question_id: askIdOf(sends[0]) }, form_value: { q_0: 'x' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  let settled = false
+  void pending.finally(() => { settled = true })
+  await new Promise(r => setTimeout(r, 5))
+  assert.equal(settled, false, 'a stranger cannot settle the question')
+})
+
+test('ask flow: abort dismisses the card and rejects with ASK_ABORTED', async () => {
+  const patches = []
+  const bot = askBot({ async sendCard() { return 'm1' }, async patchCard(id, card) { patches.push(card); return true } })
+  const controller = new AbortController()
+  const request = { questions: [{ id: 'q1', question: 'A?' }], signal: controller.signal }
+  const pending = bot.askViaCard(request)
+  await new Promise(r => setTimeout(r, 5))
+  controller.abort()
+  await assert.rejects(pending, /aborted/)
+  await new Promise(r => setTimeout(r, 5))
+  assert.equal(patches.length, 1)
+  assert.match(patches[0].header.title.content, /取消/)
+})
+
+test('registerAskSurface: router present → surface registered, no waterfall slot taken', () => {
+  let surface
+  let eventName
+  const bot = askBot({}, {
+    get: key => key === 'askSurfaces'
+      ? { register(s) { surface = s; return () => {} } }
+      : undefined,
+    on(event) {
+      eventName = event
+      return () => {}
+    },
+  })
+  bot.registerAskSurface()
+  assert.ok(surface !== undefined)
+  assert.equal(surface.name, 'feishu')
+  assert.equal(eventName, undefined, 'the router path never touches the waterfall')
+  assert.equal(surface.claim({ agent: { session: { id: 's1' } } }), true)
+  assert.equal(surface.claim({ agent: { session: { id: 'other' } } }), false)
+})
+
+test('registerAskSurface: no router — unclaimed ask delegates via next()', async () => {
+  let eventName
+  let listener
+  const bot = askBot({}, {
+    on(event, fn) {
+      eventName = event
+      listener = fn
+      return () => {}
+    },
+  }, { getSessionId: () => undefined }) // no bound session → never claims
+  bot.registerAskSurface()
+  assert.equal(eventName, 'user-questions/request')
+  assert.equal(typeof listener, 'function')
+  let nextCalls = 0
+  const answer = await listener(
+    { questions: [{ id: 'q1' }], agent: { session: { id: 'other' } } },
+    async () => {
+      nextCalls += 1
+      return { answers: [{ id: 'q1', selected: ['x'] }] }
+    },
+  )
+  assert.equal(nextCalls, 1, 'unclaimed ask delegates')
+  assert.deepEqual(answer.answers[0].selected, ['x'])
+})
+
+test('registerAskSurface: no router — claimed ask sends the card instead of delegating', async () => {
+  let listener
+  const cards = []
+  const bot = askBot({ sendCard: async (chatId, card) => { cards.push(card); return 'msg-1' } }, {
+    on(event, fn) {
+      listener = fn
+      return () => {}
+    },
+  }) // default binder 's1' + store lastChatId 'oc_test'
+  bot.registerAskSurface()
+  let nextCalls = 0
+  const pending = listener(
+    { questions: [{ id: 'q1' }], agent: { session: { id: 's1' } } },
+    async () => {
+      nextCalls += 1
+      return { answers: [{ id: 'q1', selected: ['x'] }] }
+    },
+  )
+  await new Promise(resolve => setTimeout(resolve, 10))
+  assert.equal(nextCalls, 0, 'claimed ask answers via the card')
+  assert.equal(cards.length, 1)
+  assert.equal(typeof pending.then, 'function')
+})
+
+test('/new route resolution: previous log wins; settings default is the fallback', async () => {
+  const createCalls = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 'old-1', picker: undefined }
+  const mkBot = getMap => {
+    const sends = []
+    const bot = new FeishuBot({
+      ctx: {
+        logger: { info() {}, warn() {}, error() {} },
+        get: getMap,
+      },
+      config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+      lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+      binder: {
+        getSessionId: () => 'old-1',
+        getAgent: () => undefined,
+        detach: async () => {},
+        async createNew(cwd, route, presetId) { createCalls.push(route); return { sessionId: 'fresh-1', mode: 'created', agent: { status: 'idle' } } },
+      },
+      store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+      allowlist: new Set(['ou_op']),
+      now: () => 1000,
+    })
+    return { bot, sends }
+  }
+  const submitDefaults = async (bot, card) => {
+    submitNew(bot, card, {})
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+  const present = async instance => {
+    await instance.bot.handleNew()
+    await new Promise(resolve => setTimeout(resolve, 5)) // the send rides the op chain
+  }
+
+  // 1) Previous session's log carries the route → inherited (default not consulted).
+  const withLog = mkBot(key => key === 'sessions'
+    ? { get: () => ({ events: [{ type: 'request/header', data: { header: { config: { provider: 'zhipu', model: 'glm-4.7' } } }, time: 1, seq: 1 }] }) }
+    : key === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'fallback', model: 'default-m' }) } : undefined)
+  await present(withLog)
+  await submitDefaults(withLog.bot, withLog.sends[0])
+  assert.deepEqual(createCalls[0], { provider: 'zhipu', model: 'glm-4.7' })
+
+  // 2) No previous route → the settings default (agentDefaultModel) kicks in.
+  const noLog = mkBot(key => key === 'sessions'
+    ? { get: () => ({ events: [] }) }
+    : key === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'fallback', model: 'default-m' }) } : undefined)
+  await present(noLog)
+  await submitDefaults(noLog.bot, noLog.sends[0])
+  assert.deepEqual(createCalls[1], { provider: 'fallback', model: 'default-m' })
+
+})
+
+test('/new honors the stored phone default (phoneModel) between the log and the settings default', async () => {
+  const createCalls = []
+  const mkBot = (phoneModel, events) => {
+    const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 'old-1', picker: undefined, phoneModel }
+    const sends = []
+    const bot = new FeishuBot({
+      ctx: {
+        logger: { info() {}, warn() {}, error() {} },
+        get: key => key === 'sessions'
+          ? { get: () => ({ events }) }
+          : key === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'fallback', model: 'default-m' }) } : undefined,
+      },
+      config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+      lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+      binder: {
+        getSessionId: () => 'old-1',
+        getAgent: () => undefined,
+        detach: async () => {},
+        async createNew(cwd, route, presetId) { createCalls.push(route); return { sessionId: 'fresh-1', mode: 'created', agent: { status: 'idle' } } },
+      },
+      store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+      allowlist: new Set(['ou_op']),
+      now: () => 1000,
+    })
+    return { bot, sends }
+  }
+  const noRouteLog = []
+  const submitDefaults = async (instance) => {
+    instance.bot.handleNew()
+    await new Promise(resolve => setTimeout(resolve, 10))
+    submitNew(instance.bot, instance.sends[0], {})
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
+  // 1) No previous route + a stored phone default → it wins over the
+  //    settings default, effort included (the /model, /think and
+  //    /profile-switch promise "used by /new" is now real).
+  const withPhone = mkBot({ provider: 'zhipu', model: 'glm-4.7', reasoningEffort: 'high' }, noRouteLog)
+  await submitDefaults(withPhone)
+  assert.deepEqual(createCalls[0], { provider: 'zhipu', model: 'glm-4.7', reasoningEffort: 'high' })
+
+  // 2) No phoneModel → the settings default kicks in as before.
+  const withoutPhone = mkBot(undefined, noRouteLog)
+  await submitDefaults(withoutPhone)
+  assert.deepEqual(createCalls[1], { provider: 'fallback', model: 'default-m' })
+
+  // 3) Continuity still wins: a routed previous log beats the phone default.
+  const routedLog = [{ type: 'request/header', data: { header: { config: { provider: 'openrouter', model: 'stealth/ox-alpha' } } }, time: 1, seq: 1 }]
+  const logWins = mkBot({ provider: 'zhipu', model: 'glm-4.7' }, routedLog)
+  await submitDefaults(logWins)
+  assert.deepEqual(createCalls[2], { provider: 'openrouter', model: 'stealth/ox-alpha' })
+})
+
+// ------------------------------------------- cold-resume route resolution --
+
+test('cold resume passes the target session log route; default model is the fallback', async () => {
+  const bindCalls = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: 'routeless-1', picker: undefined }
+  const mkBot = getMap => new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: getMap },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async bind(id, options) { bindCalls.push([id, options]); return { sessionId: id, mode: 'resumed', agent: { status: 'idle' } } },
+      async createNew() { throw new Error('not used') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+
+  // 1) The target session's own log carries the route → inherited.
+  const withLog = mkBot(key => key === 'sessionPersistence'
+    ? { async inspect(id) { return { meta: {}, events: [{ type: 'request/header', data: { header: { config: { provider: 'zhipu', model: 'glm-4.7', reasoningEffort: 'high' } } }, time: 1, seq: 1 }] } } }
+    : key === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'fallback', model: 'm' }) } : undefined)
+  await withLog.ensureBoundAgent()
+  assert.deepEqual(bindCalls[0], ['routeless-1', { provider: 'zhipu', model: 'glm-4.7' }])
+
+  // 2) Log without a route → the settings default model kicks in.
+  const noRoute = mkBot(key => key === 'sessionPersistence'
+    ? { async inspect() { return { meta: {}, events: [{ type: 'command/run', seq: 0, time: 1, data: {} }] } } }
+    : key === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'fallback', model: 'default-m' }) } : undefined)
+  await noRoute.ensureBoundAgent()
+  assert.deepEqual(bindCalls[1], ['routeless-1', { provider: 'fallback', model: 'default-m' }])
+
+  // 3) Neither source → bind without options (failure stays visible).
+  const nothing = mkBot(() => undefined)
+  await nothing.ensureBoundAgent()
+  assert.deepEqual(bindCalls[2], ['routeless-1', undefined])
+})
+
+test('interactive /resume submit inherits the picked session log route too', async () => {
+  const bindCalls = []
+  const state = {
+    lastChatId: 'oc_test', displayThink: true, boundSessionId: undefined,
+    picker: {
+      id: 'p1',
+      rows: [{ index: 1, sessionId: 'routeless-2', dir: 'repo', createdAt: 1, lastTime: undefined, preview: 'x' }],
+      expiresAt: 999_999,
+    },
+  }
+  const bot = new FeishuBot({
+    ctx: {
+      logger: { info() {}, warn() {}, error() {} },
+      get: key => key === 'sessionPersistence'
+        ? { async inspect() { return { meta: {}, events: [{ type: 'request/header', data: { header: { config: { provider: 'zhipu', model: 'glm-4.7' } } }, time: 1, seq: 1 }] } } }
+        : undefined,
+    },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard() { return 'm1' }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async bind(id, options) { bindCalls.push([id, options]); return { sessionId: id, mode: 'resumed', agent: { status: 'idle' } } },
+      async createNew() { throw new Error('not used') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.pendingPicker = state.picker
+  await bot.resumePickCore(1)
+  assert.deepEqual(bindCalls[0], ['routeless-2', { provider: 'zhipu', model: 'glm-4.7' }])
+})
+
+// ------------------------------------------------------------- /model --
+
+/**
+ * Fake of the host's agent-owned model selection surface (`Model`, the
+ * dsh ≥ 0.2.2-rc.1 shape): `current()` reads, `select()` writes (recorded on
+ * `.written`, last write becomes the current read).
+ */
+function fakeModelSurface(initial = undefined) {
+  const written = []
+  let current = initial
+  return {
+    current: () => current,
+    select(selection) { written.push(selection); current = selection },
+    written,
+  }
+}
+
+function modelBot(llm, selectionSurface, bound = 'fresh-1') {
+  const patches = []
+  const sends = []
+  const state = { lastChatId: 'oc_test', displayThink: true, boundSessionId: bound, picker: undefined, phoneModel: undefined }
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: key => key === 'llm' ? llm : undefined },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: {
+      async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+      async patchCard(id, card) { patches.push({ id, card }); return true },
+    },
+    binder: {
+      getSessionId: () => bound,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async bind(id, options) { return { sessionId: id, mode: 'resumed', agent: { status: 'idle' }, ...(options ? { options } : {}) } },
+      async createNew() { throw new Error('not used') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    // Card callbacks gate on the operator allowlist — the fixture's submits
+    // ride ou_op (non-operator silence is covered by its own test below).
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+  bot.selectionRefs.set(bound, selectionSurface)
+  return { bot, sends, patches, state }
+}
+
+// ASCII provider names on purpose: handleModel sorts names via localeCompare,
+// and mixed-script names (CJK + Latin) reorder under zh_CN collation — ASCII
+// keeps the hardcoded order assertion below deterministic in every locale.
+const modelProviders = [
+  { id: 'zhipu', name: 'Zhipu' },
+  { id: 'openrouter', name: 'OpenRouter' },
+]
+
+test('/model step 1 lists providers; step 2 lists the chosen provider models', async () => {
+  const listModels = []
+  const llm = {
+    listProviders: () => modelProviders,
+    async listModels(provider) {
+      listModels.push(provider)
+      return [{ id: 'glm-4.7', name: 'GLM-4.7' }, { id: 'glm-4.6', name: 'GLM-4.6' }]
+    },
+  }
+  const { bot, sends } = modelBot(llm, fakeModelSurface())
+  await bot.handleModel()
+  assert.equal(sends.length, 1)
+  assert.match(sends[0].header.title.content, /1\/2 Provider/)
+  const providerForm = sends[0].body.elements.at(-1)
+  assert.deepEqual(providerForm.elements[0].options.map(o => o.value), ['openrouter', 'zhipu'])
+
+  const flowId = providerForm.elements[1].name.replace('dsh_feishu_model_provider_', '')
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId })
+  assert.deepEqual(listModels, ['zhipu'])
+  assert.equal(sends.length, 2)
+  assert.match(sends[1].header.title.content, /2\/2 Model/)
+  assert.equal(bot.modelFlow.provider, 'zhipu')
+  // The provider card greyed out — a stale submit there is a visible dead end.
+  assert.equal(bot.modelFlow.providerCardMessageId, undefined)
+})
+
+test('/model submit live-switches bot-created sessions through the selection surface', async () => {
+  const surface = fakeModelSurface({ provider: 'zhipu', model: 'glm-4.6' })
+  const llm = { listProviders: () => modelProviders, async listModels() { return [{ id: 'glm-4.7', name: 'GLM-4.7' }] } }
+  const { bot, patches, state } = modelBot(llm, surface)
+  await bot.handleModel()
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId: bot.modelFlow.id })
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', name: 'dsh_feishu_model_submit_f1', value: { action: 'dsh_feishu_model_submit', flow_id: bot.modelFlow.id, provider: 'zhipu' }, form_value: { model: 'glm-4.7' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  // The selection surface was live-switched…
+  assert.deepEqual(surface.current(), { provider: 'zhipu', model: 'glm-4.7' })
+  // …the flow card settled green…
+  assert.equal(patches.at(-1).card.header.template, 'green')
+  // …and the phone default was NOT stored (live switch, not a default).
+  assert.equal(state.phoneModel, undefined)
+})
+
+test('/model submit on a desktop-driven session stores the phone default instead', async () => {
+  const surface = undefined // no bot-owned selection surface — the session is desktop-driven
+  const llm = { listProviders: () => modelProviders, async listModels() { return [{ id: 'glm-4.7', name: 'GLM-4.7' }] } }
+  const { bot, patches, state } = modelBot(llm, surface, 'desktop-1')
+  await bot.handleModel()
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId: bot.modelFlow.id })
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', name: 'dsh_feishu_model_submit_f1', value: { action: 'dsh_feishu_model_submit', flow_id: bot.modelFlow.id, provider: 'zhipu' }, form_value: { model: 'glm-4.7' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  assert.deepEqual(state.phoneModel, { provider: 'zhipu', model: 'glm-4.7' })
+  assert.equal(patches.at(-1).card.header.template, 'green')
+  assert.match(JSON.stringify(patches.at(-1).card), /电脑端/)
+})
+
+test('/model without an llm service replies with a pointer', async () => {
+  const sends = []
+  const bot = askBot({ async sendCard(_c, card) { sends.push(card); return 'm1' } })
+  await bot.handleModel()
+  assert.match(JSON.stringify(sends[0]), /没有 llm 服务/)
+})
+
+test('model card callbacks from non-operators are silent no-ops', async () => {
+  const surface = fakeModelSurface({ provider: 'zhipu', model: 'glm-4.6' })
+  const llm = { listProviders: () => modelProviders, async listModels() { return [{ id: 'glm-4.7', name: 'GLM-4.7' }] } }
+  const { bot, sends, patches, state } = modelBot(llm, surface)
+  await bot.handleModel() // step 1 out: provider list (1 send)
+  const flowId = bot.modelFlow.id
+
+  // 1) A stranger taps the provider list → stage 2 never opens for them.
+  bot.onCardAction({
+    operator: { open_id: 'ou_stranger' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_model_provider', flow_id: flowId }, form_value: { provider: 'zhipu' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  assert.equal(bot.modelFlow.provider, undefined)
+  assert.equal(sends.length, 1)
+
+  // 2) The operator picks the provider; a stranger taps the model submit →
+  //    the flow stays armed, nothing settles, nothing is stored.
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId })
+  const sendsAfterPick = sends.length
+  const patchesBefore = patches.length
+  bot.onCardAction({
+    operator: { open_id: 'ou_stranger' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_model_submit', flow_id: flowId, provider: 'zhipu' }, form_value: { model: 'glm-4.7' } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  assert.notEqual(bot.modelFlow, undefined) // handleModelSubmitted would have cleared it
+  assert.deepEqual(surface.current(), { provider: 'zhipu', model: 'glm-4.6' })
+  assert.equal(state.phoneModel, undefined)
+  assert.equal(patches.length, patchesBefore)
+  assert.equal(sends.length, sendsAfterPick)
+})
+
+test('resume picker submit from a non-operator is a silent no-op', async () => {
+  const sends = []
+  const patches = []
+  const bot = askBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard(id, card) { patches.push({ id, card }); return true },
+  })
+  bot.pendingPicker = {
+    id: 'p1',
+    rows: [{ index: 1, sessionId: 'resume-target', preview: 'work session', updatedAt: 1, mine: true }],
+    expiresAt: 10 ** 12,
+  }
+  bot.onCardAction({
+    operator: { open_id: 'ou_stranger' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_resume', picker_id: 'p1' }, form_value: { session: 1 } },
+  })
+  await new Promise(r => setTimeout(r, 5))
+  // Nothing settled: the picker survives untouched, no bind attempt, no reply.
+  assert.equal(bot.pendingPicker.id, 'p1')
+  assert.equal(bot.binder.getSessionId(), 's1') // binding unchanged
+  assert.equal(sends.length, 0)
+  assert.equal(patches.length, 0)
+})
+
+// ------------------------------------------------- corrupt-log resume --
+
+test('resume into a corrupt session log answers with the repair pointer', async () => {
+  const sends = []
+  const state = {
+    lastChatId: 'oc_test', displayThink: true, boundSessionId: undefined,
+    picker: {
+      id: 'p1',
+      rows: [{ index: 1, sessionId: 'torn-log', dir: 'repo', createdAt: 1, lastTime: undefined, preview: 'x' }],
+      expiresAt: 999_999,
+    },
+  }
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      // No resolvable log dir → the repair card is impossible; the desktop
+      // pointer is the degrade path under test here.
+      sessionDirOf: async () => undefined,
+      async bind() { throw new Error('corrupt Zstandard session log: complete frame contains a torn JSONL record') },
+      async createNew() { throw new Error('not used') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.pendingPicker = state.picker
+  await bot.resumePickCore(1)
+  const text = sends.at(-1).body.elements[0].content
+  assert.match(text, /日志已损坏/)
+  assert.match(text, /repair-session-log/)
+  assert.doesNotMatch(text, /进入会话失败/)
+})
+
+test('ordinary resume failures keep the raw reason reply', async () => {
+  const sends = []
+  const state = {
+    lastChatId: 'oc_test', displayThink: true, boundSessionId: undefined,
+    picker: {
+      id: 'p1',
+      rows: [{ index: 1, sessionId: 'boom', dir: 'repo', createdAt: 1, lastTime: undefined, preview: 'x' }],
+      expiresAt: 999_999,
+    },
+  }
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 5000, bodySegmentChars: 3500 },
+    lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } },
+    binder: {
+      getSessionId: () => undefined,
+      getAgent: () => undefined,
+      detach: async () => {},
+      async bind() { throw new Error('session directory vanished') },
+      async createNew() { throw new Error('not used') },
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  bot.pendingPicker = state.picker
+  await bot.resumePickCore(1)
+  const text = sends.at(-1).body.elements[0].content
+  assert.match(text, /进入会话失败：session directory vanished/)
+  assert.doesNotMatch(text, /repair-session-log/)
+})
+
+// ------------------------------------------------ dispose settlement --
+
+test('dispose settles pending asks and cancels selector flows before closing the WS', async () => {
+  const patches = []
+  const closes = []
+  const bot = roundBot(
+    {
+      async sendCard() { return 'm1' },
+      async patchCard(id, card) { patches.push({ id, card }); return true },
+      close() { closes.push(true) },
+    },
+    { getSessionId: () => 's1', isReadOnlyView: () => false, dispose: async () => {} },
+  )
+  const rejections = []
+  bot.pendingAsks.set('q1', {
+    questions: [{ id: 'q1', prompt: 'pick one' }],
+    messageId: 'm1',
+    resolve: () => {},
+    reject: (error) => rejections.push(error),
+  })
+  const cancelReasons = []
+  bot.selectors = { cancelAll: (reason) => cancelReasons.push(reason) }
+
+  await bot.dispose()
+
+  assert.equal(bot.pendingAsks.size, 0)
+  assert.equal(rejections.length, 1)
+  assert.match(rejections[0].message, /unloading/)
+  assert.deepEqual(cancelReasons, ['dsh-feishu disposed'])
+  assert.equal(patches.length, 1) // the ask card got its terminal patch…
+  assert.deepEqual(closes, [true]) // …and the WS closed exactly once, after the settle
+
+  await bot.dispose() // idempotent: no double close
+  assert.equal(closes.length, 1)
+})
+
+test('/model step 2 appends the context window when resolveModelInfo knows it', async () => {
+  const llm = {
+    listProviders: () => modelProviders,
+    async listModels() {
+      return [
+        { id: 'glm-4.7', name: 'GLM-4.7' },
+        { id: 'glm-4.6', name: 'GLM-4.6' },
+      ]
+    },
+    async resolveModelInfo(provider, model) {
+      return model === 'glm-4.7'
+        ? { context: { contextWindow: 131072 } }
+        : { context: { contextWindow: 32768 } }
+    },
+  }
+  const { bot, sends } = modelBot(llm, fakeModelSurface())
+  await bot.handleModel()
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId: bot.modelFlow.id })
+  assert.equal(sends.length, 2)
+  const options = sends[1].body.elements.at(-1).elements[0].options
+  assert.equal(options[0].text.content, 'GLM-4.7 (glm-4.7) · 131k ctx')
+  assert.equal(options[1].text.content, 'GLM-4.6 (glm-4.6) · 33k ctx')
+})
+
+test('/model step 2 degrades to the plain catalog when context resolution fails', async () => {
+  const llm = {
+    listProviders: () => modelProviders,
+    async listModels() {
+      return [{ id: 'glm-4.7', name: 'GLM-4.7' }]
+    },
+    async resolveModelInfo() {
+      throw new Error('adapter down')
+    },
+  }
+  const { bot, sends } = modelBot(llm, fakeModelSurface())
+  await bot.handleModel()
+  await bot.handleModelProviderPicked({ provider: 'zhipu', flowId: bot.modelFlow.id })
+  assert.equal(sends.length, 2)
+  const options = sends[1].body.elements.at(-1).elements[0].options
+  // No context suffix — the picker still works.
+  assert.equal(options[0].text.content, 'GLM-4.7 (glm-4.7)')
+})
+
+// -------------------------------------------------- /stop confirmation --
+
+/** Bot with a running agent, wired for the /stop confirmation flow. */
+function stopBot(lark, agent, configExtra = {}) {
+  const state = { lastChatId: 'oc_test', displayThink: false }
+  const btwCancels = []
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, bodySegmentChars: 3500, ...configExtra },
+    lark,
+    binder: {
+      getSessionId: () => 's1',
+      getAgent: () => agent,
+      isReadOnlyView: () => false,
+    },
+    store: { ready: async () => {}, get: () => state, async update(p) { Object.assign(state, p) } },
+    allowlist: new Set(['ou_op']),
+    now: () => 1000,
+  })
+  // Spy on btw.cancelAll without pulling the real LLM stack in.
+  bot.btw = { cancelAll: () => btwCancels.push(true) }
+  return { bot, btwCancels }
+}
+
+/** Dig the selector flow id out of a buttons-mode card. */
+function flowIdOf(card) {
+  const button = card.body.elements.find(e => e.tag === 'button')
+  return button.value.flow_id
+}
+
+test('/stop on an idle or unbound agent keeps the direct reply (no confirm)', async () => {
+  const sends = []
+  const lark = { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` } }
+  // Unbound.
+  const unbound = stopBot(lark, undefined)
+  await unbound.bot.handleStop()
+  assert.match(JSON.stringify(sends.at(-1)), /当前未绑定会话/)
+  // Bound but not running.
+  const idle = stopBot(lark, { status: 'idle' })
+  await idle.bot.handleStop()
+  assert.match(JSON.stringify(sends.at(-1)), /没有正在运行的 turn/)
+})
+
+test('/stop on a running agent sends a confirm card first — cancel only on 确认停止', async () => {
+  const sends = []
+  const cancels = []
+  const agent = { status: 'running', cancel: (...args) => cancels.push(args) }
+  const { bot, btwCancels } = stopBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  }, agent)
+
+  await bot.handleStop()
+  await new Promise(r => setTimeout(r, 10))
+  // 1) The confirm card is out (buttons mode, 确认停止 / 返回)…
+  const confirmCard = sends.find(c => c.header?.title?.content?.includes('确认停止'))
+  assert.ok(confirmCard !== undefined, 'confirm card was sent')
+  // …and NO cancel happened yet.
+  assert.equal(cancels.length, 0)
+  assert.equal(btwCancels.length, 0)
+
+  // 2) Tapping ⛔ 确认停止 drives the everything-stop.
+  const flowId = flowIdOf(confirmCard)
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_sel', flow_id: flowId, pick: 'stop' } },
+  })
+  await new Promise(r => setTimeout(r, 10))
+  assert.equal(cancels.length, 1)
+  assert.deepEqual(cancels[0][0], { kind: 'user' })
+  assert.deepEqual(cancels[0][1], { keepInbox: true })
+  assert.equal(btwCancels.length, 1)
+})
+
+test('/stop confirm sweep also cancels live child subagents', async () => {
+  const sends = []
+  const cancels = []
+  const childCancels = []
+  const agent = { status: 'running', cancel: () => cancels.push(true) }
+  const { bot, btwCancels } = stopBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  }, agent)
+  // Two children tracked by the run state: one live, one already settled.
+  bot.runState.subagents.set('child-live', { childId: 'child-live', label: 'worker', rounds: 2, tail: undefined, lastTool: undefined, outcome: undefined })
+  bot.runState.subagents.set('child-done', { childId: 'child-done', label: 'done', rounds: 1, tail: undefined, lastTool: undefined, outcome: 'completed' })
+  // The agents registry serves the live child only.
+  ;(bot.ctx).agents = { get(id) { return id === 'child-live' ? { cancel: (...a) => childCancels.push([id, ...a]) } : undefined } }
+
+  await bot.handleStop()
+  await new Promise(r => setTimeout(r, 10))
+  const confirmCard = sends.find(c => c.header?.title?.content?.includes('确认停止'))
+  assert.ok(confirmCard !== undefined)
+  const button = confirmCard.body.elements.find(e => e.tag === 'button' && e.value.pick === 'stop')
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_sel', flow_id: button.value.flow_id, pick: 'stop' } },
+  })
+  await new Promise(r => setTimeout(r, 10))
+  assert.equal(cancels.length, 1)
+  assert.equal(btwCancels.length, 1)
+  // The LIVE child was cancelled with keepInbox; the settled one was not touched.
+  assert.deepEqual(childCancels, [['child-live', { kind: 'user' }, { keepInbox: true }]])
+})
+
+test('/stop confirm: 返回 leaves the turn running (no cancel)', async () => {
+  const sends = []
+  const cancels = []
+  const agent = { status: 'running', cancel: (...args) => cancels.push(args) }
+  const { bot, btwCancels } = stopBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  }, agent)
+
+  await bot.handleStop()
+  await new Promise(r => setTimeout(r, 10))
+  const confirmCard = sends.find(c => c.header?.title?.content?.includes('确认停止'))
+  const flowId = flowIdOf(confirmCard)
+  bot.onCardAction({
+    operator: { open_id: 'ou_op' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_sel', flow_id: flowId, pick: 'back' } },
+  })
+  await new Promise(r => setTimeout(r, 10))
+  assert.equal(cancels.length, 0)
+  assert.equal(btwCancels.length, 0)
+  // The in-flight slot is released — a second /stop presents a fresh confirm.
+  assert.equal(bot.stopConfirmInFlight, false)
+})
+
+test('/stop confirm: a second /stop while one is pending points at the existing card', async () => {
+  const sends = []
+  const agent = { status: 'running', cancel: () => {} }
+  const { bot } = stopBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  }, agent)
+  await bot.handleStop()
+  await new Promise(r => setTimeout(r, 10))
+  const before = sends.length
+  await bot.handleStop()
+  assert.equal(sends.length, before + 1)
+  assert.match(JSON.stringify(sends.at(-1)), /停止确认卡已在上面/)
+})
+
+test('/stop confirm from a non-operator is a silent no-op', async () => {
+  const sends = []
+  const cancels = []
+  const agent = { status: 'running', cancel: (...args) => cancels.push(args) }
+  const { bot, btwCancels } = stopBot({
+    async sendCard(_c, card) { sends.push(card); return `m${sends.length}` },
+    async patchCard() { return true },
+  }, agent)
+  await bot.handleStop()
+  await new Promise(r => setTimeout(r, 10))
+  const confirmCard = sends.find(c => c.header?.title?.content?.includes('确认停止'))
+  const flowId = flowIdOf(confirmCard)
+  bot.onCardAction({
+    operator: { open_id: 'ou_stranger' },
+    action: { tag: 'button', value: { action: 'dsh_feishu_sel', flow_id: flowId, pick: 'stop' } },
+  })
+  await new Promise(r => setTimeout(r, 10))
+  assert.equal(cancels.length, 0)
+  assert.equal(btwCancels.length, 0)
+})
+
+// ------------------------------------------- roundButtons gating --
+
+test('roundButtons off strips quick actions; on keeps continue on stopped-turn cards', async () => {
+  const mkSends = () => {
+    const sends = []
+    return { sends, lark: { async sendCard(_c, card) { sends.push(card); return `m${sends.length}` }, async patchCard() { return true } } }
+  }
+  // Status cards remain available for unsuccessful turns.
+  const off = mkSends()
+  const offBot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, bodySegmentChars: 3500 },
+    lark: off.lark,
+    binder: { getSessionId: () => 's1', isReadOnlyView: () => false },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), async update() {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  offBot.runState.running = false
+  offBot.runState.turnStartedAt = 100
+  offBot.runState.turnEndedAt = 400
+  offBot.runState.turnEndReason = 'stopped'
+  offBot.runState.rounds = 1
+  await offBot.finalizeTurn()
+  const offButtons = off.sends.at(-1).body.elements.filter(e => e.tag === 'button')
+  assert.equal(offButtons.length, 0)
+
+  // on: the ended card carries the continue button.
+  const on = mkSends()
+  const onBot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, bodySegmentChars: 3500, roundButtons: 'on' },
+    lark: on.lark,
+    binder: { getSessionId: () => 's1', isReadOnlyView: () => false },
+    store: { ready: async () => {}, get: () => ({ lastChatId: 'oc_test', displayThink: false }), async update() {} },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+  onBot.runState.running = false
+  onBot.runState.turnStartedAt = 100
+  onBot.runState.turnEndedAt = 400
+  onBot.runState.turnEndReason = 'stopped'
+  onBot.runState.rounds = 1
+  await onBot.finalizeTurn()
+  const onButtons = on.sends.at(-1).body.elements.filter(e => e.tag === 'button')
+  assert.equal(onButtons.length, 1)
+  assert.equal(onButtons[0].value.op, 'continue')
+})
+
+// ------------------------------------------------ stored binding re-attach --
+
+test('a stored binding attaches when its session becomes live after startup', async () => {
+  const binds = []
+  let boundId
+  let live = false
+  const binder = {
+    getSessionId: () => boundId,
+    getAgent: () => undefined,
+    getAgentFor: id => (live ? { id } : undefined),
+    isReadOnlyView: () => false,
+    detach: async () => {},
+    async bind(id) { binds.push(id); boundId = id; return { id } },
+  }
+  const state = { lastChatId: 'oc_test', displayThink: false, boundSessionId: 'stored-1' }
+  const bot = new FeishuBot({
+    ctx: { logger: { info() {}, warn() {}, error() {} }, get: () => undefined },
+    config: { statusIntervalMs: 30000, progressIntervalMs: 60000, bodySegmentChars: 3500, backgroundPush: 'off' },
+    lark: { async sendCard() { return 'm1' }, async patchCard() { return true } },
+    binder,
+    store: { ready: async () => {}, get: () => state, async update(patch) { Object.assign(state, patch) } },
+    allowlist: new Set(),
+    now: () => 1000,
+  })
+
+  // Startup: the stored session is not live yet, so nothing is bound and every
+  // card would stay silent until the operator happened to touch the bot.
+  assert.equal(await bot.attachStoredBindingIfLive('startup'), false)
+  assert.deepEqual(binds, [])
+
+  // The desktop opens that session later — the global firehose delivers its
+  // first event, which is the moment to finish the attach.
+  live = true
+  bot.onSessionEvent({ id: 'stored-1' }, { type: 'turn/start' })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(binds, ['stored-1'])
+  assert.equal(boundId, 'stored-1')
+})

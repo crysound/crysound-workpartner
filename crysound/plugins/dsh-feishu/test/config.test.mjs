@@ -1,0 +1,142 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { resolveConfig } from '../lib/config.js'
+
+test('defaults apply for an empty config', () => {
+  const resolved = resolveConfig({}, {})
+  assert.equal(resolved.mode, 'on')
+  assert.equal(resolved.domain, 'feishu')
+  assert.deepEqual(resolved.operators, [])
+  assert.equal(resolved.statusIntervalMs, 5000)
+  assert.equal(resolved.bodySegmentChars, 3500)
+  assert.equal(resolved.appIdRef, 'DSH_FEISHU_APP_ID')
+  assert.equal(resolved.appSecretRef, 'DSH_FEISHU_APP_SECRET')
+  assert.equal(resolved.appId, undefined)
+  assert.equal(resolved.appSecret, undefined)
+})
+
+test('unknown config keys throw (a typo must not silently disarm)', () => {
+  assert.throws(() => resolveConfig({ operator: ['ou_a'] }, {}), /unknown config key "operator"/)
+})
+
+test('env supplies credentials when config omits them', () => {
+  const resolved = resolveConfig({}, {
+    DSH_FEISHU_APP_ID: 'cli_a',
+    DSH_FEISHU_APP_SECRET: 'sec',
+  })
+  assert.equal(resolved.appId, 'cli_a')
+  assert.equal(resolved.appSecret, 'sec')
+})
+
+test('config credentials win over env', () => {
+  const resolved = resolveConfig(
+    { appId: 'cli_config', appSecret: 'sec_config' },
+    { DSH_FEISHU_APP_ID: 'cli_env', DSH_FEISHU_APP_SECRET: 'sec_env' },
+  )
+  assert.equal(resolved.appId, 'cli_config')
+  assert.equal(resolved.appSecret, 'sec_config')
+})
+
+test('mode off and domain lark are honored', () => {
+  const resolved = resolveConfig({ mode: 'off', domain: 'lark' }, {})
+  assert.equal(resolved.mode, 'off')
+  assert.equal(resolved.domain, 'lark')
+})
+
+test('out-of-range numeric options throw', () => {
+  assert.throws(() => resolveConfig({ statusIntervalMs: 1000 }, {}), /statusIntervalMs/)
+  assert.throws(() => resolveConfig({ bodySegmentChars: 100 }, {}), /bodySegmentChars/)
+})
+
+test('progressIntervalMs is gone with the progress-card feature (unknown key)', () => {
+  assert.throws(() => resolveConfig({ progressIntervalMs: 60000 }, {}), /unknown config key "progressIntervalMs"/)
+})
+
+test('resumeListStyle defaults to auto', () => {
+  assert.equal(resolveConfig({}, {}).resumeListStyle, 'auto')
+})
+
+test('resumeListStyle accepts table/list overrides', () => {
+  assert.equal(resolveConfig({ resumeListStyle: 'table' }, {}).resumeListStyle, 'table')
+  assert.equal(resolveConfig({ resumeListStyle: 'list' }, {}).resumeListStyle, 'list')
+})
+
+test('unknown resumeListStyle value throws', () => {
+  // The static schema rejects it at runtime via the unknown-value union.
+  assert.throws(() => resolveConfig({ resumeListStyle: 'plain' }, {}), /resumeListStyle/)
+})
+
+test('btwContextMessages defaults to 6', () => {
+  assert.equal(resolveConfig({}, {}).btwContextMessages, 6)
+})
+
+test('btwContextMessages accepts 0..50 and rejects the rest', () => {
+  assert.equal(resolveConfig({ btwContextMessages: 0 }, {}).btwContextMessages, 0)
+  assert.equal(resolveConfig({ btwContextMessages: 50 }, {}).btwContextMessages, 50)
+  assert.throws(() => resolveConfig({ btwContextMessages: 51 }, {}), /btwContextMessages/)
+  assert.throws(() => resolveConfig({ btwContextMessages: -1 }, {}), /btwContextMessages/)
+  assert.throws(() => resolveConfig({ btwContextMessages: 1.5 }, {}), /btwContextMessages/)
+})
+
+test('backgroundPush defaults to off and accepts the three modes', () => {
+  assert.equal(resolveConfig({}, {}).backgroundPush, 'off')
+  assert.equal(resolveConfig({ backgroundPush: 'cron' }, {}).backgroundPush, 'cron')
+  assert.equal(resolveConfig({ backgroundPush: 'all' }, {}).backgroundPush, 'all')
+})
+
+test('backgroundPush env override picks up cron/all and coerces junk to off', () => {
+  assert.equal(resolveConfig({}, { DSH_FEISHU_BACKGROUND_PUSH: 'cron' }).backgroundPush, 'cron')
+  assert.equal(resolveConfig({}, { DSH_FEISHU_BACKGROUND_PUSH: 'all' }).backgroundPush, 'all')
+  assert.equal(resolveConfig({}, { DSH_FEISHU_BACKGROUND_PUSH: 'loud' }).backgroundPush, 'off')
+  assert.equal(resolveConfig({ backgroundPush: 'cron' }, { DSH_FEISHU_BACKGROUND_PUSH: 'all' }).backgroundPush, 'cron')
+})
+
+test('roundButtons defaults to off and accepts on/off', () => {
+  assert.equal(resolveConfig({}, {}).roundButtons, 'off')
+  assert.equal(resolveConfig({ roundButtons: 'on' }, {}).roundButtons, 'on')
+  assert.equal(resolveConfig({ roundButtons: 'off' }, {}).roundButtons, 'off')
+})
+
+test('roundButtons env override picks up on/off and coerces junk to off', () => {
+  assert.equal(resolveConfig({}, { DSH_FEISHU_ROUND_BUTTONS: 'on' }).roundButtons, 'on')
+  assert.equal(resolveConfig({}, { DSH_FEISHU_ROUND_BUTTONS: 'off' }).roundButtons, 'off')
+  assert.equal(resolveConfig({}, { DSH_FEISHU_ROUND_BUTTONS: 'loud' }).roundButtons, 'off')
+  assert.equal(resolveConfig({ roundButtons: 'on' }, { DSH_FEISHU_ROUND_BUTTONS: 'off' }).roundButtons, 'on')
+})
+
+test('roundButtons is a known config key (typo guard stays intact)', () => {
+  assert.throws(() => resolveConfig({ roundButton: 'on' }, {}), /unknown config key "roundButton"/)
+})
+
+test('DSH_FEISHU_OPERATORS is appended to config.operators (the documented env override actually reads)', () => {
+  assert.deepEqual(resolveConfig({ operators: ['ou_a'] }, { DSH_FEISHU_OPERATORS: 'ou_b,ou_c' }).operators, ['ou_a', 'ou_b', 'ou_c'])
+  assert.deepEqual(resolveConfig({}, { DSH_FEISHU_OPERATORS: 'ou_b' }).operators, ['ou_b'])
+})
+
+test('DSH_FEISHU_OPERATORS entries are trimmed and empty items dropped', () => {
+  assert.deepEqual(
+    resolveConfig({}, { DSH_FEISHU_OPERATORS: ' ou_b ,  ,ou_c,,' }).operators,
+    ['ou_b', 'ou_c'],
+  )
+})
+
+test('DSH_FEISHU_OPERATORS absent/blank leaves the config list untouched', () => {
+  assert.deepEqual(resolveConfig({}, {}).operators, [])
+  assert.deepEqual(resolveConfig({}, { DSH_FEISHU_OPERATORS: '' }).operators, [])
+  assert.deepEqual(resolveConfig({}, { DSH_FEISHU_OPERATORS: '   ' }).operators, [])
+  assert.deepEqual(resolveConfig({ operators: ['ou_a'] }, {}).operators, ['ou_a'])
+})
+
+test('resolveConfig keeps legal custom ref names', () => {
+  const resolved = resolveConfig({ appIdRef: 'MY_CUSTOM_REF', appSecretRef: 'MY_OTHER_REF' })
+  assert.equal(resolved.appIdRef, 'MY_CUSTOM_REF')
+  assert.equal(resolved.appSecretRef, 'MY_OTHER_REF')
+})
+
+test('resolveConfig swaps invalid ref names (host credentials grammar) for the defaults', () => {
+  // Host REF_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/ — hyphenated names brick the
+  // next boot when the credentials service parses the document.
+  const resolved = resolveConfig({ appIdRef: 'dsh-feishu-app-id', appSecretRef: 'dsh-feishu-app-secret' })
+  assert.equal(resolved.appIdRef, 'DSH_FEISHU_APP_ID')
+  assert.equal(resolved.appSecretRef, 'DSH_FEISHU_APP_SECRET')
+})

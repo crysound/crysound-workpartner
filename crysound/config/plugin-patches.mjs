@@ -3,8 +3,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const UNBOUND_HINT = "还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。";
-
 const PATCHES = [
   // SlideStudio 0.2.9 与 dsh 0.2.2-rc.1：dsh 在组装钩子之后才补工具清单，钩子里 tools 为空时按空清单处理。
   {
@@ -18,66 +16,6 @@ const PATCHES = [
     find: "You are the DSH SlideStudio slides director. Working directory is {{cwd}}.",
     replace: "You are the DSH SlideStudio slides director.",
   },
-  // 飞书机器人：没选会话时直接在 /data/work 用默认模型新建一个会话，把这条消息发进去，像和真人聊天一样不用先发命令。
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: `        const outcome = await this.injectPrompt(text);
-        if (outcome === 'refused') {`,
-    replace: `        let outcome = await this.injectPrompt(text);
-        if (outcome === 'refused' && this.binder.getSessionId() === undefined) {
-            try {
-                const created = await this.binder.createNew(this.newSessionCwd(undefined), this.newSessionDefaultSelection(undefined), undefined);
-                if (created.model !== undefined)
-                    this.selectionRefs.set(created.sessionId, created.model);
-                await this.store.update({ boundSessionId: created.sessionId, picker: undefined });
-                outcome = await this.injectPrompt(text);
-            }
-            catch (error) {
-                this.ctx.logger.warn('dsh-feishu: auto-new failed: %o', error);
-            }
-        }
-        if (outcome === 'refused') {`,
-  },
-  // 飞书机器人只发回复正文（Jason 11-06）：不开进度卡；每轮把回复作为纯正文卡发出；正常完成不发“完成”卡，出错或被停止才发状态卡。
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: `    async openCard() {
-        const chatId = this.store.get().lastChatId;`,
-    replace: `    async openCard() {
-        return;
-        const chatId = this.store.get().lastChatId;`,
-  },
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: `        const embed = shouldEmbedRoundText(roundText, this.config.bodySegmentChars);
-        if (chatId !== undefined) {`,
-    replace: `        const embed = shouldEmbedRoundText(roundText, this.config.bodySegmentChars);
-        if (chatId !== undefined && roundText !== '')
-            await this.replyLong(roundText);
-        if (false) {`,
-  },
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: `            // vanishing entirely. Round bodies already went out per round.
-            await this.lark.sendCard(chatId, card);`,
-    replace: `            // vanishing entirely. Round bodies already went out per round.
-            if (this.runState.turnEndReason !== 'completed')
-                await this.lark.sendCard(chatId, card);`,
-  },
-  // 11-06 上午版本把结束原因当成对象判断，正常完成也会发“完成”卡；已打过那版的就地改正。
-  {
-    file: "@aiwayds/dsh-feishu/lib/bot.js",
-    find: "if (this.runState.turnEndReason?.kind !== 'completed')",
-    replace: "if (this.runState.turnEndReason !== 'completed')",
-  },
-  // 飞书机器人：剩下的“未绑定”提示改成先推荐 /new。
-  ...[
-    ["@aiwayds/dsh-feishu/lib/bot.js", "尚未绑定会话。发 /resume 查看并进入一个会话；/help 查看命令。"],
-    ["@aiwayds/dsh-feishu/lib/bot.js", "尚未绑定会话。先发 /resume 进入一个会话。"],
-    ["@aiwayds/dsh-feishu/lib/bot.js", "尚未绑定会话。发 /resume 进入一个会话。"],
-    ["@aiwayds/dsh-feishu/lib/interactive.js", "尚未绑定会话。先发 /resume 进入一个会话。"],
-  ].map(([file, find]) => ({ file, find, replace: UNBOUND_HINT })),
-  { file: "@aiwayds/dsh-feishu/lib/card.js", find: "'没有可恢复的会话。'", replace: "'没有可恢复的会话。发 /new 新建一个会话。'", all: true },
 ];
 
 const root = process.argv[2];

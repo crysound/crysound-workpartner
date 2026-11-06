@@ -1,0 +1,7 @@
+node_modules/
+lib/
+*.tsbuildinfo
+.DS_Store
+
+dsh-feishu-*.mp4
+pnpm-lock.yaml
