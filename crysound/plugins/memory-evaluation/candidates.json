@@ -1,0 +1,29 @@
+{
+  "asOf": "2026-11-06T20:30:04Z",
+  "candidates": [
+    {
+      "name": "@fooxe/dsh-memory",
+      "version": "0.13.10",
+      "tarball": "https://registry.npmjs.org/@fooxe/dsh-memory/-/dsh-memory-0.13.10.tgz",
+      "integrity": "sha512-LtgwueIekKnFJBGyZM07OBWyL+3K+6yClKsQ08Qz4FClJurgkkBjnioqAY7TGGAi4UooZDe2BloKKESPXKu/Xg=="
+    },
+    {
+      "name": "dsh-memory-palace",
+      "version": "1.8.4",
+      "tarball": "https://registry.npmjs.org/dsh-memory-palace/-/dsh-memory-palace-1.8.4.tgz",
+      "integrity": "sha512-nEVmncYhalq36C5pYYU6Mb3hxWNpjTr65VNn2P4wnnL3iaDIiarWcyVMAwyiA6tH4GZuvCXmpu9KA0IZyXkLtA=="
+    },
+    {
+      "name": "@jipika/dsh-memory",
+      "version": "0.9.4",
+      "tarball": "https://registry.npmjs.org/@jipika/dsh-memory/-/dsh-memory-0.9.4.tgz",
+      "integrity": "sha512-o7/1/V1Ojc2cD28dYHNFrMwUYlksrHq2bq/uOwO3qjK4stKipy0Lt+CkgCkIAsZ+tnjjAAQEYvXMyuqWlynu+Q=="
+    },
+    {
+      "name": "@restregular/dsh-memory",
+      "version": "0.30.1",
+      "tarball": "https://registry.npmjs.org/@restregular/dsh-memory/-/dsh-memory-0.30.1.tgz",
+      "integrity": "sha512-bHjN/NlvIzkfzHTgiN7+VCuyUFPxBKTFZ4WbuP0FTWXujAv2VDQblgRqFPQIGKLIk6me+va9ayM5denhkCw6Bg=="
+    }
+  ]
+}
