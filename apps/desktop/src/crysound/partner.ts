@@ -169,3 +169,41 @@ export function isFirstRun(userData: string): boolean {
 export async function markFirstRunDone(userData: string): Promise<void> {
   await writeFile(welcomeMark(userData), '')
 }
+
+/** The small window shown while the first launch prepares the company plugins. */
+export interface PreparingWindow {
+  /** Bring the window to the front (a Dock click during preparation lands here). */
+  focus: () => void
+  /** Close the window; safe to call twice. */
+  close: () => void
+  /** Whether the window still exists. */
+  readonly alive: boolean
+}
+
+const PREPARING_HTML = `<!doctype html><meta charset="utf-8"><title>兆华工作伙伴</title>
+<style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font:15px -apple-system,"PingFang SC",sans-serif;color:#222;background:#fff;-webkit-user-select:none}
+.s{width:26px;height:26px;border:3px solid #ddd;border-top-color:#0a6cff;border-radius:50%;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+small{color:#777}</style><div class="s"></div><div>正在准备兆华工作伙伴…</div><small>首次启动需要安装插件，请稍候</small>`
+
+/**
+ * Open the loading window. The main window starts hidden, so without this the user sees nothing while plugins are prepared.
+ * @returns Handle to focus or close it.
+ */
+export function openPreparingWindow(): PreparingWindow {
+  const window = new BrowserWindow({
+    width: 420, height: 220, title: '兆华工作伙伴', resizable: false, minimizable: true, maximizable: false, fullscreenable: false,
+    autoHideMenuBar: true, show: true,
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
+  })
+  void window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(PREPARING_HTML)}`).catch(() => undefined)
+  return {
+    get alive() { return !window.isDestroyed() },
+    focus: () => {
+      if (window.isDestroyed()) return
+      if (window.isMinimized()) window.restore()
+      window.show()
+      window.focus()
+    },
+    close: () => { if (!window.isDestroyed()) window.destroy() },
+  }
+}

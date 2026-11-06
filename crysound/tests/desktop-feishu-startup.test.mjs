@@ -66,7 +66,7 @@ test("Finder startup keeps login-shell tools after prepending the company wrappe
 test("installer validator accepts generated public settings and refuses private or malformed fields", async (t) => {
   const root = await temp(t), file = join(root, "public-host.json");
   const script = await readFile(join(assets, "scripts/verify-mac-package.sh"), "utf8");
-  const match = script.match(/node -e '([\s\S]*?)' "\$res\/crysound\/config\/public-host.json"/);
+  const match = script.match(/node -e '([^']*)' "\$res\/crysound\/config\/public-host.json"/);
   assert.ok(match, "execute the installer's actual public-config validator without mounting an image");
   const validate = () => run(["-e", match[1], file]);
   for (const projectHost of ["", "project.example.test"]) {
