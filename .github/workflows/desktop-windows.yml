@@ -1,0 +1,59 @@
+name: CRYSOUND WorkPartner · Windows x64 desktop
+
+# Builds the company desktop app (apps/desktop) for Windows x64 on a GitHub-hosted runner. The installer is
+# unsigned (no Windows code-signing certificate yet), so SmartScreen warns on first run. Nothing is published.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v5.0.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Package win-x64 (unsigned)
+        run: pnpm run package:desktop:win:x64:unsigned
+      - name: Locate installer
+        id: exe
+        run: |
+          ls -lh apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/ || find apps/desktop/.desktop-build -maxdepth 4 -name '*.exe'
+          exe=$(ls apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe | head -n1)
+          test -f "$exe"
+          echo "path=$exe" >> "$GITHUB_OUTPUT"
+      - name: Upload installer
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: crysound-workpartner-win-x64-unsigned
+          path: ${{ steps.exe.outputs.path }}
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload packaging logs
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: packaging-logs-${{ github.run_id }}
+          path: apps/desktop/.desktop-build/packaging-runs/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
