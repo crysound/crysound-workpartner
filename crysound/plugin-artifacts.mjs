@@ -13,6 +13,11 @@ export const FEISHU = {
 export const WEB_SPEC = `file:/opt/company-plugins/${FEISHU.file}`;
 export const DESKTOP_WANT = `file:company-plugins/${FEISHU.file}`;
 
+/** Registry packages in the company scope need the signed-in desktop token; local archives can be bundled. */
+export function isMarketPlugin(plugin) {
+  return plugin.name.startsWith('@crysound/') && (plugin.spec === plugin.name || plugin.spec.startsWith(`${plugin.name}@`));
+}
+
 /** Reject a modified or incomplete release archive before it is used. */
 export function verifyArchive(bytes) {
   if (`sha512-${createHash('sha512').update(bytes).digest('base64')}` !== FEISHU.integrity) {

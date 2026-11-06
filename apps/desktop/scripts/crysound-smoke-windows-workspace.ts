@@ -11,6 +11,7 @@ import { createRequire, syncBuiltinESMExports } from 'node:module'
 import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
 import { PROFILE_TEMPLATES, type ProfileTemplate } from '@deepseek-ai/dsh-official-bundles'
+import { DESKTOP_WANT, FEISHU, WEB_SPEC, isMarketPlugin } from '../../../crysound/plugin-artifacts.mjs'
 
 assert.equal(process.platform, 'win32', 'this smoke requires the installed Windows runtime')
 const app = resolve(process.env.SMOKE_APP ?? '')
@@ -19,6 +20,11 @@ assert.ok(process.env.SMOKE_ROOT, 'SMOKE_ROOT is required')
 const root = resolve(process.env.SMOKE_ROOT)
 const resources = join(dirname(app), 'resources')
 const assets = join(resources, 'crysound')
+const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
+  plugins: { name: string; spec: string; want: string }[]
+  defaultBundles: string[]
+}
+const onlineNames = list.plugins.filter(isMarketPlugin).map(plugin => plugin.name)
 const home = join(root, 'dsh')
 const profile = join(home, 'profiles', 'desktop')
 assert.ok(!existsSync(profile), 'the smoke requires a fresh profile')
@@ -74,24 +80,25 @@ try {
   const started = Date.now()
   const first = await prepareCompanyWorkspace(options)
   report.preparationMs = Date.now() - started
-  assert.deepEqual(first.missing, [], 'all company plugins must be ready on first preparation')
-  assert.equal(forbiddenInstalls.length, 0, 'first preparation must use the bundled template')
+  assert.deepEqual(first.missing, onlineNames, 'only company market plugins wait for login')
+  assert.equal(forbiddenInstalls.length, onlineNames.length, 'public/local plugins must use the bundled template')
   const firstManifest = readFileSync(join(profile, 'package.json'), 'utf8')
   const second = await prepareCompanyWorkspace(options)
-  assert.deepEqual(second.missing, [])
+  assert.deepEqual(second.missing, onlineNames)
   assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), firstManifest, 'second preparation must preserve plugin records and bundles')
-  assert.equal(forbiddenInstalls.length, 0, 'second preparation must not install plugins')
+  assert.equal(forbiddenInstalls.length, onlineNames.length * 2, 'second preparation retries only market plugins')
 
-  const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
-    plugins: { name: string; want: string }[]
-    defaultBundles: string[]
-  }
   const manifest = JSON.parse(firstManifest) as { dependencies: Record<string, string>; dsh: { profile: { bundles: string[] } } }
-  assert.equal(list.plugins.length, 5, 'check the complete company plugin list')
+  assert.ok(list.plugins.length > 0, 'check the configured company plugin list')
   const require = createRequire(join(profile, 'package.json'))
   const modules = realpathSync(join(profile, 'node_modules'))
   report.plugins = list.plugins.map((plugin) => {
-    assert.equal(manifest.dependencies[plugin.name], plugin.want, `${plugin.name}: recorded version`)
+    if (isMarketPlugin(plugin)) {
+      assert.equal(manifest.dependencies[plugin.name], undefined, `${plugin.name}: not bundled`)
+      return { name: plugin.name, want: plugin.want, installation: 'online after login; not verified by this offline smoke' }
+    }
+    const want = plugin.name === FEISHU.name && plugin.want === WEB_SPEC ? DESKTOP_WANT : plugin.want
+    assert.equal(manifest.dependencies[plugin.name], want, `${plugin.name}: recorded version`)
     const installed = JSON.parse(readFileSync(join(modules, plugin.name, 'package.json'), 'utf8')) as { name: string; version: string }
     const bundled = JSON.parse(readFileSync(join(assets, 'plugin-template', 'modules', plugin.name, 'package.json'), 'utf8')) as { version: string }
     assert.equal(installed.name, plugin.name)
@@ -109,18 +116,21 @@ try {
 
   const control = join(root, 'negative-control')
   const controlAssets = join(control, 'assets')
+  mkdirSync(controlAssets, { recursive: true })
+  for (const part of ['plugin-artifacts.mjs', 'company-plugins']) cpSync(join(assets, part), join(controlAssets, part), { recursive: true })
   cpSync(join(assets, 'config'), join(controlAssets, 'config'), { recursive: true })
   cpSync(join(assets, 'feishu'), join(controlAssets, 'feishu'), { recursive: true })
   const controlHome = join(control, 'dsh')
   const controlProfile = join(controlHome, 'profiles', 'desktop')
   initProfile(controlProfile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
+  const previousAttempts = forbiddenInstalls.length
   const negative = await prepareCompanyWorkspace({
     ...options, assets: controlAssets, profile: controlProfile, userData: join(control, 'userdata'),
     environment: { ...environment, DSH_HOME: controlHome },
   })
   assert.deepEqual(negative.missing, list.plugins.map(plugin => plugin.name), 'missing template must leave every plugin uninstalled')
-  assert.equal(forbiddenInstalls.length, list.plugins.length, 'guard must intercept every attempted plugin install')
-  report.negativeControl = { forbiddenInstalls: forbiddenInstalls.length, missing: negative.missing }
+  assert.equal(forbiddenInstalls.length - previousAttempts, list.plugins.length, 'guard must intercept every attempted plugin install')
+  report.negativeControl = { forbiddenInstalls: forbiddenInstalls.length - previousAttempts, missing: negative.missing }
   report.passed = true
 } catch (error) {
   report.error = error instanceof Error ? error.stack : String(error)
