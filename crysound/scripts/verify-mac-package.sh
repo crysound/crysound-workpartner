@@ -32,8 +32,8 @@ tools=$(mktemp -d)
 npm install --prefix "$tools" --silent @electron/asar@3
 asarcli="$tools/node_modules/.bin/asar"
 list=$("$asarcli" list "$asar")
-echo "$list" | grep -q "^/dsh/node_modules/@deepseek-ai/dsh/package.json$" && echo "ok    dsh runtime inside app.asar" || { echo "FAIL  dsh runtime missing"; fail=1; }
-echo "$list" | grep -q "^/lib/main.js$" && echo "ok    lib/main.js" || { echo "FAIL  lib/main.js"; fail=1; }
+grep -q "^/dsh/node_modules/@deepseek-ai/dsh/package.json$" <<<"$list" && echo "ok    dsh runtime inside app.asar" || { echo "FAIL  dsh runtime missing"; fail=1; }
+grep -q "^/lib/main.js$" <<<"$list" && echo "ok    lib/main.js" || { echo "FAIL  lib/main.js"; fail=1; }
 tmp=$(mktemp -d)
 (cd "$tmp" && "$asarcli" extract-file "$asar" lib/main.js) >/dev/null 2>&1 || true
 if [ -f "$tmp/main.js" ]; then
