@@ -101,10 +101,11 @@ test("公司官方显示名、作者和标识来自管理员指定的账号与�
     const entry = parsed.plugins.find((p) => p.name === packageName);
     assert.equal(entry.title, title);
     assert.equal(entry.author, "兆华工作伙伴");
-    assert.deepEqual(entry.metadata.labels, ["crysound-official"]);
+    assert.deepEqual(entry.metadata.labels, ["crysound-official", "crysound-maintainer:alice"]);
     assert.equal(marketInstallTarget(entry.name, entry.versions[0]).spec, `${packageName}@1.0.0`);
   }
   assert.deepEqual(parsed.metadata.labels["crysound-official"].title, { zh: "兆华官方", en: "CRYSOUND official" });
+  assert.deepEqual(parsed.metadata.labels["crysound-maintainer:alice"].title, { zh: "维护：测试发布者", en: "Maintained by 测试发布者" });
   const colleague = parsed.plugins.find((p) => p.name === "@crysound/colleague");
   assert.equal(colleague.title, "同事工具");
   assert.equal(colleague.author, "bob");
@@ -113,6 +114,50 @@ test("公司官方显示名、作者和标识来自管理员指定的账号与�
   f.options.officialPackages = ["@crysound/design"];
   f.restart();
   assert.deepEqual((await f.index()).plugins.find((p) => p.name === "@crysound/motion").metadata.labels, []);
+});
+
+test("官方维护姓名独立于发布账号；分类、包内图片及最新顺序经原生索引解析保留", async (t) => {
+  const f = await fixture(t, { officialPublishers: ["alice"], officialPackages: ["@crysound/*"], officialMaintainers: { "@crysound/data": ["admin"] } });
+  const preview = "data:image/png;base64,iVBORw0KGgo=";
+  for (const [packageName, publisher, fields] of [
+    ["@crysound/older", "bob", { keywords: ["文档与报告", 5] }],
+    ["@crysound/data", "alice", { keywords: ["销售与市场"], dsh: { bundle: { patch: "./cordis.patch.yml" }, market: { preview } } }],
+    ["@crysound/newer", "bob", { labels: ["设计"], dsh: { bundle: { patch: "./cordis.patch.yml" }, market: { preview: "https://private.example.test/picture?token=secret" } } }],
+  ]) {
+    const body = doc("1.0.0", packageName);
+    Object.assign(body.versions["1.0.0"], fields);
+    assert.equal((await f.request(`/_zp/npm/${encodeURIComponent(packageName)}`, { method: "PUT", headers: bearer(publisher), body: JSON.stringify(body) })).status, 201);
+    assert.equal((await f.request("/_zp/market/admin", { method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin }, body: new URLSearchParams({ name: packageName, version: "1.0.0", action: "approved" }) })).status, 303);
+  }
+  const state = JSON.parse(fs.readFileSync(f.stateFile, "utf8"));
+  state.packages["@crysound/older"].versions["1.0.0"].publishTimestamp = 100;
+  state.packages["@crysound/newer"].versions["1.0.0"].publishTimestamp = 200;
+  fs.writeFileSync(f.stateFile, JSON.stringify(state));
+  f.restart();
+  const parsed = parseMarketIndex(await f.index(), `${publicOrigin}/_zp/market/index.json`);
+  assert.deepEqual(parsed.plugins.map((p) => p.name), ["@crysound/data", "@crysound/newer", "@crysound/older"]);
+  const [data, newer, older] = parsed.plugins;
+  assert.equal(data.title, "兆华数据");
+  assert.equal(data.author, "兆华工作伙伴");
+  assert.equal(data.metadata.category, "data");
+  assert.equal(data.icon, preview);
+  assert.deepEqual(data.metadata.labels, ["crysound-official"]); // Unnamed accounts never leak a slug as a name.
+  assert.equal(newer.metadata.category, "design");
+  assert.equal(newer.icon, undefined);
+  assert.equal(older.metadata.category, "documents");
+  assert.deepEqual(older.metadata.keywords, ["文档与报告"]);
+  assert.equal(Object.keys(parsed.metadata.categories).length, 7);
+  const manifest = f.packages.get("@crysound/data").versions["1.0.0"];
+  const maxPreview = "data:image/png;base64," + Buffer.alloc(32 * 1024).toString("base64");
+  manifest.dsh.market.preview = maxPreview;
+  assert.equal(parseMarketIndex(await f.index(), publicOrigin).plugins[0].icon, maxPreview);
+  for (const invalid of ["data:image/png;base64,a", "data:image/png;base64," + Buffer.alloc(32 * 1024 + 1).toString("base64")]) {
+    manifest.dsh.market.preview = invalid;
+    assert.equal(parseMarketIndex(await f.index(), publicOrigin).plugins[0].icon, undefined);
+  }
+  f.options.officialMaintainers["@crysound/data"] = ["alice"];
+  f.restart();
+  assert.deepEqual((await f.index()).plugins[0].metadata.labels, ["crysound-official", "crysound-maintainer:alice"]);
 });
 
 test("显示名优先 displayName，其次 title；旧包仍显示包名，非法显示名拒绝发布", async (t) => {

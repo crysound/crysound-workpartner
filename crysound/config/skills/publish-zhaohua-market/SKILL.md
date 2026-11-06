@@ -44,3 +44,5 @@ NPM_CONFIG_USERCONFIG="$CRYSOUND_NPM_USERCONFIG" npm publish --registry "$CRYSOU
 发布成功后网关给配置的管理员发送飞书审批卡片；管理员从卡片进入审批页完成批准或拒绝。批准版本才进入“兆华市场”索引，客户端需刷新索引（默认缓存十分钟）。待审批和被拒绝版本仍可被已开通用户按包名直接读取；审批控制发现列表。私有包的详细介绍暂不能经公共 npm CDN 读取，关键信息写进 description。
 
 遇到 401，桌面版重新登录，网页版联系管理员重建容器。403 检查 scope 和首发所有权；409 或“上传结果未知”时停止，不重试同一版本，请管理员核对。通知失败不会撤销已发布版本，管理员可从审批页重发卡片。不要 unpublish、删除 dist-tag 或覆盖版本。
+
+发布前请作者选择分类，写入 `package.json` 的 `labels` 或 `keywords`：设计、视频、文档与报告、数据、研发、销售与市场、其他（对应 `design`、`video`、`documents`、`data`、`development`、`sales`、`other`）。没有选择时归入其他。可把包内样例图编码为 `dsh.market.preview`（PNG、JPEG 或 WebP 的 base64 data URL，解码后不超过 32 KiB）；不要填私有下载地址、令牌或外部追踪 URL。官方身份和维护姓名由管理员配置，包内声明不能授予官方标识或发布权限。

@@ -13,7 +13,7 @@
 - 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
-- 市场页：`crysound/scripts/patch-market-ui.mjs` 在网页版镜像与桌面运行时准备阶段修补已构建的上游插件管理组件，在记录文件校验值和签名前完成。侧栏入口“市场 / Market”，右侧灰字“兆华 · 第三方 / Crysound · Third-party”，保持公司侧栏排序；标签按“兆华市场 → 第三方市场 → 已安装”排列，从侧栏重新进入时默认打开兆华市场，保留页内主动切换和打开已安装插件详情的行为。文案来自 `crysound/brand/market-locales.mjs` 的类型化字典，通过上游 locale 与 `t` 读取，其他语言按正常回退或语言包翻译。不修改上游插件源码，升级 dsh 时补丁未唯一命中会使构建失败。
+- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 左下角账号按钮显示飞书头像和姓名，菜单里的“登录”项换成姓名（不可点）。`brand.js` 向 `/_zp/me` 取 `{name, avatar}`：网页版由网关按登录会话回答，桌面版由 `src/main.ts` 按本机保存的登录回答。网页版在账号按钮上方多一个“下载客户端”入口，指向网关的 `/_zp/download`。
 
 ### 断开 DeepSeek 服务

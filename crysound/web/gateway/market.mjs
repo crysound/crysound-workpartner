@@ -41,10 +41,21 @@ function readState(file) {
  * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份与用户列表读取器、管理员列表与通知函数。
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
  *   officialPublishers 与 officialPackages 必须同时命中才显示官方标识；后者允许 @crysound/*，缺省均为空。
+ *   officialMaintainers 将包名映射到维护人 slug 列表，仅从 readUsers 取姓名，不改变发布授权。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
-  const officialNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效" };
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+  if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
+  const officialNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效", "@crysound/data": "兆华数据" };
+  const categories = Object.fromEntries([
+    ["design", "设计", "Design"], ["video", "视频", "Video"], ["documents", "文档与报告", "Documents and reports"],
+    ["data", "数据", "Data"], ["development", "研发", "Development"], ["sales", "销售与市场", "Sales and marketing"], ["other", "其他", "Other"],
+  ].map(([id, zh, en]) => [id, { title: { zh, en } }]));
+  const categoryOf = (manifest, name) => {
+    if (name === "@crysound/data") return "data";
+    const words = [...(Array.isArray(manifest.labels) ? manifest.labels : []), ...(Array.isArray(manifest.keywords) ? manifest.keywords : [])];
+    return Object.keys(categories).find((id) => words.some((word) => typeof word === "string" && [id, categories[id].title.zh, categories[id].title.en.toLowerCase()].includes(word.toLowerCase()))) || "other";
+  };
   let state = readState(stateFile);
   let queue = Promise.resolve();
   const serial = (work) => {
@@ -122,6 +133,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
   async function index(res) {
     const plugins = [];
     const users = readUsers();
+    const labels = { "crysound-official": { title: { zh: "兆华官方", en: "CRYSOUND official" } } };
     for (const [name, pkg] of Object.entries(state.packages)) {
       const approved = Object.keys(pkg.versions).filter((v) => pkg.versions[v].status === "approved").sort(semver.rcompare);
       if (!approved.length) continue;
@@ -140,13 +152,27 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const official = officialPublishers.includes(pkg.owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*"));
       const title = (official ? officialNames[name] : undefined) || manifest.displayName || manifest.title;
       if (title !== undefined && (typeof title !== "string" || !title.trim() || title.length > 80)) throw fail(502, "已批准版本的显示名无效");
-      plugins.push({ name, ...(title === undefined ? {} : { title: title.trim() }), description: manifest.description,
+      const maintenanceLabels = official ? (officialMaintainers[name] || [pkg.owner]).filter((slug, index, slugs) => slugs.indexOf(slug) === index).flatMap((slug) => {
+        const person = users.find((user) => user.slug === slug)?.name;
+        if (typeof person !== "string" || !person.trim()) return [];
+        const id = `crysound-maintainer:${slug}`;
+        labels[id] = { title: { zh: `维护：${person}`, en: `Maintained by ${person}` } };
+        return [id];
+      }) : [];
+      // Preview bytes are embedded by the package author, so no private registry URL or token reaches an image request.
+      const preview = manifest.dsh?.market?.preview;
+      const image = typeof preview === "string" && preview.length <= 44000 ? /^data:image\/(?:png|jpeg|webp);base64,([a-zA-Z0-9+/]+={0,2})$/.exec(preview) : null;
+      const bytes = image ? Buffer.from(image[1], "base64") : null;
+      // The pinned native index reader limits inline icons to 32 KiB and canonical base64.
+      const icon = bytes && bytes.length <= 32 * 1024 && bytes.toString("base64") === image[1] ? preview : undefined;
+      plugins.push({ name, ...(icon ? { icon } : {}), ...(title === undefined ? {} : { title: title.trim() }), description: manifest.description,
         author: official ? "兆华工作伙伴" : users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
-        metadata: { keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: official ? ["crysound-official"] : [], sortKeys: {} },
+        metadata: { category: categoryOf(manifest, name), keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: official ? ["crysound-official", ...maintenanceLabels] : [], sortKeys: {} },
         versions,
       });
     }
-    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories: {}, labels: { "crysound-official": { title: { zh: "兆华官方", en: "CRYSOUND official" } } }, sortKeys: {} }, plugins });
+    plugins.sort((a, b) => Number(b.metadata.labels.includes("crysound-official")) - Number(a.metadata.labels.includes("crysound-official")) || Math.max(...b.versions.map((v) => v.publishTimestamp)) - Math.max(...a.versions.map((v) => v.publishTimestamp)) || a.name.localeCompare(b.name));
+    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories, labels, sortKeys: {} }, plugins });
   }
 
   async function admin(req, res) {
