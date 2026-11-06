@@ -14,6 +14,8 @@ const redirectUri = (host) => `https://${host}/_zp/callback`;
 // 宿主路径（建容器时 Docker 按宿主路径挂载）与网关内看到的路径
 const HOST_USERS = `${process.env.HOST_PARTNER_DATA}/users`;
 const HOST_SECURE = process.env.HOST_PARTNER_SECURE;
+const HOST_CONFIG = process.env.HOST_PARTNER_CONFIG;
+const MAGPIE_BASE_URL = process.env.MAGPIE_BASE_URL;
 // MAGPIE_KEYS=pool：magpie 不在本机（经内网连过去）时，新人从 /secure/magpie-pool 领一把预先建好的钥匙，领用记在 assigned.log。
 const KEY_POOL = process.env.MAGPIE_KEYS === "pool" ? "/secure/magpie-pool" : null;
 const DSH_UID = 1001;
@@ -82,14 +84,16 @@ async function magpieKey(docker, slug) {
 }
 
 async function container(docker, slug) {
+  if (!HOST_CONFIG || !MAGPIE_BASE_URL) throw new Error("请设置 HOST_PARTNER_CONFIG 和 MAGPIE_BASE_URL");
   const name = `zhaohua-partner-${slug}`;
   if ((await docker("GET", `/containers/${name}/json`)).status === 200) return docker("POST", `/containers/${name}/start`);
   fs.mkdirSync(`/users/${slug}`, { recursive: true });
   fs.chownSync(`/users/${slug}`, DSH_UID, DSH_UID);
   const r = await docker("POST", `/containers/create?name=${name}`, {
-    Image: IMAGE, User: `${DSH_UID}:${DSH_UID}`, Env: [`PUBLIC_HOST=${PUBLIC_HOST}`], Labels: { "zhaohua-partner.user": slug },
+    Image: IMAGE, User: `${DSH_UID}:${DSH_UID}`, Env: [`PUBLIC_HOST=${PUBLIC_HOST}`, `MAGPIE_BASE_URL=${MAGPIE_BASE_URL}`], Labels: { "zhaohua-partner.user": slug },
     HostConfig: {
       Binds: [`${HOST_USERS}/${slug}:/data`, `${HOST_SECURE}/magpie-${slug}.key:/etc/partner/magpie.key:ro`],
+      Mounts: [{ Type: "bind", Source: HOST_CONFIG, Target: "/opt/partner-config", ReadOnly: true }],
       NetworkMode: "partner-net", RestartPolicy: { Name: "unless-stopped" },
       Memory: 2 * 1024 ** 3, NanoCpus: 2e9, PidsLimit: 512,
     },

@@ -8,12 +8,19 @@ import { fileURLToPath } from "node:url";
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "zp-compose-test-"));
 try {
   const file = path.join(root, "fake.env");
-  fs.writeFileSync(file, `PUBLIC_HOST=partner.example.test\nPARTNER_DATA=${root}/data\nPARTNER_SECURE=${root}/fake-secure\nPARTNER_FEISHU_APP_ID=cli_fake\nPILOT_CHAT_ID=oc_fake\nMARKET_ADMINS=alice,bob\n`);
+  fs.writeFileSync(file, `PUBLIC_HOST=partner.example.test\nPARTNER_DATA=${root}/data\nPARTNER_CONFIG=${root}/company-config\nMAGPIE_BASE_URL=http://models.example.test/v1\nPARTNER_SECURE=${root}/fake-secure\nPARTNER_FEISHU_APP_ID=cli_fake\nPILOT_CHAT_ID=oc_fake\nMARKET_ADMINS=alice,bob\n`);
   const result = spawnSync("docker", ["compose", "--env-file", file, "-f", fileURLToPath(new URL("../compose.yml", import.meta.url)), "config", "--format", "json"], {
     cwd: root, encoding: "utf8", env: { PATH: process.env.PATH, HOME: root, DOCKER_CONFIG: root, COMPOSE_DISABLE_ENV_FILE: "1" },
   });
   assert.equal(result.status, 0, result.stderr);
   const config = JSON.parse(result.stdout);
+  const gateway = config.services.gateway;
+  assert.equal(gateway.environment.HOST_PARTNER_CONFIG, `${root}/company-config`);
+  assert.equal(gateway.environment.MAGPIE_BASE_URL, "http://models.example.test/v1");
+  const mount = gateway.volumes.find(volume => volume.target === "/opt/partner-config");
+  assert.equal(mount.source, `${root}/company-config`);
+  assert.equal(mount.read_only, true);
+  assert.equal(mount.bind.create_host_path, false);
   const registry = config.services.verdaccio;
   assert.equal(registry.image, "verdaccio/verdaccio:6.1.6");
   assert.equal(registry.ports, undefined);

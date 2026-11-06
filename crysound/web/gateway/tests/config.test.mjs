@@ -149,13 +149,15 @@ test("桌面工作区升级实际补齐索引和可发现技能，重复启动�
   fs.mkdirSync(path.join(assets, "config"), { recursive: true });
   fs.mkdirSync(profile, { recursive: true }); fs.mkdirSync(userData);
   fs.cpSync(path.join(config, "skills"), path.join(assets, "config/skills"), { recursive: true });
-  fs.copyFileSync(path.join(config, "market-profile.mjs"), path.join(assets, "config/market-profile.mjs"));
+  for (const name of ["market-profile.mjs", "profile-upgrades.mjs", "partner.patch.yml"]) {
+    fs.copyFileSync(path.join(config, name), path.join(assets, "config", name));
+  }
   const defaults = JSON.parse(fs.readFileSync(path.join(config, "plugins.json"))).defaultBundles;
   fs.writeFileSync(path.join(assets, "config/plugins.json"), JSON.stringify({ plugins: [], defaultBundles: defaults }));
   fs.writeFileSync(path.join(profile, "package.json"), "{}");
   fs.writeFileSync(path.join(profile, "cordis.patch.yml"), "- id: other\n  config:\n    keep: true\n");
   for (const mark of [".zp-default-plugins-v1", ".zp-seed-v1"]) fs.writeFileSync(path.join(userData, mark), "");
-  const options = { assets, profile, userData, execPath: process.execPath, cliEntry: "unused-no-install", environment: { PATH: process.env.PATH, CRYSOUND_LLM_BASE: "https://partner.example.test/_zp/llm/v1" } };
+  const options = { assets, profile, userData, execPath: process.execPath, cliEntry: process.env.DSH_CLI_ENTRY || fileURLToPath(new URL("../../../../apps/cli/src/bin.ts", import.meta.url)), environment: { PATH: process.env.PATH, CRYSOUND_LLM_BASE: "https://partner.example.test/_zp/llm/v1" } };
   await prepareCompanyWorkspace(options);
   assert.match(fs.readFileSync(path.join(profile, "cordis.patch.yml"), "utf8"), /https:\/\/partner.example.test\/_zp\/market\/index.json/);
   assert.match(fs.readFileSync(path.join(root, "dsh/skills/publish-zhaohua-market/SKILL.md"), "utf8"), /name: publish-zhaohua-market/);
@@ -190,22 +192,33 @@ test("不支持的用户 YAML 或无效 manifest 只警告，跳过市场配置�
   assert.equal(fs.readFileSync(manifest, "utf8"), "broken");
 });
 
-test("入口脚本的市场配置、插件修补、配置升级和技能复制失败仍启动 dsh", (t) => {
+test("可选市场配置、插件修补和技能复制失败仍启动 dsh，公司模型刷新失败则停止", (t) => {
   const root = temp(t), bin = path.join(root, "bin"), home = path.join(root, "dsh");
   fs.mkdirSync(bin); fs.mkdirSync(home);
   for (const mark of [".zp-default-plugins-v1", ".zp-seed-v1"]) fs.writeFileSync(path.join(home, mark), "");
   const stub = (name, body) => fs.writeFileSync(path.join(bin, name), `#!/bin/sh\n${body}\n`, { mode: 0o700 });
-  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\nexit 1');
+  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\ncase "$1" in *profile-upgrades.mjs) exit 0;; esac\nexit 1');
   stub("cp", "exit 1");
   stub("cat", "echo fake-model-key");
   stub("mkdir", 'if [ "$2" = "/data/work" ]; then exit 1; fi\nexec /bin/mkdir "$@"');
   stub("hostname", "echo 127.0.0.1");
   stub("dsh", 'echo "dsh launched: $*"\numask');
-  const result = spawnSync("/bin/sh", ["-c", 'umask 022; exec /bin/sh "$1"', "entrypoint-test", fileURLToPath(new URL("../../entrypoint.sh", import.meta.url))], {
-    cwd: root, encoding: "utf8", env: { PATH: `${bin}:${process.env.PATH}`, DSH_HOME: home, PUBLIC_HOST: "partner.example.test" },
+  const mounted = path.join(root, "config");
+  fs.cpSync(config, mounted, { recursive: true });
+  const entrypoint = path.join(root, "entrypoint.sh");
+  fs.writeFileSync(entrypoint, fs.readFileSync(fileURLToPath(new URL("../../entrypoint.sh", import.meta.url)), "utf8").replace("CONFIG=/opt/partner-config", `CONFIG=${mounted}`));
+  const result = spawnSync("/bin/sh", ["-c", 'umask 022; exec /bin/sh "$1"', "entrypoint-test", entrypoint], {
+    cwd: root, encoding: "utf8", env: { PATH: `${bin}:${process.env.PATH}`, DSH_HOME: home, PUBLIC_HOST: "partner.example.test", MAGPIE_BASE_URL: "http://models.example.test/v1" },
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /dsh launched: --profile web/);
-  for (const step of ["市场 npm 配置", "插件修补", "市场发布技能复制", "市场 profile 配置", "默认配置升级"]) assert.ok(result.stderr.includes(`警告：${step}失败`), step);
+  for (const step of ["市场 npm 配置", "插件修补", "市场发布技能复制", "市场 profile 配置"]) assert.ok(result.stderr.includes(`警告：${step}失败`), step);
   assert.match(result.stdout, /\n0*22\s*$/);
+  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\nexit 1');
+  const failed = spawnSync("/bin/sh", [entrypoint], {
+    cwd: root, encoding: "utf8", env: { PATH: `${bin}:${process.env.PATH}`, DSH_HOME: home, PUBLIC_HOST: "partner.example.test", MAGPIE_BASE_URL: "http://models.example.test/v1" },
+  });
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /公司模型配置刷新失败/);
+  assert.doesNotMatch(failed.stdout, /dsh launched/);
 });

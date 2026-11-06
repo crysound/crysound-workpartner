@@ -1,67 +1,78 @@
-// 已开通用户的配置升级：默认配置只在首次开通时写入，之后公司默认值变了，靠这里把仍是旧默认值的条目改成新值。
-// 只改与旧默认值逐字相同的块，用户自己改过的不动；可重复执行。网页版入口脚本与桌面版启动时都会运行。
-// 用法：node profile-upgrades.mjs <cordis.patch.yml>
+// Refresh company model and search settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]
 import fs from "node:fs";
+import { createRequire } from "node:module";
 
-// GPT-6.1 的推理等级与 magpie 公布的一一对应（low、medium、high、xhigh、max）；dsh 没有 ultra 档。
-function gptReasoningLevels(lines) {
-  let model = "";
-  let changed = false;
-  for (let i = 0; i < lines.length; i++) {
-    const id = /^\s*- id: (\S+)/.exec(lines[i]);
-    if (id) model = id[1];
-    if (!model.startsWith("codex/gpt-6.1") || !/^\s*reasoningEfforts:\s*$/.test(lines[i])) continue;
-    const pad = /^(\s*)/.exec(lines[i + 1] ?? "")[1];
-    const old = [`${pad}low: low`, `${pad}medium: medium`, `${pad}high: high`];
-    const next = lines[i + 4] ?? "";
-    const sameLevel = next.startsWith(pad) && /^\w/.test(next.slice(pad.length));
-    if (old.every((line, k) => lines[i + 1 + k] === line) && !sameLevel) {
-      lines.splice(i + 4, 0, `${pad}xhigh: xhigh`, `${pad}max: max`);
-      changed = true;
+export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
+  const parse = (text) => {
+    const document = yaml.parseDocument(text, {
+      customTags: [{ tag: "tag:yaml.org,2002:js", resolve: (value) => value }],
+    });
+    if (document.errors.length) throw document.errors[0];
+    if (!yaml.isSeq(document.contents)) throw new Error("公司配置和个人配置必须是 YAML 条目列表");
+    document.contents.flow = false;
+    return document;
+  };
+  const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "[]\n";
+  const mine = parse(before);
+  const seed = parse(fs.readFileSync(seedFile, "utf8"));
+  const find = (document, id) => document.contents.items.findLastIndex((item) => yaml.isMap(item) && item.get("id") === id && !item.has("insert"));
+  if (seedDefaults) {
+    for (const entry of seed.contents.items) {
+      if (!yaml.isMap(entry) || typeof entry.get("id") !== "string") throw new Error("公司配置缺少条目 id");
+      if (find(mine, entry.get("id")) < 0) mine.add(entry.clone());
     }
   }
-  return changed;
-}
-
-// 默认推理等级为中：只改仍用公司默认 GPT、且没选过等级的同事。
-function defaultEffortMedium(lines) {
-  const start = lines.findIndex((line) => /^- id: agent-default-model\s*$/.test(line));
-  if (start < 0) return false;
-  let end = start + 1;
-  while (end < lines.length && !/^(- |#)/.test(lines[end])) end++;
-  const row = lines.slice(start, end);
-  const model = row.findIndex((line) => /^\s+model: codex\/gpt-6\.1/.test(line));
-  if (model < 0 || !row.some((line) => /^\s+provider: magpie\s*$/.test(line)) || row.some((line) => /^\s+reasoningEffort:/.test(line))) return false;
-  lines.splice(start + model + 1, 0, `${/^(\s*)/.exec(row[model])[1]}reasoningEffort: medium`);
-  return true;
-}
-
-// 网页搜索经网关：补上搜索条目，地址沿用本人模型配置里的网关地址（网页版是内部 magpie，桌面版是公开网关）。
-function searchViaGateway(lines) {
-  if (lines.some((line) => /^- id: ["']?web-search-deepseek["']?\s*$/.test(line))) return false;
-  const start = lines.findIndex((line) => /^- id: ["']?llm-pi-ai["']?\s*$/.test(line));
-  if (start < 0) return false;
-  let base;
-  for (let i = start + 1; i < lines.length && !/^- /.test(lines[i]); i++) {
-    base = /^\s+baseURL: (\S+\/v1)\s*$/.exec(lines[i])?.[1];
-    if (base) break;
+  const companyIndex = find(seed, "llm-pi-ai");
+  const provider = seed.getIn([companyIndex, "config", "providers", "magpie"], true);
+  if (!yaml.isMap(provider)) throw new Error("公司配置缺少 magpie 提供方");
+  let index = find(mine, "llm-pi-ai");
+  if (index < 0) {
+    mine.add(mine.createNode({ id: "llm-pi-ai", name: "@deepseek-ai/dsh-llm-pi-ai", config: { providers: {} } }));
+    index = mine.contents.items.length - 1;
   }
-  if (!base) return false;
-  while (lines.length && lines.at(-1) === "") lines.pop();
-  lines.push("", "- id: web-search-deepseek", "  config:", `    baseURL: ${base}`, "    model: deepseek/deepseek-flash", "");
-  return true;
-}
+  // A dynamic providers expression cannot be safely edited without evaluating user code.
+  for (const path of [[index, "config"], [index, "config", "providers"]]) {
+    const value = mine.getIn(path, true);
+    if (value === undefined) mine.setIn(path, mine.createNode({}));
+    else if (!yaml.isMap(value)) throw new Error("个人模型配置使用了动态表达式，无法安全刷新公司提供方；请把 providers 改为映射");
+  }
+  mine.setIn([index, "config", "providers", "magpie"], provider.clone());
 
-const file = process.argv[2];
-if (!file) throw new Error("用法：node profile-upgrades.mjs <cordis.patch.yml>");
-if (fs.existsSync(file)) {
-  const lines = fs.readFileSync(file, "utf8").split("\n");
-  const levels = gptReasoningLevels(lines);
-  const effort = defaultEffortMedium(lines);
-  const search = searchViaGateway(lines);
-  if (levels || effort || search) {
-    fs.writeFileSync(`${file}.tmp`, lines.join("\n"), { mode: 0o600 });
+  // Search uses the same company gateway on both web and desktop, including existing literal addresses.
+  const searchIndex = find(seed, "web-search-deepseek");
+  const searchConfig = seed.getIn([searchIndex, "config"], true);
+  if (!yaml.isMap(searchConfig) || !searchConfig.has("baseURL") || !searchConfig.has("model")) throw new Error("公司配置缺少网页搜索地址或模型");
+  const personalSearchIndex = find(mine, "web-search-deepseek");
+  if (personalSearchIndex < 0) {
+    mine.add(seed.contents.items[searchIndex].clone());
+  } else {
+    const path = [personalSearchIndex, "config"];
+    const config = mine.getIn(path, true);
+    if (config === undefined) mine.setIn(path, mine.createNode({}));
+    else if (!yaml.isMap(config)) throw new Error("个人网页搜索配置使用了动态表达式，无法安全刷新公司地址和模型；请把 config 改为映射");
+    for (const key of ["baseURL", "model"]) mine.setIn([...path, key], searchConfig.get(key, true).clone());
+  }
+
+  // Historical default migration: leave the user's chosen model/effort alone.
+  const defaultIndex = find(mine, "agent-default-model");
+  const defaults = mine.getIn([defaultIndex, "config"], true);
+  if (yaml.isMap(defaults) && defaults.get("provider") === "magpie"
+    && /^codex\/gpt-6\.1(?:-|$)/u.test(String(defaults.get("model"))) && !defaults.has("reasoningEffort")) {
+    defaults.set("reasoningEffort", "medium");
+  }
+  const after = String(mine);
+  if (before !== after) {
+    fs.writeFileSync(`${file}.tmp`, after, { mode: 0o600 });
     fs.renameSync(`${file}.tmp`, file);
-    console.log(`配置升级：${[levels && "GPT-6.1 推理等级补到 xhigh、max", effort && "默认推理等级设为中", search && "网页搜索改经网关"].filter(Boolean).join("；")}`);
   }
+}
+
+if (import.meta.main) {
+  const [file, seed, cliEntry, flag] = process.argv.slice(2);
+  if (!file || !seed || !cliEntry) throw new Error("用法：node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]");
+  // Follow exported package manifests so both source checkouts and packaged dependency trees work without loading lib outputs.
+  let require = createRequire(cliEntry);
+  for (const name of ["@deepseek-ai/dsh/package.json", "@deepseek-ai/dsh-base/package.json", "@deepseek-ai/dsh-config-editor/package.json"]) require = createRequire(require.resolve(name));
+  refreshProfile(file, seed, require("yaml"), flag === "--seed");
 }

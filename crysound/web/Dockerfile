@@ -32,13 +32,9 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
  sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
  grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
-# 公司配置与桌面版共用：插件清单、插件修补、默认配置（网页版把模型地址换成内部 magpie）。
-COPY config/plugins.json config/plugin-patches.mjs config/partner.patch.yml config/profile-upgrades.mjs config/market-profile.mjs config/market-npmrc.mjs /opt/partner/
-COPY config/skills/ /opt/partner/skills/
+# 公司配置由服务器目录挂载；Host 钩子属于固定运行时代码。
 COPY host-hook.mjs /opt/partner/host-hook.mjs
-RUN sed -i -e 's#https://partner.invalid/_zp/llm/v1#http://magpie:3425/v1#' \
- -e 's#https://partner.invalid/_zp/market/index.json#http://zhaohua-partner-gateway:3090/_zp/market/index.json#' /opt/partner/partner.patch.yml \
- && grep -q 'baseURL: http://magpie:3425/v1' /opt/partner/partner.patch.yml && find /opt/partner -type d -exec chmod 755 {} + && find /opt/partner -type f -exec chmod 644 {} +
+RUN chmod 644 /opt/partner/host-hook.mjs
 # 检出目录的权限随 umask 变化，这里统一放开，容器内的普通用户才能读和执行。
 COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 755 /usr/local/bin/entrypoint.sh
