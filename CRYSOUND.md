@@ -50,13 +50,13 @@
 - `Dockerfile`：每人容器的镜像。dsh 与 5 个插件按 `crysound/config/plugins.json` 固定版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；默认配置用共用的 `partner.patch.yml`，构建时把模型地址换成内部 magpie。
 - `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置（之后本人可在设置页改）。
 - `bin/partner-user`：给群外的人手工开通、列名单、用新镜像重建；`bin/upgrade-when-idle.sh <代号>` 等本人 10 分钟没操作再重建；`bin/upgrade-and-check.sh`、`bin/try-fresh.sh` 用于核对。
-- 名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`（默认 `/srv/xiaoman/zhaohua-partner`），钥匙在 `PARTNER_SECURE`，都不进仓库。
+- 部署参数（域名、飞书应用、试点群、数据目录）写在 `crysound/web/.env`，照 `.env.example` 填，不进仓库。名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`，钥匙在 `PARTNER_SECURE`。
 
 部署（在仓库 `main` 的检出里执行）：
 ```sh
 docker compose -f crysound/web/compose.yml --profile build build partner-image   # 新镜像
 docker compose -f crysound/web/compose.yml up -d --force-recreate gateway        # 网关改动（单文件挂载，必须重建才读到新文件）
-for s in $(PARTNER_DATA=/srv/xiaoman/zhaohua-partner crysound/web/bin/partner-user list | cut -d' ' -f1); do
+for s in $(crysound/web/bin/partner-user list | cut -d' ' -f1); do
   crysound/web/bin/upgrade-when-idle.sh "$s" &                                     # 每人空闲时换新镜像
 done
 ```

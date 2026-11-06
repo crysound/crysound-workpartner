@@ -1,6 +1,6 @@
 # 兆华工作伙伴：网关（按飞书身份路由到每人一个 dsh 容器）+ 每人容器所用镜像。
-# 每人容器由网关自助开通（或 bin/partner-user 手工建）；公网入口 partner.corp.crysound.com（网关自己做飞书登录，无 Cloudflare Access）→ 网关 127.0.0.1:3090。
-# 代码取自本仓库；名单、每人数据、下载文件在 PARTNER_DATA（默认 /srv/xiaoman/zhaohua-partner），钥匙在 PARTNER_SECURE，都不进仓库。
+# 每人容器由网关自助开通（或 bin/partner-user 手工建）；公网入口 PUBLIC_HOST（网关自己做飞书登录）→ 网关 127.0.0.1:3090。
+# 代码取自本仓库；部署参数写在本目录的 .env（照 .env.example 填，不进仓库）。名单、每人数据、下载文件在 PARTNER_DATA，钥匙在 PARTNER_SECURE。
 # 部署：docker compose -f crysound/web/compose.yml --profile build build partner-image && docker compose -f crysound/web/compose.yml up -d --force-recreate gateway
 name: zhaohua-partner
 services:
@@ -10,22 +10,22 @@ services:
     command: ["node", "/app/gateway.mjs"]
     restart: unless-stopped
     environment:
-      PUBLIC_HOST: ${PUBLIC_HOST:-partner.corp.crysound.com}
+      PUBLIC_HOST: ${PUBLIC_HOST:?在 .env 设置 PUBLIC_HOST}
       MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
-      HOST_PARTNER_DATA: ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}
-      HOST_PARTNER_SECURE: ${PARTNER_SECURE:-/srv/xiaoman/secure/zhaohua-partner}
-      FEISHU_APP_ID: cli_aa67a5b7fe38dc15
-      # 试用名单：飞书群“AI工作台”的成员可自助开通
-      PILOT_CHAT_ID: oc_a4b4b056d66a374e70f7b061b00e7454  # 飞书群“AI工作台”
+      HOST_PARTNER_DATA: ${PARTNER_DATA:?在 .env 设置 PARTNER_DATA}
+      HOST_PARTNER_SECURE: ${PARTNER_SECURE:?在 .env 设置 PARTNER_SECURE}
+      FEISHU_APP_ID: ${PARTNER_FEISHU_APP_ID:?在 .env 设置 PARTNER_FEISHU_APP_ID}
+      # 试用名单：这个飞书群的成员可自助开通
+      PILOT_CHAT_ID: ${PILOT_CHAT_ID:?在 .env 设置 PILOT_CHAT_ID}
       PARTNER_IMAGE: zhaohua-partner:0.2.2-rc.1
     volumes:
       - ./gateway/gateway.mjs:/app/gateway.mjs:ro
       - ./gateway/onboard.mjs:/app/onboard.mjs:ro
-      - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/users.json:/etc/partner/users.json
-      - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/users:/users
-      - ${PARTNER_SECURE:-/srv/xiaoman/secure/zhaohua-partner}:/secure
-      - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/gateway/state:/state
-      - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/downloads:/downloads:ro
+      - ${PARTNER_DATA}/users.json:/etc/partner/users.json
+      - ${PARTNER_DATA}/users:/users
+      - ${PARTNER_SECURE}:/secure
+      - ${PARTNER_DATA}/gateway/state:/state
+      - ${PARTNER_DATA}/downloads:/downloads:ro
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "127.0.0.1:3090:3090"

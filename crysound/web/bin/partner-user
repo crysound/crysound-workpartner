@@ -7,11 +7,21 @@ AI工作台群成员可在网页上自助开通，本命令只用于给群外的
 import json, os, re, subprocess, sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get('PARTNER_DATA', '/srv/xiaoman/zhaohua-partner'))
-SECURE = Path(os.environ.get('PARTNER_SECURE', '/srv/xiaoman/secure/zhaohua-partner'))
+# 部署参数与 compose 共用 crysound/web/.env；环境变量里已有的优先。
+ENV_FILE = Path(__file__).resolve().parent.parent / '.env'
+if ENV_FILE.exists():
+    for line in ENV_FILE.read_text().splitlines():
+        key, sep, value = line.partition('=')
+        if sep and not key.lstrip().startswith('#'):
+            os.environ.setdefault(key.strip(), value.strip())
+for key in ('PARTNER_DATA', 'PARTNER_SECURE'):
+    if not os.environ.get(key):
+        sys.exit(f'在 {ENV_FILE} 设置 {key}')
+ROOT = Path(os.environ['PARTNER_DATA'])
+SECURE = Path(os.environ['PARTNER_SECURE'])
 USERS = ROOT / 'users.json'
 IMAGE = os.environ.get('PARTNER_IMAGE', 'zhaohua-partner:0.2.2-rc.1')
-IA = '/srv/xiaoman/jstack/host/infisical/infisical-admin.py'
+IA = os.environ.get('INFISICAL_ADMIN', '')
 
 
 def sh(*a, **k):
@@ -37,8 +47,8 @@ def magpie_key(slug):
     if not key:
         sys.exit(f'magpie 没有返回钥匙：{name}')
     path.write_text(key[0]); path.chmod(0o400)
-    sh('python3', IA, 'put', 'xiaoman', '/zhaohua-partner', f'MAGPIE_KEY_{slug.upper().replace("-", "_")}',
-       '--comment', f'兆华工作伙伴 {slug} 容器的 magpie 网关钥匙', input=key[0])
+    if IA: sh('python3', IA, 'put', 'xiaoman', '/zhaohua-partner', f'MAGPIE_KEY_{slug.upper().replace("-", "_")}',
+              '--comment', f'兆华工作伙伴 {slug} 容器的 magpie 网关钥匙', input=key[0])
     kid = next(l.split()[0] for l in sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'list').stdout.splitlines() if f' {name} ' in l)
     sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'models', kid, 'codex/*', 'deepseek/*')
     return path
