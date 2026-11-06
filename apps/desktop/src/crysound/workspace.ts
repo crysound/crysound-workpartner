@@ -41,7 +41,8 @@ function run(command: string, args: readonly string[], environment: NodeJS.Proce
 
 /**
  * Install the company plugins that the profile does not record yet, patch them, enable the experimental
- * bundles once, seed defaults once, and refresh the company provider, market settings and publishing skill.
+ * bundles once, seed defaults once, and refresh company models, market settings and skills.
+ * Prepares user-only Feishu wrappers and the read-only pinned skills using packaged company resources.
  * Uses a complete gateway snapshot or the packaged fallback while the Host is stopped. A failed plugin
  * install is logged; invalid gateway settings, failed config refresh or a failed skill copy reject preparation.
  * @param options - Paths and environment of this run.
@@ -89,5 +90,17 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
       if (code !== 0) console.warn('CRYSOUND: market configuration failed; check the profile patch')
     }
     await cp(join(config.directory, 'skills', 'publish-zhaohua-market'), join(dirname(dirname(profile)), 'skills', 'publish-zhaohua-market'), { recursive: true })
+
+    const feishuPublic = await readJson(join(options.assets, 'config', 'public-host.json'))
+    let projectHost = typeof feishuPublic.MEEGLE_HOST === 'string' ? feishuPublic.MEEGLE_HOST : ''
+    if (options.environment.MAGPIE_API_KEY) {
+      try {
+        const response = await fetch(`${marketOrigin}/_zp/feishu/desktop-config`, { method: 'POST', redirect: 'error', headers: { authorization: `Bearer ${options.environment.MAGPIE_API_KEY}` }, signal: AbortSignal.timeout(8000) })
+        const remote: unknown = await response.json()
+        if (response.ok && typeof remote === 'object' && remote !== null && 'meegle_host' in remote && typeof remote.meegle_host === 'string') projectHost = remote.meegle_host
+      } catch { console.warn('CRYSOUND: project host refresh failed; using bundled public settings') }
+    }
+    const feishuCode = await run(execPath, [join(options.assets, 'feishu', 'desktop-setup.mjs'), join(userData, 'company'), join(userData, 'partner-session.json'), marketOrigin, execPath, join(profile, 'cordis.patch.yml'), projectHost], environment)
+    if (feishuCode !== 0) throw new Error('CRYSOUND: Feishu command and skill preparation failed')
   } finally { await config.dispose() }
 }

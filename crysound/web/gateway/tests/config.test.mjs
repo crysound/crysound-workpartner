@@ -11,7 +11,10 @@ const config = fileURLToPath(new URL("../../../config/", import.meta.url));
 const index = "http://zhaohua-partner-gateway:3090/_zp/market/index.json";
 function temp(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "zp-config-test-"));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => {
+    for (const e of fs.readdirSync(root, { recursive: true, withFileTypes: true })) if (e.isDirectory()) fs.chmodSync(path.join(e.parentPath, e.name), 0o755);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
   return root;
 }
 function run(script, args) {
@@ -126,12 +129,12 @@ test("切换公司域名后移除旧入口的令牌，其他注册表凭据保�
   assert.match(text, /other.test\/:_authToken=fake-other/);
 });
 
-test("桌面公共配置只打包 PUBLIC_HOST，运行时可覆盖，非法域名被拒绝", async (t) => {
+test("桌面公共配置只打包公共域名，运行时可覆盖，非法域名被拒绝", async (t) => {
   const { companyOrigin } = await import("../../../../apps/desktop/src/crysound/origin.ts");
   const root = temp(t), input = path.join(root, "fake.env"), output = path.join(root, "public-host.json");
-  fs.writeFileSync(input, 'PUBLIC_HOST="partner.example.test"\nUNRELATED_SECRET=fake-not-for-package\n');
+  fs.writeFileSync(input, 'PUBLIC_HOST="partner.example.test"\nMEEGLE_HOST=project.example.test\nUNRELATED_SECRET=fake-not-for-package\n');
   run(fileURLToPath(new URL("../../../scripts/configure-public-host.mjs", import.meta.url)), [input, output]);
-  assert.deepEqual(JSON.parse(fs.readFileSync(output, "utf8")), { PUBLIC_HOST: "partner.example.test" });
+  assert.deepEqual(JSON.parse(fs.readFileSync(output, "utf8")), { PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" });
   assert.equal(companyOrigin(root, {}), "https://partner.example.test");
   assert.equal(companyOrigin(root, { PUBLIC_HOST: "override.example.test" }), "https://override.example.test");
   for (const PUBLIC_HOST of ["", "https://host.test", "user@host.test", "host.test/path", "host.test?query"]) {
@@ -152,6 +155,8 @@ test("桌面工作区升级实际补齐索引和可发现技能，重复启动�
   for (const name of ["market-profile.mjs", "profile-upgrades.mjs", "partner.patch.yml"]) {
     fs.copyFileSync(path.join(config, name), path.join(assets, "config", name));
   }
+  fs.cpSync(fileURLToPath(new URL("../../../feishu/", import.meta.url)), path.join(assets, "feishu"), { recursive: true });
+  fs.writeFileSync(path.join(assets, "config/public-host.json"), JSON.stringify({ PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" }));
   const defaults = JSON.parse(fs.readFileSync(path.join(config, "plugins.json"))).defaultBundles;
   fs.writeFileSync(path.join(assets, "config/plugins.json"), JSON.stringify({ plugins: [], defaultBundles: defaults }));
   fs.writeFileSync(path.join(profile, "package.json"), "{}");

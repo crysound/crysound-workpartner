@@ -87,6 +87,7 @@ def container(slug, key):
     r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
            '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ['PUBLIC_HOST']}",
            '-e', f"MAGPIE_BASE_URL={os.environ['MAGPIE_BASE_URL']}",
+           '-e', f"MEEGLE_HOST={os.environ.get('MEEGLE_HOST', '')}",
            '--mount', f'type=bind,src={CONFIG},dst=/opt/partner-config,readonly',
            '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
            '--memory', '2g', '--cpus', '2', '--pids-limit', '512',

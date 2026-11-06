@@ -2,6 +2,13 @@ FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates python3 ripgrep iproute2 librsvg2-bin \
  && rm -rf /var/lib/apt/lists/* \
  && npm i -g @deepseek-ai/dsh@0.2.2-rc.1 pnpm@10 && npm cache clean --force
+# 飞书命令放独立前缀，PATH 上只暴露公司用户身份包装器。
+RUN npm install -g --prefix /opt/partner-clis @larksuite/cli@1.0.99 @lark-project/meegle@1.0.27 && npm cache clean --force
+COPY feishu/ /opt/partner/feishu/
+RUN node /opt/partner/feishu/setup.mjs > /opt/partner/feishu-skills-path \
+ && chmod a+r /opt/partner/feishu.json /opt/partner/feishu-skills-path \
+ && chmod -R a+rX /opt/partner/feishu /opt/partner/company /opt/partner-clis
+ENV LARKSUITE_CLI_STRICT_MODE=user CRYSOUND_FEISHU_CONFIG=/data/.zp-feishu-cli.json
 # 语音输入的识别模型（SenseVoice int8 + 静音检测）装进镜像，所有人共用这一份；地址与校验值取自 dsh 自带的模型清单。
 RUN set -e; a=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-experimental-speech-to-text-sensevoice/runtime/assets.json; \
  get() { mkdir -p "$1"; node -e 'const a=require(process.argv[1]);const x=process.argv[2].split(".").reduce((o,k)=>o[k],a);console.log(x.url,x.name,x.sha256)' "$a" "$2" \

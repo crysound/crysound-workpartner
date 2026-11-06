@@ -1,8 +1,9 @@
 /** CRYSOUND WorkPartner: company login and model gateway settings. */
 
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { delimiter, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, session } from 'electron'
 import { resolveDesktopPaths } from '../paths.ts'
@@ -119,6 +120,9 @@ export function openLoginWindow(): Promise<PartnerSession | undefined> {
  * @returns the session, or undefined when the user abandons the login.
  */
 export async function ensurePartnerSession(): Promise<PartnerSession | undefined> {
+  // Company settings navigation and its loopback page stay in company resources.
+  const settings: { installDesktopSettings: (options: { app: typeof app; BrowserWindow: typeof BrowserWindow; publicOrigin: string; configFile: string; identityFile: string; execPath: string }) => void } = await import(pathToFileURL(join(crysoundResources(), 'feishu', 'desktop.mjs')).href)
+  settings.installDesktopSettings({ app, BrowserWindow, publicOrigin: PARTNER_ORIGIN, configFile: join(app.getPath('userData'), 'company', 'feishu.json'), identityFile: tokenFile(), execPath: process.execPath })
   const stored = await readPartnerSession()
   if (stored !== undefined) {
     if (await tokenAccepted(stored.token)) {
@@ -132,7 +136,13 @@ export async function ensurePartnerSession(): Promise<PartnerSession | undefined
 
 /** Environment that points every model route of the Host at the company gateway. */
 export function partnerHostEnvironment(partner: PartnerSession): NodeJS.ProcessEnv {
+  const company = join(app.getPath('userData'), 'company')
+  const skillHash = createHash('sha256').update(readFileSync(join(crysoundResources(), 'feishu', 'official-skills.tar.gz'))).digest('hex').slice(0, 16)
   return {
+    PATH: `${join(company, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
+    CRYSOUND_FEISHU_CONFIG: join(company, 'feishu.json'),
+    CRYSOUND_COMPANY_SKILLS: join(company, `feishu-skills-${skillHash}`),
+    LARKSUITE_CLI_STRICT_MODE: 'user',
     MAGPIE_API_KEY: partner.token,
     DEEPSEEK_API_KEY: partner.token,
     DEEPSEEK_BASE_URL: LLM_BASE_URL,

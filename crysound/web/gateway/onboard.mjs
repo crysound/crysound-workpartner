@@ -90,7 +90,7 @@ async function container(docker, slug) {
   fs.mkdirSync(`/users/${slug}`, { recursive: true });
   fs.chownSync(`/users/${slug}`, DSH_UID, DSH_UID);
   const r = await docker("POST", `/containers/create?name=${name}`, {
-    Image: IMAGE, User: `${DSH_UID}:${DSH_UID}`, Env: [`PUBLIC_HOST=${PUBLIC_HOST}`, `MAGPIE_BASE_URL=${MAGPIE_BASE_URL}`], Labels: { "zhaohua-partner.user": slug },
+    Image: IMAGE, User: `${DSH_UID}:${DSH_UID}`, Env: [`PUBLIC_HOST=${PUBLIC_HOST}`, `MAGPIE_BASE_URL=${MAGPIE_BASE_URL}`, `MEEGLE_HOST=${process.env.MEEGLE_HOST || ""}`], Labels: { "zhaohua-partner.user": slug },
     HostConfig: {
       Binds: [`${HOST_USERS}/${slug}:/data`, `${HOST_SECURE}/magpie-${slug}.key:/etc/partner/magpie.key:ro`],
       Mounts: [{ Type: "bind", Source: HOST_CONFIG, Target: "/opt/partner-config", ReadOnly: true }],

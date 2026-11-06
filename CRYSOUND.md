@@ -72,6 +72,20 @@ done
 
 客户端安装包放公司 Cloudflare 账号的 R2 存储桶 `crysound-workpartner-downloads`（亚太位置，公开域名 `partner-dl.corp.crysound.com`，对象键带随机段）。在数据目录 `downloads/` 里放 `<文件名>.url`，内容是该对象的公开地址；下载页按文件名列出，点下载时跳到 R2。文件名含 `mac-arm64`、`mac-x64`、`win-x64` 才会出现在下载页上，不含的只能直链下载（用于测试包）。
 
+## 本人飞书与飞书项目（`crysound/feishu`）
+
+- 设置 → 飞书授权显示飞书和飞书项目两项连接状态。网页版管理云端授权；桌面版本机模式在独立公司窗口管理本机项目授权，飞书授权仍共享网关。本机没有 CLI 时提示固定版本安装方法。
+- 飞书只用本人身份。网关复用登录应用和回调，以独立的、绑定本人会话的一次性 state 区分连接流程；从应用权限接口筛选已授予的 user 权限并加入 offline_access，回调再核对 union_id。应用身份令牌只在网关读取应用权限元数据，不用于操作用户资源。
+- 长期凭证在网关状态目录的 `feishu/` 中按身份散列存放，目录 700、文件 600、原子改写。每分钟检查到期前五分钟的授权并刷新；领取、刷新和断开按人串行。撤销失败先停止领取，保留不可用的待撤销记录，后台重试；成功后删除。授权到期或被撤销时明确提示重新连接，不使用过期令牌。
+- 容器复用市场身份文件，向 partner-net 内未映射的 3091 端口领短期令牌；桌面版本机模式用已有登录文件向公网的受鉴权桌面入口领取。返回值只有 user_access_token、过期时间和公开应用编号。两个包装器不复制长期飞书凭证、不回退机器人身份、不自动加高风险确认参数。
+- 镜像在独立前缀固定安装 `@larksuite/cli@1.0.99`、`@lark-project/meegle@1.0.27`。项目走独立 Device Code，容器的 HOME 是个人数据卷；本机用自己的凭证存储。`MEEGLE_HOST` 来自部署配置，桌面启动时从网关更新。官方 CLI 的技能及参考资料和公司确认规则从同一固定归档装入只读公司目录，独立技能提供器保留个人技能和 AGENTS.md。
+
+部署前：负责人给现有飞书应用开通并发布所需用户权限，沿用现有回调；`.env` 设置 `FEISHU_USER_AUTH_ENABLED=1` 和 `MEEGLE_HOST`。重建 gateway、构建 partner-image，再让每人空闲时换镜像；桌面版下次正常打包带上。设 `FEISHU_USER_AUTH_ENABLED=0` 并重建网关可同时停用所有人的飞书令牌领取与刷新，仍能完成撤销。不要给 3091 增加端口映射或公网转发。
+
+轻量自查：在已有运行时镜像中按 `crysound/web/README.md` 的隔离方式运行，额外设置 `DSH_CLI_ENTRY=/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js`，测试文件为 `crysound/web/gateway/tests/feishu.test.mjs`、`crysound/feishu/tests.mjs`、`crysound/web/gateway/tests/config.test.mjs`、`crysound/web/gateway/tests/notifications.test.mjs` 和 `crysound/tests/company-config.test.mjs`；本机另跑 `node crysound/web/tests/compose-config.mjs`。全部使用假令牌和临时目录，无网络、限一核、512 MiB，不读取部署配置、安装依赖或构建镜像。设置页外观示例见 `crysound/feishu/settings-preview.png`（本机 HTTP 预览、假授权状态）。
+
+上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
+
 ## 公司维护的插件（`crysound/plugins/`）
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
 - 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；`crysound/config/plugins.json` 里该插件的 `spec` 与 `want` 都写这个地址（pnpm 按地址记录依赖，已装同一地址就跳过）。网页版同步服务器配置后空闲重启生效，桌面版启动时从网关刷新，断网用包内版本。

@@ -6,7 +6,7 @@ import http from "node:http";
 import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
 import { once } from "node:events";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, symlink } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, symlink, cp, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -30,7 +30,10 @@ const token = sign({ u: "fake-user", e: Date.now() / 1000 + 3600 });
 const auth = (req) => tokenUser(req, secret, [{ unionId: "fake-user", slug: "fake-user" }]);
 async function temp(t) {
   const root = await mkdtemp(join(tmpdir(), "partner-config-test-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
+  t.after(async () => {
+    for (const entry of await readdir(root, { recursive: true, withFileTypes: true })) if (entry.isDirectory()) await chmod(join(entry.parentPath, entry.name), 0o755);
+    await rm(root, { recursive: true, force: true });
+  });
   return root;
 }
 async function server(t, handler) {
@@ -122,6 +125,7 @@ test("desktop selects the gateway snapshot, otherwise the whole packaged snapsho
   const origin = await server(t, async (req, res) => {
     res.setHeader("content-type", "text/plain; charset=utf-8");
     assert.equal(req.headers.authorization, `Bearer ${token}`);
+    if (req.url === "/_zp/feishu/desktop-config") return res.end(JSON.stringify({ meegle_host: "project.example.test" }));
     const file = req.url.slice("/_zp/config/".length);
     if (failure && file === "partner.patch.yml") { res.writeHead(503); return res.end(); }
     res.end(file === "plugins.json" ? (invalid ? "{}" : JSON.stringify({ plugins: [], defaultBundles: [] })) : `remote ${file}`);
@@ -143,6 +147,8 @@ test("desktop startup applies the selected plugin version and provider, then fal
   const root = await temp(t), profile = join(root, "dsh/profiles/desktop"), userData = join(root, "userData");
   const packaged = join(root, "packaged"), config = join(packaged, "config"), fakeCli = join(root, "cli.cjs");
   await mkdir(profile, { recursive: true }); await mkdir(config, { recursive: true });
+  await cp(join(assets, "feishu"), join(packaged, "feishu"), { recursive: true });
+  await writeFile(join(config, "public-host.json"), JSON.stringify({ PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" }));
   // Exercise the real preparer and subprocess scripts; the fake installer only records the requested plugin.
   await symlink(resolve(runtime, "../../../../"), join(root, "node_modules"), "dir");
   await writeFile(join(profile, "package.json"), JSON.stringify({ dependencies: {} }));
@@ -153,6 +159,7 @@ test("desktop startup applies the selected plugin version and provider, then fal
   const origin = await server(t, async (req, res) => {
     res.setHeader("content-type", "text/plain; charset=utf-8");
     if (!online) { res.writeHead(503); return res.end(); }
+    if (req.url === "/_zp/feishu/desktop-config") return res.end(JSON.stringify({ meegle_host: "project.example.test" }));
     const file = req.url.slice("/_zp/config/".length);
     const text = await readFile(join(config, file), "utf8");
     res.end(file === "plugins.json" ? text.replaceAll('"1"', `"${version}"`).replace("fake-plugin@1", `fake-plugin@${version}`) : text.replaceAll("codex/gpt-6.1-sol", "codex/company-model"));

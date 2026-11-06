@@ -6,7 +6,9 @@ name: zhaohua-partner
 services:
   gateway:
     image: zhaohua-partner-gateway:market1
-    build: ./gateway
+    build:
+      context: ..
+      dockerfile: web/gateway/Dockerfile
     container_name: zhaohua-partner-gateway
     command: ["node", "/app/gateway.mjs"]
     depends_on: [verdaccio]
@@ -14,6 +16,8 @@ services:
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST:?在 .env 设置 PUBLIC_HOST}
       OLD_HOSTS: ${OLD_HOSTS:-}
+      FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
+      MEEGLE_HOST: ${MEEGLE_HOST:-}
       MARKET_ADMINS: ${MARKET_ADMINS:?在 .env 设置市场管理员（首期 Jason 的已开通 slug）}
       MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
       HOST_PARTNER_DATA: ${PARTNER_DATA:?在 .env 设置 PARTNER_DATA}
@@ -36,6 +40,8 @@ services:
           create_host_path: false
       - ./gateway/market.mjs:/app/market.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
+      - ./gateway/feishu.mjs:/app/feishu.mjs:ro
+      - ../feishu:/feishu:ro
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure
