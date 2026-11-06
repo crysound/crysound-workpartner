@@ -4,7 +4,7 @@
 
 ## 安装与环境
 
-当前仅支持网页版 Linux：Node ≥24.9、Chromium headless shell、ffmpeg、ffprobe 和 util-linux 的 flock。本包零 npm 运行时依赖，无 install 脚本。镜像通过 `OM_CHROME` 指向 SlideStudio 共用浏览器，复用已有 ffmpeg；无需下载第二份浏览器。包不加入默认插件清单，发布并批准后由测试账号在兆华市场安装，或通过 `dsh plugin --profile <profile> add @crysound/motion@0.1.0` 安装。Mac 本机运行模式本版未支持；桌面连接云端工作区可使用云端插件。
+当前仅支持网页版 Linux：Node ≥24.9、Chromium headless shell、ffmpeg、ffprobe 和 util-linux 的 flock。本包零 npm 运行时依赖，无 install 脚本。镜像通过 `OM_CHROME` 指向 SlideStudio 共用浏览器，复用已有 ffmpeg；无需下载第二份浏览器。包不加入默认插件清单，发布并批准后由测试账号在兆华市场安装，或通过 `dsh plugin --profile <profile> add @crysound/motion@0.1.1` 安装。Mac 本机运行模式本版未支持；桌面连接云端工作区可使用云端插件。
 
 安装后使用 `/crysound-motion`。技能载入时提供包内 Node/CLI 绝对路径，因此无需全局安装命令。直接调用示例（`<om入口>` 用技能给出的路径）：
 
@@ -24,6 +24,10 @@ node <om入口> render 产品片 --format gif --workers 2
 
 同一容器、同一用户一次只允许一个动效命令，第二项直接退出（75），不排无限队列。每次渲染默认且最多 2 个浏览器，ffmpeg 解码/编码线程为 2，过滤器为 1；片长不超过 30 秒、尺寸不超过 1920×1080 总像素且任一边不超过 1920（允许竖屏），fps 为 24/25/30。每项任务 5 分钟截止，先终止、1 秒后强制结束，返回 124。外层进程监督不受同步合成音乐阻塞；所有浏览器和编码进程留在该任务组，退出时停止残留进程并清临时目录。
 
+任务锁使用 Linux 共用的 `/tmp/crysound-motion-<uid>/job.lock`，不随每次调用的 `TMPDIR` 或 HOME 变化；目录仅本人可访问。系统临时目录不可写时退到当前工作区 `.crysound-motion/crysound-motion-<uid>/job.lock`，此时同一工作区内的命令共用锁，必须从同一工作区根目录调用。两处均不可用时显示中文错误并停止，不启动任务。锁文件保留以维持同一文件的互斥，进程退出后由系统释放锁。
+
+每项任务的临时目录建在锁目录内，结束后清理；浏览器配置、渲染临时帧和字体缓存均使用该临时目录，忽略外部传入的缓存目录。配乐历史保存在当前工作区 `.crysound-motion/soundtracks.jsonl`，忽略外部 `OM_HOME`；项目缓存、字体副本和输出仍留在项目内。用户目录和插件安装目录只读即可运行，不迁移旧版用户目录中的历史。
+
 这些限制避免无界任务，不是容器 CPU 配额，不能替代上线时核对容器 CPU 和渲染耗时。生成的 HTML 在浏览器执行本人编辑的脚本，按现有每人容器隔离，不是新的安全沙箱。不要载入不可信 HTML 或网络素材。子进程环境剔除含 KEY/SECRET/TOKEN/PASSWORD 的变量；项目和输出须留在当前工作区（检查已有祖先的真实路径）。
 
 不提供 studio/server、口播、采样构建、在线抓素材、上传分享等命令。`OM_SAMPLES` 强制为 off，配乐只使用合成器。插件不访问飞书身份或市场凭据。
@@ -32,9 +36,9 @@ node <om入口> render 产品片 --format gif --workers 2
 
 在包目录运行 `npm pack --dry-run --json` 核对内容，按工作伙伴内置的“发布到兆华市场”技能发布。必须使用现有 `CRYSOUND_MARKET_REGISTRY` 与 `CRYSOUND_NPM_USERCONFIG`；包内不指定注册表，不读取或复制凭据。版本不能覆盖。发布会触发管理员审批，批准后才出现在市场索引。本 PR 只准备可发布的包；伙伴助理负责发布、审批和测试安装。
 
-部署只需重建网页版镜像以加入 OM_CHROME 和 flock，然后先更新测试账号。无需新增服务或端口，无需改网关、默认插件清单或用户数据。不要在本机装依赖、建镜像或运行完整上游测试；`node scripts/verify.mjs` 与 `node --test tests/*.test.mjs` 是轻量检查。真实短片冒烟脚本 `node scripts/smoke.mjs` 只生成 2 秒、320×180 的测试视频和 GIF，另截图公司模板的四个关键帧，并核对过长时间线被拒绝；`OM_CHROME` 必须指向已存在浏览器，不下载。
+首次部署需要镜像已有 OM_CHROME 和 flock。0.1.1 修复默认工作区权限下的首次运行；已有 0.1.0 环境无需重建镜像，由同一发布账号发布、审批并安装 0.1.1 后重新验收。无需新增服务或端口，无需改网关、默认插件清单或用户数据。不要在本机装依赖、建镜像或运行完整上游测试；`node scripts/verify.mjs` 与 `node --test tests/*.test.mjs` 是轻量检查。真实短片冒烟脚本 `node scripts/smoke.mjs` 只生成 2 秒、320×180 的测试视频和 GIF，另截图公司模板的四个关键帧，并核对过长时间线被拒绝；`OM_CHROME` 必须指向已存在浏览器，不下载。
 
-设置 `OM_CHROME` 后，行为测试还会用真实浏览器验证先单帧后多帧、先多帧后单帧、默认第 0 秒与显式输出文件不覆盖；未设置时跳过这两条浏览器用例。
+Linux 行为测试使用 Python 3 和 Landlock ABI ≥3 实施文件写入限制，验证 HOME 只读、系统临时目录可写与只读、两处均不可写、跨工作区及不同 TMPDIR 的真实命令互斥和取消后恢复；不会更改本人 HOME 权限。设置 `OM_CHROME` 后，行为测试还会用真实浏览器验证先单帧后多帧、先多帧后单帧、默认第 0 秒与显式输出文件不覆盖；未设置时跳过这两条浏览器用例。
 
 ## 后续离线模型与采样预置
 
