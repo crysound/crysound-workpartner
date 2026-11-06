@@ -159,7 +159,7 @@ export function createElectronBuilderConfig(
       { from: buildPaths.runtime, to: 'runtime' },
       { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
       // CRYSOUND: brand layer, default configuration, plugin list, Host hook.
-      { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'host-hook.mjs'] },
+      { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'feishu/**/*', 'host-hook.mjs'] },
       ...(packagesMacOS ? [{ from: fileURLToPath(new URL('../../../crysound/macos/zh_CN.lproj', import.meta.url)), to: 'zh_CN.lproj' }] : []),
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),

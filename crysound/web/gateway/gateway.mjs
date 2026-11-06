@@ -9,6 +9,9 @@ import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmi
 
 import { issueToken, tokenUser, writeContainerToken } from "./market-auth.mjs";
 import { createMarket } from "./market.mjs";
+import { createFeishu } from "./feishu.mjs";
+import { createSettingsHandler } from "../../feishu/settings.mjs";
+import { createContainerProject } from "../../feishu/container-project.mjs";
 
 const PORT = 3090;
 const PUBLIC_HOST = process.env.PUBLIC_HOST;
@@ -85,6 +88,34 @@ const market = createMarket({
   notify: notifyMarketAdmins,
   internalOrigin: "http://zhaohua-partner-gateway:3090",
 });
+
+const feishu = createFeishu({
+  stateDir: "/state/feishu", appId: process.env.FEISHU_APP_ID,
+  secret: () => fs.readFileSync("/secure/feishu-app.secret", "utf8").trim(),
+  publicOrigin: `https://${PUBLIC_HOST}`, enabled: () => process.env.FEISHU_USER_AUTH_ENABLED === "1",
+  authenticate: desktopUser, sessionUser: (req) => userFor(req).user, readUsers: users, projectHost: process.env.MEEGLE_HOST || "",
+});
+const feishuSettings = createSettingsHandler({
+  basePath: "/_zp/feishu/", origin: `https://${PUBLIC_HOST}`, identify: (req) => userFor(req).user,
+  status: (user) => feishu.status(user.unionId), disconnect: (user) => feishu.disconnect(user.unionId),
+  project: createContainerProject(), connectUrl: `https://${PUBLIC_HOST}/_zp/feishu/connect`,
+});
+// 此端口不映射到宿主机，也不经公网网关路由，容器仍须通过 tokenUser 鉴权。
+const feishuInternal = http.createServer(async (req, res) => {
+  if (req.url === "/token") return feishu.token(req, res);
+  res.writeHead(404); res.end();
+});
+feishuInternal.listen(3091, "0.0.0.0");
+let maintaining = false;
+const maintainFeishu = async () => {
+  if (maintaining) return;
+  maintaining = true;
+  try { await feishu.maintain(); } catch (error) { console.warn("飞书授权维护未完成，将在下次重试"); }
+  finally { maintaining = false; }
+};
+const feishuTimer = setInterval(maintainFeishu, 60000);
+feishuTimer.unref();
+void maintainFeishu();
 
 // 桌面版的模型请求：核对通行证，换成本人的 magpie 钥匙，原样流式转给 magpie。
 function proxyModel(req, res, user, path) {
@@ -311,6 +342,10 @@ const server = http.createServer(async (req, res) => {
     const host = String(req.headers.host || "").toLowerCase();
     const oldHost = OLD_HOSTS.includes(host);
     if (oldHost && !servedOnOldHost(url)) return redirect(res, `https://${PUBLIC_HOST}${req.url}`);
+    if (url.pathname === "/_zp/feishu") return redirect(res, "/_zp/feishu/");
+    if (await feishu.handle(req, res, url)) return;
+    if (url.pathname.startsWith("/_zp/feishu/") && !userFor(req).user) return redirect(res, "/_zp/login?next=%2F_zp%2Ffeishu%2F");
+    if (await feishuSettings(req, res, url)) return;
     if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
     if (url.pathname.startsWith("/_zp/config/")) return await serveCompanyConfig(req, res, url.pathname, desktopUser);
