@@ -1,0 +1,3128 @@
+{
+  "scope": "Synthetic memory trials only. Main-model calls exclude title generation and palace background summaries. Token fields are host-reported, not billing measurements. Character counts are Unicode code points (not JS UTF-16 or tokens).",
+  "sessions": [
+    {
+      "session": "session-ff63d72a-4355-4876-963a-021988fa9162",
+      "createdAt": 1794003879419,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11664,
+            "outputTokens": 48,
+            "totalTokens": 11712
+          }
+        },
+        {
+          "seq": 21,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 237,
+            "outputTokens": 43,
+            "totalTokens": 11800,
+            "cacheReadTokens": 11520
+          }
+        },
+        {
+          "seq": 28,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11975,
+            "outputTokens": 63,
+            "totalTokens": 12038
+          }
+        },
+        {
+          "seq": 35,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 12299,
+            "outputTokens": 594,
+            "totalTokens": 12893
+          }
+        },
+        {
+          "seq": 43,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 122,
+            "outputTokens": 43,
+            "totalTokens": 12965,
+            "cacheReadTokens": 12800
+          }
+        },
+        {
+          "seq": 48,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 330,
+            "outputTokens": 78,
+            "totalTokens": 13208,
+            "cacheReadTokens": 12800
+          }
+        },
+        {
+          "seq": 55,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 13398,
+            "outputTokens": 64,
+            "totalTokens": 13462
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 17,
+          "turn": 1,
+          "callId": "call_a6252b3979854d4fb26a3d153a3601f2",
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 22,
+          "turn": 1,
+          "callId": "call_1bff5394c45f4549a9e0723ef7189d54",
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户长期负责声学校准工作。",
+            "kind": "identity",
+            "revision": 0,
+            "title": "声学校准工作"
+          }
+        },
+        {
+          "seq": 29,
+          "turn": 1,
+          "callId": "call_1497a6278e024d00aa2daf63a1f2d052",
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户平时工作报告一直用表格呈现，希望以后回答其工作问题时优先采用表格。",
+            "kind": "preference",
+            "revision": 1,
+            "title": "工作问题用表格呈现"
+          }
+        },
+        {
+          "seq": 44,
+          "turn": 2,
+          "callId": "call_be4a0e91e19a40dc8620119242aeaad7",
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 49,
+          "turn": 2,
+          "callId": "call_f6bb4829831740ceb2ca3ab2af2df906",
+          "name": "crysound_memory_save",
+          "arguments": {
+            "content": "用户希望以后工作报告及工作问题的回答默认用要点列表呈现，不再默认使用表格。",
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "revision": 2,
+            "title": "报告格式用要点列表"
+          }
+        }
+      ],
+      "memoryResults": [
+        {
+          "seq": 18,
+          "callId": "call_a6252b3979854d4fb26a3d153a3601f2",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "个人记忆操作完成。"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":0,\"enabled\":true,\"facts\":[],\"usage\":{\"count\":0,\"chars\":40,\"nearCapacity\":false}}"
+        },
+        {
+          "seq": 23,
+          "callId": "call_1bff5394c45f4549a9e0723ef7189d54",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "已记住：声学校准工作（可在 设置 › 个人记忆 中查看或删除）"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":1,\"enabled\":true,\"facts\":[{\"id\":\"fd1c2eabf01df4a1393154c6\",\"kind\":\"identity\",\"title\":\"声学校准工作\",\"content\":\"用户长期负责声学校准工作。\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":1,\"chars\":161,\"nearCapacity\":false},\"message\":\"已记住：声学校准工作（可在 设置 › 个人记忆 中查看或删除）\"}"
+        },
+        {
+          "seq": 30,
+          "callId": "call_1497a6278e024d00aa2daf63a1f2d052",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "已记住：工作问题用表格呈现（可在 设置 › 个人记忆 中查看或删除）"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":2,\"enabled\":true,\"facts\":[{\"id\":\"fd1c2eabf01df4a1393154c6\",\"kind\":\"identity\",\"title\":\"声学校准工作\",\"content\":\"用户长期负责声学校准工作。\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f3e207e499ab329262f3b777\",\"kind\":\"preference\",\"title\":\"工作问题用表格呈现\",\"content\":\"用户平时工作报告一直用表格呈现，希望以后回答其工作问题时优先采用表格。\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":2,\"chars\":310,\"nearCapacity\":false},\"message\":\"已记住：工作问题用表格呈现（可在 设置 › 个人记忆 中查看或删除）\"}"
+        },
+        {
+          "seq": 45,
+          "callId": "call_be4a0e91e19a40dc8620119242aeaad7",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "个人记忆操作完成。"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":2,\"enabled\":true,\"facts\":[{\"id\":\"fd1c2eabf01df4a1393154c6\",\"kind\":\"identity\",\"title\":\"声学校准工作\",\"content\":\"用户长期负责声学校准工作。\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f3e207e499ab329262f3b777\",\"kind\":\"preference\",\"title\":\"工作问题用表格呈现\",\"content\":\"用户平时工作报告一直用表格呈现，希望以后回答其工作问题时优先采用表格。\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":2,\"chars\":310,\"nearCapacity\":false}}"
+        },
+        {
+          "seq": 50,
+          "callId": "call_f6bb4829831740ceb2ca3ab2af2df906",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "已记住：报告格式用要点列表（可在 设置 › 个人记忆 中查看或删除）"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":3,\"enabled\":true,\"facts\":[{\"id\":\"fd1c2eabf01df4a1393154c6\",\"kind\":\"identity\",\"title\":\"声学校准工作\",\"content\":\"用户长期负责声学校准工作。\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f3e207e499ab329262f3b777\",\"kind\":\"preference\",\"title\":\"报告格式用要点列表\",\"content\":\"用户希望以后工作报告及工作问题的回答默认用要点列表呈现，不再默认使用表格。\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":2,\"chars\":312,\"nearCapacity\":false},\"message\":\"已记住：报告格式用要点列表（可在 设置 › 个人记忆 中查看或删除）\"}"
+        }
+      ],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "我长期负责声学校准，平时工作报告一直用表格呈现，以后回答我的工作问题请按这个习惯。你能帮我做什么？"
+        },
+        {
+          "seq": 42,
+          "text": "以后报告改用要点列表，不再默认表格。请更新我原来的报告格式偏好。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "我会记住你长期负责声学校准，以及工作问题优先用表格呈现的习惯。\n"
+        },
+        {
+          "seq": 21,
+          "text": ""
+        },
+        {
+          "seq": 28,
+          "text": ""
+        },
+        {
+          "seq": 35,
+          "text": "已记住：你长期负责**声学校准工作**，以后回答你的工作问题，我会**优先用表格呈现**，必要时补充公式、计算过程和说明。你可以在「设置 › 个人记忆」中查看或删除。\n\n结合你的工作，我可以协助以下事项：\n\n| 工作场景 | 我可以帮你做什么 | 可交付的结果 |\n|---|---|---|\n| 校准方案与操作规程 | 根据仪器类型、适用规程和实验室条件，整理校准项目、步骤、环境要求及注意事项 | 校准方案、作业指导书、操作检查表 |\n| 校准数据处理 | 处理声压级、频率、灵敏度等数据，计算偏差、修正值、重复性，检查单位与异常值 | 数据汇总表、计算公式、Excel计算模板 |\n| 测量不确定度评定 | 梳理测量模型和不确定度来源，核对分布、包含因子、灵敏系数及合成过程 | 不确定度预算表、评定说明 |\n| 报告与证书审核 | 核对数据一致性、有效数字、单位、溯源信息及结论表述 | 审核问题清单、修改建议表 |\n| 标准与规程解读 | 对照你提供的标准或可查证版本，提取适用范围、技术要求和方法差异 | 条款对照表、新旧版差异表 |\n| 设备与量值溯源管理 | 整理参考标准器、工作标准器、校准周期、证书信息和溯源关系 | 设备台账、周期计划表、溯源关系表 |\n| 期间核查与质量监控 | 协助设计核查项目、统计方法和判定规则，分析漂移趋势 | 期间核查方案、趋势图、异常分析表 |\n| 异常排查 | 根据现象梳理传声器、声校准器、耦合腔、环境及设置等可能因素 | 排查步骤表、原因分析与验证建议 |\n| 日常报告与培训 | 将原始记录、问题描述或技术材料整理为易审核的内容 | 工作汇报表、培训提纲、技术问答 |\n\n涉及具体标准条款、允差或符合性结论时，我会注明依据，并把需要核实的条件列出来；数据计算也会写清输入、单位和假设，方便你复核。\n\n你可以直接给我一项实际任务，例如：**“帮我把这组声校准器测量数据整理成结果表，并列出不确定度预算。”**"
+        },
+        {
+          "seq": 43,
+          "text": "我会更新原来的格式偏好，以后报告默认用要点列表呈现。\n"
+        },
+        {
+          "seq": 48,
+          "text": ""
+        },
+        {
+          "seq": 55,
+          "text": "已更新原来的报告格式偏好：以后工作报告及工作问题的回答，**默认用要点列表呈现，不再默认使用表格**。\n\n已记住：报告格式用要点列表（可在「设置 › 个人记忆」中查看或删除）。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 40,
+          "snapshot": {
+            "revision": 0,
+            "enabled": true,
+            "facts": []
+          }
+        },
+        {
+          "seq": 26,
+          "source": "crysound-memory",
+          "chars": 161,
+          "snapshot": {
+            "revision": 1,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 33,
+          "source": "crysound-memory",
+          "chars": 310,
+          "snapshot": {
+            "revision": 2,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f3e207e499ab329262f3b777",
+                "kind": "preference",
+                "title": "工作问题用表格呈现",
+                "content": "用户平时工作报告一直用表格呈现，希望以后回答其工作问题时优先采用表格。",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 53,
+          "source": "crysound-memory",
+          "chars": 312,
+          "snapshot": {
+            "revision": 3,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f3e207e499ab329262f3b777",
+                "kind": "preference",
+                "title": "报告格式用要点列表",
+                "content": "用户希望以后工作报告及工作问题的回答默认用要点列表呈现，不再默认使用表格。",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-49f942be-71fd-43f0-9dea-44734295acfe",
+      "createdAt": 1794003918998,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11770,
+            "outputTokens": 27,
+            "totalTokens": 11797
+          }
+        },
+        {
+          "seq": 24,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 175,
+            "outputTokens": 26,
+            "totalTokens": 11849,
+            "cacheReadTokens": 11648
+          }
+        }
+      ],
+      "memoryTools": [],
+      "memoryResults": [],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "这次对话别记。我以后的工作会议固定安排在周三下午。请简单确认。"
+        },
+        {
+          "seq": 23,
+          "text": "还有一个长期习惯：我所有评审材料都先列风险。请简单确认。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "好的，你以后的工作会议固定安排在周三下午。本次对话不保存到个人记忆。"
+        },
+        {
+          "seq": 24,
+          "text": "好的，你所有评审材料都先列风险。本次对话仍不保存到个人记忆。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 312,
+          "snapshot": {
+            "revision": 3,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f3e207e499ab329262f3b777",
+                "kind": "preference",
+                "title": "报告格式用要点列表",
+                "content": "用户希望以后工作报告及工作问题的回答默认用要点列表呈现，不再默认使用表格。",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-5d8f1758-39ec-48d1-bf7c-46b8c033a269",
+      "createdAt": 1794004000049,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11797,
+            "outputTokens": 26,
+            "totalTokens": 11823
+          }
+        }
+      ],
+      "memoryTools": [],
+      "memoryResults": [],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "我长期负责什么工作？报告默认用什么形式？只回答你记得的内容。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "你长期负责声学校准工作。工作报告默认采用编号清单，并先说明适用范围。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 402,
+          "snapshot": {
+            "revision": 5,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f3e207e499ab329262f3b777",
+                "kind": "preference",
+                "title": "报告格式",
+                "content": "工作报告默认采用编号清单",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "b007dfc1da36bc50b26d9f1d",
+                "kind": "preference",
+                "title": "页面添加偏好",
+                "content": "报告先说明适用范围",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-8b9fc75e-6dac-4c04-8439-3d85ac40f60e",
+      "createdAt": 1794004023257,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11097,
+            "outputTokens": 25,
+            "totalTokens": 11122
+          }
+        }
+      ],
+      "memoryTools": [],
+      "memoryResults": [],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "我长期负责什么工作？报告默认用什么形式？只回答你记得的内容。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "我目前不记得你长期负责什么工作，也不记得你的报告默认采用什么形式。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory-disabled",
+          "snapshot": {
+            "enabled": false,
+            "facts": []
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-8f0a4be0-de27-4ab9-bb63-e35ca961d488",
+      "createdAt": 1794004040423,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 11801,
+            "outputTokens": 40,
+            "totalTokens": 11841
+          }
+        }
+      ],
+      "memoryTools": [],
+      "memoryResults": [],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 402,
+          "snapshot": {
+            "revision": 7,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "fd1c2eabf01df4a1393154c6",
+                "kind": "identity",
+                "title": "声学校准工作",
+                "content": "用户长期负责声学校准工作。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f3e207e499ab329262f3b777",
+                "kind": "preference",
+                "title": "报告格式",
+                "content": "工作报告默认采用编号清单",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "b007dfc1da36bc50b26d9f1d",
+                "kind": "preference",
+                "title": "页面添加偏好",
+                "content": "报告先说明适用范围",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "session": "session-44b3b933-d96d-4631-986f-b54d3606bcfa",
+      "createdAt": 1794004114838,
+      "modelCalls": [
+        {
+          "seq": 16,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 13850,
+            "outputTokens": 38,
+            "totalTokens": 13888
+          }
+        },
+        {
+          "seq": 21,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 2442,
+            "outputTokens": 156,
+            "totalTokens": 16294,
+            "cacheReadTokens": 13696
+          }
+        },
+        {
+          "seq": 29,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 202,
+            "outputTokens": 51,
+            "totalTokens": 16381,
+            "cacheReadTokens": 16128
+          }
+        },
+        {
+          "seq": 34,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 2375,
+            "outputTokens": 120,
+            "totalTokens": 18751,
+            "cacheReadTokens": 16256
+          }
+        },
+        {
+          "seq": 41,
+          "provider": "magpie",
+          "model": "codex/gpt-6.1-sol",
+          "usage": {
+            "inputTokens": 21057,
+            "outputTokens": 66,
+            "totalTokens": 21123
+          }
+        }
+      ],
+      "memoryTools": [
+        {
+          "seq": 17,
+          "turn": 1,
+          "callId": "call_1e1dc952ed6847bd9353544a55174ba7",
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 30,
+          "turn": 2,
+          "callId": "call_925f430fbc624103b996135ebb13140a",
+          "name": "crysound_memory_list",
+          "arguments": {}
+        },
+        {
+          "seq": 35,
+          "turn": 2,
+          "callId": "call_9e8096d9df7e48dc9d45e93e4edbd0a7",
+          "name": "crysound_memory_save",
+          "arguments": {
+            "confirmed": true,
+            "content": "我常用的校准设备型号是 ZX-7。",
+            "kind": "preference",
+            "removeIds": [
+              "7a3c3472a3b15c7e3784d085"
+            ],
+            "revision": 58,
+            "title": "常用校准设备",
+            "updates": [
+              {
+                "content": "回答和书写均使用简体中文。",
+                "id": "a3dd249f56d7436429f5ad28",
+                "kind": "preference",
+                "title": "回答语言"
+              }
+            ]
+          }
+        }
+      ],
+      "memoryResults": [
+        {
+          "seq": 18,
+          "callId": "call_1e1dc952ed6847bd9353544a55174ba7",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "个人记忆操作完成。"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":58,\"enabled\":true,\"facts\":[{\"id\":\"a3dd249f56d7436429f5ad28\",\"kind\":\"preference\",\"title\":\"回答语言\",\"content\":\"简体中文\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7a3c3472a3b15c7e3784d085\",\"kind\":\"preference\",\"title\":\"书写语言\",\"content\":\"简体中文\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f0ac6009f94d752ee9a670ad\",\"kind\":\"preference\",\"title\":\"偏好3\",\"content\":\"设定3\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"5d9f9880f9ec6cb0a7b79eb7\",\"kind\":\"preference\",\"title\":\"偏好4\",\"content\":\"设定4\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3fc021157ec74aadf58cdaff\",\"kind\":\"preference\",\"title\":\"偏好5\",\"content\":\"设定5\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4474bb91fc0f10ac5f8d1fa6\",\"kind\":\"preference\",\"title\":\"偏好6\",\"content\":\"设定6\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3000e3ed99b05cf9cda08dc6\",\"kind\":\"preference\",\"title\":\"偏好7\",\"content\":\"设定7\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7392324afcbcb3b890641b8a\",\"kind\":\"preference\",\"title\":\"偏好8\",\"content\":\"设定8\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"31b5d22feac551ddb07af90d\",\"kind\":\"preference\",\"title\":\"偏好9\",\"content\":\"设定9\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"ecceb71826b379b6c837821e\",\"kind\":\"preference\",\"title\":\"偏好10\",\"content\":\"设定10\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1efcb1e958c790c9b7af0482\",\"kind\":\"preference\",\"title\":\"偏好11\",\"content\":\"设定11\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4fd567e4fe8e0b22d7cedb33\",\"kind\":\"preference\",\"title\":\"偏好12\",\"content\":\"设定12\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c84e4e7922f3f8109569e1a1\",\"kind\":\"preference\",\"title\":\"偏好13\",\"content\":\"设定13\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3c40916038bdf5b88fb68197\",\"kind\":\"preference\",\"title\":\"偏好14\",\"content\":\"设定14\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4a16327fd5a9f0a460044fea\",\"kind\":\"preference\",\"title\":\"偏好15\",\"content\":\"设定15\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"93928a0ece989710b734f9cb\",\"kind\":\"preference\",\"title\":\"偏好16\",\"content\":\"设定16\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"451adf87bc7d269a1396dfcf\",\"kind\":\"preference\",\"title\":\"偏好17\",\"content\":\"设定17\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"106f38e3edc10595b8377e02\",\"kind\":\"preference\",\"title\":\"偏好18\",\"content\":\"设定18\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4794cca346ffd7b6963e20dc\",\"kind\":\"preference\",\"title\":\"偏好19\",\"content\":\"设定19\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"b60cb343f99008fd6d1af66e\",\"kind\":\"preference\",\"title\":\"偏好20\",\"content\":\"设定20\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"645f10923394f162ce382637\",\"kind\":\"preference\",\"title\":\"偏好21\",\"content\":\"设定21\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6b0c9ceb58e468de2903a6c0\",\"kind\":\"preference\",\"title\":\"偏好22\",\"content\":\"设定22\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1bf0ec483b30f90609d39089\",\"kind\":\"preference\",\"title\":\"偏好23\",\"content\":\"设定23\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"130cdda0bf97194275df91a5\",\"kind\":\"preference\",\"title\":\"偏好24\",\"content\":\"设定24\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c7555ad1050131cae5dcdcb3\",\"kind\":\"preference\",\"title\":\"偏好25\",\"content\":\"设定25\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0485001fd2f8204df1608c4a\",\"kind\":\"preference\",\"title\":\"偏好26\",\"content\":\"设定26\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"537b734bc694d3e624f63477\",\"kind\":\"preference\",\"title\":\"偏好27\",\"content\":\"设定27\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"84fbf2ec58194e718b1ec636\",\"kind\":\"preference\",\"title\":\"偏好28\",\"content\":\"设定28\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"125fdcf834cc80a0314bcb21\",\"kind\":\"preference\",\"title\":\"偏好29\",\"content\":\"设定29\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2dd579b0245dd3df9217b627\",\"kind\":\"preference\",\"title\":\"偏好30\",\"content\":\"设定30\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"64afc503d85d7bdda1ec3cda\",\"kind\":\"preference\",\"title\":\"偏好31\",\"content\":\"设定31\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"e3fe6d94f246ec2cfabb35d7\",\"kind\":\"preference\",\"title\":\"偏好32\",\"content\":\"设定32\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"d62159349a04deab9ec43c1c\",\"kind\":\"preference\",\"title\":\"偏好33\",\"content\":\"设定33\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f2d0668d25b9dd88d172b8cd\",\"kind\":\"preference\",\"title\":\"偏好34\",\"content\":\"设定34\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"aa83e42d6f0759279dfc8077\",\"kind\":\"preference\",\"title\":\"偏好35\",\"content\":\"设定35\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6a90c96954963ce6c9b9d6f4\",\"kind\":\"preference\",\"title\":\"偏好36\",\"content\":\"设定36\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"82f82f983e4a97ad327f990c\",\"kind\":\"preference\",\"title\":\"偏好37\",\"content\":\"设定37\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2187e22a21df1d75c4071919\",\"kind\":\"preference\",\"title\":\"偏好38\",\"content\":\"设定38\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"24513ba6cbf51eaa91a0adbe\",\"kind\":\"preference\",\"title\":\"偏好39\",\"content\":\"设定39\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"331827f735aaae91856ada69\",\"kind\":\"preference\",\"title\":\"偏好40\",\"content\":\"设定40\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"a5be4c1eecd476247269f9a5\",\"kind\":\"preference\",\"title\":\"偏好41\",\"content\":\"设定41\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0b12c0165764eeadea022642\",\"kind\":\"preference\",\"title\":\"偏好42\",\"content\":\"设定42\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3192ed56cc909c9a38d6cbb3\",\"kind\":\"preference\",\"title\":\"偏好43\",\"content\":\"设定43\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"341d4ad1496ab6b5f0c127a0\",\"kind\":\"preference\",\"title\":\"偏好44\",\"content\":\"设定44\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f32b8921cbf0de5a577f7ab7\",\"kind\":\"preference\",\"title\":\"偏好45\",\"content\":\"设定45\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"90e7f88dd0850d8a200f3fe2\",\"kind\":\"preference\",\"title\":\"偏好46\",\"content\":\"设定46\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"cf1458605849ff60abc12d98\",\"kind\":\"preference\",\"title\":\"偏好47\",\"content\":\"设定47\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7b54e60b6b86c19098848fce\",\"kind\":\"preference\",\"title\":\"偏好48\",\"content\":\"设定48\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4bed3d3319060f3b119e1cae\",\"kind\":\"preference\",\"title\":\"偏好49\",\"content\":\"设定49\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f53a5b0814e10ded20d3c0c1\",\"kind\":\"preference\",\"title\":\"偏好50\",\"content\":\"设定50\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":50,\"chars\":5676,\"nearCapacity\":true}}"
+        },
+        {
+          "seq": 31,
+          "callId": "call_925f430fbc624103b996135ebb13140a",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "个人记忆操作完成。"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":58,\"enabled\":true,\"facts\":[{\"id\":\"a3dd249f56d7436429f5ad28\",\"kind\":\"preference\",\"title\":\"回答语言\",\"content\":\"简体中文\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7a3c3472a3b15c7e3784d085\",\"kind\":\"preference\",\"title\":\"书写语言\",\"content\":\"简体中文\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f0ac6009f94d752ee9a670ad\",\"kind\":\"preference\",\"title\":\"偏好3\",\"content\":\"设定3\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"5d9f9880f9ec6cb0a7b79eb7\",\"kind\":\"preference\",\"title\":\"偏好4\",\"content\":\"设定4\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3fc021157ec74aadf58cdaff\",\"kind\":\"preference\",\"title\":\"偏好5\",\"content\":\"设定5\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4474bb91fc0f10ac5f8d1fa6\",\"kind\":\"preference\",\"title\":\"偏好6\",\"content\":\"设定6\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3000e3ed99b05cf9cda08dc6\",\"kind\":\"preference\",\"title\":\"偏好7\",\"content\":\"设定7\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7392324afcbcb3b890641b8a\",\"kind\":\"preference\",\"title\":\"偏好8\",\"content\":\"设定8\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"31b5d22feac551ddb07af90d\",\"kind\":\"preference\",\"title\":\"偏好9\",\"content\":\"设定9\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"ecceb71826b379b6c837821e\",\"kind\":\"preference\",\"title\":\"偏好10\",\"content\":\"设定10\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1efcb1e958c790c9b7af0482\",\"kind\":\"preference\",\"title\":\"偏好11\",\"content\":\"设定11\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4fd567e4fe8e0b22d7cedb33\",\"kind\":\"preference\",\"title\":\"偏好12\",\"content\":\"设定12\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c84e4e7922f3f8109569e1a1\",\"kind\":\"preference\",\"title\":\"偏好13\",\"content\":\"设定13\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3c40916038bdf5b88fb68197\",\"kind\":\"preference\",\"title\":\"偏好14\",\"content\":\"设定14\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4a16327fd5a9f0a460044fea\",\"kind\":\"preference\",\"title\":\"偏好15\",\"content\":\"设定15\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"93928a0ece989710b734f9cb\",\"kind\":\"preference\",\"title\":\"偏好16\",\"content\":\"设定16\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"451adf87bc7d269a1396dfcf\",\"kind\":\"preference\",\"title\":\"偏好17\",\"content\":\"设定17\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"106f38e3edc10595b8377e02\",\"kind\":\"preference\",\"title\":\"偏好18\",\"content\":\"设定18\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4794cca346ffd7b6963e20dc\",\"kind\":\"preference\",\"title\":\"偏好19\",\"content\":\"设定19\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"b60cb343f99008fd6d1af66e\",\"kind\":\"preference\",\"title\":\"偏好20\",\"content\":\"设定20\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"645f10923394f162ce382637\",\"kind\":\"preference\",\"title\":\"偏好21\",\"content\":\"设定21\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6b0c9ceb58e468de2903a6c0\",\"kind\":\"preference\",\"title\":\"偏好22\",\"content\":\"设定22\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1bf0ec483b30f90609d39089\",\"kind\":\"preference\",\"title\":\"偏好23\",\"content\":\"设定23\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"130cdda0bf97194275df91a5\",\"kind\":\"preference\",\"title\":\"偏好24\",\"content\":\"设定24\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c7555ad1050131cae5dcdcb3\",\"kind\":\"preference\",\"title\":\"偏好25\",\"content\":\"设定25\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0485001fd2f8204df1608c4a\",\"kind\":\"preference\",\"title\":\"偏好26\",\"content\":\"设定26\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"537b734bc694d3e624f63477\",\"kind\":\"preference\",\"title\":\"偏好27\",\"content\":\"设定27\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"84fbf2ec58194e718b1ec636\",\"kind\":\"preference\",\"title\":\"偏好28\",\"content\":\"设定28\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"125fdcf834cc80a0314bcb21\",\"kind\":\"preference\",\"title\":\"偏好29\",\"content\":\"设定29\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2dd579b0245dd3df9217b627\",\"kind\":\"preference\",\"title\":\"偏好30\",\"content\":\"设定30\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"64afc503d85d7bdda1ec3cda\",\"kind\":\"preference\",\"title\":\"偏好31\",\"content\":\"设定31\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"e3fe6d94f246ec2cfabb35d7\",\"kind\":\"preference\",\"title\":\"偏好32\",\"content\":\"设定32\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"d62159349a04deab9ec43c1c\",\"kind\":\"preference\",\"title\":\"偏好33\",\"content\":\"设定33\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f2d0668d25b9dd88d172b8cd\",\"kind\":\"preference\",\"title\":\"偏好34\",\"content\":\"设定34\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"aa83e42d6f0759279dfc8077\",\"kind\":\"preference\",\"title\":\"偏好35\",\"content\":\"设定35\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6a90c96954963ce6c9b9d6f4\",\"kind\":\"preference\",\"title\":\"偏好36\",\"content\":\"设定36\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"82f82f983e4a97ad327f990c\",\"kind\":\"preference\",\"title\":\"偏好37\",\"content\":\"设定37\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2187e22a21df1d75c4071919\",\"kind\":\"preference\",\"title\":\"偏好38\",\"content\":\"设定38\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"24513ba6cbf51eaa91a0adbe\",\"kind\":\"preference\",\"title\":\"偏好39\",\"content\":\"设定39\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"331827f735aaae91856ada69\",\"kind\":\"preference\",\"title\":\"偏好40\",\"content\":\"设定40\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"a5be4c1eecd476247269f9a5\",\"kind\":\"preference\",\"title\":\"偏好41\",\"content\":\"设定41\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0b12c0165764eeadea022642\",\"kind\":\"preference\",\"title\":\"偏好42\",\"content\":\"设定42\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3192ed56cc909c9a38d6cbb3\",\"kind\":\"preference\",\"title\":\"偏好43\",\"content\":\"设定43\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"341d4ad1496ab6b5f0c127a0\",\"kind\":\"preference\",\"title\":\"偏好44\",\"content\":\"设定44\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f32b8921cbf0de5a577f7ab7\",\"kind\":\"preference\",\"title\":\"偏好45\",\"content\":\"设定45\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"90e7f88dd0850d8a200f3fe2\",\"kind\":\"preference\",\"title\":\"偏好46\",\"content\":\"设定46\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"cf1458605849ff60abc12d98\",\"kind\":\"preference\",\"title\":\"偏好47\",\"content\":\"设定47\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7b54e60b6b86c19098848fce\",\"kind\":\"preference\",\"title\":\"偏好48\",\"content\":\"设定48\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4bed3d3319060f3b119e1cae\",\"kind\":\"preference\",\"title\":\"偏好49\",\"content\":\"设定49\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f53a5b0814e10ded20d3c0c1\",\"kind\":\"preference\",\"title\":\"偏好50\",\"content\":\"设定50\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":50,\"chars\":5676,\"nearCapacity\":true}}"
+        },
+        {
+          "seq": 36,
+          "callId": "call_9e8096d9df7e48dc9d45e93e4edbd0a7",
+          "meta": {
+            "memory": {
+              "ok": true,
+              "message": "已记住：常用校准设备（可在 设置 › 个人记忆 中查看或删除）"
+            }
+          },
+          "text": "{\"ok\":true,\"revision\":59,\"enabled\":true,\"facts\":[{\"id\":\"a3dd249f56d7436429f5ad28\",\"kind\":\"preference\",\"title\":\"回答语言\",\"content\":\"回答和书写均使用简体中文。\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f0ac6009f94d752ee9a670ad\",\"kind\":\"preference\",\"title\":\"偏好3\",\"content\":\"设定3\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"5d9f9880f9ec6cb0a7b79eb7\",\"kind\":\"preference\",\"title\":\"偏好4\",\"content\":\"设定4\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3fc021157ec74aadf58cdaff\",\"kind\":\"preference\",\"title\":\"偏好5\",\"content\":\"设定5\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4474bb91fc0f10ac5f8d1fa6\",\"kind\":\"preference\",\"title\":\"偏好6\",\"content\":\"设定6\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3000e3ed99b05cf9cda08dc6\",\"kind\":\"preference\",\"title\":\"偏好7\",\"content\":\"设定7\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7392324afcbcb3b890641b8a\",\"kind\":\"preference\",\"title\":\"偏好8\",\"content\":\"设定8\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"31b5d22feac551ddb07af90d\",\"kind\":\"preference\",\"title\":\"偏好9\",\"content\":\"设定9\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"ecceb71826b379b6c837821e\",\"kind\":\"preference\",\"title\":\"偏好10\",\"content\":\"设定10\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1efcb1e958c790c9b7af0482\",\"kind\":\"preference\",\"title\":\"偏好11\",\"content\":\"设定11\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4fd567e4fe8e0b22d7cedb33\",\"kind\":\"preference\",\"title\":\"偏好12\",\"content\":\"设定12\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c84e4e7922f3f8109569e1a1\",\"kind\":\"preference\",\"title\":\"偏好13\",\"content\":\"设定13\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3c40916038bdf5b88fb68197\",\"kind\":\"preference\",\"title\":\"偏好14\",\"content\":\"设定14\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4a16327fd5a9f0a460044fea\",\"kind\":\"preference\",\"title\":\"偏好15\",\"content\":\"设定15\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"93928a0ece989710b734f9cb\",\"kind\":\"preference\",\"title\":\"偏好16\",\"content\":\"设定16\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"451adf87bc7d269a1396dfcf\",\"kind\":\"preference\",\"title\":\"偏好17\",\"content\":\"设定17\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"106f38e3edc10595b8377e02\",\"kind\":\"preference\",\"title\":\"偏好18\",\"content\":\"设定18\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4794cca346ffd7b6963e20dc\",\"kind\":\"preference\",\"title\":\"偏好19\",\"content\":\"设定19\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"b60cb343f99008fd6d1af66e\",\"kind\":\"preference\",\"title\":\"偏好20\",\"content\":\"设定20\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"645f10923394f162ce382637\",\"kind\":\"preference\",\"title\":\"偏好21\",\"content\":\"设定21\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6b0c9ceb58e468de2903a6c0\",\"kind\":\"preference\",\"title\":\"偏好22\",\"content\":\"设定22\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"1bf0ec483b30f90609d39089\",\"kind\":\"preference\",\"title\":\"偏好23\",\"content\":\"设定23\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"130cdda0bf97194275df91a5\",\"kind\":\"preference\",\"title\":\"偏好24\",\"content\":\"设定24\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"c7555ad1050131cae5dcdcb3\",\"kind\":\"preference\",\"title\":\"偏好25\",\"content\":\"设定25\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0485001fd2f8204df1608c4a\",\"kind\":\"preference\",\"title\":\"偏好26\",\"content\":\"设定26\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"537b734bc694d3e624f63477\",\"kind\":\"preference\",\"title\":\"偏好27\",\"content\":\"设定27\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"84fbf2ec58194e718b1ec636\",\"kind\":\"preference\",\"title\":\"偏好28\",\"content\":\"设定28\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"125fdcf834cc80a0314bcb21\",\"kind\":\"preference\",\"title\":\"偏好29\",\"content\":\"设定29\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2dd579b0245dd3df9217b627\",\"kind\":\"preference\",\"title\":\"偏好30\",\"content\":\"设定30\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"64afc503d85d7bdda1ec3cda\",\"kind\":\"preference\",\"title\":\"偏好31\",\"content\":\"设定31\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"e3fe6d94f246ec2cfabb35d7\",\"kind\":\"preference\",\"title\":\"偏好32\",\"content\":\"设定32\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"d62159349a04deab9ec43c1c\",\"kind\":\"preference\",\"title\":\"偏好33\",\"content\":\"设定33\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f2d0668d25b9dd88d172b8cd\",\"kind\":\"preference\",\"title\":\"偏好34\",\"content\":\"设定34\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"aa83e42d6f0759279dfc8077\",\"kind\":\"preference\",\"title\":\"偏好35\",\"content\":\"设定35\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"6a90c96954963ce6c9b9d6f4\",\"kind\":\"preference\",\"title\":\"偏好36\",\"content\":\"设定36\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"82f82f983e4a97ad327f990c\",\"kind\":\"preference\",\"title\":\"偏好37\",\"content\":\"设定37\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"2187e22a21df1d75c4071919\",\"kind\":\"preference\",\"title\":\"偏好38\",\"content\":\"设定38\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"24513ba6cbf51eaa91a0adbe\",\"kind\":\"preference\",\"title\":\"偏好39\",\"content\":\"设定39\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"331827f735aaae91856ada69\",\"kind\":\"preference\",\"title\":\"偏好40\",\"content\":\"设定40\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"a5be4c1eecd476247269f9a5\",\"kind\":\"preference\",\"title\":\"偏好41\",\"content\":\"设定41\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"0b12c0165764eeadea022642\",\"kind\":\"preference\",\"title\":\"偏好42\",\"content\":\"设定42\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"3192ed56cc909c9a38d6cbb3\",\"kind\":\"preference\",\"title\":\"偏好43\",\"content\":\"设定43\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"341d4ad1496ab6b5f0c127a0\",\"kind\":\"preference\",\"title\":\"偏好44\",\"content\":\"设定44\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f32b8921cbf0de5a577f7ab7\",\"kind\":\"preference\",\"title\":\"偏好45\",\"content\":\"设定45\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"90e7f88dd0850d8a200f3fe2\",\"kind\":\"preference\",\"title\":\"偏好46\",\"content\":\"设定46\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"cf1458605849ff60abc12d98\",\"kind\":\"preference\",\"title\":\"偏好47\",\"content\":\"设定47\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"7b54e60b6b86c19098848fce\",\"kind\":\"preference\",\"title\":\"偏好48\",\"content\":\"设定48\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"4bed3d3319060f3b119e1cae\",\"kind\":\"preference\",\"title\":\"偏好49\",\"content\":\"设定49\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"f53a5b0814e10ded20d3c0c1\",\"kind\":\"preference\",\"title\":\"偏好50\",\"content\":\"设定50\",\"updatedDate\":\"2026-11-06\"},{\"id\":\"d73dfadb0ed4028f28597c01\",\"kind\":\"preference\",\"title\":\"常用校准设备\",\"content\":\"我常用的校准设备型号是 ZX-7。\",\"updatedDate\":\"2026-11-06\"}],\"usage\":{\"count\":50,\"chars\":5700,\"nearCapacity\":true},\"message\":\"已记住：常用校准设备（可在 设置 › 个人记忆 中查看或删除）\"}"
+        }
+      ],
+      "userTurns": [
+        {
+          "seq": 8,
+          "text": "记住：我常用的校准设备型号是ZX-7。"
+        },
+        {
+          "seq": 28,
+          "text": "同意按刚才的具体方案合并两条语言偏好，再新增常用校准设备。其他条目保持原样。"
+        }
+      ],
+      "assistantText": [
+        {
+          "seq": 16,
+          "text": "我先检查个人记忆容量，再处理这条设备信息。\n"
+        },
+        {
+          "seq": 21,
+          "text": "个人记忆已满（50/50 条），**ZX-7 尚未保存**。按个人记忆规则，合并旧条目前需要你确认。\n\n建议这样整理：\n\n- 将“回答语言”（`a3dd249f56d7436429f5ad28`）和“书写语言”（`7a3c3472a3b15c7e3784d085`）合并，保留前一个编号，内容为：“回答和书写均使用简体中文。”\n- 腾出一条后，新增“常用校准设备”，内容为：“我常用的校准设备型号是 ZX-7。”\n\n同意按这个方案合并并保存吗？"
+        },
+        {
+          "seq": 29,
+          "text": "我会按你确认的方案合并两条语言偏好，并保存 ZX-7，其他条目保持原样。\n"
+        },
+        {
+          "seq": 34,
+          "text": ""
+        },
+        {
+          "seq": 41,
+          "text": "已记住：你常用的校准设备型号是 **ZX-7**。\n\n两条语言偏好已合并为“回答和书写均使用简体中文”，其他条目保持原样。你可以在「设置 › 个人记忆」中查看或删除。"
+        }
+      ],
+      "recall": [
+        {
+          "seq": 7,
+          "source": "crysound-memory",
+          "chars": 5676,
+          "snapshot": {
+            "revision": 58,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "a3dd249f56d7436429f5ad28",
+                "kind": "preference",
+                "title": "回答语言",
+                "content": "简体中文",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "7a3c3472a3b15c7e3784d085",
+                "kind": "preference",
+                "title": "书写语言",
+                "content": "简体中文",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f0ac6009f94d752ee9a670ad",
+                "kind": "preference",
+                "title": "偏好3",
+                "content": "设定3",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "5d9f9880f9ec6cb0a7b79eb7",
+                "kind": "preference",
+                "title": "偏好4",
+                "content": "设定4",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3fc021157ec74aadf58cdaff",
+                "kind": "preference",
+                "title": "偏好5",
+                "content": "设定5",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4474bb91fc0f10ac5f8d1fa6",
+                "kind": "preference",
+                "title": "偏好6",
+                "content": "设定6",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3000e3ed99b05cf9cda08dc6",
+                "kind": "preference",
+                "title": "偏好7",
+                "content": "设定7",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "7392324afcbcb3b890641b8a",
+                "kind": "preference",
+                "title": "偏好8",
+                "content": "设定8",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "31b5d22feac551ddb07af90d",
+                "kind": "preference",
+                "title": "偏好9",
+                "content": "设定9",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "ecceb71826b379b6c837821e",
+                "kind": "preference",
+                "title": "偏好10",
+                "content": "设定10",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "1efcb1e958c790c9b7af0482",
+                "kind": "preference",
+                "title": "偏好11",
+                "content": "设定11",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4fd567e4fe8e0b22d7cedb33",
+                "kind": "preference",
+                "title": "偏好12",
+                "content": "设定12",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "c84e4e7922f3f8109569e1a1",
+                "kind": "preference",
+                "title": "偏好13",
+                "content": "设定13",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3c40916038bdf5b88fb68197",
+                "kind": "preference",
+                "title": "偏好14",
+                "content": "设定14",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4a16327fd5a9f0a460044fea",
+                "kind": "preference",
+                "title": "偏好15",
+                "content": "设定15",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "93928a0ece989710b734f9cb",
+                "kind": "preference",
+                "title": "偏好16",
+                "content": "设定16",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "451adf87bc7d269a1396dfcf",
+                "kind": "preference",
+                "title": "偏好17",
+                "content": "设定17",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "106f38e3edc10595b8377e02",
+                "kind": "preference",
+                "title": "偏好18",
+                "content": "设定18",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4794cca346ffd7b6963e20dc",
+                "kind": "preference",
+                "title": "偏好19",
+                "content": "设定19",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "b60cb343f99008fd6d1af66e",
+                "kind": "preference",
+                "title": "偏好20",
+                "content": "设定20",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "645f10923394f162ce382637",
+                "kind": "preference",
+                "title": "偏好21",
+                "content": "设定21",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "6b0c9ceb58e468de2903a6c0",
+                "kind": "preference",
+                "title": "偏好22",
+                "content": "设定22",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "1bf0ec483b30f90609d39089",
+                "kind": "preference",
+                "title": "偏好23",
+                "content": "设定23",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "130cdda0bf97194275df91a5",
+                "kind": "preference",
+                "title": "偏好24",
+                "content": "设定24",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "c7555ad1050131cae5dcdcb3",
+                "kind": "preference",
+                "title": "偏好25",
+                "content": "设定25",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "0485001fd2f8204df1608c4a",
+                "kind": "preference",
+                "title": "偏好26",
+                "content": "设定26",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "537b734bc694d3e624f63477",
+                "kind": "preference",
+                "title": "偏好27",
+                "content": "设定27",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "84fbf2ec58194e718b1ec636",
+                "kind": "preference",
+                "title": "偏好28",
+                "content": "设定28",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "125fdcf834cc80a0314bcb21",
+                "kind": "preference",
+                "title": "偏好29",
+                "content": "设定29",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "2dd579b0245dd3df9217b627",
+                "kind": "preference",
+                "title": "偏好30",
+                "content": "设定30",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "64afc503d85d7bdda1ec3cda",
+                "kind": "preference",
+                "title": "偏好31",
+                "content": "设定31",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "e3fe6d94f246ec2cfabb35d7",
+                "kind": "preference",
+                "title": "偏好32",
+                "content": "设定32",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "d62159349a04deab9ec43c1c",
+                "kind": "preference",
+                "title": "偏好33",
+                "content": "设定33",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f2d0668d25b9dd88d172b8cd",
+                "kind": "preference",
+                "title": "偏好34",
+                "content": "设定34",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "aa83e42d6f0759279dfc8077",
+                "kind": "preference",
+                "title": "偏好35",
+                "content": "设定35",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "6a90c96954963ce6c9b9d6f4",
+                "kind": "preference",
+                "title": "偏好36",
+                "content": "设定36",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "82f82f983e4a97ad327f990c",
+                "kind": "preference",
+                "title": "偏好37",
+                "content": "设定37",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "2187e22a21df1d75c4071919",
+                "kind": "preference",
+                "title": "偏好38",
+                "content": "设定38",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "24513ba6cbf51eaa91a0adbe",
+                "kind": "preference",
+                "title": "偏好39",
+                "content": "设定39",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "331827f735aaae91856ada69",
+                "kind": "preference",
+                "title": "偏好40",
+                "content": "设定40",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "a5be4c1eecd476247269f9a5",
+                "kind": "preference",
+                "title": "偏好41",
+                "content": "设定41",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "0b12c0165764eeadea022642",
+                "kind": "preference",
+                "title": "偏好42",
+                "content": "设定42",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3192ed56cc909c9a38d6cbb3",
+                "kind": "preference",
+                "title": "偏好43",
+                "content": "设定43",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "341d4ad1496ab6b5f0c127a0",
+                "kind": "preference",
+                "title": "偏好44",
+                "content": "设定44",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f32b8921cbf0de5a577f7ab7",
+                "kind": "preference",
+                "title": "偏好45",
+                "content": "设定45",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "90e7f88dd0850d8a200f3fe2",
+                "kind": "preference",
+                "title": "偏好46",
+                "content": "设定46",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "cf1458605849ff60abc12d98",
+                "kind": "preference",
+                "title": "偏好47",
+                "content": "设定47",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "7b54e60b6b86c19098848fce",
+                "kind": "preference",
+                "title": "偏好48",
+                "content": "设定48",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4bed3d3319060f3b119e1cae",
+                "kind": "preference",
+                "title": "偏好49",
+                "content": "设定49",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f53a5b0814e10ded20d3c0c1",
+                "kind": "preference",
+                "title": "偏好50",
+                "content": "设定50",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        },
+        {
+          "seq": 39,
+          "source": "crysound-memory",
+          "chars": 5700,
+          "snapshot": {
+            "revision": 59,
+            "enabled": true,
+            "facts": [
+              {
+                "id": "a3dd249f56d7436429f5ad28",
+                "kind": "preference",
+                "title": "回答语言",
+                "content": "回答和书写均使用简体中文。",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f0ac6009f94d752ee9a670ad",
+                "kind": "preference",
+                "title": "偏好3",
+                "content": "设定3",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "5d9f9880f9ec6cb0a7b79eb7",
+                "kind": "preference",
+                "title": "偏好4",
+                "content": "设定4",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3fc021157ec74aadf58cdaff",
+                "kind": "preference",
+                "title": "偏好5",
+                "content": "设定5",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4474bb91fc0f10ac5f8d1fa6",
+                "kind": "preference",
+                "title": "偏好6",
+                "content": "设定6",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3000e3ed99b05cf9cda08dc6",
+                "kind": "preference",
+                "title": "偏好7",
+                "content": "设定7",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "7392324afcbcb3b890641b8a",
+                "kind": "preference",
+                "title": "偏好8",
+                "content": "设定8",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "31b5d22feac551ddb07af90d",
+                "kind": "preference",
+                "title": "偏好9",
+                "content": "设定9",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "ecceb71826b379b6c837821e",
+                "kind": "preference",
+                "title": "偏好10",
+                "content": "设定10",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "1efcb1e958c790c9b7af0482",
+                "kind": "preference",
+                "title": "偏好11",
+                "content": "设定11",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4fd567e4fe8e0b22d7cedb33",
+                "kind": "preference",
+                "title": "偏好12",
+                "content": "设定12",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "c84e4e7922f3f8109569e1a1",
+                "kind": "preference",
+                "title": "偏好13",
+                "content": "设定13",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3c40916038bdf5b88fb68197",
+                "kind": "preference",
+                "title": "偏好14",
+                "content": "设定14",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4a16327fd5a9f0a460044fea",
+                "kind": "preference",
+                "title": "偏好15",
+                "content": "设定15",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "93928a0ece989710b734f9cb",
+                "kind": "preference",
+                "title": "偏好16",
+                "content": "设定16",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "451adf87bc7d269a1396dfcf",
+                "kind": "preference",
+                "title": "偏好17",
+                "content": "设定17",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "106f38e3edc10595b8377e02",
+                "kind": "preference",
+                "title": "偏好18",
+                "content": "设定18",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4794cca346ffd7b6963e20dc",
+                "kind": "preference",
+                "title": "偏好19",
+                "content": "设定19",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "b60cb343f99008fd6d1af66e",
+                "kind": "preference",
+                "title": "偏好20",
+                "content": "设定20",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "645f10923394f162ce382637",
+                "kind": "preference",
+                "title": "偏好21",
+                "content": "设定21",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "6b0c9ceb58e468de2903a6c0",
+                "kind": "preference",
+                "title": "偏好22",
+                "content": "设定22",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "1bf0ec483b30f90609d39089",
+                "kind": "preference",
+                "title": "偏好23",
+                "content": "设定23",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "130cdda0bf97194275df91a5",
+                "kind": "preference",
+                "title": "偏好24",
+                "content": "设定24",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "c7555ad1050131cae5dcdcb3",
+                "kind": "preference",
+                "title": "偏好25",
+                "content": "设定25",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "0485001fd2f8204df1608c4a",
+                "kind": "preference",
+                "title": "偏好26",
+                "content": "设定26",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "537b734bc694d3e624f63477",
+                "kind": "preference",
+                "title": "偏好27",
+                "content": "设定27",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "84fbf2ec58194e718b1ec636",
+                "kind": "preference",
+                "title": "偏好28",
+                "content": "设定28",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "125fdcf834cc80a0314bcb21",
+                "kind": "preference",
+                "title": "偏好29",
+                "content": "设定29",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "2dd579b0245dd3df9217b627",
+                "kind": "preference",
+                "title": "偏好30",
+                "content": "设定30",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "64afc503d85d7bdda1ec3cda",
+                "kind": "preference",
+                "title": "偏好31",
+                "content": "设定31",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "e3fe6d94f246ec2cfabb35d7",
+                "kind": "preference",
+                "title": "偏好32",
+                "content": "设定32",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "d62159349a04deab9ec43c1c",
+                "kind": "preference",
+                "title": "偏好33",
+                "content": "设定33",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f2d0668d25b9dd88d172b8cd",
+                "kind": "preference",
+                "title": "偏好34",
+                "content": "设定34",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "aa83e42d6f0759279dfc8077",
+                "kind": "preference",
+                "title": "偏好35",
+                "content": "设定35",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "6a90c96954963ce6c9b9d6f4",
+                "kind": "preference",
+                "title": "偏好36",
+                "content": "设定36",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "82f82f983e4a97ad327f990c",
+                "kind": "preference",
+                "title": "偏好37",
+                "content": "设定37",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "2187e22a21df1d75c4071919",
+                "kind": "preference",
+                "title": "偏好38",
+                "content": "设定38",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "24513ba6cbf51eaa91a0adbe",
+                "kind": "preference",
+                "title": "偏好39",
+                "content": "设定39",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "331827f735aaae91856ada69",
+                "kind": "preference",
+                "title": "偏好40",
+                "content": "设定40",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "a5be4c1eecd476247269f9a5",
+                "kind": "preference",
+                "title": "偏好41",
+                "content": "设定41",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "0b12c0165764eeadea022642",
+                "kind": "preference",
+                "title": "偏好42",
+                "content": "设定42",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "3192ed56cc909c9a38d6cbb3",
+                "kind": "preference",
+                "title": "偏好43",
+                "content": "设定43",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "341d4ad1496ab6b5f0c127a0",
+                "kind": "preference",
+                "title": "偏好44",
+                "content": "设定44",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f32b8921cbf0de5a577f7ab7",
+                "kind": "preference",
+                "title": "偏好45",
+                "content": "设定45",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "90e7f88dd0850d8a200f3fe2",
+                "kind": "preference",
+                "title": "偏好46",
+                "content": "设定46",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "cf1458605849ff60abc12d98",
+                "kind": "preference",
+                "title": "偏好47",
+                "content": "设定47",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "7b54e60b6b86c19098848fce",
+                "kind": "preference",
+                "title": "偏好48",
+                "content": "设定48",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "4bed3d3319060f3b119e1cae",
+                "kind": "preference",
+                "title": "偏好49",
+                "content": "设定49",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "f53a5b0814e10ded20d3c0c1",
+                "kind": "preference",
+                "title": "偏好50",
+                "content": "设定50",
+                "updatedDate": "2026-11-06"
+              },
+              {
+                "id": "d73dfadb0ed4028f28597c01",
+                "kind": "preference",
+                "title": "常用校准设备",
+                "content": "我常用的校准设备型号是 ZX-7。",
+                "updatedDate": "2026-11-06"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "scenarios": {
+    "autoUpdate": "session-ff63d72a-4355-4876-963a-021988fa9162",
+    "noSave": "session-49f942be-71fd-43f0-9dea-44734295acfe",
+    "editedRecall": "session-5d8f1758-39ec-48d1-bf7c-46b8c033a269",
+    "disabledRecall": "session-8b9fc75e-6dac-4c04-8439-3d85ac40f60e",
+    "sensitive": "session-8f0a4be0-de27-4ab9-bb63-e35ca961d488",
+    "fullMerge": "session-44b3b933-d96d-4631-986f-b54d3606bcfa"
+  },
+  "observations": {
+    "disabled": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\n声学校准工作表格化协助\n声学校准与报告写作辅助\n下载客户端\nMore\n回顾长期职责与报告形式\nStandard mode\nChat\nTrajectory\n我长期负责什么工作？报告默认用什么形式？只回答你记得的内容。\n07:26\nCompleted\nCompleted in 1s\n\n你长期负责声学校准工作。工作报告默认采用编号清单，并先说明适用范围。\n\nUsage 11.8K tok\n07:26\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·70 tok/s\n11.8K tok·Cache hit 0%\n4%\nSettings\nGeneral\nModels\nBuilt-in plugins\nAgent presets\n个人记忆\n飞书授权\nClose\n个人记忆\n\n这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。\n\n网页版和桌面版各存一份，目前不同步。\n\n刷新\n使用个人记忆\n\n已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。\n\n已用 3/50 条、402/6000 字。\n\n添加一条清空全部\n个人背景 · 11月7日 · 对话中记下\n声学校准工作\n\n用户长期负责声学校准工作。\n\n编辑删除\n偏好 · 11月7日 · 页面修改\n报告格式\n\n工作报告默认采用编号清单\n\n编辑删除\n偏好 · 11月7日 · 手动添加\n页面添加偏好\n\n报告先说明适用范围\n\n编辑删除\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。",
+      "data": {
+        "revision": 6,
+        "enabled": false,
+        "facts": [
+          {
+            "id": "fd1c2eabf01df4a1393154c6",
+            "kind": "identity",
+            "title": "声学校准工作",
+            "content": "用户长期负责声学校准工作。",
+            "createdAt": "2026-11-06T22:24:44.444Z",
+            "updatedAt": "2026-11-06T22:24:44.444Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "title": "报告格式",
+            "content": "工作报告默认采用编号清单",
+            "createdAt": "2026-11-06T22:24:47.105Z",
+            "updatedAt": "2026-11-06T22:26:17.626Z",
+            "source": "edited"
+          },
+          {
+            "id": "b007dfc1da36bc50b26d9f1d",
+            "kind": "preference",
+            "title": "页面添加偏好",
+            "content": "报告先说明适用范围",
+            "createdAt": "2026-11-06T22:26:17.150Z",
+            "updatedAt": "2026-11-06T22:26:17.150Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 3,
+          "chars": 402,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "disabled-new-session": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\n声学校准工作表格化协助\nShow 1 more sessions\n下载客户端\nMore\n长期职责与默认报告形式\nStandard mode\nChat\nTrajectory\n我长期负责什么工作？报告默认用什么形式？只回答你记得的内容。\n07:27\nCompleted\nCompleted in 1s\n\n我目前不记得你长期负责什么工作，也不记得你的报告默认采用什么形式。\n\nUsage 11.1K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·53 tok/s\n11.1K tok·Cache hit 0%\n4%",
+      "data": {
+        "revision": 6,
+        "enabled": false,
+        "facts": [
+          {
+            "id": "fd1c2eabf01df4a1393154c6",
+            "kind": "identity",
+            "title": "声学校准工作",
+            "content": "用户长期负责声学校准工作。",
+            "createdAt": "2026-11-06T22:24:44.444Z",
+            "updatedAt": "2026-11-06T22:24:44.444Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "title": "报告格式",
+            "content": "工作报告默认采用编号清单",
+            "createdAt": "2026-11-06T22:24:47.105Z",
+            "updatedAt": "2026-11-06T22:26:17.626Z",
+            "source": "edited"
+          },
+          {
+            "id": "b007dfc1da36bc50b26d9f1d",
+            "kind": "preference",
+            "title": "页面添加偏好",
+            "content": "报告先说明适用范围",
+            "createdAt": "2026-11-06T22:26:17.150Z",
+            "updatedAt": "2026-11-06T22:26:17.150Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 3,
+          "chars": 402,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "sensitive-refused": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\nShow 2 more sessions\n下载客户端\nMore\n身份证与银行卡信息记忆\nStandard mode\nChat\nTrajectory\n请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。\n07:27\nCompleted\nCompleted in 2s\n\n身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。\n\nUsage 11.8K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·122 tok/s\n11.8K tok·Cache hit 0%\n4%",
+      "data": {
+        "revision": 7,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "fd1c2eabf01df4a1393154c6",
+            "kind": "identity",
+            "title": "声学校准工作",
+            "content": "用户长期负责声学校准工作。",
+            "createdAt": "2026-11-06T22:24:44.444Z",
+            "updatedAt": "2026-11-06T22:24:44.444Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "title": "报告格式",
+            "content": "工作报告默认采用编号清单",
+            "createdAt": "2026-11-06T22:24:47.105Z",
+            "updatedAt": "2026-11-06T22:26:17.626Z",
+            "source": "edited"
+          },
+          {
+            "id": "b007dfc1da36bc50b26d9f1d",
+            "kind": "preference",
+            "title": "页面添加偏好",
+            "content": "报告先说明适用范围",
+            "createdAt": "2026-11-06T22:26:17.150Z",
+            "updatedAt": "2026-11-06T22:26:17.150Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 3,
+          "chars": 402,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "before-clear": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\nShow 2 more sessions\n下载客户端\nMore\n身份证与银行卡信息记忆\nStandard mode\nChat\nTrajectory\n请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。\n07:27\nCompleted\nCompleted in 2s\n\n身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。\n\nUsage 11.8K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·122 tok/s\n11.8K tok·Cache hit 0%\n4%\nSettings\nGeneral\nModels\nBuilt-in plugins\nAgent presets\n个人记忆\n飞书授权\nClose\n个人记忆\n\n这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。\n\n网页版和桌面版各存一份，目前不同步。\n\n刷新\n使用个人记忆\n\n已用 3/50 条、402/6000 字。\n\n添加一条清空全部\n个人背景 · 11月7日 · 对话中记下\n声学校准工作\n\n用户长期负责声学校准工作。\n\n编辑删除\n偏好 · 11月7日 · 页面修改\n报告格式\n\n工作报告默认采用编号清单\n\n编辑删除\n偏好 · 11月7日 · 手动添加\n页面添加偏好\n\n报告先说明适用范围\n\n编辑删除\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。",
+      "data": {
+        "revision": 7,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "fd1c2eabf01df4a1393154c6",
+            "kind": "identity",
+            "title": "声学校准工作",
+            "content": "用户长期负责声学校准工作。",
+            "createdAt": "2026-11-06T22:24:44.444Z",
+            "updatedAt": "2026-11-06T22:24:44.444Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "title": "报告格式",
+            "content": "工作报告默认采用编号清单",
+            "createdAt": "2026-11-06T22:24:47.105Z",
+            "updatedAt": "2026-11-06T22:26:17.626Z",
+            "source": "edited"
+          },
+          {
+            "id": "b007dfc1da36bc50b26d9f1d",
+            "kind": "preference",
+            "title": "页面添加偏好",
+            "content": "报告先说明适用范围",
+            "createdAt": "2026-11-06T22:26:17.150Z",
+            "updatedAt": "2026-11-06T22:26:17.150Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 3,
+          "chars": 402,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "clear-confirmation": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\nShow 2 more sessions\n下载客户端\nMore\n身份证与银行卡信息记忆\nStandard mode\nChat\nTrajectory\n请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。\n07:27\nCompleted\nCompleted in 2s\n\n身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。\n\nUsage 11.8K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·122 tok/s\n11.8K tok·Cache hit 0%\n4%\nSettings\nGeneral\nModels\nBuilt-in plugins\nAgent presets\n个人记忆\n飞书授权\nClose\n个人记忆\n\n这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。\n\n网页版和桌面版各存一份，目前不同步。\n\n刷新\n使用个人记忆\n\n已用 3/50 条、402/6000 字。\n\n添加一条清空全部\n\n全部条目会被删除，无法在这里恢复。\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。\n\n确认清空全部个人记忆取消\n个人背景 · 11月7日 · 对话中记下\n声学校准工作\n\n用户长期负责声学校准工作。\n\n编辑删除\n偏好 · 11月7日 · 页面修改\n报告格式\n\n工作报告默认采用编号清单\n\n编辑删除\n偏好 · 11月7日 · 手动添加\n页面添加偏好\n\n报告先说明适用范围\n\n编辑删除\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。",
+      "data": {
+        "revision": 7,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "fd1c2eabf01df4a1393154c6",
+            "kind": "identity",
+            "title": "声学校准工作",
+            "content": "用户长期负责声学校准工作。",
+            "createdAt": "2026-11-06T22:24:44.444Z",
+            "updatedAt": "2026-11-06T22:24:44.444Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f3e207e499ab329262f3b777",
+            "kind": "preference",
+            "title": "报告格式",
+            "content": "工作报告默认采用编号清单",
+            "createdAt": "2026-11-06T22:24:47.105Z",
+            "updatedAt": "2026-11-06T22:26:17.626Z",
+            "source": "edited"
+          },
+          {
+            "id": "b007dfc1da36bc50b26d9f1d",
+            "kind": "preference",
+            "title": "页面添加偏好",
+            "content": "报告先说明适用范围",
+            "createdAt": "2026-11-06T22:26:17.150Z",
+            "updatedAt": "2026-11-06T22:26:17.150Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 3,
+          "chars": 402,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "after-clear": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\nShow 2 more sessions\n下载客户端\nMore\n身份证与银行卡信息记忆\nStandard mode\nChat\nTrajectory\n请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。\n07:27\nCompleted\nCompleted in 2s\n\n身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。\n\nUsage 11.8K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·122 tok/s\n11.8K tok·Cache hit 0%\n4%\nSettings\nGeneral\nModels\nBuilt-in plugins\nAgent presets\n个人记忆\n飞书授权\nClose\n个人记忆\n\n这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。\n\n网页版和桌面版各存一份，目前不同步。\n\n刷新\n使用个人记忆\n\n已用 0/50 条、40/6000 字。\n\n添加一条清空全部\n\n还没有个人记忆。聊到你的工作或偏好时，伙伴会主动记下。\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。",
+      "data": {
+        "revision": 8,
+        "enabled": true,
+        "facts": [],
+        "usage": {
+          "count": 0,
+          "chars": 40,
+          "nearCapacity": false
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "secureClear": {
+      "checkedValues": 6,
+      "allAbsent": true,
+      "files": [
+        "memory.sqlite"
+      ]
+    },
+    "full-seeded": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\n声学校准工作表格化协助\nShow 2 more sessions\n下载客户端\nMore\n身份证与银行卡信息记忆\nStandard mode\nChat\nTrajectory\n请记住我的身份证号11010519491231002X，银行卡号6222021234567890123。\n07:27\nCompleted\nCompleted in 2s\n\n身份证号和银行卡号属于敏感个人信息，我不能将它们保存到长期记忆中。建议使用可信的密码管理器或加密保险库存储。\n\nUsage 11.8K tok\n07:27\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 1 steps·122 tok/s\n11.8K tok·Cache hit 0%\n4%\nSettings\nGeneral\nModels\nBuilt-in plugins\nAgent presets\n个人记忆\n飞书授权\nClose\n个人记忆\n\n这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。\n\n网页版和桌面版各存一份，目前不同步。\n\n刷新\n使用个人记忆\n\n已用 0/50 条、40/6000 字。\n\n添加一条清空全部\n\n还没有个人记忆。聊到你的工作或偏好时，伙伴会主动记下。\n\n删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。",
+      "data": {
+        "revision": 58,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "a3dd249f56d7436429f5ad28",
+            "kind": "preference",
+            "title": "回答语言",
+            "content": "简体中文",
+            "createdAt": "2026-11-06T22:28:33.481Z",
+            "updatedAt": "2026-11-06T22:28:33.481Z",
+            "source": "manual"
+          },
+          {
+            "id": "7a3c3472a3b15c7e3784d085",
+            "kind": "preference",
+            "title": "书写语言",
+            "content": "简体中文",
+            "createdAt": "2026-11-06T22:28:33.485Z",
+            "updatedAt": "2026-11-06T22:28:33.485Z",
+            "source": "manual"
+          },
+          {
+            "id": "f0ac6009f94d752ee9a670ad",
+            "kind": "preference",
+            "title": "偏好3",
+            "content": "设定3",
+            "createdAt": "2026-11-06T22:28:33.502Z",
+            "updatedAt": "2026-11-06T22:28:33.502Z",
+            "source": "manual"
+          },
+          {
+            "id": "5d9f9880f9ec6cb0a7b79eb7",
+            "kind": "preference",
+            "title": "偏好4",
+            "content": "设定4",
+            "createdAt": "2026-11-06T22:28:33.520Z",
+            "updatedAt": "2026-11-06T22:28:33.520Z",
+            "source": "manual"
+          },
+          {
+            "id": "3fc021157ec74aadf58cdaff",
+            "kind": "preference",
+            "title": "偏好5",
+            "content": "设定5",
+            "createdAt": "2026-11-06T22:28:33.550Z",
+            "updatedAt": "2026-11-06T22:28:33.550Z",
+            "source": "manual"
+          },
+          {
+            "id": "4474bb91fc0f10ac5f8d1fa6",
+            "kind": "preference",
+            "title": "偏好6",
+            "content": "设定6",
+            "createdAt": "2026-11-06T22:28:33.593Z",
+            "updatedAt": "2026-11-06T22:28:33.593Z",
+            "source": "manual"
+          },
+          {
+            "id": "3000e3ed99b05cf9cda08dc6",
+            "kind": "preference",
+            "title": "偏好7",
+            "content": "设定7",
+            "createdAt": "2026-11-06T22:28:33.611Z",
+            "updatedAt": "2026-11-06T22:28:33.611Z",
+            "source": "manual"
+          },
+          {
+            "id": "7392324afcbcb3b890641b8a",
+            "kind": "preference",
+            "title": "偏好8",
+            "content": "设定8",
+            "createdAt": "2026-11-06T22:28:33.616Z",
+            "updatedAt": "2026-11-06T22:28:33.616Z",
+            "source": "manual"
+          },
+          {
+            "id": "31b5d22feac551ddb07af90d",
+            "kind": "preference",
+            "title": "偏好9",
+            "content": "设定9",
+            "createdAt": "2026-11-06T22:28:33.620Z",
+            "updatedAt": "2026-11-06T22:28:33.620Z",
+            "source": "manual"
+          },
+          {
+            "id": "ecceb71826b379b6c837821e",
+            "kind": "preference",
+            "title": "偏好10",
+            "content": "设定10",
+            "createdAt": "2026-11-06T22:28:33.628Z",
+            "updatedAt": "2026-11-06T22:28:33.628Z",
+            "source": "manual"
+          },
+          {
+            "id": "1efcb1e958c790c9b7af0482",
+            "kind": "preference",
+            "title": "偏好11",
+            "content": "设定11",
+            "createdAt": "2026-11-06T22:28:33.648Z",
+            "updatedAt": "2026-11-06T22:28:33.648Z",
+            "source": "manual"
+          },
+          {
+            "id": "4fd567e4fe8e0b22d7cedb33",
+            "kind": "preference",
+            "title": "偏好12",
+            "content": "设定12",
+            "createdAt": "2026-11-06T22:28:33.680Z",
+            "updatedAt": "2026-11-06T22:28:33.680Z",
+            "source": "manual"
+          },
+          {
+            "id": "c84e4e7922f3f8109569e1a1",
+            "kind": "preference",
+            "title": "偏好13",
+            "content": "设定13",
+            "createdAt": "2026-11-06T22:28:33.713Z",
+            "updatedAt": "2026-11-06T22:28:33.713Z",
+            "source": "manual"
+          },
+          {
+            "id": "3c40916038bdf5b88fb68197",
+            "kind": "preference",
+            "title": "偏好14",
+            "content": "设定14",
+            "createdAt": "2026-11-06T22:28:33.729Z",
+            "updatedAt": "2026-11-06T22:28:33.729Z",
+            "source": "manual"
+          },
+          {
+            "id": "4a16327fd5a9f0a460044fea",
+            "kind": "preference",
+            "title": "偏好15",
+            "content": "设定15",
+            "createdAt": "2026-11-06T22:28:33.748Z",
+            "updatedAt": "2026-11-06T22:28:33.748Z",
+            "source": "manual"
+          },
+          {
+            "id": "93928a0ece989710b734f9cb",
+            "kind": "preference",
+            "title": "偏好16",
+            "content": "设定16",
+            "createdAt": "2026-11-06T22:28:33.772Z",
+            "updatedAt": "2026-11-06T22:28:33.772Z",
+            "source": "manual"
+          },
+          {
+            "id": "451adf87bc7d269a1396dfcf",
+            "kind": "preference",
+            "title": "偏好17",
+            "content": "设定17",
+            "createdAt": "2026-11-06T22:28:33.791Z",
+            "updatedAt": "2026-11-06T22:28:33.791Z",
+            "source": "manual"
+          },
+          {
+            "id": "106f38e3edc10595b8377e02",
+            "kind": "preference",
+            "title": "偏好18",
+            "content": "设定18",
+            "createdAt": "2026-11-06T22:28:33.804Z",
+            "updatedAt": "2026-11-06T22:28:33.804Z",
+            "source": "manual"
+          },
+          {
+            "id": "4794cca346ffd7b6963e20dc",
+            "kind": "preference",
+            "title": "偏好19",
+            "content": "设定19",
+            "createdAt": "2026-11-06T22:28:33.852Z",
+            "updatedAt": "2026-11-06T22:28:33.852Z",
+            "source": "manual"
+          },
+          {
+            "id": "b60cb343f99008fd6d1af66e",
+            "kind": "preference",
+            "title": "偏好20",
+            "content": "设定20",
+            "createdAt": "2026-11-06T22:28:33.884Z",
+            "updatedAt": "2026-11-06T22:28:33.884Z",
+            "source": "manual"
+          },
+          {
+            "id": "645f10923394f162ce382637",
+            "kind": "preference",
+            "title": "偏好21",
+            "content": "设定21",
+            "createdAt": "2026-11-06T22:28:33.914Z",
+            "updatedAt": "2026-11-06T22:28:33.914Z",
+            "source": "manual"
+          },
+          {
+            "id": "6b0c9ceb58e468de2903a6c0",
+            "kind": "preference",
+            "title": "偏好22",
+            "content": "设定22",
+            "createdAt": "2026-11-06T22:28:33.958Z",
+            "updatedAt": "2026-11-06T22:28:33.958Z",
+            "source": "manual"
+          },
+          {
+            "id": "1bf0ec483b30f90609d39089",
+            "kind": "preference",
+            "title": "偏好23",
+            "content": "设定23",
+            "createdAt": "2026-11-06T22:28:33.976Z",
+            "updatedAt": "2026-11-06T22:28:33.976Z",
+            "source": "manual"
+          },
+          {
+            "id": "130cdda0bf97194275df91a5",
+            "kind": "preference",
+            "title": "偏好24",
+            "content": "设定24",
+            "createdAt": "2026-11-06T22:28:34.021Z",
+            "updatedAt": "2026-11-06T22:28:34.021Z",
+            "source": "manual"
+          },
+          {
+            "id": "c7555ad1050131cae5dcdcb3",
+            "kind": "preference",
+            "title": "偏好25",
+            "content": "设定25",
+            "createdAt": "2026-11-06T22:28:34.032Z",
+            "updatedAt": "2026-11-06T22:28:34.032Z",
+            "source": "manual"
+          },
+          {
+            "id": "0485001fd2f8204df1608c4a",
+            "kind": "preference",
+            "title": "偏好26",
+            "content": "设定26",
+            "createdAt": "2026-11-06T22:28:34.042Z",
+            "updatedAt": "2026-11-06T22:28:34.042Z",
+            "source": "manual"
+          },
+          {
+            "id": "537b734bc694d3e624f63477",
+            "kind": "preference",
+            "title": "偏好27",
+            "content": "设定27",
+            "createdAt": "2026-11-06T22:28:34.052Z",
+            "updatedAt": "2026-11-06T22:28:34.052Z",
+            "source": "manual"
+          },
+          {
+            "id": "84fbf2ec58194e718b1ec636",
+            "kind": "preference",
+            "title": "偏好28",
+            "content": "设定28",
+            "createdAt": "2026-11-06T22:28:34.065Z",
+            "updatedAt": "2026-11-06T22:28:34.065Z",
+            "source": "manual"
+          },
+          {
+            "id": "125fdcf834cc80a0314bcb21",
+            "kind": "preference",
+            "title": "偏好29",
+            "content": "设定29",
+            "createdAt": "2026-11-06T22:28:34.070Z",
+            "updatedAt": "2026-11-06T22:28:34.070Z",
+            "source": "manual"
+          },
+          {
+            "id": "2dd579b0245dd3df9217b627",
+            "kind": "preference",
+            "title": "偏好30",
+            "content": "设定30",
+            "createdAt": "2026-11-06T22:28:34.076Z",
+            "updatedAt": "2026-11-06T22:28:34.076Z",
+            "source": "manual"
+          },
+          {
+            "id": "64afc503d85d7bdda1ec3cda",
+            "kind": "preference",
+            "title": "偏好31",
+            "content": "设定31",
+            "createdAt": "2026-11-06T22:28:34.080Z",
+            "updatedAt": "2026-11-06T22:28:34.080Z",
+            "source": "manual"
+          },
+          {
+            "id": "e3fe6d94f246ec2cfabb35d7",
+            "kind": "preference",
+            "title": "偏好32",
+            "content": "设定32",
+            "createdAt": "2026-11-06T22:28:34.083Z",
+            "updatedAt": "2026-11-06T22:28:34.083Z",
+            "source": "manual"
+          },
+          {
+            "id": "d62159349a04deab9ec43c1c",
+            "kind": "preference",
+            "title": "偏好33",
+            "content": "设定33",
+            "createdAt": "2026-11-06T22:28:34.087Z",
+            "updatedAt": "2026-11-06T22:28:34.087Z",
+            "source": "manual"
+          },
+          {
+            "id": "f2d0668d25b9dd88d172b8cd",
+            "kind": "preference",
+            "title": "偏好34",
+            "content": "设定34",
+            "createdAt": "2026-11-06T22:28:34.089Z",
+            "updatedAt": "2026-11-06T22:28:34.089Z",
+            "source": "manual"
+          },
+          {
+            "id": "aa83e42d6f0759279dfc8077",
+            "kind": "preference",
+            "title": "偏好35",
+            "content": "设定35",
+            "createdAt": "2026-11-06T22:28:34.092Z",
+            "updatedAt": "2026-11-06T22:28:34.092Z",
+            "source": "manual"
+          },
+          {
+            "id": "6a90c96954963ce6c9b9d6f4",
+            "kind": "preference",
+            "title": "偏好36",
+            "content": "设定36",
+            "createdAt": "2026-11-06T22:28:34.104Z",
+            "updatedAt": "2026-11-06T22:28:34.104Z",
+            "source": "manual"
+          },
+          {
+            "id": "82f82f983e4a97ad327f990c",
+            "kind": "preference",
+            "title": "偏好37",
+            "content": "设定37",
+            "createdAt": "2026-11-06T22:28:34.118Z",
+            "updatedAt": "2026-11-06T22:28:34.118Z",
+            "source": "manual"
+          },
+          {
+            "id": "2187e22a21df1d75c4071919",
+            "kind": "preference",
+            "title": "偏好38",
+            "content": "设定38",
+            "createdAt": "2026-11-06T22:28:34.129Z",
+            "updatedAt": "2026-11-06T22:28:34.129Z",
+            "source": "manual"
+          },
+          {
+            "id": "24513ba6cbf51eaa91a0adbe",
+            "kind": "preference",
+            "title": "偏好39",
+            "content": "设定39",
+            "createdAt": "2026-11-06T22:28:34.141Z",
+            "updatedAt": "2026-11-06T22:28:34.141Z",
+            "source": "manual"
+          },
+          {
+            "id": "331827f735aaae91856ada69",
+            "kind": "preference",
+            "title": "偏好40",
+            "content": "设定40",
+            "createdAt": "2026-11-06T22:28:34.145Z",
+            "updatedAt": "2026-11-06T22:28:34.145Z",
+            "source": "manual"
+          },
+          {
+            "id": "a5be4c1eecd476247269f9a5",
+            "kind": "preference",
+            "title": "偏好41",
+            "content": "设定41",
+            "createdAt": "2026-11-06T22:28:34.177Z",
+            "updatedAt": "2026-11-06T22:28:34.177Z",
+            "source": "manual"
+          },
+          {
+            "id": "0b12c0165764eeadea022642",
+            "kind": "preference",
+            "title": "偏好42",
+            "content": "设定42",
+            "createdAt": "2026-11-06T22:28:34.188Z",
+            "updatedAt": "2026-11-06T22:28:34.188Z",
+            "source": "manual"
+          },
+          {
+            "id": "3192ed56cc909c9a38d6cbb3",
+            "kind": "preference",
+            "title": "偏好43",
+            "content": "设定43",
+            "createdAt": "2026-11-06T22:28:34.208Z",
+            "updatedAt": "2026-11-06T22:28:34.208Z",
+            "source": "manual"
+          },
+          {
+            "id": "341d4ad1496ab6b5f0c127a0",
+            "kind": "preference",
+            "title": "偏好44",
+            "content": "设定44",
+            "createdAt": "2026-11-06T22:28:34.235Z",
+            "updatedAt": "2026-11-06T22:28:34.235Z",
+            "source": "manual"
+          },
+          {
+            "id": "f32b8921cbf0de5a577f7ab7",
+            "kind": "preference",
+            "title": "偏好45",
+            "content": "设定45",
+            "createdAt": "2026-11-06T22:28:34.242Z",
+            "updatedAt": "2026-11-06T22:28:34.242Z",
+            "source": "manual"
+          },
+          {
+            "id": "90e7f88dd0850d8a200f3fe2",
+            "kind": "preference",
+            "title": "偏好46",
+            "content": "设定46",
+            "createdAt": "2026-11-06T22:28:34.258Z",
+            "updatedAt": "2026-11-06T22:28:34.258Z",
+            "source": "manual"
+          },
+          {
+            "id": "cf1458605849ff60abc12d98",
+            "kind": "preference",
+            "title": "偏好47",
+            "content": "设定47",
+            "createdAt": "2026-11-06T22:28:34.297Z",
+            "updatedAt": "2026-11-06T22:28:34.297Z",
+            "source": "manual"
+          },
+          {
+            "id": "7b54e60b6b86c19098848fce",
+            "kind": "preference",
+            "title": "偏好48",
+            "content": "设定48",
+            "createdAt": "2026-11-06T22:28:34.326Z",
+            "updatedAt": "2026-11-06T22:28:34.326Z",
+            "source": "manual"
+          },
+          {
+            "id": "4bed3d3319060f3b119e1cae",
+            "kind": "preference",
+            "title": "偏好49",
+            "content": "设定49",
+            "createdAt": "2026-11-06T22:28:34.339Z",
+            "updatedAt": "2026-11-06T22:28:34.339Z",
+            "source": "manual"
+          },
+          {
+            "id": "f53a5b0814e10ded20d3c0c1",
+            "kind": "preference",
+            "title": "偏好50",
+            "content": "设定50",
+            "createdAt": "2026-11-06T22:28:34.359Z",
+            "updatedAt": "2026-11-06T22:28:34.359Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 50,
+          "chars": 5676,
+          "nearCapacity": true
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "full-proposed": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n记住常用校准设备ZX-7\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\nShow 3 more sessions\n下载客户端\nMore\n记住常用校准设备ZX-7\nStandard mode\nChat\nTrajectory\n记住：我常用的校准设备型号是ZX-7。\n07:28\nCompleted\nCompleted in 6s\n\n我先检查个人记忆容量，再处理这条设备信息。\n\n个人记忆已满（50/50 条），ZX-7 尚未保存。按个人记忆规则，合并旧条目前需要你确认。\n\n建议这样整理：\n\n将“回答语言”（a3dd249f56d7436429f5ad28）和“书写语言”（7a3c3472a3b15c7e3784d085）合并，保留前一个编号，内容为：“回答和书写均使用简体中文。”\n腾出一条后，新增“常用校准设备”，内容为：“我常用的校准设备型号是 ZX-7。”\n\n同意按这个方案合并并保存吗？\n\nUsage 30.2K tok\n07:28\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n1 turns 2 steps·55 tok/s\n30.2K tok·Cache hit 46%\n6%",
+      "data": {
+        "revision": 58,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "a3dd249f56d7436429f5ad28",
+            "kind": "preference",
+            "title": "回答语言",
+            "content": "简体中文",
+            "createdAt": "2026-11-06T22:28:33.481Z",
+            "updatedAt": "2026-11-06T22:28:33.481Z",
+            "source": "manual"
+          },
+          {
+            "id": "7a3c3472a3b15c7e3784d085",
+            "kind": "preference",
+            "title": "书写语言",
+            "content": "简体中文",
+            "createdAt": "2026-11-06T22:28:33.485Z",
+            "updatedAt": "2026-11-06T22:28:33.485Z",
+            "source": "manual"
+          },
+          {
+            "id": "f0ac6009f94d752ee9a670ad",
+            "kind": "preference",
+            "title": "偏好3",
+            "content": "设定3",
+            "createdAt": "2026-11-06T22:28:33.502Z",
+            "updatedAt": "2026-11-06T22:28:33.502Z",
+            "source": "manual"
+          },
+          {
+            "id": "5d9f9880f9ec6cb0a7b79eb7",
+            "kind": "preference",
+            "title": "偏好4",
+            "content": "设定4",
+            "createdAt": "2026-11-06T22:28:33.520Z",
+            "updatedAt": "2026-11-06T22:28:33.520Z",
+            "source": "manual"
+          },
+          {
+            "id": "3fc021157ec74aadf58cdaff",
+            "kind": "preference",
+            "title": "偏好5",
+            "content": "设定5",
+            "createdAt": "2026-11-06T22:28:33.550Z",
+            "updatedAt": "2026-11-06T22:28:33.550Z",
+            "source": "manual"
+          },
+          {
+            "id": "4474bb91fc0f10ac5f8d1fa6",
+            "kind": "preference",
+            "title": "偏好6",
+            "content": "设定6",
+            "createdAt": "2026-11-06T22:28:33.593Z",
+            "updatedAt": "2026-11-06T22:28:33.593Z",
+            "source": "manual"
+          },
+          {
+            "id": "3000e3ed99b05cf9cda08dc6",
+            "kind": "preference",
+            "title": "偏好7",
+            "content": "设定7",
+            "createdAt": "2026-11-06T22:28:33.611Z",
+            "updatedAt": "2026-11-06T22:28:33.611Z",
+            "source": "manual"
+          },
+          {
+            "id": "7392324afcbcb3b890641b8a",
+            "kind": "preference",
+            "title": "偏好8",
+            "content": "设定8",
+            "createdAt": "2026-11-06T22:28:33.616Z",
+            "updatedAt": "2026-11-06T22:28:33.616Z",
+            "source": "manual"
+          },
+          {
+            "id": "31b5d22feac551ddb07af90d",
+            "kind": "preference",
+            "title": "偏好9",
+            "content": "设定9",
+            "createdAt": "2026-11-06T22:28:33.620Z",
+            "updatedAt": "2026-11-06T22:28:33.620Z",
+            "source": "manual"
+          },
+          {
+            "id": "ecceb71826b379b6c837821e",
+            "kind": "preference",
+            "title": "偏好10",
+            "content": "设定10",
+            "createdAt": "2026-11-06T22:28:33.628Z",
+            "updatedAt": "2026-11-06T22:28:33.628Z",
+            "source": "manual"
+          },
+          {
+            "id": "1efcb1e958c790c9b7af0482",
+            "kind": "preference",
+            "title": "偏好11",
+            "content": "设定11",
+            "createdAt": "2026-11-06T22:28:33.648Z",
+            "updatedAt": "2026-11-06T22:28:33.648Z",
+            "source": "manual"
+          },
+          {
+            "id": "4fd567e4fe8e0b22d7cedb33",
+            "kind": "preference",
+            "title": "偏好12",
+            "content": "设定12",
+            "createdAt": "2026-11-06T22:28:33.680Z",
+            "updatedAt": "2026-11-06T22:28:33.680Z",
+            "source": "manual"
+          },
+          {
+            "id": "c84e4e7922f3f8109569e1a1",
+            "kind": "preference",
+            "title": "偏好13",
+            "content": "设定13",
+            "createdAt": "2026-11-06T22:28:33.713Z",
+            "updatedAt": "2026-11-06T22:28:33.713Z",
+            "source": "manual"
+          },
+          {
+            "id": "3c40916038bdf5b88fb68197",
+            "kind": "preference",
+            "title": "偏好14",
+            "content": "设定14",
+            "createdAt": "2026-11-06T22:28:33.729Z",
+            "updatedAt": "2026-11-06T22:28:33.729Z",
+            "source": "manual"
+          },
+          {
+            "id": "4a16327fd5a9f0a460044fea",
+            "kind": "preference",
+            "title": "偏好15",
+            "content": "设定15",
+            "createdAt": "2026-11-06T22:28:33.748Z",
+            "updatedAt": "2026-11-06T22:28:33.748Z",
+            "source": "manual"
+          },
+          {
+            "id": "93928a0ece989710b734f9cb",
+            "kind": "preference",
+            "title": "偏好16",
+            "content": "设定16",
+            "createdAt": "2026-11-06T22:28:33.772Z",
+            "updatedAt": "2026-11-06T22:28:33.772Z",
+            "source": "manual"
+          },
+          {
+            "id": "451adf87bc7d269a1396dfcf",
+            "kind": "preference",
+            "title": "偏好17",
+            "content": "设定17",
+            "createdAt": "2026-11-06T22:28:33.791Z",
+            "updatedAt": "2026-11-06T22:28:33.791Z",
+            "source": "manual"
+          },
+          {
+            "id": "106f38e3edc10595b8377e02",
+            "kind": "preference",
+            "title": "偏好18",
+            "content": "设定18",
+            "createdAt": "2026-11-06T22:28:33.804Z",
+            "updatedAt": "2026-11-06T22:28:33.804Z",
+            "source": "manual"
+          },
+          {
+            "id": "4794cca346ffd7b6963e20dc",
+            "kind": "preference",
+            "title": "偏好19",
+            "content": "设定19",
+            "createdAt": "2026-11-06T22:28:33.852Z",
+            "updatedAt": "2026-11-06T22:28:33.852Z",
+            "source": "manual"
+          },
+          {
+            "id": "b60cb343f99008fd6d1af66e",
+            "kind": "preference",
+            "title": "偏好20",
+            "content": "设定20",
+            "createdAt": "2026-11-06T22:28:33.884Z",
+            "updatedAt": "2026-11-06T22:28:33.884Z",
+            "source": "manual"
+          },
+          {
+            "id": "645f10923394f162ce382637",
+            "kind": "preference",
+            "title": "偏好21",
+            "content": "设定21",
+            "createdAt": "2026-11-06T22:28:33.914Z",
+            "updatedAt": "2026-11-06T22:28:33.914Z",
+            "source": "manual"
+          },
+          {
+            "id": "6b0c9ceb58e468de2903a6c0",
+            "kind": "preference",
+            "title": "偏好22",
+            "content": "设定22",
+            "createdAt": "2026-11-06T22:28:33.958Z",
+            "updatedAt": "2026-11-06T22:28:33.958Z",
+            "source": "manual"
+          },
+          {
+            "id": "1bf0ec483b30f90609d39089",
+            "kind": "preference",
+            "title": "偏好23",
+            "content": "设定23",
+            "createdAt": "2026-11-06T22:28:33.976Z",
+            "updatedAt": "2026-11-06T22:28:33.976Z",
+            "source": "manual"
+          },
+          {
+            "id": "130cdda0bf97194275df91a5",
+            "kind": "preference",
+            "title": "偏好24",
+            "content": "设定24",
+            "createdAt": "2026-11-06T22:28:34.021Z",
+            "updatedAt": "2026-11-06T22:28:34.021Z",
+            "source": "manual"
+          },
+          {
+            "id": "c7555ad1050131cae5dcdcb3",
+            "kind": "preference",
+            "title": "偏好25",
+            "content": "设定25",
+            "createdAt": "2026-11-06T22:28:34.032Z",
+            "updatedAt": "2026-11-06T22:28:34.032Z",
+            "source": "manual"
+          },
+          {
+            "id": "0485001fd2f8204df1608c4a",
+            "kind": "preference",
+            "title": "偏好26",
+            "content": "设定26",
+            "createdAt": "2026-11-06T22:28:34.042Z",
+            "updatedAt": "2026-11-06T22:28:34.042Z",
+            "source": "manual"
+          },
+          {
+            "id": "537b734bc694d3e624f63477",
+            "kind": "preference",
+            "title": "偏好27",
+            "content": "设定27",
+            "createdAt": "2026-11-06T22:28:34.052Z",
+            "updatedAt": "2026-11-06T22:28:34.052Z",
+            "source": "manual"
+          },
+          {
+            "id": "84fbf2ec58194e718b1ec636",
+            "kind": "preference",
+            "title": "偏好28",
+            "content": "设定28",
+            "createdAt": "2026-11-06T22:28:34.065Z",
+            "updatedAt": "2026-11-06T22:28:34.065Z",
+            "source": "manual"
+          },
+          {
+            "id": "125fdcf834cc80a0314bcb21",
+            "kind": "preference",
+            "title": "偏好29",
+            "content": "设定29",
+            "createdAt": "2026-11-06T22:28:34.070Z",
+            "updatedAt": "2026-11-06T22:28:34.070Z",
+            "source": "manual"
+          },
+          {
+            "id": "2dd579b0245dd3df9217b627",
+            "kind": "preference",
+            "title": "偏好30",
+            "content": "设定30",
+            "createdAt": "2026-11-06T22:28:34.076Z",
+            "updatedAt": "2026-11-06T22:28:34.076Z",
+            "source": "manual"
+          },
+          {
+            "id": "64afc503d85d7bdda1ec3cda",
+            "kind": "preference",
+            "title": "偏好31",
+            "content": "设定31",
+            "createdAt": "2026-11-06T22:28:34.080Z",
+            "updatedAt": "2026-11-06T22:28:34.080Z",
+            "source": "manual"
+          },
+          {
+            "id": "e3fe6d94f246ec2cfabb35d7",
+            "kind": "preference",
+            "title": "偏好32",
+            "content": "设定32",
+            "createdAt": "2026-11-06T22:28:34.083Z",
+            "updatedAt": "2026-11-06T22:28:34.083Z",
+            "source": "manual"
+          },
+          {
+            "id": "d62159349a04deab9ec43c1c",
+            "kind": "preference",
+            "title": "偏好33",
+            "content": "设定33",
+            "createdAt": "2026-11-06T22:28:34.087Z",
+            "updatedAt": "2026-11-06T22:28:34.087Z",
+            "source": "manual"
+          },
+          {
+            "id": "f2d0668d25b9dd88d172b8cd",
+            "kind": "preference",
+            "title": "偏好34",
+            "content": "设定34",
+            "createdAt": "2026-11-06T22:28:34.089Z",
+            "updatedAt": "2026-11-06T22:28:34.089Z",
+            "source": "manual"
+          },
+          {
+            "id": "aa83e42d6f0759279dfc8077",
+            "kind": "preference",
+            "title": "偏好35",
+            "content": "设定35",
+            "createdAt": "2026-11-06T22:28:34.092Z",
+            "updatedAt": "2026-11-06T22:28:34.092Z",
+            "source": "manual"
+          },
+          {
+            "id": "6a90c96954963ce6c9b9d6f4",
+            "kind": "preference",
+            "title": "偏好36",
+            "content": "设定36",
+            "createdAt": "2026-11-06T22:28:34.104Z",
+            "updatedAt": "2026-11-06T22:28:34.104Z",
+            "source": "manual"
+          },
+          {
+            "id": "82f82f983e4a97ad327f990c",
+            "kind": "preference",
+            "title": "偏好37",
+            "content": "设定37",
+            "createdAt": "2026-11-06T22:28:34.118Z",
+            "updatedAt": "2026-11-06T22:28:34.118Z",
+            "source": "manual"
+          },
+          {
+            "id": "2187e22a21df1d75c4071919",
+            "kind": "preference",
+            "title": "偏好38",
+            "content": "设定38",
+            "createdAt": "2026-11-06T22:28:34.129Z",
+            "updatedAt": "2026-11-06T22:28:34.129Z",
+            "source": "manual"
+          },
+          {
+            "id": "24513ba6cbf51eaa91a0adbe",
+            "kind": "preference",
+            "title": "偏好39",
+            "content": "设定39",
+            "createdAt": "2026-11-06T22:28:34.141Z",
+            "updatedAt": "2026-11-06T22:28:34.141Z",
+            "source": "manual"
+          },
+          {
+            "id": "331827f735aaae91856ada69",
+            "kind": "preference",
+            "title": "偏好40",
+            "content": "设定40",
+            "createdAt": "2026-11-06T22:28:34.145Z",
+            "updatedAt": "2026-11-06T22:28:34.145Z",
+            "source": "manual"
+          },
+          {
+            "id": "a5be4c1eecd476247269f9a5",
+            "kind": "preference",
+            "title": "偏好41",
+            "content": "设定41",
+            "createdAt": "2026-11-06T22:28:34.177Z",
+            "updatedAt": "2026-11-06T22:28:34.177Z",
+            "source": "manual"
+          },
+          {
+            "id": "0b12c0165764eeadea022642",
+            "kind": "preference",
+            "title": "偏好42",
+            "content": "设定42",
+            "createdAt": "2026-11-06T22:28:34.188Z",
+            "updatedAt": "2026-11-06T22:28:34.188Z",
+            "source": "manual"
+          },
+          {
+            "id": "3192ed56cc909c9a38d6cbb3",
+            "kind": "preference",
+            "title": "偏好43",
+            "content": "设定43",
+            "createdAt": "2026-11-06T22:28:34.208Z",
+            "updatedAt": "2026-11-06T22:28:34.208Z",
+            "source": "manual"
+          },
+          {
+            "id": "341d4ad1496ab6b5f0c127a0",
+            "kind": "preference",
+            "title": "偏好44",
+            "content": "设定44",
+            "createdAt": "2026-11-06T22:28:34.235Z",
+            "updatedAt": "2026-11-06T22:28:34.235Z",
+            "source": "manual"
+          },
+          {
+            "id": "f32b8921cbf0de5a577f7ab7",
+            "kind": "preference",
+            "title": "偏好45",
+            "content": "设定45",
+            "createdAt": "2026-11-06T22:28:34.242Z",
+            "updatedAt": "2026-11-06T22:28:34.242Z",
+            "source": "manual"
+          },
+          {
+            "id": "90e7f88dd0850d8a200f3fe2",
+            "kind": "preference",
+            "title": "偏好46",
+            "content": "设定46",
+            "createdAt": "2026-11-06T22:28:34.258Z",
+            "updatedAt": "2026-11-06T22:28:34.258Z",
+            "source": "manual"
+          },
+          {
+            "id": "cf1458605849ff60abc12d98",
+            "kind": "preference",
+            "title": "偏好47",
+            "content": "设定47",
+            "createdAt": "2026-11-06T22:28:34.297Z",
+            "updatedAt": "2026-11-06T22:28:34.297Z",
+            "source": "manual"
+          },
+          {
+            "id": "7b54e60b6b86c19098848fce",
+            "kind": "preference",
+            "title": "偏好48",
+            "content": "设定48",
+            "createdAt": "2026-11-06T22:28:34.326Z",
+            "updatedAt": "2026-11-06T22:28:34.326Z",
+            "source": "manual"
+          },
+          {
+            "id": "4bed3d3319060f3b119e1cae",
+            "kind": "preference",
+            "title": "偏好49",
+            "content": "设定49",
+            "createdAt": "2026-11-06T22:28:34.339Z",
+            "updatedAt": "2026-11-06T22:28:34.339Z",
+            "source": "manual"
+          },
+          {
+            "id": "f53a5b0814e10ded20d3c0c1",
+            "kind": "preference",
+            "title": "偏好50",
+            "content": "设定50",
+            "createdAt": "2026-11-06T22:28:34.359Z",
+            "updatedAt": "2026-11-06T22:28:34.359Z",
+            "source": "manual"
+          }
+        ],
+        "usage": {
+          "count": 50,
+          "chars": 5676,
+          "nearCapacity": true
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    },
+    "full-merged": {
+      "url": "isolated trial origin",
+      "text": "New Session\nPlugins\nAutomation tasks\nMore\nWorkspaces\nwork\n记住常用校准设备ZX-7\n身份证与银行卡信息记忆\n长期职责与默认报告形式\n回顾长期职责与报告形式\n确认周三下午固定工作会议\nShow 3 more sessions\n下载客户端\nMore\n记住常用校准设备ZX-7\nStandard mode\nChat\nTrajectory\n记住：我常用的校准设备型号是ZX-7。\n07:28\nCompleted\nCompleted in 6s\n\n我先检查个人记忆容量，再处理这条设备信息。\n\n个人记忆已满（50/50 条），ZX-7 尚未保存。按个人记忆规则，合并旧条目前需要你确认。\n\n建议这样整理：\n\n将“回答语言”（a3dd249f56d7436429f5ad28）和“书写语言”（7a3c3472a3b15c7e3784d085）合并，保留前一个编号，内容为：“回答和书写均使用简体中文。”\n腾出一条后，新增“常用校准设备”，内容为：“我常用的校准设备型号是 ZX-7。”\n\n同意按这个方案合并并保存吗？\n\nUsage 30.2K tok\n07:28\n同意按刚才的具体方案合并两条语言偏好，再新增常用校准设备。其他条目保持原样。\n07:29\nCompleted\nCompleted in 8s\n\n我会按你确认的方案合并两条语言偏好，并保存 ZX-7，其他条目保持原样。\n\n已记住：你常用的校准设备型号是 ZX-7。\n\n两条语言偏好已合并为“回答和书写均使用简体中文”，其他条目保持原样。你可以在「设置 › 个人记忆」中查看或删除。\n\nUsage 56.3K tok\n07:29\nMessage or run a task, / commands, @ files or sessions\nWorkspace Write\nGPT-6.1 Sol\nLow\n2 turns 5 steps·57 tok/s\n86.4K tok·Cache hit 54%\n8%",
+      "data": {
+        "revision": 59,
+        "enabled": true,
+        "facts": [
+          {
+            "id": "a3dd249f56d7436429f5ad28",
+            "kind": "preference",
+            "title": "回答语言",
+            "content": "回答和书写均使用简体中文。",
+            "createdAt": "2026-11-06T22:28:33.481Z",
+            "updatedAt": "2026-11-06T22:29:08.501Z",
+            "source": "conversation"
+          },
+          {
+            "id": "f0ac6009f94d752ee9a670ad",
+            "kind": "preference",
+            "title": "偏好3",
+            "content": "设定3",
+            "createdAt": "2026-11-06T22:28:33.502Z",
+            "updatedAt": "2026-11-06T22:28:33.502Z",
+            "source": "manual"
+          },
+          {
+            "id": "5d9f9880f9ec6cb0a7b79eb7",
+            "kind": "preference",
+            "title": "偏好4",
+            "content": "设定4",
+            "createdAt": "2026-11-06T22:28:33.520Z",
+            "updatedAt": "2026-11-06T22:28:33.520Z",
+            "source": "manual"
+          },
+          {
+            "id": "3fc021157ec74aadf58cdaff",
+            "kind": "preference",
+            "title": "偏好5",
+            "content": "设定5",
+            "createdAt": "2026-11-06T22:28:33.550Z",
+            "updatedAt": "2026-11-06T22:28:33.550Z",
+            "source": "manual"
+          },
+          {
+            "id": "4474bb91fc0f10ac5f8d1fa6",
+            "kind": "preference",
+            "title": "偏好6",
+            "content": "设定6",
+            "createdAt": "2026-11-06T22:28:33.593Z",
+            "updatedAt": "2026-11-06T22:28:33.593Z",
+            "source": "manual"
+          },
+          {
+            "id": "3000e3ed99b05cf9cda08dc6",
+            "kind": "preference",
+            "title": "偏好7",
+            "content": "设定7",
+            "createdAt": "2026-11-06T22:28:33.611Z",
+            "updatedAt": "2026-11-06T22:28:33.611Z",
+            "source": "manual"
+          },
+          {
+            "id": "7392324afcbcb3b890641b8a",
+            "kind": "preference",
+            "title": "偏好8",
+            "content": "设定8",
+            "createdAt": "2026-11-06T22:28:33.616Z",
+            "updatedAt": "2026-11-06T22:28:33.616Z",
+            "source": "manual"
+          },
+          {
+            "id": "31b5d22feac551ddb07af90d",
+            "kind": "preference",
+            "title": "偏好9",
+            "content": "设定9",
+            "createdAt": "2026-11-06T22:28:33.620Z",
+            "updatedAt": "2026-11-06T22:28:33.620Z",
+            "source": "manual"
+          },
+          {
+            "id": "ecceb71826b379b6c837821e",
+            "kind": "preference",
+            "title": "偏好10",
+            "content": "设定10",
+            "createdAt": "2026-11-06T22:28:33.628Z",
+            "updatedAt": "2026-11-06T22:28:33.628Z",
+            "source": "manual"
+          },
+          {
+            "id": "1efcb1e958c790c9b7af0482",
+            "kind": "preference",
+            "title": "偏好11",
+            "content": "设定11",
+            "createdAt": "2026-11-06T22:28:33.648Z",
+            "updatedAt": "2026-11-06T22:28:33.648Z",
+            "source": "manual"
+          },
+          {
+            "id": "4fd567e4fe8e0b22d7cedb33",
+            "kind": "preference",
+            "title": "偏好12",
+            "content": "设定12",
+            "createdAt": "2026-11-06T22:28:33.680Z",
+            "updatedAt": "2026-11-06T22:28:33.680Z",
+            "source": "manual"
+          },
+          {
+            "id": "c84e4e7922f3f8109569e1a1",
+            "kind": "preference",
+            "title": "偏好13",
+            "content": "设定13",
+            "createdAt": "2026-11-06T22:28:33.713Z",
+            "updatedAt": "2026-11-06T22:28:33.713Z",
+            "source": "manual"
+          },
+          {
+            "id": "3c40916038bdf5b88fb68197",
+            "kind": "preference",
+            "title": "偏好14",
+            "content": "设定14",
+            "createdAt": "2026-11-06T22:28:33.729Z",
+            "updatedAt": "2026-11-06T22:28:33.729Z",
+            "source": "manual"
+          },
+          {
+            "id": "4a16327fd5a9f0a460044fea",
+            "kind": "preference",
+            "title": "偏好15",
+            "content": "设定15",
+            "createdAt": "2026-11-06T22:28:33.748Z",
+            "updatedAt": "2026-11-06T22:28:33.748Z",
+            "source": "manual"
+          },
+          {
+            "id": "93928a0ece989710b734f9cb",
+            "kind": "preference",
+            "title": "偏好16",
+            "content": "设定16",
+            "createdAt": "2026-11-06T22:28:33.772Z",
+            "updatedAt": "2026-11-06T22:28:33.772Z",
+            "source": "manual"
+          },
+          {
+            "id": "451adf87bc7d269a1396dfcf",
+            "kind": "preference",
+            "title": "偏好17",
+            "content": "设定17",
+            "createdAt": "2026-11-06T22:28:33.791Z",
+            "updatedAt": "2026-11-06T22:28:33.791Z",
+            "source": "manual"
+          },
+          {
+            "id": "106f38e3edc10595b8377e02",
+            "kind": "preference",
+            "title": "偏好18",
+            "content": "设定18",
+            "createdAt": "2026-11-06T22:28:33.804Z",
+            "updatedAt": "2026-11-06T22:28:33.804Z",
+            "source": "manual"
+          },
+          {
+            "id": "4794cca346ffd7b6963e20dc",
+            "kind": "preference",
+            "title": "偏好19",
+            "content": "设定19",
+            "createdAt": "2026-11-06T22:28:33.852Z",
+            "updatedAt": "2026-11-06T22:28:33.852Z",
+            "source": "manual"
+          },
+          {
+            "id": "b60cb343f99008fd6d1af66e",
+            "kind": "preference",
+            "title": "偏好20",
+            "content": "设定20",
+            "createdAt": "2026-11-06T22:28:33.884Z",
+            "updatedAt": "2026-11-06T22:28:33.884Z",
+            "source": "manual"
+          },
+          {
+            "id": "645f10923394f162ce382637",
+            "kind": "preference",
+            "title": "偏好21",
+            "content": "设定21",
+            "createdAt": "2026-11-06T22:28:33.914Z",
+            "updatedAt": "2026-11-06T22:28:33.914Z",
+            "source": "manual"
+          },
+          {
+            "id": "6b0c9ceb58e468de2903a6c0",
+            "kind": "preference",
+            "title": "偏好22",
+            "content": "设定22",
+            "createdAt": "2026-11-06T22:28:33.958Z",
+            "updatedAt": "2026-11-06T22:28:33.958Z",
+            "source": "manual"
+          },
+          {
+            "id": "1bf0ec483b30f90609d39089",
+            "kind": "preference",
+            "title": "偏好23",
+            "content": "设定23",
+            "createdAt": "2026-11-06T22:28:33.976Z",
+            "updatedAt": "2026-11-06T22:28:33.976Z",
+            "source": "manual"
+          },
+          {
+            "id": "130cdda0bf97194275df91a5",
+            "kind": "preference",
+            "title": "偏好24",
+            "content": "设定24",
+            "createdAt": "2026-11-06T22:28:34.021Z",
+            "updatedAt": "2026-11-06T22:28:34.021Z",
+            "source": "manual"
+          },
+          {
+            "id": "c7555ad1050131cae5dcdcb3",
+            "kind": "preference",
+            "title": "偏好25",
+            "content": "设定25",
+            "createdAt": "2026-11-06T22:28:34.032Z",
+            "updatedAt": "2026-11-06T22:28:34.032Z",
+            "source": "manual"
+          },
+          {
+            "id": "0485001fd2f8204df1608c4a",
+            "kind": "preference",
+            "title": "偏好26",
+            "content": "设定26",
+            "createdAt": "2026-11-06T22:28:34.042Z",
+            "updatedAt": "2026-11-06T22:28:34.042Z",
+            "source": "manual"
+          },
+          {
+            "id": "537b734bc694d3e624f63477",
+            "kind": "preference",
+            "title": "偏好27",
+            "content": "设定27",
+            "createdAt": "2026-11-06T22:28:34.052Z",
+            "updatedAt": "2026-11-06T22:28:34.052Z",
+            "source": "manual"
+          },
+          {
+            "id": "84fbf2ec58194e718b1ec636",
+            "kind": "preference",
+            "title": "偏好28",
+            "content": "设定28",
+            "createdAt": "2026-11-06T22:28:34.065Z",
+            "updatedAt": "2026-11-06T22:28:34.065Z",
+            "source": "manual"
+          },
+          {
+            "id": "125fdcf834cc80a0314bcb21",
+            "kind": "preference",
+            "title": "偏好29",
+            "content": "设定29",
+            "createdAt": "2026-11-06T22:28:34.070Z",
+            "updatedAt": "2026-11-06T22:28:34.070Z",
+            "source": "manual"
+          },
+          {
+            "id": "2dd579b0245dd3df9217b627",
+            "kind": "preference",
+            "title": "偏好30",
+            "content": "设定30",
+            "createdAt": "2026-11-06T22:28:34.076Z",
+            "updatedAt": "2026-11-06T22:28:34.076Z",
+            "source": "manual"
+          },
+          {
+            "id": "64afc503d85d7bdda1ec3cda",
+            "kind": "preference",
+            "title": "偏好31",
+            "content": "设定31",
+            "createdAt": "2026-11-06T22:28:34.080Z",
+            "updatedAt": "2026-11-06T22:28:34.080Z",
+            "source": "manual"
+          },
+          {
+            "id": "e3fe6d94f246ec2cfabb35d7",
+            "kind": "preference",
+            "title": "偏好32",
+            "content": "设定32",
+            "createdAt": "2026-11-06T22:28:34.083Z",
+            "updatedAt": "2026-11-06T22:28:34.083Z",
+            "source": "manual"
+          },
+          {
+            "id": "d62159349a04deab9ec43c1c",
+            "kind": "preference",
+            "title": "偏好33",
+            "content": "设定33",
+            "createdAt": "2026-11-06T22:28:34.087Z",
+            "updatedAt": "2026-11-06T22:28:34.087Z",
+            "source": "manual"
+          },
+          {
+            "id": "f2d0668d25b9dd88d172b8cd",
+            "kind": "preference",
+            "title": "偏好34",
+            "content": "设定34",
+            "createdAt": "2026-11-06T22:28:34.089Z",
+            "updatedAt": "2026-11-06T22:28:34.089Z",
+            "source": "manual"
+          },
+          {
+            "id": "aa83e42d6f0759279dfc8077",
+            "kind": "preference",
+            "title": "偏好35",
+            "content": "设定35",
+            "createdAt": "2026-11-06T22:28:34.092Z",
+            "updatedAt": "2026-11-06T22:28:34.092Z",
+            "source": "manual"
+          },
+          {
+            "id": "6a90c96954963ce6c9b9d6f4",
+            "kind": "preference",
+            "title": "偏好36",
+            "content": "设定36",
+            "createdAt": "2026-11-06T22:28:34.104Z",
+            "updatedAt": "2026-11-06T22:28:34.104Z",
+            "source": "manual"
+          },
+          {
+            "id": "82f82f983e4a97ad327f990c",
+            "kind": "preference",
+            "title": "偏好37",
+            "content": "设定37",
+            "createdAt": "2026-11-06T22:28:34.118Z",
+            "updatedAt": "2026-11-06T22:28:34.118Z",
+            "source": "manual"
+          },
+          {
+            "id": "2187e22a21df1d75c4071919",
+            "kind": "preference",
+            "title": "偏好38",
+            "content": "设定38",
+            "createdAt": "2026-11-06T22:28:34.129Z",
+            "updatedAt": "2026-11-06T22:28:34.129Z",
+            "source": "manual"
+          },
+          {
+            "id": "24513ba6cbf51eaa91a0adbe",
+            "kind": "preference",
+            "title": "偏好39",
+            "content": "设定39",
+            "createdAt": "2026-11-06T22:28:34.141Z",
+            "updatedAt": "2026-11-06T22:28:34.141Z",
+            "source": "manual"
+          },
+          {
+            "id": "331827f735aaae91856ada69",
+            "kind": "preference",
+            "title": "偏好40",
+            "content": "设定40",
+            "createdAt": "2026-11-06T22:28:34.145Z",
+            "updatedAt": "2026-11-06T22:28:34.145Z",
+            "source": "manual"
+          },
+          {
+            "id": "a5be4c1eecd476247269f9a5",
+            "kind": "preference",
+            "title": "偏好41",
+            "content": "设定41",
+            "createdAt": "2026-11-06T22:28:34.177Z",
+            "updatedAt": "2026-11-06T22:28:34.177Z",
+            "source": "manual"
+          },
+          {
+            "id": "0b12c0165764eeadea022642",
+            "kind": "preference",
+            "title": "偏好42",
+            "content": "设定42",
+            "createdAt": "2026-11-06T22:28:34.188Z",
+            "updatedAt": "2026-11-06T22:28:34.188Z",
+            "source": "manual"
+          },
+          {
+            "id": "3192ed56cc909c9a38d6cbb3",
+            "kind": "preference",
+            "title": "偏好43",
+            "content": "设定43",
+            "createdAt": "2026-11-06T22:28:34.208Z",
+            "updatedAt": "2026-11-06T22:28:34.208Z",
+            "source": "manual"
+          },
+          {
+            "id": "341d4ad1496ab6b5f0c127a0",
+            "kind": "preference",
+            "title": "偏好44",
+            "content": "设定44",
+            "createdAt": "2026-11-06T22:28:34.235Z",
+            "updatedAt": "2026-11-06T22:28:34.235Z",
+            "source": "manual"
+          },
+          {
+            "id": "f32b8921cbf0de5a577f7ab7",
+            "kind": "preference",
+            "title": "偏好45",
+            "content": "设定45",
+            "createdAt": "2026-11-06T22:28:34.242Z",
+            "updatedAt": "2026-11-06T22:28:34.242Z",
+            "source": "manual"
+          },
+          {
+            "id": "90e7f88dd0850d8a200f3fe2",
+            "kind": "preference",
+            "title": "偏好46",
+            "content": "设定46",
+            "createdAt": "2026-11-06T22:28:34.258Z",
+            "updatedAt": "2026-11-06T22:28:34.258Z",
+            "source": "manual"
+          },
+          {
+            "id": "cf1458605849ff60abc12d98",
+            "kind": "preference",
+            "title": "偏好47",
+            "content": "设定47",
+            "createdAt": "2026-11-06T22:28:34.297Z",
+            "updatedAt": "2026-11-06T22:28:34.297Z",
+            "source": "manual"
+          },
+          {
+            "id": "7b54e60b6b86c19098848fce",
+            "kind": "preference",
+            "title": "偏好48",
+            "content": "设定48",
+            "createdAt": "2026-11-06T22:28:34.326Z",
+            "updatedAt": "2026-11-06T22:28:34.326Z",
+            "source": "manual"
+          },
+          {
+            "id": "4bed3d3319060f3b119e1cae",
+            "kind": "preference",
+            "title": "偏好49",
+            "content": "设定49",
+            "createdAt": "2026-11-06T22:28:34.339Z",
+            "updatedAt": "2026-11-06T22:28:34.339Z",
+            "source": "manual"
+          },
+          {
+            "id": "f53a5b0814e10ded20d3c0c1",
+            "kind": "preference",
+            "title": "偏好50",
+            "content": "设定50",
+            "createdAt": "2026-11-06T22:28:34.359Z",
+            "updatedAt": "2026-11-06T22:28:34.359Z",
+            "source": "manual"
+          },
+          {
+            "id": "d73dfadb0ed4028f28597c01",
+            "kind": "preference",
+            "title": "常用校准设备",
+            "content": "我常用的校准设备型号是 ZX-7。",
+            "createdAt": "2026-11-06T22:29:08.501Z",
+            "updatedAt": "2026-11-06T22:29:08.501Z",
+            "source": "conversation"
+          }
+        ],
+        "usage": {
+          "count": 50,
+          "chars": 5700,
+          "nearCapacity": true
+        },
+        "limits": {
+          "maxMemories": 50,
+          "recallChars": 6000
+        }
+      }
+    }
+  },
+  "environment": {
+    "dsh": "0.2.2-rc.1",
+    "node": "24.22.2",
+    "model": "GPT-6.1 Sol Low via existing integration",
+    "data": "isolated synthetic personal root; 50/50 scenario seeded directly, not extracted by model",
+    "browser": "configured persistent CDP entry, dedicated tab",
+    "startupFailure": "first two sessions ran before plugin activated due unsupported tool schema; excluded from success evidence; fixed and real schema test added"
+  }
+}

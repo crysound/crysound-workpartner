@@ -1,7 +1,7 @@
 {
   "name": "@crysound/memory",
   "version": "0.1.0",
-  "description": "兆华记忆：自动记住稳定的个人事实与偏好，跨会话召回，中文页面查看和删除。",
+  "description": "个人记忆：自动记住稳定的个人事实与偏好，跨会话召回，支持开关、编辑与清空。",
   "type": "module",
   "main": "./index.mjs",
   "exports": { ".": "./index.mjs", "./client": "./client.js", "./package.json": "./package.json" },
@@ -12,7 +12,7 @@
   "scripts": { "test": "node --test tests/*.test.mjs" },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
-    "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-settings"] }
+    "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-tool"] }
   },
   "keywords": ["dsh-plugin", "memory", "crysound"]
 }

@@ -8,20 +8,29 @@ import subprocess
 
 def summarize(path):
     rows = [json.loads(line) for line in subprocess.check_output(["zstd", "-dc", str(path)]).decode().splitlines()]
-    result = {"session": rows[0]["id"], "createdAt": rows[0]["createdAt"], "modelCalls": [], "memoryTools": [], "recall": []}
+    result = {"session": rows[0]["id"], "createdAt": rows[0]["createdAt"], "modelCalls": [], "memoryTools": [], "memoryResults": [], "userTurns": [], "assistantText": [], "recall": []}
+    memory_calls = set()
     for row in rows:
         data = row.get("data", {})
         message = data.get("message", {})
         if row["type"] == "assistant/message":
+            result["assistantText"].append({"seq": row["seq"], "text": "\n".join(c.get("text", "") for c in message.get("content", []) if c.get("type") == "text")})
             source = message.get("source", {})
             result["modelCalls"].append({"seq": row["seq"], "provider": source.get("provider"), "model": source.get("model"), "usage": data.get("usage", {})})
+        if row["type"] == "user/message" and data.get("source", {}).get("kind") == "user":
+            result["userTurns"].append({"seq": row["seq"], "text": "\n".join(c.get("text", "") for c in data.get("content", []) if c.get("type") == "text")})
+        if row["type"] == "tool/result" and message.get("toolCallId") in memory_calls:
+            result["memoryResults"].append({"seq": row["seq"], "callId": message.get("toolCallId"), "meta": data.get("meta"), "text": "\n".join(c.get("text", "") for c in message.get("content", []) if c.get("type") == "text")})
         if row["type"] == "tool/call" and "memory" in data["name"]:
-            result["memoryTools"].append({"seq": row["seq"], "name": data["name"], "arguments": json.loads(data["arguments"])})
+            memory_calls.add(data["callId"])
+            result["memoryTools"].append({"seq": row["seq"], "turn": data.get("turn"), "callId": data["callId"], "name": data["name"], "arguments": json.loads(data["arguments"])})
         if row["type"] == "user/message" and data.get("source", {}).get("kind") == "plugin:dsh-memory-palace":
             result["recall"].append({"seq": row["seq"], "source": "palace", "text": "\n".join(c.get("text", "") for c in data.get("content", []))})
         if row["type"] == "system/message":
             for content in message.get("content", []):
                 text = content.get("text", "")
+                if "个人记忆已关闭；不要调用个人记忆保存工具。" in text:
+                    result["recall"].append({"seq": row["seq"], "source": "crysound-memory-disabled", "snapshot": {"enabled": False, "facts": []}})
                 marker = "当前记忆：\n"
                 if marker in text:
                     memory, _ = json.JSONDecoder().raw_decode(text.split(marker, 1)[1])
