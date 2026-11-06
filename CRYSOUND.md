@@ -10,7 +10,8 @@
 ### 品牌
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
-- 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
+- B 玻璃图标与会动组件统一由 `crysound/brand/logo-src/src/gen.mjs` 生成（配色只改这一处，≤32 px 简化）；素材、预览与核对方法见 `crysound/brand/logo-src/README.md`。Windows 安装图标与托盘 ICO 按尺寸选用简化版。
+- 图标由品牌源稿生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
