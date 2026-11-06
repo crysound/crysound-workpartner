@@ -15,6 +15,9 @@ import { createContainerProject } from "../../feishu/container-project.mjs";
 
 const PORT = 3090;
 const PUBLIC_HOST = process.env.PUBLIC_HOST;
+// 模型网关地址与钥匙文件前缀（换一套 magpie 时改 .env，容器空闲重建后逐个切过去）。
+const MAGPIE = new URL(process.env.MAGPIE_BASE_URL || "http://magpie:3425/v1");
+const MAGPIE_KEY_PREFIX = process.env.MAGPIE_KEY_PREFIX || "magpie-";
 if (!PUBLIC_HOST || !/^[a-z0-9.-]+(?::[0-9]+)?$/i.test(PUBLIC_HOST) || new URL(`https://${PUBLIC_HOST}`).host !== PUBLIC_HOST.toLowerCase()) {
   throw new Error("在 .env 配置有效的 PUBLIC_HOST，然后重建网关");
 }
@@ -120,11 +123,11 @@ void maintainFeishu();
 // 桌面版的模型请求：核对通行证，换成本人的 magpie 钥匙，原样流式转给 magpie。
 function proxyModel(req, res, user, path) {
   let key;
-  try { key = fs.readFileSync(`/secure/magpie-${user.slug}.key`, "utf8").trim(); } catch { res.writeHead(403); return res.end(); }
-  const headers = { ...req.headers, host: "magpie:3425", authorization: `Bearer ${key}` };
+  try { key = fs.readFileSync(`/secure/${MAGPIE_KEY_PREFIX}${user.slug}.key`, "utf8").trim(); } catch { res.writeHead(403); return res.end(); }
+  const headers = { ...req.headers, host: MAGPIE.host, authorization: `Bearer ${key}` };
   delete headers.cookie;
   delete headers["x-api-key"]; // Anthropic 格式的请求（网页搜索）同时带这一项，留着会让 magpie 拿通行证当钥匙。
-  const up = http.request({ host: "magpie", port: 3425, path, method: req.method, headers }, (r) => {
+  const up = http.request({ host: MAGPIE.hostname, port: MAGPIE.port || 80, path, method: req.method, headers }, (r) => {
     res.writeHead(r.statusCode, r.headers);
     r.pipe(res);
   });

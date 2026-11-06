@@ -16,8 +16,10 @@ const HOST_USERS = `${process.env.HOST_PARTNER_DATA}/users`;
 const HOST_SECURE = process.env.HOST_PARTNER_SECURE;
 const HOST_CONFIG = process.env.HOST_PARTNER_CONFIG;
 const MAGPIE_BASE_URL = process.env.MAGPIE_BASE_URL;
-// MAGPIE_KEYS=pool：magpie 不在本机（经内网连过去）时，新人从 /secure/magpie-pool 领一把预先建好的钥匙，领用记在 assigned.log。
-const KEY_POOL = process.env.MAGPIE_KEYS === "pool" ? "/secure/magpie-pool" : null;
+// 钥匙文件为 /secure/<前缀><slug>.key，前缀默认 magpie-（换一套 magpie 时用另一前缀，旧钥匙不动）。
+// MAGPIE_KEYS=pool：magpie 不在本机（经内网连过去）时，新人从 /secure/<前缀>pool 领一把预先建好的钥匙，领用记在 assigned.log。
+const KEY_PREFIX = process.env.MAGPIE_KEY_PREFIX || "magpie-";
+const KEY_POOL = process.env.MAGPIE_KEYS === "pool" ? `/secure/${KEY_PREFIX}pool` : null;
 const DSH_UID = 1001;
 
 const secret = () => fs.readFileSync("/secure/feishu-app.secret", "utf8").trim();
@@ -64,7 +66,7 @@ async function dockerExec(docker, container, cmd) {
 }
 
 async function magpieKey(docker, slug) {
-  const file = `/secure/magpie-${slug}.key`;
+  const file = `/secure/${KEY_PREFIX}${slug}.key`;
   if (fs.existsSync(file)) return;
   if (KEY_POOL) {
     const spare = fs.readdirSync(KEY_POOL).filter((f) => f.endsWith(".key")).sort()[0];
@@ -92,7 +94,7 @@ async function container(docker, slug) {
   const r = await docker("POST", `/containers/create?name=${name}`, {
     Image: IMAGE, User: `${DSH_UID}:${DSH_UID}`, Env: [`PUBLIC_HOST=${PUBLIC_HOST}`, `MAGPIE_BASE_URL=${MAGPIE_BASE_URL}`, `MEEGLE_HOST=${process.env.MEEGLE_HOST || ""}`], Labels: { "zhaohua-partner.user": slug },
     HostConfig: {
-      Binds: [`${HOST_USERS}/${slug}:/data`, `${HOST_SECURE}/magpie-${slug}.key:/etc/partner/magpie.key:ro`],
+      Binds: [`${HOST_USERS}/${slug}:/data`, `${HOST_SECURE}/${KEY_PREFIX}${slug}.key:/etc/partner/magpie.key:ro`],
       Mounts: [{ Type: "bind", Source: HOST_CONFIG, Target: "/opt/partner-config", ReadOnly: true }],
       NetworkMode: "partner-net", RestartPolicy: { Name: "unless-stopped" },
       Memory: 2 * 1024 ** 3, NanoCpus: 2e9, PidsLimit: 512,
