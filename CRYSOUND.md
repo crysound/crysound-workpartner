@@ -29,7 +29,7 @@
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
 4. 默认配置 `partner.patch.yml` 只写一次到 profile 的 `cordis.patch.yml`（标记 `.zp-seed-v1`，已有同 id 项不覆盖）。
-只有退回联网安装时才需要网络；某个插件装失败只记日志，应用照常启动，下次启动会重试。
+只有退回联网安装时才需要网络；每一步都有时限：联网安装单个插件 120 秒、一次启动内全部联网安装共 180 秒，超时就结束该子进程及其子孙进程，剩下的跳过，下次启动重试。准备期间（复制模板或联网安装）显示“正在准备兆华工作伙伴…”小窗口，点 Dock 图标会把它带到前台；结束后若有插件没装好，弹出非阻塞提示并列出名字。某个插件装失败只记日志，应用照常启动，下次启动会重试。
 
 ### 打包
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。

@@ -63,6 +63,7 @@ hdiutil resize -size "$(( $(du -sm "$target" | cut -f1) + 200 ))m" "$rw"
 hdiutil attach "$rw" -mountpoint "$mount" -nobrowse -quiet
 rm -rf "$mount/$name"
 ditto "$target" "$mount/$name"
+ls -la "$mount" | head -20; hdiutil info | grep -E "image-path|/dev/disk.*(Apple|GUID|partition)|mount" | head -20; df -h "$mount" | cat
 test -L "$mount/Applications"
 hdiutil detach "$mount" -quiet
 hdiutil convert "$rw" -format ULMO -ov -o "$signed" -quiet

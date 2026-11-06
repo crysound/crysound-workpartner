@@ -69,7 +69,7 @@ import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import {
   BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
-  openLoginWindow, partnerHostEnvironment,
+  openLoginWindow, openPreparingWindow, partnerHostEnvironment, type PreparingWindow,
 } from './crysound/partner.ts'
 import { prepareCompanyWorkspace } from './crysound/workspace.ts'
 import { onPartnerAuthExpired } from './crysound/auth-events.ts'
@@ -677,19 +677,32 @@ async function main(): Promise<void> {
     finally { await Promise.all([operationJournal?.drain(500), reports]) }
   }
 
+  let preparingWindow: PreparingWindow | undefined
   const reconcileBackend = (): Promise<void> => {
     startup ??= (async () => {
       await navigateMain(applicationUrl)
+      let missingPlugins: readonly string[] = []
       await backend.start(async () => {
         await Promise.all([manager.applyRelease(), prepareHostEnvironment()])
-        await prepareCompanyWorkspace({
-          assets: crysoundResources(), profile: paths.profile, execPath: resources.node, userData: app.getPath('userData'),
-          cliEntry: join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
-          environment: hostEnvironment,
-        }).catch((error: unknown) => { console.warn('CRYSOUND: workspace preparation failed', error) })
+        try {
+          const result = await prepareCompanyWorkspace({
+            assets: crysoundResources(), profile: paths.profile, execPath: resources.node, userData: app.getPath('userData'),
+            cliEntry: join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
+            environment: hostEnvironment,
+            onBusy: () => { preparingWindow ??= openPreparingWindow() },
+          })
+          missingPlugins = result.missing
+        } catch (error: unknown) { console.warn('CRYSOUND: workspace preparation failed', error) }
+        finally { preparingWindow?.close(); preparingWindow = undefined }
       })
       if (backend.host !== undefined) await openInitialWindow()
       if (backend.host !== undefined) updateJournal?.action('workspace-ready')
+      if (missingPlugins.length > 0) {
+        void dialog.showMessageBox({
+          type: 'info', buttons: ['好'], message: '部分插件没有装好，下次启动会自动重试',
+          detail: `未装好的插件：${missingPlugins.join('、')}。其余功能可以正常使用。`,
+        }).catch((error: unknown) => { console.error(error) })
+      }
       // The existing Web document resumes through the boot IPC response.
     })().catch((error: unknown) => {
       updateJournal?.action('workspace-failed')
@@ -1382,6 +1395,7 @@ async function main(): Promise<void> {
   }
   focusPrimaryWindow = () => {
     if (quitting) return
+    if (preparingWindow?.alive === true) { preparingWindow.focus(); return }
     if (isMandatory()) { mandatoryUI?.focus(); return }
     const window = welcomeWindow ?? mainWindow
     if (window === undefined || window.isDestroyed()) {
@@ -1403,7 +1417,8 @@ async function main(): Promise<void> {
   })
 
   app.on('activate', (_event, hasVisibleWindows) => {
-    if (!hasVisibleWindows) focusPrimaryWindow()
+    if (preparingWindow?.alive === true) preparingWindow.focus()
+    else if (!hasVisibleWindows) focusPrimaryWindow()
   })
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
