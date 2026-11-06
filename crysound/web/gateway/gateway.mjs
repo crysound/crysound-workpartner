@@ -5,6 +5,7 @@ import net from "node:net";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import { authorizeUrl, identify, provision, readUsers, slugFor } from "./onboard.mjs";
+import { createDeviceRelay, containerLookup } from "./devices.mjs";
 
 const PORT = 3090;
 const PUBLIC_HOST = process.env.PUBLIC_HOST || "partner.corp.crysound.com";
@@ -278,8 +279,11 @@ function welcomeNew(res, who) {
   });
 }
 
+const devices = await createDeviceRelay({ authenticateDesktop: desktopUser, lookupContainer: containerLookup(docker, users) });
+
 const server = http.createServer(async (req, res) => {
   try {
+    if (await devices.handleHttp(req, res)) return;
     const url = new URL(req.url, `https://${PUBLIC_HOST}`);
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url);
     if (url.pathname.startsWith("/_zp/llm/v1/")) {
@@ -334,6 +338,7 @@ const server = http.createServer(async (req, res) => {
 
 server.on("upgrade", async (req, socket, head) => {
   try {
+    if (await devices.handleUpgrade(req, socket, head)) return;
     const r = await resolve(req);
     if (!r.cookie) return socket.destroy();
     const up = net.connect(3080, r.up.ip, () => {

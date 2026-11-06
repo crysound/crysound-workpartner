@@ -21,6 +21,12 @@ services:
     volumes:
       - ./gateway/gateway.mjs:/app/gateway.mjs:ro
       - ./gateway/onboard.mjs:/app/onboard.mjs:ro
+      - ./gateway/devices.mjs:/app/devices.mjs:ro
+      - ./gateway/device-websocket.mjs:/app/device-websocket.mjs:ro
+      - ./gateway/device-paths.mjs:/app/device-paths.mjs:ro
+      - ./../hands/tools.json:/hands/tools.json:ro
+      - ./../hands/wire.mjs:/hands/wire.mjs:ro
+      - ./../hands/paths.mjs:/hands/paths.mjs:ro
       - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}/users:/users
       - ${PARTNER_SECURE:-/srv/xiaoman/secure/zhaohua-partner}:/secure

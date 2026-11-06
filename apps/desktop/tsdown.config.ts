@@ -34,6 +34,12 @@ const clientVersionDefine = { 'process.env.DSH_CLIENT_VERSION': JSON.stringify(c
 
 export default defineConfig([
   {
+    entry: { 'crysound-hands': 'src/crysound/hands/index.mjs' },
+    plugins: [packagedImportsPlugin(mainProcessImports)],
+    outDir: 'lib', format: ['esm'], platform: 'node', target: 'es2024',
+    fixedExtension: false, dts: false, clean: false, codeSplitting: false,
+  },
+  {
     entry: ['lib/types/operation-report-worker.js'],
     plugins: [packagedImportsPlugin({ packages: new Set(), nodeBuiltins: true })],
     outDir: 'lib', format: ['esm'], platform: 'node', target: 'es2024',

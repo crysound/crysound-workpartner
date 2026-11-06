@@ -10,6 +10,8 @@ description: "Desktop 在原生应用中运行 Harness 工作区。本参考文�
 
 Desktop 在原生应用中运行 Harness 工作区。本参考文档说明应用行为、开发与集成；打包、Windows 签名和发布指南分别维护构建与发布操作。
 
+CRYSOUND 构建将尚未启动的本机文件服务打包为 `lib/crysound-hands.js`；Node API 与 Electron 接入要求见[本机服务接入](../../crysound/hands/INTEGRATION.md)。
+
 ## 目录
 
 - [应用概览](#application-overview)
