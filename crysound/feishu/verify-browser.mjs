@@ -17,6 +17,12 @@ for (const candidate of context.pages()) {
   if (targetInfo.targetId === process.env.CDP_TAB) { page = candidate; break; }
 }
 if (!page) throw new Error('Owned tab is no longer available.');
+// Only this preview tab uses Chinese browser language; no account preference is written.
+await page.addInitScript(() => {
+  const language = window.name === 'zp-feishu-preview-en' ? 'en-US' : 'zh-CN';
+  Object.defineProperty(navigator, 'languages', { get: () => [language] });
+  Object.defineProperty(navigator, 'language', { get: () => language });
+});
 const origin = process.env.APP_ORIGIN;
 if (!origin) throw new Error('Set APP_ORIGIN to the existing authenticated app origin.');
 const output = fileURLToPath(new URL('./evidence/', import.meta.url));
@@ -25,6 +31,22 @@ const original = fs.readFileSync(new URL('./native/client.js', import.meta.url),
 let mode = 'web', connected = false, projectMinutes = 4350;
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
+function attachPreview() {
+  const previous = window.__ModuleLoader__.load;
+  window.__ModuleLoader__.load = function (registration) {
+    if (registration.id === '@deepseek-ai/dsh-client-ui-settings-general') {
+      const factory = registration.factory;
+      registration = { ...registration, factory(require) {
+        const settings = factory(require);
+        return { ...settings, apply(ctx) {
+          settings.apply(ctx);
+          window.__zpFeishuPreviewDefinition.factory(require).apply(ctx);
+        } };
+      } };
+    }
+    return previous.call(this, registration);
+  };
+}
 await page.route('**/*', async route => {
   const url = new URL(route.request().url());
   if (url.origin !== origin) return route.continue();
@@ -46,9 +68,8 @@ await page.route('**/*', async route => {
   // Desktop/embedded previews select only client branches. They do not emulate a native window/provider.
   const source = original.replace("const desktop = location.protocol === 'dsh-app:';", `const desktop = ${mode === 'desktop-preview'};`)
     .replace('const embedded = /Lark|Feishu/i.test(navigator.userAgent);', `const embedded = ${mode === 'embedded-preview'};`)
-    .replace('window.__ModuleLoader__.load(', 'register(');
-  const prefix = `(()=>{const previous=window.__ModuleLoader__.load;window.__ModuleLoader__.load=function(reg){if(reg.id==='@deepseek-ai/dsh-client-ui-settings-general'){const original=reg.factory;reg={...reg,factory(require){const api=original(require);return {...api,apply(ctx){api.apply(ctx);let native;new Function('register',${JSON.stringify(source)})(reg=>{native=reg});native.factory(require).apply(ctx);}}}};}return previous.call(this,reg)}})();\n`;
-  new Function(prefix);
+    .replace('window.__ModuleLoader__.load(', 'window.__zpFeishuPreviewDefinition = (');
+  const prefix = source + '\n;(' + attachPreview.toString() + ')();\n';
   return route.fulfill({ response, body: prefix + text });
 });
 const panel = page.locator('[data-shortcut-modal="settings"]');
@@ -106,8 +127,18 @@ try {
     assert.equal(await nav.getAttribute('aria-current'), null);
     await shot('navigation-unselected');
   }
+  mode = 'web'; connected = true;
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.evaluate(() => { window.name = 'zp-feishu-preview-en'; });
+  await page.goto(origin + '/?zp-settings=feishu', { waitUntil: 'domcontentloaded' });
+  await panel.getByRole('heading', { name: 'Feishu authorization', exact: true }).waitFor();
+  const englishNav = panel.locator('nav button').filter({ hasText: /^Feishu authorization$/ });
+  assert.equal(await englishNav.getAttribute('aria-current'), 'true');
+  await panel.getByText('Connected · 3 days remaining', { exact: true }).waitFor();
+  assert.match(await panel.locator('.zp-feishu-row').first().getByRole('status').innerText(), /Connected · 测试同事 · Authorized/);
+  await shot('web-wide-connected-en');
   assert.deepEqual(errors, []);
-  console.log('PASS: native navigation, icon, fixed popup target, focus refresh, disconnect confirmation/cancel, theme and 11 fixture screenshots.');
+  console.log('PASS: native navigation, icon, fixed popup target, focus refresh, disconnect confirmation/cancel, Chinese/English locale, theme and 12 fixture screenshots.');
 } finally {
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   await browser.close();

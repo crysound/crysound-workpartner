@@ -45,13 +45,107 @@ test('设置入口注册原生页和图标，授权回跳打开同一原生设�
   };
   vm.runInNewContext(fs.readFileSync(new URL('./native/client.js',import.meta.url),'utf8'),context);
   const plugin = definition.factory(name => name==='react' ? {createElement(){}} : {});
-  plugin.apply({effect:work=>work(),slots:{
+  plugin.apply({effect:work=>work(),locale:{register:()=>()=>{},bind:()=>key=>key,getSnapshot:()=>({active:'en'})},slots:{
     inject:(_key,work)=>work(), register:(options,component)=>entries.push({options,component}),
     entries:()=>[{store:{create:()=>({actions:{openSection:id=>actions.push(id)}})}}], subscribe:()=>()=>{},
   }});
   assert.deepEqual(entries.map(entry=>entry.options.name),['settings.section','settings.section.icon']);
   assert.equal(entries[0].options.id,entries[1].options.id);
   assert.deepEqual(actions,['crysound-feishu']); assert.equal(location.search,'');
+});
+
+function panelFixture(t, { saved, respond } = {}) {
+  let definition, active = 'zh', tick, clock = 1000, panel, slot, cursor = 0;
+  const state = [], refs = [], effects = [], registrations = [], dictionaries = new Map(), events = new Map();
+  const storage = new Map(saved ? [['zp-project-authorization', JSON.stringify(saved)]] : []);
+  const requests = [], disposers = [];
+  const translate = (key, values = {}) => (dictionaries.get(active)?.[key] ?? dictionaries.get('en')?.[key] ?? key)
+    .replace(/\{(\w+)\}/g, (match, name) => name in values ? String(values[name]) : match);
+  const react = {
+    createElement: (type, props, ...children) => ({ type, props, children }),
+    useState(initial) {
+      const index = cursor++; if (!(index in state)) state[index] = initial;
+      return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }];
+    },
+    useRef(initial) { const index = cursor++; return refs[index] ??= {current:initial}; },
+    useEffect(work) { if (!effects.length) effects.push(work); },
+  };
+  const listeners = {
+    addEventListener: (name, fn) => events.set(name, fn),
+    removeEventListener: (name, fn) => { if (events.get(name) === fn) events.delete(name); },
+  };
+  const context = {
+    window: {__ModuleLoader__:{load:value=>{definition=value;}},...listeners},
+    location:new URL('https://partner.example.test/'),navigator:{userAgent:'test'},URL,URLSearchParams,
+    sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+    document:{...listeners,visibilityState:'visible',createElement:()=>({remove(){}}),head:{appendChild(){}}},
+    history:{replaceState(){}},AbortController,
+    Date:class extends Date { static now(){return clock;} },
+    setTimeout:fn=>{tick=fn;return fn;},clearTimeout:()=>{tick=null;},
+    fetch:async url=>{
+      const route=url.replace('/_zp/feishu/','');requests.push(route);
+      const value = respond ? await respond(route) : {connected:true,expiresInMinutes:4350,name:'Test',authorizedAt:'2026-11-07T00:00:00Z'};
+      return {ok:true,json:async()=>value};
+    },
+  };
+  vm.runInNewContext(fs.readFileSync(new URL('./native/client.js',import.meta.url),'utf8'),context);
+  definition.factory(name=>name==='react'?react:{}).apply({
+    effect:work=>{const stop=work();if(typeof stop==='function')disposers.push(stop);},
+    locale:{register:(_ns,language,dict)=>{dictionaries.set(language,dict);return()=>dictionaries.delete(language);},bind:()=>translate,getSnapshot:()=>({active})},
+    slots:{inject:(_name,work)=>work(),register:(options,component)=>{registrations.push(options);if(options.name==='settings.section'){panel=component;slot=options;}},entries:()=>[],subscribe:()=>()=>{}},
+  });
+  function render(){cursor=0;return panel({t:translate,...slot.inject?.()});}
+  render();
+  for(const work of effects){const stop=work();if(typeof stop==='function')disposers.push(stop);}
+  t.after(()=>{for(const stop of disposers.reverse())stop();});
+  const settle=()=>new Promise(resolve=>setImmediate(resolve));
+  const text=node=>typeof node==='string'?node:node?.children?.map(text).join(' ')??'';
+  return {requests,registrations,dictionaries,events,storage,render,text,settle,
+    locale:value=>{active=value;},
+    advance:async milliseconds=>{clock+=milliseconds;assert.ok(tick,'mounted panel has a scheduled tick');await tick();await settle();},
+  };
+}
+
+test('设置文案、导航和日期跟随语言切换，中文和英文字典键一致', async t => {
+  const f=panelFixture(t);await f.settle();
+  assert.match(f.text(f.render()),/飞书授权/);
+  f.locale('en');const english=f.text(f.render());
+  assert.match(english,/Feishu authorization/);
+  assert.match(english,/Connected · Test · Authorized/);
+  assert.ok(english.includes(new Date('2026-11-07T00:00:00Z').toLocaleString('en')));
+  assert.ok(!/[\u4e00-\u9fff]/u.test(english));
+  assert.equal(f.registrations[0].label(),'Feishu authorization');
+  assert.equal(f.registrations[0].locale,'crysound.feishu');
+  assert.deepEqual(Object.keys(f.dictionaries.get('zh')).sort(),Object.keys(f.dictionaries.get('en')).sort());
+  f.locale('zh');assert.match(f.text(f.render()),/飞书授权/);
+});
+
+test('设备授权临时轮询失败后保留尝试和错误，恢复焦点后重试至成功', async t => {
+  let polls=0, connected=false;
+  const f=panelFixture(t,{saved:{next:1000,interval:5000,until:30000},respond:route=>{
+    if(route==='project/poll'){polls++;if(polls===1)throw new Error('offline');connected=true;return {state:'connected'};}
+    return {connected};
+  }});
+  await f.settle();await f.advance(0);assert.equal(polls,1);
+  f.events.get('focus')();await f.settle();
+  assert.match(f.text(f.render()),/正在重试/);
+  await f.advance(4999);assert.equal(polls,1);
+  await f.advance(1);assert.equal(polls,2);
+  assert.match(f.text(f.render()),/已连接/);
+  assert.ok(!f.storage.has('zp-project-authorization'));
+  assert.doesNotMatch(f.text(f.render()),/正在重试/);
+});
+
+test('设备授权持续轮询失败只重试到尝试到期', async t => {
+  let polls=0;
+  const f=panelFixture(t,{saved:{next:1000,interval:5000,until:7000},respond:route=>{
+    if(route==='project/poll'){polls++;throw new Error('offline');}
+    return {connected:false};
+  }});
+  await f.settle();await f.advance(0);await f.advance(5000);assert.equal(polls,2);
+  await f.advance(1000);assert.match(f.text(f.render()),/授权已过期/);
+  await f.advance(5000);assert.equal(polls,2);
+  assert.ok(!f.storage.has('zp-project-authorization'));
 });
 
 test('桌面原生设置拒绝跨源断开，连接使用隔离子窗口且不向页面暴露身份文件', async t => {
