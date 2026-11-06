@@ -7,6 +7,7 @@
     { "name": "dsh-video-editor", "spec": "dsh-video-editor@1.0.0", "want": "1.0.0" }
   ],
   "defaultBundles": [
+    "@deepseek-ai/dsh-experimental-plugin-market-bundle",
     "@deepseek-ai/dsh-experimental-voice-input-bundle",
     "@deepseek-ai/dsh-experimental-auto-review",
     "@deepseek-ai/dsh-experimental-cot-translation-bundle",

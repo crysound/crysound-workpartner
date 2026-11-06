@@ -2,8 +2,8 @@
 
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 
 /** Inputs of one preparation run; everything is a plain path so the run can also be smoke-tested outside Electron. */
 export interface WorkspaceOptions {
@@ -17,7 +17,7 @@ export interface WorkspaceOptions {
   readonly execPath: string
   /** Directory holding the once-only markers. */
   readonly userData: string
-  /** Environment the Host will run with; the installer sees the same home and PATH. */
+  /** Host environment, including CRYSOUND_LLM_BASE; the installer sees the same home and PATH. */
   readonly environment: NodeJS.ProcessEnv
 }
 
@@ -40,12 +40,15 @@ function run(command: string, args: readonly string[], environment: NodeJS.Proce
 
 /**
  * Install the company plugins that the profile does not record yet, patch them, enable the experimental
- * bundles once, and seed the default configuration once. Runs while the Host is stopped; a failed install
- * is logged and does not block startup.
+ * bundles once, seed the default configuration, and migrate market settings for existing profiles.
+ * Refreshes the publishing skill on each start. Runs while the Host is stopped; a failed plugin install
+ * is logged and does not block startup. Invalid gateway settings or a failed skill copy stop preparation.
  * @param options - Paths and environment of this run.
  */
 export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promise<void> {
   const { assets, profile, cliEntry, execPath, userData } = options
+  if (!options.environment.CRYSOUND_LLM_BASE) throw new Error('CRYSOUND: company gateway is missing')
+  const marketOrigin = new URL(options.environment.CRYSOUND_LLM_BASE).origin
   const list = await readJson(join(assets, 'config', 'plugins.json')) as unknown as PluginList
   const manifestPath = join(profile, 'package.json')
   const recorded = async (): Promise<Record<string, string>> =>
@@ -77,7 +80,7 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     const target = join(profile, 'cordis.patch.yml')
     const head = '# Your patch layer for this dsh profile, applied after every bundle layer:\n# a top-level YAML array of loader patch entries (id-targeted config\n# overrides, disables, and insert lists; `!!js` expressions allowed).\n'
     let mine = (existsSync(target) ? await readFile(target, 'utf8') : head).replace(/^\[\]\s*$/mu, '')
-    const seed = await readFile(join(assets, 'config', 'partner.patch.yml'), 'utf8')
+    const seed = (await readFile(join(assets, 'config', 'partner.patch.yml'), 'utf8')).replaceAll('https://partner.invalid', marketOrigin)
     for (const entry of seed.split(/^(?=- id: )/mu).filter(part => part.startsWith('- id: '))) {
       const id = /^- id: (\S+)/u.exec(entry)?.[1]
       if (id === undefined) continue
@@ -86,6 +89,14 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     await writeFile(target, mine, { mode: 0o600 })
     await writeFile(seedMark, '')
   }
+
+  const market = join(assets, 'config', 'market-profile.mjs')
+  if (existsSync(market)) {
+    const code = await run(execPath, [market, join(profile, 'cordis.patch.yml'), manifestPath, `${marketOrigin}/_zp/market/index.json`], environment)
+    if (code !== 0) console.warn('CRYSOUND: market configuration failed; check the profile patch')
+  }
+
+  await cp(join(assets, 'config', 'skills', 'publish-zhaohua-market'), join(dirname(dirname(profile)), 'skills', 'publish-zhaohua-market'), { recursive: true })
 
   const upgrades = join(assets, 'config', 'profile-upgrades.mjs')
   if (existsSync(upgrades)) await run(execPath, [upgrades, join(profile, 'cordis.patch.yml')], environment)

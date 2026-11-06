@@ -1,6 +1,11 @@
 #!/bin/sh
 # 模型一律经 magpie：钥匙从只读挂载的文件进环境，DeepSeek 内置路由也改指 magpie，用量记在这把钥匙上。
 # dsh 网页版不接受 0.0.0.0，绑定容器自己的地址，再由 Docker 或网关在内部网络访问。
+# 缺少容器市场身份时停止，不能带着错误身份启动；网关启动会签发文件。
+set -eu
+umask 077
+# 使用字面令牌：dsh 子进程会过滤含 TOKEN 的环境变量。
+node /opt/partner/market-npmrc.mjs /data/.npmrc
 MAGPIE_API_KEY=$(cat /etc/partner/magpie.key) && export MAGPIE_API_KEY
 export DEEPSEEK_API_KEY="$MAGPIE_API_KEY" DEEPSEEK_BASE_URL=http://magpie:3425/v1
 mkdir -p /data/work && cd /data/work
@@ -32,6 +37,9 @@ for (const e of fs.readFileSync(seed,"utf8").split(/^(?=- id: )/m).filter(e=>e.s
   if (!new RegExp("^- id: [\"\x27]?"+id+"[\"\x27]?\\s*$","m").test(mine)) mine=mine.replace(/\n*$/,"\n")+e.replace(/\n*$/,"\n");
 }
 fs.writeFileSync(dst,mine,{mode:0o600})' /opt/partner/partner.patch.yml "$DSH_HOME/profiles/web/cordis.patch.yml" && touch "$SEED_MARK"
+mkdir -p "$DSH_HOME/skills"
+cp -R /opt/partner/skills/publish-zhaohua-market "$DSH_HOME/skills/"
+node /opt/partner/market-profile.mjs "$DSH_HOME/profiles/web/cordis.patch.yml" "$DSH_HOME/profiles/web/package.json" http://zhaohua-partner-gateway:3090/_zp/market/index.json
 # 公司默认值变了时，把已开通用户仍是旧默认值的条目升到新值（用户改过的不动）。
 node /opt/partner/profile-upgrades.mjs "$DSH_HOME/profiles/web/cordis.patch.yml"
 exec dsh --profile web --no-open --host "$(hostname -i | cut -d' ' -f1)" --port 3080 \
