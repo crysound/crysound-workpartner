@@ -15,7 +15,7 @@
       items.forEach((el) => { const r = rank(el); const v = String(r >= 0 ? r : SIDEBAR_ORDER.length); if (el.style.order !== v) el.style.order = v; });
     }
   };
-  const DESKTOP = /Electron/.test(navigator.userAgent);
+  const DESKTOP = location.protocol === "dsh-app:";
   let me = null;
   const avatar = () => {
     const el = document.createElement(me.avatar ? "img" : "span");
@@ -24,7 +24,7 @@
     return el;
   };
   const showAccount = () => {
-    const trigger = document.querySelector('button[aria-label="Account menu"]');
+    const trigger = document.querySelector("button[data-signed-out]");
     if (!trigger) return;
     if (me && trigger.dataset.zpName !== me.name) {
       trigger.dataset.zpName = me.name;
