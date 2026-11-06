@@ -32,5 +32,7 @@ for (const e of fs.readFileSync(seed,"utf8").split(/^(?=- id: )/m).filter(e=>e.s
   if (!new RegExp("^- id: [\"\x27]?"+id+"[\"\x27]?\\s*$","m").test(mine)) mine=mine.replace(/\n*$/,"\n")+e.replace(/\n*$/,"\n");
 }
 fs.writeFileSync(dst,mine,{mode:0o600})' /opt/partner/partner.patch.yml "$DSH_HOME/profiles/web/cordis.patch.yml" && touch "$SEED_MARK"
+# 独立于首次开通标记，每次启动按固定 id 合入；已有用户同样能获得本机工具。
+node /opt/partner/device-profile.mjs "$DSH_HOME/profiles/web/cordis.patch.yml" || exit 1
 exec dsh --profile web --no-open --host "$(hostname -i | cut -d' ' -f1)" --port 3080 \
   --public-url "https://${PUBLIC_HOST}/" --trusted-host "${PUBLIC_HOST}" --trusted-host 127.0.0.1:3080

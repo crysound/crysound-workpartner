@@ -1,0 +1,6 @@
+{
+  "offline": {"isError":true,"content":[{"type":"text","text":"电脑未连接，请在你的电脑上打开兆华工作伙伴后重试。"}]},
+  "denied": {"isError":true,"content":[{"type":"text","text":"操作未获确认；请等你回到电脑前确认"}]},
+  "disabled": {"isError":true,"content":[{"type":"text","text":"管理员已关闭本机访问，请联系管理员"}]},
+  "read": {"isError":false,"content":[{"type":"text","text":"完成汇总"}]}
+}

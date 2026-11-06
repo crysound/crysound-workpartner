@@ -10,6 +10,8 @@ English | [中文](README.zh.md)
 
 Desktop runs the Harness workspace in a native application. This reference covers application behavior, development and integration; the packaging, Windows signing and publication guides own build and release operations.
 
+The CRYSOUND build packages an inactive laptop file service as `lib/crysound-hands.js`; its Node API and Electron integration requirements are documented in [hands integration](../../crysound/hands/INTEGRATION.md).
+
 ## Table of Contents
 
 - [Application overview](#application-overview)
