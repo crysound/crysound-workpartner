@@ -36,8 +36,7 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Workspace preparation tests (template copy, install time bounds)
-        working-directory: apps/desktop
-        run: pnpm exec vitest run tests/crysound-workspace.spec.ts
+        run: pnpm exec vitest run apps/desktop/tests/crysound-workspace.spec.ts
       - name: Package mac-arm64 (unsigned)
         run: pnpm run package:desktop:mac:arm64:unsigned
       - name: Locate installer
