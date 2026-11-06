@@ -62,7 +62,11 @@ ws.addEventListener("message", async (event) => {
       assert.ok(position >= 0 && start >= 0, "必须是实际插件管理器模块");
       let client = patchDataMarket(basePatch(body.slice(start, end)));
       client = replaceOnce(client, 'const face = controller.inject(configLedger, tabLedgerSource(ctx), (text) => ctx.locale.resolveText(text));',
-        'const face = controller.inject(configLedger, tabLedgerSource(ctx), (text) => ctx.locale.resolveText(text)); window.__dataPreview = { ctx, controller };');
+        `const face = controller.inject(configLedger, tabLedgerSource(ctx), (text) => ctx.locale.resolveText(text));
+        let dataState = {status:"ready", packages:[]}; const dataListeners = new Set();
+        const dataPreviewFace = {hooks:{pluginManager:{getSnapshot:()=>dataState,subscribe:fn=>{dataListeners.add(fn);return ()=>dataListeners.delete(fn);}}}};
+        window.__dataPreview = {ctx,setPackages:packages=>{dataState={...dataState,packages};for(const fn of dataListeners)fn();}};`);
+      client = replaceOnce(client, '(ctx, face, react, react_jsx_runtime.jsx);', '(ctx, dataPreviewFace, react, react_jsx_runtime.jsx);');
       client = replaceOnce(client, 'dataCtx.uiWorkspace.startSession(undefined, { prompt: card.prompt, whenDraftExists: "append" })',
         '(window.__dataDraft = { prompt: card.prompt, whenDraftExists: "append" })');
       client = replaceOnce(client, 'props.openPackage("@crysound/data")', '(window.__dataOpenPackage = "@crysound/data")');
@@ -96,7 +100,7 @@ try {
   await evaluate('document.querySelector("[data-zp-data-market] article button").click()');
   const install = await evaluate("window.__dataInstall");
   assert.equal(install.spec, "@crysound/data@0.1.0"); assert.equal(install.registry, "https://partner.example.test/_zp/npm/");
-  await evaluate('window.__dataOriginalPackages=window.__dataPreview.controller.getSnapshot().packages; window.__dataPreview.controller.patch({ packages: [{name:"@crysound/data",enabled:true,rows:[{enabled:true}]}] });');
+  await evaluate('window.__dataPreview.setPackages([{name:"@crysound/data",enabled:true,rows:[{enabled:true}]}]);');
   await until('document.querySelector("[data-zp-data-market] article button").textContent === "使用"');
   await evaluate('document.querySelector("[data-zp-data-market] article button").click()');
   assert.deepEqual(await evaluate("window.__dataDraft"), { prompt: categories[0].prompt, whenDraftExists: "append" });
@@ -106,7 +110,7 @@ try {
     await evaluate('window.__dataPreview.ctx.locale.publish("zh", false)');
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
     await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
-    await evaluate('window.__dataPreview.controller.patch({ packages: [{name:"@crysound/data",enabled:true,rows:[{enabled:true}]}] });');
+    await evaluate('window.__dataPreview.setPackages([{name:"@crysound/data",enabled:true,rows:[{enabled:true}]}]);');
     await until('document.querySelector("[data-zp-data-market] article button").textContent === "使用"');
     const clip = await evaluate('(()=>{const r=document.querySelector("[data-zp-data-market]").getBoundingClientRect();return {x:r.left,y:Math.max(0,r.top-84),width:r.width,height:r.height+Math.min(84,r.top),scale:1};})()');
     assert.ok(clip.x >= 0 && clip.x + clip.width <= width + 1, "数据专栏必须在当前视口内");
@@ -116,11 +120,11 @@ try {
   };
   await shot("data-desktop.png", 1440, 1600);
   await shot("data-narrow.png", 820, 2600);
-  await evaluate('window.__dataPreview.controller.patch({ packages: [{name:"@crysound/data",enabled:false,rows:[{enabled:false}]}] });');
+  await evaluate('window.__dataPreview.setPackages([{name:"@crysound/data",enabled:false,rows:[{enabled:false}]}]);');
   await until('document.querySelector("[data-zp-data-market] article button").textContent === "启用插件"');
   await evaluate('document.querySelector("[data-zp-data-market] article button").click()');
   assert.equal(await evaluate("window.__dataOpenPackage"), "@crysound/data");
-  await evaluate("window.__dataPreview.controller.patch({packages:window.__dataOriginalPackages})");
+  await evaluate("window.__dataPreview.setPackages([])");
   catalogFailure = true;
   const reloadTab = async () => {
     await evaluate('[...document.querySelectorAll("[role=tab]")].find(node => ["已安装", "Installed"].includes(node.textContent)).click()');
