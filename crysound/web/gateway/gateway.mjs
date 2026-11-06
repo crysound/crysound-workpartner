@@ -246,7 +246,7 @@ async function login(req, res, url) {
 
 // 客户端下载：/downloads 里的安装包（由发布流程放入），文件名带平台，如 兆华工作伙伴-1.0.0-mac-arm64.dmg。
 const DOWNLOADS = "/downloads";
-const PLATFORMS = [["mac-arm64", "Mac（Apple 芯片）"], ["mac-x64", "Mac（Intel 芯片）"], ["win-x64", "Windows"]];
+const PLATFORMS = [["mac-arm64", "Mac（Apple 芯片）"], ["win-x64", "Windows"]];
 function download(res, file) {
   // 安装包可以放在 R2：下载目录里放“<文件名>.url”，内容是 R2 公开地址，下载时跳过去；没有就从本机目录发。
   const entries = (() => { try { return fs.readdirSync(DOWNLOADS).filter((f) => !f.startsWith(".")); } catch { return []; } })();
@@ -263,7 +263,7 @@ function download(res, file) {
     return f ? `<a class="dl" href="/_zp/download/${encodeURIComponent(f)}">下载 ${label} 版</a>` : `<span class="dl off">${label} 版即将推出</span>`;
   }).join("");
   res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-  res.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>下载客户端 · 兆华工作伙伴</title><style>body{font-family:-apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;display:grid;place-items:center;min-height:90vh;color:#170057;margin:0}main{max-width:420px;padding:24px}h2{font-weight:600}p{color:#555;line-height:1.6}.dl{display:block;margin:10px 0;padding:12px 16px;border-radius:10px;background:#170057;color:#fff;text-decoration:none;text-align:center}.dl.off{background:#eee;color:#888}</style><main><h2>下载兆华工作伙伴客户端</h2><p>客户端直接处理电脑上的文件。第一次打开时用飞书登录，用的是同一个账号。</p>${rows}</main>`);
+  res.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>下载客户端 · 兆华工作伙伴</title><style>body{font-family:-apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;display:grid;place-items:center;min-height:90vh;color:#170057;margin:0}main{max-width:420px;padding:24px}h2{font-weight:600}p{color:#555;line-height:1.6}.dl{display:block;margin:10px 0;padding:12px 16px;border-radius:10px;background:#170057;color:#fff;text-decoration:none;text-align:center}.dl.off{background:#eee;color:#888}</style><main><h2>下载兆华工作伙伴客户端</h2><p>客户端直接处理电脑上的文件。第一次打开时用飞书登录，用的是同一个账号。Mac 版只支持 Apple 芯片（M 系列），不支持 Intel 芯片的 Mac。</p>${rows}</main>`);
 }
 
 function welcomeNew(res, who) {
