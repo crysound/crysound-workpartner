@@ -71,7 +71,14 @@ mounted() { mount | grep -F " on $mount (" >/dev/null; }
 for attempt in 1 2 3 4 5 6 7 8 9 10; do mounted || break; hdiutil detach "$mount" -quiet || sleep 5; done
 if mounted; then hdiutil detach "$mount" -force; fi
 mounted && { echo "could not detach $mount" >&2; exit 1; }
-hdiutil convert "$rw" -format ULMO -ov -o "$signed"
+# Even with the mount point gone the image can stay attached for a while ("Resource temporarily
+# unavailable"), so wait until hdiutil no longer lists it and retry the conversion.
+for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do hdiutil info | grep -F "$rw" >/dev/null || break; sleep 5; done
+for attempt in 1 2 3 4 5 6; do
+  hdiutil convert "$rw" -format ULMO -ov -o "$signed" && break
+  [ "$attempt" -lt 6 ] || exit 1
+  sleep 15
+done
 codesign --force --timestamp --sign "$identity" --keychain "$keychain" "$signed"
 
 result="$work/notarize.txt"
