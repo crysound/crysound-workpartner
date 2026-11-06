@@ -115,8 +115,15 @@ test("relay credentials are stable, private, distinct and idempotent", (t) => {
 
 test("real HTTP roundtrip preserves root paths, cookies, request bodies and redirects", async (t) => {
   const f = await fixture(t), b = await f.bootstrap();
-  assert.equal(b.redeem.headers.location, "/slides/demo/?x=1#page2");
-  const page = await f.request(b.origin + b.redeem.headers.location, { jar: b.jar });
+  const entry = `/_zp/preview/open?port=${f.port}&path=%2Fslides%2Fdemo%2F%3Fx%3D1`;
+  const login = await f.request(entry, { account: "" });
+  const loginUrl = new URL(login.headers.location);
+  assert.equal(login.status, 302);
+  assert.equal(loginUrl.origin, "https://app.example.test");
+  assert.equal(loginUrl.pathname, "/_zp/login");
+  assert.equal(loginUrl.searchParams.get("next"), entry);
+  assert.equal(b.redeem.headers.location, b.origin + "/slides/demo/?x=1#page2");
+  const page = await f.request(b.redeem.headers.location, { jar: b.jar });
   assert.equal(page.text, "editor:/slides/demo/?x=1");
   assert.equal(f.requests.at(-1).headers.host, `127.0.0.1:${f.port}`);
   assert.equal(f.requests.at(-1).headers["x-zp-relay-key"], undefined);
@@ -162,7 +169,7 @@ test("copied links, wrong-browser grants, replays and tampered bindings cannot c
   const unsafeAuth = new URL(b.start.headers.location);
   unsafeAuth.searchParams.set("path", "/\t/evil.test");
   assert.equal((await f.request(unsafeAuth.href, { jar: b.jar })).status, 403);
-  // A malformed signed grant must also fail at the final redirect, after URL normalization.
+  // Even a signed grant must contain a valid local path before it can establish a session.
   const freshStart = await f.request(b.open.headers.location, { jar: b.jar });
   const freshAuth = await f.request(freshStart.headers.location, { jar: b.jar });
   const redeem = new URL(freshAuth.headers.location);
@@ -173,8 +180,9 @@ test("copied links, wrong-browser grants, replays and tampered bindings cannot c
   const grantSignature = crypto.createHmac("sha256", f.key).update(`grant:${changed}`).digest("hex");
   redeem.searchParams.set("ticket", `${changed}.${grantSignature}`);
   const deniedRedirect = await f.request(redeem.href, { jar: b.jar });
-  assert.equal(deniedRedirect.status, 400);
+  assert.equal(deniedRedirect.status, 403);
   assert.equal(deniedRedirect.headers.location, undefined);
+  assert.equal(deniedRedirect.headers["set-cookie"], undefined);
   f.users.splice(0, 1);
   assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 401);
 });

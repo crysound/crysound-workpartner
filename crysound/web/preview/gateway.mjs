@@ -73,12 +73,14 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
   };
   const redirect = (res, location, cookies = []) => {
     let destination;
-    try { destination = new URL(location, mainOrigin); }
+    try { destination = new URL(location); }
     catch (error) { reject(res, 400, "预览跳转地址无效。"); return; }
     if (destination.origin !== mainOrigin && destination.origin !== previewOrigin) {
       reject(res, 400, "预览跳转地址无效。"); return;
     }
-    res.writeHead(302, { location, "cache-control": "no-store", "referrer-policy": "no-referrer", "set-cookie": cookies }); res.end();
+    const trustedBase = destination.origin === mainOrigin ? `${mainOrigin}/` : `${previewOrigin}/`;
+    const safeLocation = trustedBase + destination.pathname.slice(1) + destination.search + destination.hash;
+    res.writeHead(302, { location: safeLocation, "cache-control": "no-store", "referrer-policy": "no-referrer", "set-cookie": cookies }); res.end();
   };
   const start = (res, r, path) => {
     const nonce = crypto.randomBytes(24).toString("hex");
@@ -120,16 +122,17 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
       }
       if (url.pathname === "/_zp_preview/redeem") {
         const grant = unpack("grant", url.searchParams.get("ticket"));
+        const path = grant && previewPath(grant.path);
         const nonce = cookieOf(req, NONCE);
         const user = grant && users().find((u) => u.unionId === grant.u);
         for (const [ticket, expires] of used) if (expires <= now() / 1000) used.delete(ticket);
-        if (req.method !== "GET" || !grant || !nonce || grant.n !== hmac(key, nonce) || grant.h !== host
+        if (req.method !== "GET" || !grant || !path || !nonce || grant.n !== hmac(key, nonce) || grant.h !== host
           || !user || !previewPort(grant.p) || used.has(grant.id)) {
           reject(res, 403, "预览链接已失效，请从自己的工作区重新打开。"); return true;
         }
         used.set(grant.id, grant.e);
         const value = pack("session", { u: grant.u, h: host, p: grant.p, until: grant.until, e: Math.min(now() / 1000 + TTL, grant.until) });
-        redirect(res, grant.path, [cookie(SID, value, TTL), cookie(NONCE, "", 0)]);
+        redirect(res, `${previewOrigin}${path}`, [cookie(SID, value, TTL), cookie(NONCE, "", 0)]);
         return true;
       }
       if (!allowedOrigin(req, { host }) || req.method === "CONNECT") { reject(res, 403, "预览来源不匹配。"); return true; }
@@ -155,7 +158,7 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
     }
     const identity = sessionUser(req);
     if (!identity?.user) {
-      redirect(res, `/_zp/login?next=${encodeURIComponent(req.url)}`); return true;
+      redirect(res, `${mainOrigin}/_zp/login?next=${encodeURIComponent(req.url)}`); return true;
     }
     const { user, expires } = identity;
     if (url.pathname === "/_zp/preview/client.js") {
