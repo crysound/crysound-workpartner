@@ -2,10 +2,9 @@ name: CRYSOUND WorkPartner · macOS arm64 desktop
 
 # Builds the company desktop app (apps/desktop) for Apple Silicon. The unsigned installer is always uploaded; when
 # all signing secrets exist, it is also re-signed, notarized and uploaded as a second artifact. Nothing is published.
+# 只在发版时手动触发：Mac 构建按分钟计费，推代码不自动跑。
 on:
   workflow_dispatch:
-  push:
-    branches: ['desktop/**']
 
 permissions:
   contents: read
