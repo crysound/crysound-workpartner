@@ -47,14 +47,6 @@
 
   const apply = () => {
     if (document.title !== NAME) document.title = NAME;
-    const settingsNav = document.querySelector('[data-shortcut-modal="settings"] nav > div');
-    if (settingsNav && !settingsNav.querySelector('.zp-feishu-settings')) {
-      const a = document.createElement('a');
-      a.className = (settingsNav.querySelector('button')?.className || '') + ' zp-feishu-settings';
-      a.href = '/_zp/feishu/';
-      a.textContent = '飞书授权';
-      settingsNav.appendChild(a);
-    }
     showAccount();
 
     const hero = document.querySelector('[data-slot="conversation.hero.brand.mark"]');

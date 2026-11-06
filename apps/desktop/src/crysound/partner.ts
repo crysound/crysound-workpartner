@@ -115,14 +115,24 @@ export function openLoginWindow(): Promise<PartnerSession | undefined> {
   })
 }
 
+let desktopFeishuRequest: ((request: Request) => Promise<Response | null>) | undefined;
+
+/** Route company settings through the existing app protocol; credentials remain in the main process.
+ * @param request Renderer request to a company Feishu settings route.
+ * @returns Native settings response, or null when no handler owns the request.
+ */
+export async function handleDesktopFeishuRequest(request: Request): Promise<Response | null> {
+  return desktopFeishuRequest ? desktopFeishuRequest(request) : null;
+}
+
 /**
  * Return a usable session, opening the login window when none is stored or the stored token is rejected.
  * @returns the session, or undefined when the user abandons the login.
  */
 export async function ensurePartnerSession(): Promise<PartnerSession | undefined> {
-  // Company settings navigation and its loopback page stay in company resources.
-  const settings: { installDesktopSettings: (options: { app: typeof app; BrowserWindow: typeof BrowserWindow; publicOrigin: string; configFile: string; identityFile: string; execPath: string }) => void } = await import(pathToFileURL(join(crysoundResources(), 'feishu', 'desktop.mjs')).href)
-  settings.installDesktopSettings({ app, BrowserWindow, publicOrigin: PARTNER_ORIGIN, configFile: join(app.getPath('userData'), 'company', 'feishu.json'), identityFile: tokenFile(), execPath: process.execPath })
+  // Native settings and legacy loopback pages stay in company resources.
+  const settings: { installDesktopSettings: (options: { app: typeof app; BrowserWindow: typeof BrowserWindow; publicOrigin: string; configFile: string; identityFile: string; execPath: string }) => (request: Request) => Promise<Response | null> } = await import(pathToFileURL(join(crysoundResources(), 'feishu', 'desktop.mjs')).href)
+  desktopFeishuRequest = settings.installDesktopSettings({ app, BrowserWindow, publicOrigin: PARTNER_ORIGIN, configFile: join(app.getPath('userData'), 'company', 'feishu.json'), identityFile: tokenFile(), execPath: process.execPath })
   const stored = await readPartnerSession()
   if (stored !== undefined) {
     if (await tokenAccepted(stored.token)) {
