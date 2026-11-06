@@ -39,10 +39,14 @@ sign() { codesign --force --timestamp --options runtime --entitlements "$entitle
 
 # Innermost code first: every Mach-O file, then frameworks and helper apps (deepest first), then the app.
 count=0
+template_count=0
 while IFS= read -r -d '' file; do
-  if file -b "$file" | grep -q "Mach-O"; then sign "$file"; count=$((count + 1)); fi
+  if file -b "$file" | grep -q "Mach-O"; then
+    sign "$file"; count=$((count + 1))
+    case "$file" in */Resources/crysound/plugin-template/*) template_count=$((template_count + 1));; esac
+  fi
 done < <(find "$target" -type f -print0)
-echo "signed $count Mach-O files"
+echo "signed $count Mach-O files, $template_count of them in the bundled plugin template"
 find "$target" -type d \( -name '*.framework' -o -name '*.app' \) ! -path "$target" | awk '{ print length, $0 }' | sort -rn | cut -d' ' -f2- |
   while IFS= read -r bundle; do sign "$bundle"; done
 sign "$target"

@@ -84,5 +84,7 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
-      - name: First-run workspace smoke test (plugins, patches, default configuration)
+      - name: First-run workspace smoke test (bundled plugins without network, patches, default configuration)
+        env:
+          SMOKE_ONLINE_BASELINE: '1'
         run: crysound/scripts/smoke-workspace.sh "${{ steps.dmg.outputs.path }}"

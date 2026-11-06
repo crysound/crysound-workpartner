@@ -2,7 +2,7 @@
 
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { cp, copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /** Inputs of one preparation run; everything is a plain path so the run can also be smoke-tested outside Electron. */
@@ -39,7 +39,47 @@ function run(command: string, args: readonly string[], environment: NodeJS.Proce
 }
 
 /**
- * Install the company plugins that the profile does not record yet, patch them, enable the experimental
+ * Copy the plugins pre-installed at build time (`assets/plugin-template`) into a profile that has none of them.
+ * `node_modules` is copied beside its final place and renamed, and the manifest is written last, so an interrupted
+ * copy leaves nothing recorded and the online install below takes over.
+ * @param assets - Company assets directory.
+ * @param profile - Desktop profile directory.
+ * @param list - Company plugin list.
+ * @returns Whether the template was applied.
+ */
+async function applyPluginTemplate(assets: string, profile: string, list: PluginList): Promise<boolean> {
+  const template = join(assets, 'plugin-template')
+  if (!existsSync(join(template, 'package.json'))) return false
+  const modules = join(profile, 'node_modules')
+  const staging = join(profile, 'node_modules.zp-tmp')
+  try {
+    const manifestPath = join(profile, 'package.json')
+    const profileManifest = await readJson(manifestPath) as { dependencies?: Record<string, string> }
+    const dependencies = profileManifest.dependencies ?? {}
+    if (list.plugins.some(plugin => dependencies[plugin.name] !== undefined)) return false
+    if (existsSync(modules) && (await readdir(modules)).length > 0) return false
+    const bundled = ((await readJson(join(template, 'package.json'))).dependencies ?? {}) as Record<string, string>
+    const missing = list.plugins.filter(plugin => bundled[plugin.name] !== plugin.want)
+    if (missing.length > 0) throw new Error(`template lacks ${missing.map(plugin => plugin.name).join(', ')}`)
+    const started = Date.now()
+    await rm(staging, { recursive: true, force: true })
+    await cp(join(template, 'modules'), staging, { recursive: true, verbatimSymlinks: true })
+    await rm(modules, { recursive: true, force: true })
+    await rename(staging, modules)
+    if (!existsSync(join(profile, 'pnpm-lock.yaml'))) await copyFile(join(template, 'pnpm-lock.yaml'), join(profile, 'pnpm-lock.yaml'))
+    for (const plugin of list.plugins) dependencies[plugin.name] = bundled[plugin.name] as string
+    await writeFile(manifestPath, `${JSON.stringify({ ...profileManifest, dependencies }, null, 2)}\n`)
+    console.info(`CRYSOUND: installed ${String(list.plugins.length)} bundled plugins in ${String(Date.now() - started)} ms`)
+    return true
+  } catch (error) {
+    console.warn('CRYSOUND: bundled plugins could not be copied; installing online', error)
+    await rm(staging, { recursive: true, force: true }).catch(() => {})
+    return false
+  }
+}
+
+/**
+ * Install the company plugins that the profile does not record yet (from the bundled template, else online), patch them, enable the experimental
  * bundles once, and seed the default configuration once. Runs while the Host is stopped; a failed install
  * is logged and does not block startup.
  * @param options - Paths and environment of this run.
@@ -53,6 +93,7 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
   const environment: NodeJS.ProcessEnv = { ...options.environment, ELECTRON_RUN_AS_NODE: '1' }
   await mkdir(userData, { recursive: true })
 
+  await applyPluginTemplate(assets, profile, list)
   for (const plugin of list.plugins) {
     if ((await recorded())[plugin.name] === plugin.want) continue
     const code = await run(execPath, ['--expose-internals', cliEntry, 'plugin', '--profile', 'desktop', 'add', plugin.spec], environment)

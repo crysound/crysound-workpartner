@@ -25,11 +25,11 @@
 - 菜单“退出登录”：删令牌、清登录窗口的飞书会话，重启后进入登录窗口。
 
 ### 首次启动自动就位（`src/crysound/workspace.ts`，数据在 `crysound/config/`）
-1. 5 个插件按 `plugins.json` 的固定版本，用包内 `dsh plugin --profile desktop add` 安装（已记录同版本则跳过）。
+1. 5 个插件按 `plugins.json` 的固定版本就位。构建时 `apps/desktop/scripts/prepare-plugin-template.ts` 用打包用的 dsh 运行时把它们装进临时 profile，结果（`package.json`、`pnpm-lock.yaml`、`modules/` 即 `node_modules`）随包放在 `Resources/crysound/plugin-template`；首次启动在 profile 里还没有这 5 个插件、`node_modules` 为空时，把模板复制进去并写入插件记录，几秒内完成。模板缺失、版本不符、profile 里已有旧版插件或复制失败时，退回联网执行包内 `dsh plugin --profile desktop add`（已记录同版本则跳过）。模板只在与构建机同架构的 macOS 目标上生成。
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
 4. 默认配置 `partner.patch.yml` 只写一次到 profile 的 `cordis.patch.yml`（标记 `.zp-seed-v1`，已有同 id 项不覆盖）。
-插件安装需要联网；某个插件装失败只记日志，应用照常启动，下次启动会重试。
+只有退回联网安装时才需要网络；某个插件装失败只记日志，应用照常启动，下次启动会重试。
 
 ### 打包
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
@@ -39,8 +39,8 @@
 
 ## 打包
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
-- CI：`.github/workflows/desktop-mac.yml`，手动触发或推送 `desktop/**` 分支，在 `macos-15`（Apple 芯片）上构建，依次做：打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里真实安装 5 个插件）。
-- 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；缺任何一项就跳过。
+- CI：`.github/workflows/desktop-mac.yml`，手动触发或推送 `desktop/**` 分支，在 `macos-15`（Apple 芯片）上构建，依次做：打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、模型源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
+- 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签（含 `plugin-template` 里的全部 Mach-O 文件）、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；缺任何一项就跳过。
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
 ## 网页版（`crysound/web`）

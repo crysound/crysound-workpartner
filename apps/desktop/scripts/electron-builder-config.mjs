@@ -1,7 +1,7 @@
 import { readInstallerLocales, renderInstallerStrings } from './installer-locales.mjs'
 import { officePackageDirectories } from '../../../scripts/libreoffice-packages.mjs'
 import { X509Certificate } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -160,6 +160,8 @@ export function createElectronBuilderConfig(
       { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
       // CRYSOUND: brand layer, default configuration, plugin list, Host hook.
       { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'host-hook.mjs'] },
+      // CRYSOUND: plugins pre-installed for this target (see prepare-plugin-template.ts); absent when the target cannot be built on this host.
+      ...(existsSync(join(buildPaths.root, 'plugin-template', 'plugins.json')) ? [{ from: join(buildPaths.root, 'plugin-template'), to: 'crysound/plugin-template' }] : []),
       ...(packagesMacOS ? [{ from: fileURLToPath(new URL('../../../crysound/macos/zh_CN.lproj', import.meta.url)), to: 'zh_CN.lproj' }] : []),
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
