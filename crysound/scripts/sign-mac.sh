@@ -64,5 +64,10 @@ if ! grep -q "status: Accepted" "$result"; then
   echo "notarization was not accepted"
   exit 1
 fi
-xcrun stapler staple "$signed"
+# Stapling fetches the ticket from Apple's CloudKit, which drops connections now and then.
+for attempt in 1 2 3 4; do
+  if xcrun stapler staple "$signed"; then break; fi
+  [ "$attempt" = 4 ] && exit 1
+  sleep $((attempt * 20))
+done
 ls -lh "$signed"
