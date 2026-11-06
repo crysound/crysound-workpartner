@@ -13,6 +13,7 @@
         models:
           - id: codex/gpt-6.1-sol
             name: GPT-6.1 Sol
+            input: [text, image]
             contextWindow: 272000
             reasoningEfforts:
               low: low
@@ -22,6 +23,7 @@
               max: max
           - id: codex/gpt-6.1-terra
             name: GPT-6.1 Terra
+            input: [text, image]
             contextWindow: 272000
             reasoningEfforts:
               low: low
