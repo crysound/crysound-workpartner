@@ -1,8 +1,10 @@
 {
   "mode": "Native online shell, branch client/brand overrides, isolated real SQLite and HTTP API; synthetic facts; no model round or production writes",
   "checks": [
+    "Settings navigation, heading, switch and empty state use 记忆; privacy explanation is preserved",
     "Branch client runs in the native settings slot; native Switch and memory pin icon present",
     "Feishu uses unselected native row with link icon and no underline; market fallback icon hidden",
+    "A real revision conflict rejects the switch change; successful automatic and focus reads preserve the mutation error",
     "Native switch persists; add/type selection/edit/delete work through real HTTP and SQLite; cancelling delete preserves facts",
     "Focus refresh sees another writer; an open draft is preserved; stale save is refused without overwriting; cancelling refreshes",
     "20 screenshots: two widths × two palettes × empty/three/near/delete confirmation/clear confirmation; empty count is zero with no character metric or destructive controls; no panel horizontal overflow",
@@ -10,6 +12,7 @@
     "Opening the section again refreshes; memory/market selected and unselected states follow the native shell"
   ],
   "screenshots": [
+    "switch-conflict.png",
     "light-wide-empty.png",
     "light-wide-three.png",
     "light-wide-delete-confirm.png",

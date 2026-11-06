@@ -5,19 +5,19 @@ window.__ModuleLoader__.load({
     const { createElement: h, useState, useEffect } = require('react');
     const { Button, Switch, Input, Modal, Menu, IconPinOutlineMedium, IconEditOutlineRegular, IconTrashOutlineRegular } = require('@deepseek-ai/dsh-client-ui-primitives');
     const copy = {
-      title: '个人记忆', description: '伙伴记住的你的工作和偏好，只用于你自己的对话，同事看不到。',
+      title: '记忆', description: '伙伴记住的你的工作和偏好，只用于你自己的对话，同事看不到。',
       sync: '网页版和桌面版各存一份，目前不同步。',
-      empty: '还没有个人记忆', example: '在对话里说“记住我写报告喜欢用表格”',
+      empty: '还没有记忆', example: '在对话里说“记住我写报告喜欢用表格”',
       loading: '正在读取记忆…', retry: '读取失败，请重新打开页面或稍后切回重试。',
       remove: '删除', confirm: '确认删除', cancel: '取消', saving: '正在保存…',
       note: '删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。',
       preference: '偏好', identity: '个人背景', project: '长期项目',
       capacity: '记忆空间接近上限，整理后可继续记录。',
-      enabled: '使用个人记忆', disabled: '关闭后，新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
-      clear: '清空全部', clearConfirm: '清空全部个人记忆？', clearNote: '全部条目会被删除，无法在这里恢复。删除后，后续记忆召回不再包含这些条目。原聊天记录和既有备份会保留。',
+      enabled: '使用记忆', disabled: '关闭后，新会话不再使用记忆，对话中也不会保存；已有条目保留。',
+      clear: '清空全部', clearConfirm: '清空全部记忆？', clearNote: '全部条目会被删除，无法在这里恢复。删除后，后续记忆召回不再包含这些条目。原聊天记录和既有备份会保留。',
       add: '添加一条', edit: '编辑', save: '保存', kind: '类型', factTitle: '标题', content: '内容',
       conversation: '对话中记下', manual: '手动添加', edited: '页面修改', created: '创建于', updated: '更新于',
-      pending: '正在保存个人记忆…', failed: '个人记忆操作未完成。',
+      pending: '正在保存记忆…', failed: '记忆操作未完成。',
     };
     // Same spacing, type sizes and theme tokens as native General / PreferenceRow;
     // Button, Switch, Input, Menu and Modal own all control styling and behavior.
@@ -54,7 +54,9 @@ window.__ModuleLoader__.load({
     }
     function MemoryPanel() {
       const [data, setData] = useState(null);
-      const [error, setError] = useState('');
+      const [readError, setReadError] = useState('');
+      const [mutationError, setError] = useState('');
+      const error = mutationError || readError;
       // An open editor/confirmation keeps its displayed revision until dismissed.
       const [action, setAction] = useState(null);
       const [busy, setBusy] = useState(false);
@@ -69,8 +71,8 @@ window.__ModuleLoader__.load({
           const current = controller;
           try {
             const value = await request('list', { signal: current.signal });
-            if (!current.signal.aborted) { setData(value); setError(''); }
-          } catch (error) { if (!current.signal.aborted) setError(error.message); }
+            if (!current.signal.aborted) { setData(value); setReadError(''); }
+          } catch (error) { if (!current.signal.aborted) setReadError(error.message); }
         };
         void refresh();
         window.addEventListener('focus', refresh);

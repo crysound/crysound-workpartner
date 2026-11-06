@@ -1,7 +1,8 @@
 {
   "name": "@crysound/memory",
   "version": "0.1.1",
-  "description": "个人记忆：自动记住稳定的个人事实与偏好，跨会话召回，支持开关、编辑与清空。",
+  "displayName": "兆华记忆",
+  "description": "兆华记忆：自动记住稳定的个人事实与偏好，跨会话召回，支持开关、编辑与清空。",
   "type": "module",
   "main": "./index.mjs",
   "exports": { ".": "./index.mjs", "./client": "./client.js", "./package.json": "./package.json" },

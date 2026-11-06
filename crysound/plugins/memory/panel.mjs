@@ -62,7 +62,7 @@ export function registerPanel(ctx, store) {
         try {
           if (method === 'GET') return reply(response, 200, { ...store.snapshot(), limits });
           if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') {
-            return reply(response, 415, { error: '请使用个人记忆页面上的按钮。' });
+            return reply(response, 415, { error: '请使用记忆页面上的按钮。' });
           }
           const chunks = [];
           let length = 0;

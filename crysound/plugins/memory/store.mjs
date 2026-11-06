@@ -97,7 +97,7 @@ export class MemoryStore {
     // Count the full enabled recall JSON even when disabled, so toggling never hides an overrun.
     const chars = JSON.stringify(recallData({ ...value, enabled: true })).length;
     if (facts.length > this.maxMemories || chars > this.recallChars) {
-      throw new Error('个人记忆已超出当前预算，请先整理；不会自动删除旧记忆。');
+      throw new Error('记忆已超出当前预算，请先整理；不会自动删除旧记忆。');
     }
     return { ...value, usage: { count: facts.length, chars, nearCapacity: facts.length >= this.maxMemories * 0.8 || chars >= this.recallChars * 0.8 } };
   }
@@ -123,13 +123,13 @@ export class MemoryStore {
   /** Save by random id; approved merges, removals and the target write share one transaction. */
   save(input, { source = 'conversation', requireEnabled = true } = {}) {
     return this.change(input.revision, before => {
-      if (requireEnabled && !before.enabled) throw new Error('个人记忆已关闭');
+      if (requireEnabled && !before.enabled) throw new Error('记忆已关闭');
       const fact = factInput(input);
       const id = input.id === undefined ? randomBytes(12).toString('hex') : factId(input.id);
       const removeIds = input.removeIds ?? [];
       const updates = input.updates ?? [];
       if (!Array.isArray(removeIds) || !Array.isArray(updates) || removeIds.length + updates.length > this.maxMemories) {
-        throw new Error('整理方案无效，请重新读取个人记忆。');
+        throw new Error('整理方案无效，请重新读取记忆。');
       }
       if ((removeIds.length || updates.length) && input.confirmed !== true) throw new Error('请先让用户确认要合并或删除的条目。');
       const touched = new Set([id]);
@@ -173,13 +173,13 @@ export class MemoryStore {
 
   /** The switch is personal, durable, and participates in optimistic concurrency. */
   setEnabled({ enabled, revision }) {
-    if (typeof enabled !== 'boolean') throw new Error('请选择开启或关闭个人记忆。');
+    if (typeof enabled !== 'boolean') throw new Error('请选择开启或关闭记忆。');
     return this.change(revision, () => this.db.prepare('UPDATE meta SET enabled=? WHERE id=1').run(enabled ? 1 : 0));
   }
 
   /** Securely clear every fact in one revision-checked transaction after confirmation. */
   clear({ revision, confirmed }) {
-    if (confirmed !== true) throw new Error('请再次确认清空全部个人记忆。');
+    if (confirmed !== true) throw new Error('请再次确认清空全部记忆。');
     return this.change(revision, () => this.db.exec('DELETE FROM facts'));
   }
 

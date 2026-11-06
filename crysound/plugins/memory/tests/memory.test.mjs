@@ -170,7 +170,7 @@ test('disabled memory persists, hides recall, rejects model save and retains edi
   const disabled = store.setEnabled({ enabled: false, revision: 1 });
   assert.deepEqual(recallData(disabled).facts, []);
   assert.equal(disabled.facts.length, 1);
-  assert.throws(() => store.save({ ...coffee, revision: 2 }), /个人记忆已关闭/u);
+  assert.throws(() => store.save({ ...coffee, revision: 2 }), /记忆已关闭/u);
   const other = new MemoryStore(dir);
   t.after(() => other.close());
   assert.equal(other.snapshot().enabled, false);

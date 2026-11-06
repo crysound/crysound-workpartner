@@ -19,13 +19,22 @@ mkdirSync(directory, { recursive: true });
 const temporary = mkdtempSync(join(tmpdir(), 'memory-settings-browser-'));
 let store = new MemoryStore(temporary);
 const routes = new Map();
+const apiPaths = ['list', 'save', 'delete', 'enabled', 'clear'].map(action => '/crysound-memory/api/' + action);
+let conflictNextSwitch = false;
 registerPanel({ effect: fn => fn(), webStartup: { trustedHosts: [] }, webServer: {
   host: '127.0.0.1', register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path); },
 } }, { get maxMemories() { return store.maxMemories; }, get recallChars() { return store.recallChars; },
   snapshot: () => store.snapshot(), save: (...args) => store.save(...args), remove: input => store.remove(input),
   clear: input => store.clear(input), setEnabled: input => store.setEnabled(input),
 });
-const server = createServer((req, res) => { const handle = routes.get(req.url); if (handle) void handle(req, res); else { res.writeHead(404); res.end(); } });
+const server = createServer((req, res) => {
+  if (!apiPaths.includes(req.url)) { res.writeHead(404); res.end(); return; }
+  if (req.url === '/crysound-memory/api/enabled' && conflictNextSwitch) {
+    conflictNextSwitch = false;
+    store.setEnabled({ revision: store.snapshot().revision, enabled: true });
+  }
+  void routes.get(req.url)(req, res);
+});
 server.listen(0, '127.0.0.1');
 await once(server, 'listening');
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -55,7 +64,8 @@ ws.addEventListener('message', async event => {
     let body;
     let contentType = 'text/javascript';
     let status = 200;
-    if (url.pathname.startsWith('/crysound-memory/api/')) {
+    if (apiPaths.includes(url.pathname)) {
+      if (request.method !== 'GET' && request.method !== 'POST') throw new Error('Unexpected memory method');
       const response = await fetch(base + url.pathname, { method: request.method,
         ...(request.method === 'POST' ? { headers: { 'content-type': 'application/json' }, body: request.postData } : {}),
       });
@@ -90,14 +100,22 @@ const until = async (expression, name = expression) => {
   throw new Error('UI condition not met: ' + name);
 };
 const click = async expression => {
-  await until(`Boolean(${expression})`, 'click target');
-  await evaluate(`(()=>{const target=(${expression});target.focus();target.click()})()`);
+  await until(expression, 'click target');
+  const target = await send('Runtime.evaluate', { expression });
+  const { result } = await send('Runtime.callFunctionOn', {
+    objectId: target.result.objectId, returnByValue: true,
+    functionDeclaration: 'function(){this.scrollIntoView({block:"nearest"});const r=this.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}}',
+  });
+  const { x, y } = result.value;
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
 };
 const button = (label, scope = 'document') => `[...${scope}.querySelectorAll('button')].find(x=>x.textContent.trim()===${JSON.stringify(label)})`;
 const panel = `document.querySelector('.zp-memory')`;
 const focus = () => evaluate(`window.dispatchEvent(new Event('focus'))`);
 const screenshot = async name => {
-  await evaluate(`Promise.all([document.fonts.ready,...document.getAnimations().filter(a=>a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))]).then(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true)))))`);
+  await evaluate(`Promise.all([document.fonts.ready,...document.getAnimations().filter(a=>a.effect?.target?.closest('[data-shortcut-modal=settings], [role=dialog]') && a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))]).then(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true)))))`);
   const clip = await evaluate(`(()=>{const box=document.querySelector('[data-shortcut-modal=settings]')?.getBoundingClientRect();return box?{x:box.x,y:box.y,width:box.width,height:box.height,scale:1}:null})()`);
   if (!clip) return; // Never capture unrelated account or conversation content.
   const { data } = await send('Page.captureScreenshot', { format: 'png', clip });
@@ -124,9 +142,9 @@ const type = async (label, value) => {
 };
 const client = readFileSync(new URL('../client.js', import.meta.url), 'utf8');
 // Capture the branch registration while keeping its factory's window global real.
-const init = `(()=>{
-  let replacement;
-  new Function('capture', ${JSON.stringify(client.replace('window.__ModuleLoader__.load(', 'capture('))})(value=>{replacement=value});
+const init = `window.__ModuleLoader__={load(value){window.__memoryBranchRegistration=value}};\n` + client + `\n(()=>{
+  const replacement = window.__memoryBranchRegistration;
+  delete window.__memoryBranchRegistration;
   let loader;
   Object.defineProperty(window,'__ModuleLoader__',{configurable:true,get(){return loader},set(value){
     loader=value;let load=value.load;
@@ -152,11 +170,17 @@ try {
   ] });
   injection = (await send('Page.addScriptToEvaluateOnNewDocument', { source: init })).identifier;
   await send('Page.navigate', { url: process.env.MEMORY_SETTINGS_URL || 'https://workpartner.corp.crysound.com/' });
-  await until('window.__memoryBranchLoaded && document.querySelector("button[data-signed-out]")', 'branch memory factory and account button');
+  await until('window.__memoryBranchLoaded && document.querySelector("button[data-signed-out]")?.dataset.zpName', 'branch memory factory and account button');
   await click('document.querySelector("button[data-signed-out]")');
+  await evaluate(`Promise.all(document.getAnimations().filter(a=>a.effect?.target?.closest('[role=menu]') && a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))).then(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true)))))`);
   await click(`[...document.querySelectorAll('[role=menuitem]')].find(x=>['Settings','设置'].includes(x.textContent.trim()))`);
-  await click(button('个人记忆'));
+  await until(`document.querySelector('[data-shortcut-modal=settings] nav')`);
+  await evaluate(`Promise.all(document.getAnimations().filter(a=>a.effect?.target?.closest('[data-shortcut-modal=settings], [role=dialog]') && a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))).then(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true)))))`);
+  await click(button('记忆'));
   await until(`${panel}?.textContent.includes('已记 0 条')`);
+  assert.equal(await evaluate(`${panel}.querySelector('h2').textContent`), '记忆');
+  assert.equal(await evaluate(`${panel}.textContent.includes('使用记忆') && ${panel}.textContent.includes('还没有记忆') && ${panel}.textContent.includes('伙伴记住的你的工作和偏好，只用于你自己的对话，同事看不到。') && !document.querySelector('[data-shortcut-modal=settings]').textContent.includes('个人记忆')`), true);
+  proof.checks.push('Settings navigation, heading, switch and empty state use 记忆; privacy explanation is preserved');
   proof.checks.push('Branch client runs in the native settings slot; native Switch and memory pin icon present');
   assert.equal(await evaluate(`${panel}.querySelectorAll('[role=switch]').length`), 1);
   assert.equal(await evaluate(`document.querySelector('[data-shortcut-modal=settings] nav [aria-current] [data-icon]')?.dataset.icon`), 'dsw-icon-pin-outline-medium');
@@ -169,6 +193,14 @@ try {
   assert.equal(store.snapshot().enabled, false);
   await click(`${panel}.querySelector('[role=switch]')`);
   await until(`${panel}.querySelector('[role=switch]').getAttribute('aria-checked')==='true'`);
+  conflictNextSwitch = true;
+  await click(`${panel}.querySelector('[role=switch]')`);
+  await until(`${panel}.querySelector('[role=alert]')?.textContent.includes('记忆已变化') && !${panel}.querySelector('[role=switch]').disabled`);
+  await focus();
+  await until(`${panel}.querySelector('[role=switch]').getAttribute('aria-checked')==='true'`);
+  await screenshot('switch-conflict');
+  assert.equal(await evaluate(`${panel}.querySelector('[role=alert]')?.textContent.includes('记忆已变化')`), true);
+  proof.checks.push('A real revision conflict rejects the switch change; successful automatic and focus reads preserve the mutation error');
   await click(button('添加一条', panel));
   await type('标题', '页面新增验证'); await type('内容', '写报告时先给结论');
   await click(`document.querySelector('#zp-memory-editor [aria-label="类型"]')`);
@@ -202,7 +234,7 @@ try {
   proof.checks.push('Focus refresh sees another writer; an open draft is preserved; stale save is refused without overwriting; cancelling refreshes');
   for (const [width, size] of [[1440, 'wide'], [390, 'narrow']]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
-    await evaluate(`[...document.querySelectorAll('[data-shortcut-modal=settings] nav button')].find(x=>x.textContent==='个人记忆').focus()`);
+    await evaluate(`[...document.querySelectorAll('[data-shortcut-modal=settings] nav button')].find(x=>x.textContent==='记忆').focus()`);
     for (const theme of ['light', 'dark']) {
       await evaluate(`document.body.toggleAttribute('data-ds-dark-theme', ${theme === 'dark'})`);
       for (const scenario of ['empty', 'three', 'near']) {
@@ -228,9 +260,9 @@ try {
           await screenshot(`${theme}-${size}-delete-confirm`);
           await click(button('取消', `document.querySelector('[role=dialog][aria-label="确认删除"]')`));
           await click(button('清空全部', panel));
-          await until(`document.querySelector('[role=dialog][aria-label="清空全部个人记忆？"]')`);
+          await until(`document.querySelector('[role=dialog][aria-label="清空全部记忆？"]')`);
           await screenshot(`${theme}-${size}-clear-confirm`);
-          await click(button('取消', `document.querySelector('[role=dialog][aria-label="清空全部个人记忆？"]')`));
+          await click(button('取消', `document.querySelector('[role=dialog][aria-label="清空全部记忆？"]')`));
           assert.equal(store.snapshot().facts.length, 3);
         }
       }
@@ -238,7 +270,7 @@ try {
   }
   seed(3); await refreshCount(3);
   await click(button('清空全部', panel));
-  await click(button('清空全部', `document.querySelector('[role=dialog][aria-label="清空全部个人记忆？"]')`));
+  await click(button('清空全部', `document.querySelector('[role=dialog][aria-label="清空全部记忆？"]')`));
   await until(`${panel}?.textContent.includes('已记 0 条')`);
   assert.equal(store.snapshot().facts.length, 0);
   proof.checks.push('20 screenshots: two widths × two palettes × empty/three/near/delete confirmation/clear confirmation; empty count is zero with no character metric or destructive controls; no panel horizontal overflow');
@@ -250,7 +282,7 @@ try {
   await screenshot('navigation-market-selected');
   await click(`[...document.querySelectorAll('[data-shortcut-modal=settings] nav button')].find(x=>['General','通用设置','通用'].includes(x.textContent.trim()))`);
   await screenshot('navigation-memory-unselected');
-  await click(button('个人记忆'));
+  await click(button('记忆'));
   await until(`${panel}?.textContent.includes('已记 0 条')`);
   proof.checks.push('Opening the section again refreshes; memory/market selected and unselected states follow the native shell');
   assert.deepEqual(failures, []);
