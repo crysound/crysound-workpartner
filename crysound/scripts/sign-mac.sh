@@ -70,5 +70,7 @@ if ! grep -q "status: Accepted" "$result"; then
   echo "notarization was not accepted"
   exit 1
 fi
-xcrun stapler staple "$signed"
+# Apple's ticket service drops connections now and then (exit 68); retry before failing the build.
+retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" -lt 3 ] && sleep 20; done; return 1; }
+retry xcrun stapler staple "$signed"
 ls -lh "$signed"

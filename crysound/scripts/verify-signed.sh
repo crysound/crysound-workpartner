@@ -5,7 +5,9 @@ dmg=$1
 mount=$(mktemp -d)
 trap 'hdiutil detach "$mount" -quiet || true' EXIT
 echo "== stapler validate (dmg)"
-xcrun stapler validate "$dmg"
+# Apple's ticket service drops connections now and then (exit 68); retry before failing the build.
+retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" -lt 3 ] && sleep 20; done; return 1; }
+retry xcrun stapler validate "$dmg"
 echo "== spctl (dmg)"
 spctl -a -vv -t open --context context:primary-signature "$dmg"
 hdiutil attach "$dmg" -mountpoint "$mount" -nobrowse -readonly -quiet
