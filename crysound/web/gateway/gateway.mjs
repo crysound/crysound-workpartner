@@ -78,6 +78,7 @@ const market = createMarket({
   authorization: `Basic ${Buffer.from(fs.readFileSync("/secure/market-npm-auth", "utf8").trim()).toString("base64")}`,
   publicOrigin: `https://${PUBLIC_HOST}`,
   authenticate: desktopUser,
+  readUsers: users,
   sessionUser: (req) => userFor(req).user,
   admins: marketAdmins,
   notify: notifyMarketAdmins,

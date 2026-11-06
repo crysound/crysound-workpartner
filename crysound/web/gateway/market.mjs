@@ -38,11 +38,11 @@ function readState(file) {
 
 /**
  * 创建市场 HTTP 处理器；发布与审批串行、原子保存。未知上传结果保留 publishing，需管理员核对。
- * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份读取器、管理员列表与通知函数。
+ * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份与用户列表读取器、管理员列表与通知函数。
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, admins, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
   let state = readState(stateFile);
   let queue = Promise.resolve();
   const serial = (work) => {
@@ -74,7 +74,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     if (manifest.engines?.dsh !== undefined && (typeof manifest.engines.dsh !== "string" || !manifest.engines.dsh.trim() || semver.validRange(manifest.engines.dsh) === null)) throw fail(400, "engines.dsh 必须是有效的 SemVer 范围");
     if (!doc._attachments || typeof doc._attachments !== "object" || Array.isArray(doc._attachments) || Object.keys(doc._attachments).length !== 1 || doc._deleted || doc._rev) throw fail(400, "只接受带 tarball 的新版本发布");
     // 仅向后端发送新版本数据，丢弃调用者的权限、修订号等注册表字段。
-    const upload = JSON.stringify({ name, versions: { [version]: manifest }, "dist-tags": { latest: version }, _attachments: doc._attachments, readme: typeof doc.readme === "string" ? doc.readme : "" });
+    const upload = JSON.stringify({ name, versions: { [version]: manifest }, "dist-tags": {}, _attachments: doc._attachments, readme: typeof doc.readme === "string" ? doc.readme : "" });
     await serial(async () => {
       const existing = state.packages[name];
       if (existing && existing.owner !== user.slug) throw fail(403, "只有首个发布者能发布这个包的新版本");
@@ -116,6 +116,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
 
   async function index(res) {
     const plugins = [];
+    const users = readUsers();
     for (const [name, pkg] of Object.entries(state.packages)) {
       const approved = Object.keys(pkg.versions).filter((v) => pkg.versions[v].status === "approved").sort(semver.rcompare);
       if (!approved.length) continue;
@@ -131,7 +132,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       });
       if (!versions.length) continue;
       const manifest = doc.versions[(versions.find((v) => semver.prerelease(v.version) === null) ?? versions[0]).version];
-      plugins.push({ name, description: manifest.description, author: pkg.owner,
+      plugins.push({ name, description: manifest.description, author: users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
         metadata: { keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: [], sortKeys: {} },
         versions,
       });
@@ -190,14 +191,33 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       if (req.method === "PUT" && !selector && !tarball) { await publish(req, res, user, name, `/${encodeURIComponent(name)}`); return true; }
       if (!["GET", "HEAD"].includes(req.method)) throw fail(403, "禁止删除、修改 dist-tag 或改写包数据；请发布新版本");
       if (selector && !/^(?:[a-zA-Z0-9][a-zA-Z0-9._+~-]*)$/.test(selector)) throw fail(400, "版本路径无效");
-      const r = await upstream(`/${encodeURIComponent(name)}${tarball ? `/-/${tarball}` : selector ? `/${encodeURIComponent(selector)}` : ""}`);
-      if (!r.ok) { await r.body?.cancel(); throw fail(r.status, "注册表未能读取这个包"); }
+      const pkg = state.packages[name];
+      if (!pkg) throw fail(404, "没有可安装的版本");
+      const metadata = await upstream(`/${encodeURIComponent(name)}`);
+      if (!metadata.ok) { await metadata.body?.cancel(); throw fail(metadata.status, "注册表未能读取这个包"); }
+      const doc = await metadata.json();
+      const readable = (version) => {
+        const row = state.packages[name]?.versions[version];
+        return row?.status === "approved" || (row?.status === "pending" && row.publisher === user.slug);
+      };
+      doc.versions = Object.fromEntries(Object.entries(doc.versions ?? {}).filter(([version]) => readable(version)));
+      const approved = Object.keys(doc.versions).filter((version) => state.packages[name].versions[version].status === "approved").sort(semver.rcompare);
+      if (!Object.keys(doc.versions).length || (!approved.length && pkg.owner !== user.slug)) throw fail(404, "没有可安装的版本");
+      doc.time = Object.fromEntries(Object.entries(doc.time ?? {}).filter(([version]) => Object.hasOwn(doc.versions, version)));
+      doc["dist-tags"] = Object.fromEntries(Object.entries(doc["dist-tags"] ?? {}).filter(([tag, version]) => tag !== "latest" && approved.includes(version)));
+      if (approved.length) doc["dist-tags"].latest = approved[0];
       if (tarball) {
+        // tarball 文件名由注册表元数据映射到版本，不能只凭文件名中的版本授权。
+        if (!Object.values(doc.versions).some((manifest) => manifest.dist?.tarball && new URL(manifest.dist.tarball).pathname.split("/").pop() === tarball)) throw fail(404, "没有可安装的版本");
+        const r = await upstream(`/${encodeURIComponent(name)}/-/${tarball}`);
+        if (!r.ok) { await r.body?.cancel(); throw fail(r.status, "注册表未能读取这个包"); }
         res.writeHead(200, { "content-type": "application/octet-stream", "cache-control": "private, no-store" });
         if (req.method === "HEAD") { await r.body?.cancel(); res.end(); }
         else await pipeline(Readable.fromWeb(r.body), res);
       } else {
-        const doc = await r.json();
+        const version = selector && (Object.hasOwn(doc.versions, selector) ? selector : doc["dist-tags"][selector]);
+        if (selector && (!version || !Object.hasOwn(doc.versions, version))) throw fail(404, "没有可安装的版本");
+        const result = selector ? doc.versions[version] : doc;
         const rewrite = (v) => {
           if (!v?.dist?.tarball) return;
           const u = new URL(v.dist.tarball);
@@ -206,10 +226,10 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
           const origin = internalOrigin && req.headers.host === new URL(internalOrigin).host ? internalOrigin : publicOrigin;
           v.dist.tarball = `${origin}${PREFIX}${name}/-/${file}`;
         };
-        if (doc.versions) for (const v of Object.values(doc.versions)) rewrite(v);
-        else rewrite(doc);
+        if (selector) rewrite(result);
+        else for (const v of Object.values(doc.versions)) rewrite(v);
         if (req.method === "HEAD") { res.writeHead(200, { "cache-control": "no-store" }); res.end(); }
-        else json(res, 200, doc);
+        else json(res, 200, result);
       }
     } catch (error) {
       console.log("市场请求失败", error.status || 500);

@@ -63,7 +63,7 @@ try {
   const origin = `http://127.0.0.1:${gateway.address().port}`;
   handler = createMarket({ stateFile: path.join(root, "market.json"), registry,
     authorization: `Basic ${Buffer.from("zp-gateway:fake-internal-password").toString("base64")}`,
-    publicOrigin: origin, authenticate: (req) => tokenUser(req, key, users), admins: ["admin"],
+    publicOrigin: origin, authenticate: (req) => tokenUser(req, key, users), readUsers: () => users, admins: ["admin"],
     sessionUser: (req) => req.headers.cookie === "fake-admin-session" ? users[1] : null,
   });
   assert.equal((await fetch(`${registry}/@crysound%2fdemo`)).status, 401);

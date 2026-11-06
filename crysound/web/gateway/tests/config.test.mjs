@@ -166,3 +166,46 @@ test("桌面工作区升级实际补齐索引和可发现技能，重复启动�
   await prepareCompanyWorkspace(options);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(profile, "package.json"))).dsh.profile.bundles, []);
 });
+
+test("不支持的用户 YAML 或无效 manifest 只警告，跳过市场配置且保留原文件", (t) => {
+  const root = temp(t), patch = path.join(root, "cordis.patch.yml"), manifest = path.join(root, "package.json");
+  for (const initial of [
+    "- id: plugin-market\n  config: {cacheTtlMs: 2000}\n",
+    "- {id: plugin-market, config: {indexes: []}}\n",
+    "[{id: plugin-market, config: {indexes: []}}]\n",
+  ]) {
+    fs.writeFileSync(patch, initial); fs.writeFileSync(manifest, "{}");
+    const result = spawnSync(process.execPath, [path.join(config, "market-profile.mjs"), patch, manifest, index], { encoding: "utf8", env: { PATH: process.env.PATH } });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stderr, /警告.*已跳过/);
+    assert.equal(fs.readFileSync(patch, "utf8"), initial);
+    assert.equal(fs.readFileSync(manifest, "utf8"), "{}");
+    assert.equal(fs.existsSync(path.join(root, ".zp-market-v1")), false);
+  }
+  fs.writeFileSync(patch, "[]\n"); fs.writeFileSync(manifest, "broken");
+  const result = spawnSync(process.execPath, [path.join(config, "market-profile.mjs"), patch, manifest, index], { encoding: "utf8", env: { PATH: process.env.PATH } });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /警告.*无法解析/);
+  assert.equal(fs.readFileSync(patch, "utf8"), "[]\n");
+  assert.equal(fs.readFileSync(manifest, "utf8"), "broken");
+});
+
+test("入口脚本的市场配置、插件修补、配置升级和技能复制失败仍启动 dsh", (t) => {
+  const root = temp(t), bin = path.join(root, "bin"), home = path.join(root, "dsh");
+  fs.mkdirSync(bin); fs.mkdirSync(home);
+  for (const mark of [".zp-default-plugins-v1", ".zp-seed-v1"]) fs.writeFileSync(path.join(home, mark), "");
+  const stub = (name, body) => fs.writeFileSync(path.join(bin, name), `#!/bin/sh\n${body}\n`, { mode: 0o700 });
+  stub("node", 'if [ "$1" = "-e" ]; then exit 0; fi\nexit 1');
+  stub("cp", "exit 1");
+  stub("cat", "echo fake-model-key");
+  stub("mkdir", 'if [ "$2" = "/data/work" ]; then exit 1; fi\nexec /bin/mkdir "$@"');
+  stub("hostname", "echo 127.0.0.1");
+  stub("dsh", 'echo "dsh launched: $*"\numask');
+  const result = spawnSync("/bin/sh", ["-c", 'umask 022; exec /bin/sh "$1"', "entrypoint-test", fileURLToPath(new URL("../../entrypoint.sh", import.meta.url))], {
+    cwd: root, encoding: "utf8", env: { PATH: `${bin}:${process.env.PATH}`, DSH_HOME: home, PUBLIC_HOST: "partner.example.test" },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /dsh launched: --profile web/);
+  for (const step of ["市场 npm 配置", "插件修补", "市场发布技能复制", "市场 profile 配置", "默认配置升级"]) assert.ok(result.stderr.includes(`警告：${step}失败`), step);
+  assert.match(result.stdout, /\n0*22\s*$/);
+});
