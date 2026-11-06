@@ -22,6 +22,15 @@ def magpie_key(slug):
     path = SECURE / f'magpie-{slug}.key'
     if path.exists():
         return path
+    if os.environ.get('MAGPIE_KEYS') == 'pool':  # magpie 不在本机：领一把预建的钥匙（与网关自助开通同一个池）
+        pool = SECURE / 'magpie-pool'
+        spare = next(iter(sorted(pool.glob('*.key'))), None)
+        if spare is None:
+            sys.exit('预建的 magpie 钥匙用完了')
+        spare.rename(path); os.chown(path, 1001, 1001)
+        with open(pool / 'assigned.log', 'a') as f:
+            f.write(f'{spare.name} {slug} cli\n')
+        return path
     name = f'zhaohua-partner-{slug}'
     out = sh('docker', 'exec', 'magpie', '/magpie', 'gateway-key', 'add', name).stdout
     key = re.findall(r'sk-magpie-key-[A-Za-z0-9_-]+', out)
@@ -42,7 +51,7 @@ def container(slug, key):
     data = ROOT / 'users' / slug
     data.mkdir(parents=True, exist_ok=True)
     r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
-           '--user', '1001:1001', '-e', 'PUBLIC_HOST=partner.corp.crysound.com',
+           '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ.get('PUBLIC_HOST', 'partner.corp.crysound.com')}",
            '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
            '--memory', '2g', '--cpus', '2', '--pids-limit', '512',
            '--label', f'zhaohua-partner.user={slug}', IMAGE)

@@ -10,7 +10,10 @@ services:
     command: ["node", "/app/gateway.mjs"]
     restart: unless-stopped
     environment:
-      PUBLIC_HOST: partner.corp.crysound.com
+      PUBLIC_HOST: ${PUBLIC_HOST:-partner.corp.crysound.com}
+      MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
+      HOST_PARTNER_DATA: ${PARTNER_DATA:-/srv/xiaoman/zhaohua-partner}
+      HOST_PARTNER_SECURE: ${PARTNER_SECURE:-/srv/xiaoman/secure/zhaohua-partner}
       FEISHU_APP_ID: cli_aa67a5b7fe38dc15
       # 试用名单：飞书群“AI工作台”的成员可自助开通
       PILOT_CHAT_ID: oc_a4b4b056d66a374e70f7b061b00e7454  # 飞书群“AI工作台”
