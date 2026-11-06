@@ -24,16 +24,6 @@ export function updateDirectory(value) {
   return url.href
 }
 
-/** Change only the desktop manifest version in an ephemeral CI checkout, before packaging. */
-export async function prepareRelease(root, version, url) {
-  releaseVersion(version)
-  updateDirectory(url)
-  const path = join(root, 'apps/desktop/package.json')
-  const manifest = JSON.parse(await readFile(path, 'utf8'))
-  manifest.version = version
-  await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`)
-}
-
 /** Embed the generic feed before Developer ID signing; unsigned artifacts never call this. */
 export async function configureSignedApp(appPath, url) {
   const config = {
@@ -81,14 +71,13 @@ export async function verifyUpdateMetadata(zipPath, version) {
 }
 
 async function main() {
-  const [command, path, versionOrUrl, url] = process.argv.slice(2)
+  const [command, path, versionOrUrl] = process.argv.slice(2)
   switch (command) {
     case 'validate': releaseVersion(path); updateDirectory(versionOrUrl); break
-    case 'prepare': await prepareRelease(path, versionOrUrl, url); break
     case 'configure': await configureSignedApp(path, versionOrUrl); break
     case 'metadata': await writeUpdateMetadata(path, versionOrUrl); break
     case 'verify': await verifyUpdateMetadata(path, versionOrUrl); break
-    default: throw new Error('Usage: mac-update-release.mjs prepare ROOT VERSION URL | configure APP URL | metadata ZIP VERSION')
+    default: throw new Error('Usage: mac-update-release.mjs validate VERSION URL | configure APP URL | metadata ZIP VERSION | verify ZIP VERSION')
   }
 }
 

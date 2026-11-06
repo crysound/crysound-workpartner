@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { stripTypeScriptTypes } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
 import { test } from 'node:test'
 import { companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from '../../apps/desktop/src/crysound/auto-update.ts'
+import { DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig } from '../../apps/desktop/src/update-schedule.ts'
 
 const sixHours = 6 * 60 * 60 * 1000
 
@@ -29,6 +31,61 @@ test('only installed macOS builds with a sealed update source enable checks', as
   assert.equal(companyUpdatesEnabled(false, 'darwin', root), false)
   assert.equal(companyUpdatesEnabled(true, 'win32', root), false)
   assert.equal(companyUpdatesEnabled(true, 'darwin', root), true)
+})
+
+test('the actual main-process wiring selects one company schedule and shows the approved restart choice', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'company-main-update-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  const source = await readFile(new URL('../../apps/desktop/src/main.ts', import.meta.url), 'utf8')
+  // Run the shell's actual initialization block without starting Electron, login or the workspace.
+  const start = source.indexOf('  const companyUpdateEnabled =')
+  const end = source.indexOf('  const downloadUpdate =', start)
+  assert.ok(start >= 0 && end > start)
+  const initialize = new Function('dependencies', `
+    const { app, process, manifest, desktopUpdateChannel, DesktopUpdateCoordinator, publishUpdate,
+      companyUpdatesEnabled, companyUpdateReadyPrompt, createCompanyAutoUpdateSchedule,
+      DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig, windowShown, ordinaryMessageBox, quitting } = dependencies
+    ${stripTypeScriptTypes(source.slice(start, end), { mode: 'transform' })}
+    return { updates, updateSchedule, updateChannel, companyUpdateEnabled }
+  `)
+  let prompts = 0
+  class ShellCoordinator {
+    constructor(publish, beforeRestart, updater, enabled, currentVersion, downloadResult, channel) {
+      Object.assign(this, coordinator())
+      this.channel = channel
+      const check = this.check
+      this.check = async () => enabled() ? check.call(this) : this.state
+    }
+  }
+  const dependencies = {
+    app: { isPackaged: true }, process: { platform: 'darwin', resourcesPath: root, env: {} }, manifest: {},
+    desktopUpdateChannel: () => 'nightly', DesktopUpdateCoordinator: ShellCoordinator, publishUpdate: state => state,
+    companyUpdatesEnabled, companyUpdateReadyPrompt, createCompanyAutoUpdateSchedule,
+    DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig, quitting: false,
+    windowShown: async () => {}, ordinaryMessageBox: async options => {
+      assert.equal(options.message, '新版本已下载，重启后生效')
+      assert.deepEqual(options.buttons, ['立即重启', '稍后'])
+      prompts++
+      return { response: 1 }
+    },
+  }
+  const unsigned = initialize(dependencies)
+  t.after(() => unsigned.updateSchedule.dispose())
+  assert.equal(unsigned.companyUpdateEnabled, false)
+  await unsigned.updateSchedule.check()
+  assert.equal(unsigned.updates.checks, 0)
+  await writeFile(join(root, 'app-update.yml'), '{}')
+  const development = initialize({ ...dependencies, app: { isPackaged: false } })
+  t.after(() => development.updateSchedule.dispose())
+  assert.equal(development.companyUpdateEnabled, false)
+  const signed = initialize(dependencies)
+  t.after(() => signed.updateSchedule.dispose())
+  assert.equal(signed.updateChannel, 'latest')
+  assert.equal(signed.updates.channel, 'latest')
+  await signed.updateSchedule.check()
+  assert.deepEqual(signed.updates.downloads, ['0.2.3'])
+  assert.deepEqual(signed.updates.installs, [])
+  assert.equal(prompts, 1)
 })
 
 test('startup downloads automatically, Later never installs or repeats the same prompt, polling waits six hours', async t => {

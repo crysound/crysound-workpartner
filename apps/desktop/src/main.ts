@@ -50,6 +50,8 @@ import { connectDesktopWelcome, type DesktopWelcomeBackend } from './welcome-bac
 import { DesktopUpdateJournal } from './update-journal.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
 import { DesktopUpdateSchedule, resolveDesktopUpdateScheduleConfig } from './update-schedule.ts'
+// CRYSOUND: signed Mac releases use the company feed and one background-download schedule.
+import { companyUpdateReadyPrompt, companyUpdatesEnabled, createCompanyAutoUpdateSchedule } from './crysound/auto-update.ts'
 import { desktopUpdateErrorSummary, presentDesktopUpdate } from './update-presentation.ts'
 import { desktopErrorState } from './startup-error.ts'
 import { readDesktopLoginShellEnvironment, resolveDesktopLoginShellConfig } from './login-shell-environment.ts'
@@ -716,7 +718,9 @@ async function main(): Promise<void> {
   }
 
   const manifest: unknown = JSON.parse(await readFile(join(app.getAppPath(), 'package.json'), 'utf8'))
-  const updateChannel = desktopUpdateChannel(manifest)
+  // CRYSOUND: only installed Mac releases with a signing-sealed company feed enable updates.
+  const companyUpdateEnabled = companyUpdatesEnabled(app.isPackaged, process.platform, process.resourcesPath)
+  const updateChannel = companyUpdateEnabled ? 'latest' : desktopUpdateChannel(manifest)
   const updates = new DesktopUpdateCoordinator(
     publishUpdate,
     async () => {
@@ -772,13 +776,21 @@ async function main(): Promise<void> {
       }
       return true
     },
-    // Company build: no update source, whatever the packaged resources contain.
-    undefined, () => false, undefined,
+    // CRYSOUND: keep the upstream task inspection, locking and clean stop before restart.
+    undefined, () => companyUpdateEnabled, undefined,
     (success, reason) => { void track('desktop_upgrade_download_result', { is_success: success, ...reason === undefined ? {} : { error_reason: reason } }) },
     updateChannel,
   )
 
-  const updateSchedule = new DesktopUpdateSchedule(updates, resolveDesktopUpdateScheduleConfig(process.env))
+  // CRYSOUND: reuse startup/resume checks and shutdown disposal with a single six-hour polling owner.
+  const updateSchedule = companyUpdateEnabled
+    ? createCompanyAutoUpdateSchedule(updates, async () => {
+        await windowShown()
+        if (quitting) return false
+        const result = await ordinaryMessageBox(companyUpdateReadyPrompt)
+        return result.response === 0
+      })
+    : new DesktopUpdateSchedule(updates, resolveDesktopUpdateScheduleConfig(process.env))
 
   const downloadUpdate = async (version: string): Promise<DesktopUpdateState> => {
     void track('desktop_upgrade_click', {})
