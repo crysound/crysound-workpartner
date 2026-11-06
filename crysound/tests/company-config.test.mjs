@@ -136,7 +136,7 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "agent-default-model").config.reasoningEffort, "max");
   await writeFile(file, "[]\n");
   refreshProfile(file, seed, yaml);
-  assert.deepEqual(load(await readFile(file, "utf8")).map(row => row.id), ["llm-pi-ai", "web-search-deepseek"]);
+  assert.deepEqual(load(await readFile(file, "utf8")).map(row => row.id), ["llm-pi-ai", "web-search-deepseek", "ui-chat"]);
 });
 
 test("invalid personal configuration fails without changing the file", async (t) => {
@@ -332,5 +332,28 @@ test("startup refreshes missing and literal search settings from company config 
     }
     refreshProfile(file, seed, yaml);
     assert.equal(await readFile(file, "utf8"), after, "second run is byte-identical");
+  }
+});
+
+test("work-step display defaults to standard and keeps a chosen value", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  const scenarios = [
+    [undefined, "standard"],
+    ["- id: ui-sidebar-terminal\n  disabled: true\n", "standard"],
+    ["- id: ui-chat\n  name: '@deepseek-ai/dsh-client-ui-chat'\n  config:\n    foldedReplies: final\n", "standard"],
+    ["- id: ui-chat\n  config:\n    transcriptView: detailed\n", "detailed"],
+    ["- id: ui-chat\n  config:\n    transcriptView: compact\n", "compact"],
+  ];
+  for (const [index, [before, expected]] of scenarios.entries()) {
+    const file = join(root, `chat-${index}.yml`);
+    if (before !== undefined) await writeFile(file, before);
+    refreshProfile(file, seed, yaml, before === undefined);
+    const after = await readFile(file, "utf8"), rows = load(after);
+    const chat = rows.filter(row => row.id === "ui-chat");
+    assert.equal(chat.length, 1, `scenario ${index} keeps one ui-chat entry`);
+    assert.equal(chat[0].config.transcriptView, expected, `scenario ${index}`);
+    if (index === 2) assert.equal(chat[0].config.foldedReplies, "final");
+    refreshProfile(file, seed, yaml);
+    assert.equal(await readFile(file, "utf8"), after, "second refresh is byte-identical");
   }
 });
