@@ -93,7 +93,7 @@ done
 
 ## 公司维护的插件（`crysound/plugins/`）
 
-- `memory`（`@crysound/memory`，兆华记忆）：独立最小实现，主对话模型主动保存稳定的个人事实，在新会话中按总预算召回；中文设置页查看和删除。数据仅在个人 DSH home 的插件专属 SQLite 文件，不接新模型或服务，不加入预装。评估与隔离实测见 `crysound/plugins/memory-evaluation/`；界面、存储结构、正式网关和备份恢复验收通过后再决定发布。
+- `memory`（`@crysound/memory`，兆华记忆）：独立最小实现，主对话模型主动保存稳定的个人事实，在新会话中按总预算召回；中文设置页查看和删除，满额提示先删再记。数据仅在个人 DSH home 的插件专属 SQLite 文件，使用 DELETE 日志模式，不接新模型或服务，不加入预装。中文页和存储方案已获分诊确认，交伙伴助理测试账号验收；正式网关、桌面版、备份恢复、长期并发及提取率仍未验收。评估见 `crysound/plugins/memory-evaluation/`；Node 实验性 SQLite 的升级复查、镜像版本和备份恢复步骤见插件 README，验收后征得负责人同意才预装。
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。

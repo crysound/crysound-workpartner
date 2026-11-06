@@ -46,6 +46,7 @@ function reply(response, status, body) {
 
 /** Register read/delete endpoints with the same store and revision checks as the model tools. */
 export function registerPanel(ctx, store) {
+  const limits = { maxMemories: store.maxMemories, recallChars: store.recallChars };
   for (const [path, method] of [['list', 'GET'], ['delete', 'POST']]) {
     ctx.effect(() => ctx.webServer.register({
       kind: 'exact', path: '/crysound-memory/api/' + path,
@@ -53,7 +54,7 @@ export function registerPanel(ctx, store) {
         if (!trustedRequest(request, ctx.webStartup, ctx.webServer.host)) return reply(response, 403, { error: '请从本人的工作伙伴页面访问。' });
         if (request.method !== method) return reply(response, 405, { error: '请求方式不支持。' });
         try {
-          if (method === 'GET') return reply(response, 200, store.snapshot());
+          if (method === 'GET') return reply(response, 200, { ...store.snapshot(), limits });
           if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') {
             return reply(response, 415, { error: '请使用页面上的删除按钮。' });
           }
@@ -68,7 +69,7 @@ export function registerPanel(ctx, store) {
           try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
           catch (error) { return reply(response, 400, { error: '请求内容无效，请刷新。' }); }
           if (!input || typeof input !== 'object') return reply(response, 400, { error: '请选择要删除的记忆。' });
-          return reply(response, 200, store.remove(input));
+          return reply(response, 200, { ...store.remove(input), limits });
         } catch (error) {
           // Return an actionable failure; never report an uncommitted deletion as successful.
           return reply(response, 409, { error: error.message });

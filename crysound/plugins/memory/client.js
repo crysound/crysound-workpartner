@@ -10,6 +10,8 @@ window.__ModuleLoader__.load({
       remove: '删除', confirm: '确认删除', cancel: '取消', saving: '正在删除…',
       note: '删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。',
       preference: '偏好', identity: '个人背景', project: '长期项目',
+      full: '记忆条数已满，请先删除不再需要的记忆，再记新内容。',
+      capacity: '达到条数或内容上限后，请先删除不再需要的记忆，再记新内容。',
     };
     const style = { padding: '20px', maxWidth: '760px', lineHeight: 1.6 };
     async function request(action, options = {}) {
@@ -50,6 +52,9 @@ window.__ModuleLoader__.load({
         h('h2', null, copy.title), h('p', null, copy.description),
         h('button', { onClick: refresh, disabled: busy }, copy.refresh),
         error ? h('p', { role: 'alert' }, error) : null,
+        data ? h('p', { role: 'status' },
+          `已保存 ${data.facts.length} / ${data.limits.maxMemories} 条记忆。`,
+          data.facts.length >= data.limits.maxMemories ? copy.full : copy.capacity) : null,
         !data ? h('p', null, copy.loading) : data.facts.length === 0 ? h('p', null, copy.empty) :
           h('ul', { style: { padding: 0, listStyle: 'none' } }, data.facts.map(fact =>
             h('li', { key: fact.id, style: { borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },

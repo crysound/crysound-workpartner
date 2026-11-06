@@ -127,14 +127,19 @@ test('real HTTP panel reads and deletes with revision checks, method and content
     webStartup: { trustedHosts: [] },
     webServer: { host: '127.0.0.1', register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path); } },
   }, store);
-  const server = createServer((req, res) => routes.get(req.url)?.(req, res));
+  const server = createServer((req, res) => {
+    for (const [path, handler] of routes) {
+      if (req.url === path) { handler(req, res); return; }
+    }
+    res.writeHead(404); res.end();
+  });
   t.after(async () => { disposers.forEach(fn => fn()); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const base = `http://127.0.0.1:${server.address().port}/crysound-memory/api/`;
   const get = await fetch(base + 'list');
   assert.equal(get.headers.get('cache-control'), 'no-store');
-  assert.deepEqual(await get.json(), data);
+  assert.deepEqual(await get.json(), { ...data, limits: { maxMemories: 50, recallChars: 6000 } });
   assert.equal((await fetch(base + 'list', { method: 'POST' })).status, 405);
   assert.equal((await fetch(base + 'delete', { method: 'POST', body: '{}' })).status, 415);
   const post = body => fetch(base + 'delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
@@ -143,6 +148,6 @@ test('real HTTP panel reads and deletes with revision checks, method and content
   assert.equal((await post(JSON.stringify({ id: data.facts[0].id, revision: 0 }))).status, 409);
   const removed = await post(JSON.stringify({ id: data.facts[0].id, revision: 1 }));
   assert.equal(removed.status, 200);
-  assert.deepEqual((await removed.json()).facts, []);
+  assert.deepEqual(await removed.json(), { revision: 2, facts: [], limits: { maxMemories: 50, recallChars: 6000 } });
   assert.equal(store.snapshot().facts.length, 0);
 });
