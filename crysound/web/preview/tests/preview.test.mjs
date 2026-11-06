@@ -81,14 +81,13 @@ async function fixture(t) {
     });
     req.on("error", reject); req.end(body);
   });
-  const bootstrap = async (targetPort = port) => {
-    const jar = new Map();
+  const bootstrap = async (targetPort = port, jar = new Map()) => {
     const open = await request(`/_zp/preview/open?port=${targetPort}&path=${encodeURIComponent("/slides/demo/?x=1#page2")}`, { jar });
     assert.equal(open.status, 302);
     const start = await request(open.headers.location, { jar });
     const auth = await request(start.headers.location, { jar });
     const redeem = await request(auth.headers.location, { jar });
-    assert.equal(redeem.status, 302);
+    assert.equal(redeem.status, 302, redeem.text);
     const origin = new URL(auth.headers.location).origin;
     return { jar, open, start, auth, redeem, origin };
   };
@@ -131,21 +130,29 @@ test("real HTTP roundtrip preserves root paths, cookies, request bodies and redi
   assert.equal(redirect.headers.location, b.origin + "/slides/demo/?a=1");
 });
 
-test("copied links, wrong-browser grants, replays and other-port cookies cannot cross accounts", async (t) => {
+test("copied links, wrong-browser grants, replays and tampered bindings cannot cross accounts", async (t) => {
   const f = await fixture(t), b = await f.bootstrap();
   assert.equal((await f.request(b.start.headers.location, { account: "b" })).status, 403);
   assert.equal((await f.request(b.auth.headers.location, { jar: new Map() })).status, 403);
   assert.equal((await f.request(b.auth.headers.location, { jar: b.jar })).status, 403);
   assert.equal((await f.request(b.origin + "/slides/demo/")).status, 401);
-  const differentPort = new URL(b.origin); differentPort.hostname = differentPort.hostname.replace(/^\d+-/, `${f.port === 4710 ? 4711 : 4710}-`);
-  const copied = new Map([[differentPort.host, b.jar.get(new URL(b.origin).host)]]);
-  assert.equal((await f.request(differentPort.origin + "/", { jar: copied })).status, 401);
+  const copiedStart = await f.request(b.open.headers.location);
+  assert.equal((await f.request(copiedStart.headers.location, { account: "b" })).status, 403);
+  const host = new URL(b.origin).host;
+  const token = b.jar.get(host).match(/__Host-zp-preview=([^;]+)/)[1];
+  const [data, signature] = token.split(".");
+  const payload = JSON.parse(Buffer.from(data, "base64url"));
+  for (const patch of [{ p: f.port === 4710 ? 4711 : 4710 }, { u: "b" }]) {
+    const forged = Buffer.from(JSON.stringify({ ...payload, ...patch })).toString("base64url");
+    assert.equal((await f.request(b.origin + "/", { headers: { cookie: `__Host-zp-preview=${forged}.${signature}` } })).status, 401);
+  }
+  assert.equal((await f.request(`https://4710-abc.preview.example.test/`, { headers: { cookie: b.jar.get(host) } })).status, 403);
   assert.equal((await f.request(b.origin + "/", { jar: b.jar, headers: { origin: "https://evil.test" } })).status, 403);
   assert.equal((await f.request("/_zp/preview/open?port=3080")).status, 400);
   assert.equal((await f.request("/_zp/preview/open?port=3091")).status, 400);
   assert.equal((await f.request("/_zp/preview/open?port=4710&path=//evil.test")).status, 400);
   f.users.splice(0, 1);
-  assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 403);
+  assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 401);
 });
 
 test("relay rejects another workspace key and a correct key from a non-gateway address", async (t) => {
@@ -171,6 +178,10 @@ test("short sessions renew during use and expired grants and sessions fail close
   assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 200);
   f.advance(601000);
   assert.equal((await f.request(b.origin + "/", { jar: b.jar })).status, 401);
+  const renew = await f.request(b.origin + "/", { jar: b.jar, headers: { "sec-fetch-mode": "navigate" } });
+  assert.equal(renew.status, 302);
+  assert.equal(new URL(renew.headers.location).host, "app.example.test");
+  assert.equal((await f.request(renew.headers.location, { account: "b" })).status, 403);
   const jar = new Map();
   const open = await f.request(`/_zp/preview/open?port=${f.port}`, { jar });
   const start = await f.request(open.headers.location, { jar });
@@ -213,14 +224,16 @@ test("WebSocket handshakes and bytes cross both hops, while a foreign origin is 
 });
 
 
-test("two editor ports remain independent when opened together", async (t) => {
+test("one host-only session selects the current editor port and can switch back", async (t) => {
   const f = await fixture(t);
   const second = http.createServer((_req, res) => res.end("second editor"));
   const port = await listen(second);
   t.after(() => new Promise((resolve) => second.close(resolve)));
-  const a = await f.bootstrap(), b = await f.bootstrap(port);
-  assert.notEqual(a.origin, b.origin);
-  assert.equal((await f.request(b.origin + "/", { jar: b.jar })).text, "second editor");
+  const a = await f.bootstrap();
   assert.equal((await f.request(a.origin + "/", { jar: a.jar })).text, "editor:/");
-  assert.equal((await f.request(a.origin + "/", { jar: b.jar })).status, 401);
+  const b = await f.bootstrap(port, a.jar);
+  assert.equal(a.origin, b.origin);
+  assert.equal((await f.request(b.origin + "/", { jar: b.jar })).text, "second editor");
+  const again = await f.bootstrap(f.port, a.jar);
+  assert.equal((await f.request(again.origin + "/", { jar: again.jar })).text, "editor:/");
 });

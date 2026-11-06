@@ -90,7 +90,8 @@ try {
     const frameUrl = frames[0].src;
     assert.equal(injected.keyedHooks.browserState("t1").getSnapshot().frame.target.kind, cloud ? "https" : "http");
     if (cloud) {
-      const at = new URL(frameUrl); assert.equal(at.host, "4710-abc.preview.example.test");
+      const at = new URL(frameUrl); assert.equal(at.host, "preview.example.test");
+      assert.equal(at.searchParams.get("owner"), "abc"); assert.equal(at.searchParams.get("port"), "4710");
       assert.equal(at.searchParams.get("path"), "/slides/demo/?x=1#p2");
       const anchor = Object.assign(new Element(), { href: "http://localhost:4710/slides/demo/" });
       let prevented = false;

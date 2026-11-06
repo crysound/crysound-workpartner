@@ -30,7 +30,7 @@ export function writeRelayKey(key, user, root = "/users", uid = 1001) {
   } finally { fs.rmSync(temp, { force: true }); }
 }
 
-/** Isolated preview origins, browser-bound single-use grants, streaming HTTP and WebSocket routing. */
+/** Separate preview origin, browser-bound single-use grants, streaming HTTP and WebSocket routing. */
 export function createPreview({ publicHost, previewHost = "", key, users, sessionUser, upstream, relayPort = RELAY_PORT, now = Date.now }) {
   if (previewHost && (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(previewHost) || previewHost === publicHost
     || publicHost.endsWith(`.${previewHost}`))) {
@@ -38,31 +38,33 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
   }
   const mainOrigin = `https://${publicHost}`;
   const scope = (user) => hmac(key, `preview-origin-v1:${user.unionId}`).slice(0, 24);
-  const hostFor = (user, port) => `${port}-${scope(user)}.${previewHost}`;
   const used = new Map();
   const pack = (purpose, value) => {
     const data = Buffer.from(JSON.stringify(value)).toString("base64url");
     return `${data}.${hmac(key, `${purpose}:${data}`)}`;
   };
-  const unpack = (purpose, token) => {
+  const unpack = (purpose, token, allowExpired = false) => {
     if (typeof token !== "string" || token.length > 32768) return null;
     const [data, mac, extra] = token.split(".");
     if (extra || !/^[a-f0-9]{64}$/.test(mac || "") || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(hmac(key, `${purpose}:${data}`)))) return null;
     try {
       const value = JSON.parse(Buffer.from(data, "base64url").toString());
-      return value.e > now() / 1000 ? value : null;
+      return allowExpired || value.e > now() / 1000 ? value : null;
     } catch (error) { return null; }
   };
   const canonicalHost = (host) => host.replace(/:443$/, "");
   const isPreviewHost = (host) => previewHost && (canonicalHost(host) === previewHost || canonicalHost(host).endsWith(`.${previewHost}`));
-  const route = (host) => {
-    host = canonicalHost(host);
-    if (!isPreviewHost(host)) return null;
-    const match = /^([0-9]+)-([a-f0-9]{24})$/.exec(host.slice(0, -(previewHost.length + 1)));
-    if (!match) return null;
-    const port = previewPort(match[1]);
-    const user = port && users().find((u) => scope(u) === match[2]);
-    return user ? { user, port, host } : null;
+  const route = (owner, inputPort) => {
+    const port = previewPort(inputPort);
+    const user = port && users().find((u) => scope(u) === owner);
+    return user ? { user, port, host: previewHost } : null;
+  };
+  const sessionRoute = (req, allowExpired = false) => {
+    const value = unpack("session", cookieOf(req, SID), allowExpired);
+    const user = value && users().find((u) => u.unionId === value.u);
+    const port = value && previewPort(value.p);
+    return user && port && value.h === previewHost && value.until > now() / 1000
+      ? { user, port, host: previewHost, value } : null;
   };
   const reject = (res, status, message) => {
     res.writeHead(status, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" });
@@ -74,12 +76,8 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
   const start = (res, r, path) => {
     const nonce = crypto.randomBytes(24).toString("hex");
     const auth = new URL("/_zp/preview/authorize", mainOrigin);
-    auth.search = new URLSearchParams({ host: r.host, path, nonce }).toString();
+    auth.search = new URLSearchParams({ owner: scope(r.user), port: r.port, path, nonce }).toString();
     redirect(res, auth.href, [cookie(NONCE, nonce, 60)]);
-  };
-  const authenticate = (req, r) => {
-    const value = unpack("session", cookieOf(req, SID));
-    return value && value.u === r.user.unionId && value.h === r.host && value.p === r.port && value.until > now() / 1000 ? value : null;
   };
   const allowedOrigin = (req, r) => !req.headers.origin || req.headers.origin === `https://${r.host}`;
   const relayHeaders = (req, r) => ({ ...editorHeaders(req.headers), host: `127.0.0.1:${r.port}`,
@@ -104,37 +102,40 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
   const handle = async (req, res, url) => {
     const host = canonicalHost(String(req.headers.host || "").toLowerCase());
     if (isPreviewHost(host)) {
-      const r = route(host);
-      if (!r) { reject(res, 403, "这个预览端口不可用。"); return true; }
+      // Unknown subdomains must never reach the main app or the shared preview session.
+      if (host !== previewHost) { reject(res, 403, "这个预览域名不可用。"); return true; }
       if (url.pathname === "/_zp_preview/start") {
+        const r = route(url.searchParams.get("owner"), url.searchParams.get("port"));
         const path = previewPath(url.searchParams.get("path") || "/");
-        if (req.method !== "GET" || !path) reject(res, 400, "预览地址无效。");
+        if (req.method !== "GET" || !r || !path) reject(res, 400, "预览地址无效。");
         else start(res, r, path);
         return true;
       }
       if (url.pathname === "/_zp_preview/redeem") {
         const grant = unpack("grant", url.searchParams.get("ticket"));
         const nonce = cookieOf(req, NONCE);
+        const user = grant && users().find((u) => u.unionId === grant.u);
         for (const [ticket, expires] of used) if (expires <= now() / 1000) used.delete(ticket);
         if (req.method !== "GET" || !grant || !nonce || grant.n !== hmac(key, nonce) || grant.h !== host
-          || grant.u !== r.user.unionId || grant.p !== r.port || used.has(grant.id)) {
+          || !user || !previewPort(grant.p) || used.has(grant.id)) {
           reject(res, 403, "预览链接已失效，请从自己的工作区重新打开。"); return true;
         }
         used.set(grant.id, grant.e);
-        const value = pack("session", { u: grant.u, h: host, p: r.port, until: grant.until, e: Math.min(now() / 1000 + TTL, grant.until) });
+        const value = pack("session", { u: grant.u, h: host, p: grant.p, until: grant.until, e: Math.min(now() / 1000 + TTL, grant.until) });
         redirect(res, grant.path, [cookie(SID, value, TTL), cookie(NONCE, "", 0)]);
         return true;
       }
-      if (!allowedOrigin(req, r) || req.method === "CONNECT") { reject(res, 403, "预览来源不匹配。"); return true; }
-      const value = authenticate(req, r);
-      if (!value) {
-        if (req.method === "GET" && req.headers["sec-fetch-mode"] === "navigate") start(res, r, req.url);
+      if (!allowedOrigin(req, { host }) || req.method === "CONNECT") { reject(res, 403, "预览来源不匹配。"); return true; }
+      const r = sessionRoute(req);
+      if (!r) {
+        const expired = sessionRoute(req, true);
+        if (expired && req.method === "GET" && req.headers["sec-fetch-mode"] === "navigate") start(res, expired, req.url);
         else reject(res, 401, "预览登录已过期，请重新打开预览。");
         return true;
       }
       const up = await upstream(r.user.slug);
       if (!up.ip) { reject(res, 503, "工作区暂时不可用。"); return true; }
-      proxyHttp(req, res, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, value));
+      proxyHttp(req, res, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, r.value));
       return true;
     }
     if (!url.pathname.startsWith("/_zp/preview/")) return false;
@@ -159,11 +160,11 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
       const port = previewPort(url.searchParams.get("port"));
       const path = previewPath(url.searchParams.get("path") || "/");
       if (!port || !path) reject(res, 400, "这个预览端口或地址不可用。");
-      else redirect(res, `https://${hostFor(user, port)}/_zp_preview/start?${new URLSearchParams({ path })}`);
+      else redirect(res, `https://${previewHost}/_zp_preview/start?${new URLSearchParams({ owner: scope(user), port, path })}`);
       return true;
     }
     if (url.pathname === "/_zp/preview/authorize") {
-      const r = route(url.searchParams.get("host") || "");
+      const r = route(url.searchParams.get("owner"), url.searchParams.get("port"));
       const path = previewPath(url.searchParams.get("path"));
       const nonce = url.searchParams.get("nonce") || "";
       if (!r || r.user.unionId !== user.unionId || !path || !/^[a-f0-9]{48}$/.test(nonce) || !Number.isFinite(expires)) {
@@ -177,13 +178,13 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
     reject(res, 404, "预览地址不存在。"); return true;
   };
   const upgrade = async (req, socket, head) => {
-    const r = route(String(req.headers.host || "").toLowerCase());
-    const value = r && authenticate(req, r);
-    if (!r || !allowedOrigin(req, r) || !value || req.method !== "GET"
+    const host = canonicalHost(String(req.headers.host || "").toLowerCase());
+    const r = host === previewHost && sessionRoute(req);
+    if (!r || !allowedOrigin(req, r) || req.method !== "GET"
       || String(req.headers.upgrade).toLowerCase() !== "websocket") return socket.destroy();
     const up = await upstream(r.user.slug);
     if (!up.ip) return socket.destroy();
-    proxyUpgrade(req, socket, head, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, value));
+    proxyUpgrade(req, socket, head, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, r.value));
   };
   return { handle, upgrade, isPreviewHost };
 }
