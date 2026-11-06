@@ -10,6 +10,8 @@ echo "== spctl (dmg)"
 spctl -a -vv -t open --context context:primary-signature "$dmg"
 hdiutil attach "$dmg" -mountpoint "$mount" -nobrowse -readonly -quiet
 app=$(ls -d "$mount"/*.app | head -n1)
+echo "== installer window: Applications link and layout"
+test -L "$mount/Applications" && test -f "$mount/.DS_Store" && echo "Applications link and layout present"
 echo "== codesign --verify --deep --strict"
 codesign --verify --deep --strict --verbose=2 "$app"
 echo "== codesign details"
