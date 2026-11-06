@@ -88,7 +88,10 @@ test("real HTTP transport sends browser headers and uses the checked DNS answer"
 });
 
 test("compressed responses decode before text extraction and unsupported encodings fail", async t => {
-  const compressors = { gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync, "gzip, br": value => brotliCompressSync(gzipSync(value)) };
+  const compressors = new Map([
+    ["gzip", gzipSync], ["deflate", deflateSync], ["br", brotliCompressSync],
+    ["gzip, br", value => brotliCompressSync(gzipSync(value))],
+  ]);
   let closed;
   const connectionClosed = new Promise(resolve => { closed = resolve; });
   const origin = await server(t, (req, res) => {
@@ -103,15 +106,16 @@ test("compressed responses decode before text extraction and unsupported encodin
     const encoding = decodeURIComponent(req.url.slice(1));
     res.setHeader("content-type", "text/html; charset=utf-8");
     res.setHeader("content-encoding", encoding);
-    res.end(compressors[encoding] ? compressors[encoding](Buffer.from(content)) : "unsupported payload");
+    const compress = compressors.get(encoding);
+    res.end(compress ? compress(Buffer.from(content)) : "unsupported payload");
   });
   const { HttpFetchProvider } = await released("dsh-web-fetch-http");
   const fetcher = companyFetcher(HttpFetchProvider, WebError, limits, { request: fixtureRequest(origin) });
-  for (const encoding of Object.keys(compressors)) {
+  for (const encoding of compressors.keys()) {
     const result = await fetcher.fetch({ url: `https://public.example/${encoding}` });
     assert.equal(result.body.content, content, encoding);
   }
-  await assert.rejects(fetcher.fetch({ url: "https://public.example/unknown" }), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" });
+  for (const name of ["unknown", "constructor", "__proto__"]) await assert.rejects(fetcher.fetch({ url: `https://public.example/${name}` }), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" });
   await assert.rejects(fetcher.fetch({ url: "https://public.example/broken" }), { code: "WEB_PROVIDER_ERROR" });
   await assert.rejects(fetcher.fetch({ url: "https://public.example/gzip,gzip,gzip" }), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" });
   const controller = new AbortController();
