@@ -1,4 +1,4 @@
-// Refresh company model, search and Sidebar Browser settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// Refresh company model, search, Sidebar Browser and work-step display settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
 // node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -73,6 +73,15 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
     && /^codex\/gpt-6\.1(?:-|$)/u.test(String(defaults.get("model"))) && !defaults.has("reasoningEffort")) {
     defaults.set("reasoningEffort", "medium");
   }
+  // Company default for the work-step display; a value the user already chose stays.
+  let chatIndex = find(mine, "ui-chat");
+  if (chatIndex < 0) {
+    mine.add(mine.createNode({ id: "ui-chat", name: "@deepseek-ai/dsh-client-ui-chat", config: {} }));
+    chatIndex = mine.contents.items.length - 1;
+  }
+  const chat = mine.getIn([chatIndex, "config"], true);
+  if (chat === undefined) mine.setIn([chatIndex, "config"], mine.createNode({ transcriptView: "standard" }));
+  else if (yaml.isMap(chat) && !chat.has("transcriptView")) chat.set("transcriptView", "standard");
   const after = String(mine);
   if (before !== after) {
     fs.writeFileSync(`${file}.tmp`, after, { mode: 0o600 });

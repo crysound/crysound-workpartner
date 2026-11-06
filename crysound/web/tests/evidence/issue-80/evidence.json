@@ -1,0 +1,286 @@
+{
+  "messages": [
+    {
+      "zone": "UTC",
+      "enabled": false,
+      "expectedZone": "UTC",
+      "reported": "UTC",
+      "offset": 0,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "17:25",
+          "expected": "17:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "17:26",
+          "expected": "17:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "17:26",
+          "expected": "17:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "17:26",
+          "expected": "17:26",
+          "sameDay": true
+        }
+      ]
+    },
+    {
+      "zone": "UTC",
+      "enabled": true,
+      "expectedZone": "Asia/Shanghai",
+      "reported": "Asia/Shanghai",
+      "offset": -480,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "01:25",
+          "expected": "01:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        }
+      ]
+    },
+    {
+      "zone": "Asia/Shanghai",
+      "enabled": true,
+      "expectedZone": "Asia/Shanghai",
+      "reported": "Asia/Shanghai",
+      "offset": -480,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "01:25",
+          "expected": "01:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        }
+      ]
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "enabled": true,
+      "expectedZone": "Asia/Tokyo",
+      "reported": "Asia/Tokyo",
+      "offset": -540,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "02:25",
+          "expected": "02:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "02:26",
+          "expected": "02:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "02:26",
+          "expected": "02:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "02:26",
+          "expected": "02:26",
+          "sameDay": true
+        }
+      ]
+    },
+    {
+      "zone": "America/New_York",
+      "enabled": true,
+      "expectedZone": "America/New_York",
+      "reported": "America/New_York",
+      "offset": 300,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "12:25",
+          "expected": "12:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "12:26",
+          "expected": "12:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "12:26",
+          "expected": "12:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "12:26",
+          "expected": "12:26",
+          "sameDay": true
+        }
+      ]
+    },
+    {
+      "zone": "Etc/GMT",
+      "enabled": true,
+      "expectedZone": "Asia/Shanghai",
+      "reported": "Asia/Shanghai",
+      "offset": -480,
+      "rows": [
+        {
+          "timestamp": 1793985953775,
+          "displayed": "01:25",
+          "expected": "01:25",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985969016,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793985998187,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        },
+        {
+          "timestamp": 1793986001536,
+          "displayed": "01:26",
+          "expected": "01:26",
+          "sameDay": true
+        }
+      ]
+    }
+  ],
+  "workspace": [
+    {
+      "zone": "UTC",
+      "createdAt": 1793932696909,
+      "displayed": "Created 2026-11-6 10:38"
+    },
+    {
+      "zone": "Asia/Shanghai",
+      "createdAt": 1793932696909,
+      "displayed": "Created 2026-11-6 10:38"
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "createdAt": 1793932696909,
+      "displayed": "Created 2026-11-6 11:38"
+    },
+    {
+      "zone": "America/New_York",
+      "createdAt": 1793932696909,
+      "displayed": "Created 2026-11-5 21:38"
+    }
+  ],
+  "automation": [
+    {
+      "zone": "Asia/Shanghai",
+      "times": [
+        {
+          "stamp": "2026-11-06T23:02:00.000Z",
+          "text": "Nov 7, 2026, 07:02"
+        }
+      ],
+      "form": {
+        "date": "2026/11/07",
+        "time": "08:15:00",
+        "expectedDate": "2026/11/07",
+        "expectedClock": "08:15"
+      }
+    },
+    {
+      "zone": "Asia/Shanghai",
+      "times": [
+        {
+          "stamp": "2026-11-06T23:02:00.000Z",
+          "text": "Nov 7, 2026, 07:02"
+        }
+      ],
+      "form": {
+        "date": "2026/11/07",
+        "time": "08:15:00",
+        "expectedDate": "2026/11/07",
+        "expectedClock": "08:15"
+      }
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "times": [
+        {
+          "stamp": "2026-11-06T23:02:00.000Z",
+          "text": "Nov 7, 2026, 08:02"
+        }
+      ],
+      "form": {
+        "date": "2026/11/07",
+        "time": "09:15:00",
+        "expectedDate": "2026/11/07",
+        "expectedClock": "09:15"
+      }
+    },
+    {
+      "zone": "America/New_York",
+      "times": [
+        {
+          "stamp": "2026-11-06T23:02:00.000Z",
+          "text": "Nov 6, 2026, 18:02"
+        }
+      ],
+      "form": {
+        "date": "2026/11/06",
+        "time": "19:15:00",
+        "expectedDate": "2026/11/06",
+        "expectedClock": "19:15"
+      }
+    }
+  ]
+}

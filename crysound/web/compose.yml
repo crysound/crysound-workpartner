@@ -18,6 +18,13 @@ services:
       PREVIEW_HOST: ${PREVIEW_HOST:-}
       OLD_HOSTS: ${OLD_HOSTS:-}
       FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
+      TREG_ENABLED: ${TREG_ENABLED:-0}
+      TREG_ORG_ID: ${TREG_ORG_ID:-}
+      TREG_ORG_SLUG: ${TREG_ORG_SLUG:-}
+      TREG_ATTRIBUTION_VERIFIED: ${TREG_ATTRIBUTION_VERIFIED:-0}
+      TREG_DAILY_USD: ${TREG_DAILY_USD:-1}
+      TREG_MONTHLY_USD: ${TREG_MONTHLY_USD:-5}
+      TREG_CALL_MAX_USD: ${TREG_CALL_MAX_USD:-1}
       MEEGLE_HOST: ${MEEGLE_HOST:-}
       MARKET_ADMINS: ${MARKET_ADMINS:?在 .env 设置市场管理员（首期 Jason 的已开通 slug）}
       MARKET_OFFICIAL_PUBLISHERS: ${MARKET_OFFICIAL_PUBLISHERS:-}
@@ -46,6 +53,9 @@ services:
         bind:
           create_host_path: false
       - ./gateway/market.mjs:/app/market.mjs:ro
+      - ./gateway/treg-catalog.mjs:/app/treg-catalog.mjs:ro
+      - ./gateway/treg.mjs:/app/treg.mjs:ro
+      - ./gateway/treg-state.mjs:/app/treg-state.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
       - ./gateway/feishu.mjs:/app/feishu.mjs:ro
       - ../feishu:/feishu:ro

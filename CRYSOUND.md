@@ -8,6 +8,7 @@
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
 ### 品牌
+- `crysound/brand/timezone.js` 在网页与桌面前端启动前加载：仅在浏览器同时报告零偏移与 UTC/GMT 类时区时，默认日期格式化改用北京时间；显式时区保留。dsh 使用的本地日期取值、设值与日期字符串按现代北京时间（UTC+08:00）兜底，时间戳、UTC 方法与序列化不变。此脚本不模拟历史夏令时，也不改变原生日期构造或解析规则；回退时撤下两端 HTML 的该脚本入口。网页版需重建用户镜像并在空闲时更新容器，网关无改动；桌面版随下次打包生效。轻量回归：`node crysound/scripts/check-timezone.mjs`；截图与验收边界见 `crysound/web/tests/evidence/issue-80/`。
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
 - 图标由 `crysound/brand/zp-mark.svg` 生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
@@ -61,6 +62,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
 - `Dockerfile`：每人容器的镜像。dsh 版本固定；公司插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
+- `web/web-tools/`：镜像构建时给固定 dsh 发布产物装公司搜索、抓取适配。搜索按会话模型在 ChatGPT 与 DeepSeek 间选择、失败互相回退；抓取允许最多五跳，对公网地址检查并固定连接地址，短动态页复用镜像 Chromium。登录页明确报错，私网与本机地址不再由 `web_fetch` 读取。测试和回退见 `crysound/web/web-tools/README.md`。
 - `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置；每次刷新公司模型清单，个人其他提供方保留（之后本人可在设置页改）。
 - `bin/partner-user`：给群外的人手工开通、列名单、用新镜像重建；`bin/upgrade-when-idle.sh <代号>` 等本人 10 分钟没操作再重建；`bin/upgrade-and-check.sh`、`bin/try-fresh.sh` 用于核对。
 - 部署参数（域名、飞书应用、试点群、数据目录）写在 `crysound/web/.env`，照 `.env.example` 填，不进仓库。名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`，钥匙在 `PARTNER_SECURE`。
@@ -95,6 +97,12 @@ done
 轻量自查：在已有运行时镜像中按 `crysound/web/README.md` 的隔离方式运行，额外设置 `DSH_CLI_ENTRY=/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js`，测试文件为 `crysound/web/gateway/tests/feishu.test.mjs`、`crysound/feishu/tests.mjs`、`crysound/web/gateway/tests/config.test.mjs`、`crysound/web/gateway/tests/notifications.test.mjs` 和 `crysound/tests/company-config.test.mjs`；本机另跑 `node crysound/web/tests/compose-config.mjs`。全部使用假令牌和临时目录，无网络、限一核、512 MiB，不读取部署配置、安装依赖或构建镜像。设置页外观示例见 `crysound/feishu/settings-preview.png`（本机 HTTP 预览、假授权状态）。
 
 上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
+
+## 兆华数据（网关与插件）
+
+- 网关 `/_zp/treg/` 使用现有个人通行证，受控 MCP 与 REST 共用平台白名单、归属和单次金额上限；日/月限额用 Treg 原生 user 标签预算，每人默认日 1、月 5 美元；缺组织令牌自动关闭，真实费用归属验证前不开放付费入口。本人用量取上游 UTC 当日/当月账单；北京时间每天 08:00、每月 1 日 08:00 重置。
+- 兆华数据 `@crysound/data` 经现有审批进入兆华市场普通官方卡片，分类“数据”。市场保持 #61 的三个标签；七类分组、示例和易读价格说明在独立插件内部，本仓库不提供数据目录页或市场目录缓存。
+- `config/patch-data-use.mjs` 为原生卡片增加“使用”：已启用时打开分类引导草稿、保留已有草稿、不自动发送；停用时进入原生设置。网页镜像与桌面打包共用幂等补丁，无额外桌面目录代理。部署配置、回退与待验收项见 `crysound/web/treg/README.md`。
 
 ## 公司维护的插件（`crysound/plugins/`）
 

@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg util-lin
 ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ffprobe \
     HYPERFRAMES_BROWSER_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell \
     PUPPETEER_EXECUTABLE_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
+# 公司搜索与抓取适配只改固定版本的发布产物；未命中即停止构建。
+COPY web/web-tools/ /opt/partner/web-tools/
+RUN node /opt/partner/web-tools/patch.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # 公司动效复用同一份浏览器；口播和采样下载不随插件启用。
 ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell OM_SAMPLES=off
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
@@ -43,14 +46,14 @@ ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chr
 COPY brand/ /tmp/brand/
 RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
  cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
- cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/pet.js $d/welcome.js; \
+ cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/timezone.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/timezone.js $d/pet.js $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
         -e 's#\(href="\./\(favicon[-a-z]*\.svg\|apple-touch-icon\.png\)\)"#\1?v='"$v"'"#g' \
-        -e 's#</head>#<script src="/_zp/preview/client.js"></script>  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
+        -e 's#</head>#<script src="./timezone.js?v='"$v"'"></script><script src="/_zp/preview/client.js"></script>  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
  sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
- grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
+ grep -q timezone.js $d/index.html; grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
 # 公司配置由服务器目录挂载；Host 钩子属于固定运行时代码。
 COPY host-hook.mjs /opt/partner/host-hook.mjs
 RUN chmod 644 /opt/partner/host-hook.mjs
@@ -66,3 +69,7 @@ ENV CRYSOUND_MARKET_REGISTRY=http://zhaohua-partner-gateway:3090/_zp/npm/ CRYSOU
 ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
 WORKDIR /data
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# 原生市场卡片的兆华数据使用按钮；不新增标签或目录页。
+COPY config/patch-data-use.mjs /opt/partner/patch-data-use.mjs
+RUN node /opt/partner/patch-data-use.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"

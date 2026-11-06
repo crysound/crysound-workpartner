@@ -504,3 +504,19 @@ test("非官方显示名、备用名称及包名不得以兆华开头，拒绝�
   assert.equal(f.requests.length, 0);
   assert.equal((await f.publish("alice", "1.0.0")).status, 201);
 });
+
+test("兆华数据经同一审批进入普通市场索引，分类为数据，不发布独立数据目录", async (t) => {
+  const f = await fixture(t);
+  await f.publish("alice", "1.0.0", "@crysound/data");
+  assert.equal((await f.index()).plugins.length, 0);
+  assert.equal((await f.request("/_zp/market/admin", {
+    method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin },
+    body: new URLSearchParams({ name: "@crysound/data", version: "1.0.0", action: "approved" }),
+  })).status, 303);
+  const index = await f.index();
+  assert.equal(index.plugins.length, 1);
+  assert.equal(index.plugins[0].metadata.category, "data");
+  assert.deepEqual(index.metadata.categories.data.title, { zh: "数据", en: "Data" });
+  assert.equal(parseMarketIndex(index, `${publicOrigin}/_zp/market/index.json`).plugins[0].name, "@crysound/data");
+  assert.equal((await f.request("/_zp/market/data.json", { headers: bearer("alice") })).status, 404);
+});
