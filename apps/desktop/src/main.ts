@@ -67,6 +67,15 @@ import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
+import {
+  BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
+  openLoginWindow, partnerHostEnvironment,
+} from './crysound/partner.ts'
+import { prepareCompanyWorkspace } from './crysound/workspace.ts'
+import { onPartnerAuthExpired } from './crysound/auth-events.ts'
+
+/** The company build never opens DeepSeek account pages or its welcome/sign-in window. */
+const DEEPSEEK_PLATFORM_ENABLED: boolean = false
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => { await stopOperationReports() }
@@ -367,6 +376,9 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 
 async function main(): Promise<void> {
   const desktopSettings = readDesktopSettings(app.getPath('userData'))
+  // Company login comes first: the Host needs the user's gateway token in its environment.
+  const partner = await ensurePartnerSession()
+  if (partner === undefined) { app.quit(); return }
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
   const updateJournal = journalDirectory === undefined ? undefined : new DesktopUpdateJournal(journalDirectory, app.getVersion())
@@ -388,8 +400,8 @@ async function main(): Promise<void> {
     for (const failure of result.failures) console.warn(`desktop login shell: ${failure.shell} failed (${failure.reason})`)
     return result.environment
   })
-  let hostEnvironment: NodeJS.ProcessEnv = process.env
-  const prepareHostEnvironment = async (): Promise<void> => { hostEnvironment = await loginShell }
+  let hostEnvironment: NodeJS.ProcessEnv = { ...process.env, ...partnerHostEnvironment(partner) }
+  const prepareHostEnvironment = async (): Promise<void> => { hostEnvironment = { ...(await loginShell), ...partnerHostEnvironment(partner) } }
   let quitting = false
   let startup: Promise<void> | undefined
   let workspaceRecovery: Promise<void> | undefined
@@ -470,7 +482,10 @@ async function main(): Promise<void> {
     show: ordinaryMessageBox,
   })
   const appPreload = fileURLToPath(new URL('./preload-app.cjs', import.meta.url))
-  const applicationUrl = `${SCHEME}://app/`
+  const baseApplicationUrl = `${SCHEME}://app/`
+  // The first workspace entry carries the Feishu onboarding flag read by the company welcome script.
+  const firstRun = isFirstRun(app.getPath('userData'))
+  let applicationUrl = firstRun ? `${baseApplicationUrl}?zp-welcome=1` : baseApplicationUrl
   let hostUrl: string | undefined
   let hostCookie: string | undefined
   const browserGuests = new DesktopBrowserGuests(() => hostUrl)
@@ -534,7 +549,7 @@ async function main(): Promise<void> {
         if (ready.injections === undefined) throw new Error('Desktop Host did not provide boot injections')
         injections = ready.injections
         welcomeBackend = await connectDesktopWelcome(ready.url, (input, init) => net.fetch(input, init), async () => (await session.defaultSession.cookies.get({ url: ready.url })).map(cookie => `${cookie.name}=${cookie.value}`).join('; '))
-        analyticsEnabled = await welcomeBackend.analyticsEnabled().catch(() => false)
+        analyticsEnabled = false // Product analytics stay off in the company build.
         if (!reportedLaunch) { reportedLaunch = true; void track('desktop_app_launch', {}) }
         stopAccount?.()
         const accountBackend = welcomeBackend.account
@@ -573,7 +588,7 @@ async function main(): Promise<void> {
             const state = await accountBackend.state()
             if (welcomeWindow !== undefined && !welcomeWindow.isDestroyed()) welcomeWindow.webContents.send(WELCOME_IPC.state, state)
           }).catch(() => undefined)
-        }, (enabled) => { analyticsEnabled = enabled })
+        }, () => { analyticsEnabled = false })
       },
       stop: async () => {
         analyticsEnabled = false
@@ -663,6 +678,11 @@ async function main(): Promise<void> {
       await navigateMain(applicationUrl)
       await backend.start(async () => {
         await Promise.all([manager.applyRelease(), prepareHostEnvironment()])
+        await prepareCompanyWorkspace({
+          assets: crysoundResources(), profile: paths.profile, execPath: resources.node, userData: app.getPath('userData'),
+          cliEntry: join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
+          environment: hostEnvironment,
+        }).catch((error: unknown) => { console.warn('CRYSOUND: workspace preparation failed', error) })
       })
       if (backend.host !== undefined) await openInitialWindow()
       if (backend.host !== undefined) updateJournal?.action('workspace-ready')
@@ -732,7 +752,8 @@ async function main(): Promise<void> {
       }
       return true
     },
-    undefined, undefined, undefined,
+    // Company build: no update source, whatever the packaged resources contain.
+    undefined, () => false, undefined,
     (success, reason) => { void track('desktop_upgrade_download_result', { is_success: success, ...reason === undefined ? {} : { error_reason: reason } }) },
     updateChannel,
   )
@@ -759,15 +780,27 @@ async function main(): Promise<void> {
     window.once('closed', () => { resolve() })
   })
 
+  // Company brand layer: title, logo slots, and the first-run Feishu guide are injected into the index document.
+  const brandIndex = (html: string): string => html
+    .replace(/<title>[^<]*<\/title>/u, '<title>兆华工作伙伴</title>')
+    .replace('</head>', '<link rel="stylesheet" href="./brand.css" /><script src="./brand.js" defer></script><script src="./welcome.js" defer></script></head>')
+
   protocol.handle(SCHEME, (request) => {
     const url = new URL(request.url)
     // Shell-owned documents live in the application bundle and never pass through the Host.
     if (url.hostname === 'shell') return serveWebDocument(request, join(app.getAppPath(),
       url.pathname === '/design-platform.css' ? 'lib/welcome' : 'renderer'))
     if (url.hostname === 'app') {
+      if (BRAND_FILES.has(url.pathname)) return serveWebDocument(request, join(crysoundResources(), 'brand'))
+      // The brand layer shows the signed-in Feishu name and avatar; the web version gets the same answer from the gateway.
+      if (url.pathname === '/_zp/me') {
+        return readPartnerSession().then(signedIn => signedIn === undefined
+          ? new Response(null, { status: 401 })
+          : Response.json({ name: signedIn.name, avatar: signedIn.avatar }))
+      }
       if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname.startsWith('/assets/')
         || ['/favicon.svg', '/manifest.webmanifest'].includes(url.pathname)) {
-        return serveWebDocument(request, join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-web-frontend', 'dist'))
+        return serveWebDocument(request, join(resources.dsh, 'node_modules', '@deepseek-ai', 'dsh-web-frontend', 'dist'), brandIndex)
       }
       if (backend.host === undefined || hostUrl === undefined || hostCookie === undefined) {
         return Promise.resolve(new Response(null, { status: 503 }))
@@ -835,6 +868,7 @@ async function main(): Promise<void> {
   ipcMain.handle(PLATFORM_IPC.open, (event, page: unknown, bounds: unknown) => {
     const owner = assertMainApplication(event)
     if (page !== 'usage' && page !== 'top-up') throw new Error('Invalid Platform page')
+    if (!DEEPSEEK_PLATFORM_ENABLED) throw new Error('CRYSOUND WorkPartner: DeepSeek platform pages are disabled')
     return platformView.open(owner, page, platformBounds(bounds))
   })
   ipcMain.handle(PLATFORM_IPC.bounds, (event, bounds: unknown) => {
@@ -1027,10 +1061,30 @@ async function main(): Promise<void> {
     updates.dispose()
   })
 
+  // Signing out forgets the token and the Feishu session of the login window, then restarts into the login window.
+  const signOut = async (): Promise<void> => {
+    if (quitting) return
+    await clearPartnerSession()
+    app.relaunch()
+    quitWithoutConfirmation()
+  }
+  // The gateway rejected the token: ask for a new login, then restart so the Host gets the new token.
+  let relogin: Promise<void> | undefined
+  let reloginPausedUntil = 0
+  onPartnerAuthExpired(() => {
+    if (relogin !== undefined || quitting || Date.now() < reloginPausedUntil) return
+    relogin = (async () => {
+      const next = await openLoginWindow()
+      if (next === undefined) { reloginPausedUntil = Date.now() + 60_000; return }
+      app.relaunch()
+      quitWithoutConfirmation()
+    })().catch((error: unknown) => { console.error(error) }).finally(() => { relogin = undefined })
+  })
+
   const applicationIconPath = development ? join(app.getAppPath(), 'resources', 'icon-windows.png')
     : join(process.resourcesPath, 'icon.png')
   app.setAboutPanelOptions({
-    applicationName: 'DeepSeek Harness',
+    applicationName: '兆华工作伙伴',
     applicationVersion: app.getVersion(),
     // The release has no separate build number; omit Electron's bundle version.
     version: '',
@@ -1057,7 +1111,7 @@ async function main(): Promise<void> {
         click: () => { void showAbout().catch((error: unknown) => { console.error(error) }) } }
       : { label: currentDesktopLocale().messages.aboutMenu, role: 'about' },
     { type: 'separator' },
-    { label: currentDesktopLocale().messages.checkUpdatesMenu, click: () => { void openUpdatePrompt(true) } },
+    { label: currentDesktopLocale().id === 'zh-CN' ? '退出登录' : 'Sign Out', click: () => { void signOut() } },
     ...process.platform === 'darwin' || process.platform === 'win32'
       ? [{ label: currentDesktopLocale().messages.cliCommandMenu, click: () => { void commandManager.show() } }] : [],
     { type: 'separator' },
@@ -1083,7 +1137,7 @@ async function main(): Promise<void> {
   const refreshApplicationMenu = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(process.platform === 'win32'
       ? windowsDevToolsShortcuts : [{
-        label: darwin ? app.name : currentDesktopLocale().messages.application,
+        label: darwin ? currentDesktopLocale().messages.aboutProduct : currentDesktopLocale().messages.application,
         submenu: [...applicationItems(), devToolsF12Shortcut],
       }, ...platformMenus()]))
     tray?.relabel()
@@ -1224,6 +1278,10 @@ async function main(): Promise<void> {
     if (activate) window.show()
     else window.showInactive()
     enteredWorkspace = true
+    if (firstRun && applicationUrl !== baseApplicationUrl) {
+      applicationUrl = baseApplicationUrl
+      void markFirstRunDone(app.getPath('userData')).catch(() => undefined)
+    }
     if (welcomeWindow !== undefined) {
       welcomeWindow.close()
       window.webContents.send(DESKTOP_IPC.enterWorkspace)
@@ -1241,6 +1299,8 @@ async function main(): Promise<void> {
   let openingWelcome: Promise<void> | undefined
   const showWelcome = (): Promise<void> => {
     if (quitting) return Promise.resolve()
+    // Company login replaces the DeepSeek welcome and account window.
+    if (!DEEPSEEK_PLATFORM_ENABLED) return enterWorkspace()
     if (welcomeWindow !== undefined && !welcomeWindow.isDestroyed()) {
       if (!welcomeWindow.isVisible()) void track('auth_page_view', {})
       welcomeWindow.show()
@@ -1308,7 +1368,7 @@ async function main(): Promise<void> {
     writeDesktopLocaleCache(app.getPath('userData'), locale.id)
     windowsLanguage = locale.id
     refreshApplicationMenu()
-    if (!enteredWorkspace && needsWelcome({ loggedIn: state.loggedIn, hasApiKey: state.hasApiKey })) {
+    if (DEEPSEEK_PLATFORM_ENABLED && !enteredWorkspace && needsWelcome({ loggedIn: state.loggedIn, hasApiKey: state.hasApiKey })) {
       // A later login must retain its own activation policy instead of replaying startup focus.
       raiseAfterUpdate = false
       await showWelcome()
@@ -1332,10 +1392,10 @@ async function main(): Promise<void> {
     window.focus()
   }
 
-  if (app.isPackaged || process.env.DSH_DESKTOP_DEV_APP === '1') app.setAsDefaultProtocolClient('dsh')
+  if (app.isPackaged || process.env.DSH_DESKTOP_DEV_APP === '1') app.setAsDefaultProtocolClient('crysound-workpartner')
   app.on('open-url', (event, url) => {
     event.preventDefault()
-    if (url === 'dsh://open' || url === 'dsh://open/') focusPrimaryWindow()
+    if (url === 'crysound-workpartner://open' || url === 'crysound-workpartner://open/') focusPrimaryWindow()
   })
 
   app.on('activate', (_event, hasVisibleWindows) => {
@@ -1394,10 +1454,8 @@ async function main(): Promise<void> {
 
   mainWindow = createMainWindow()
   if (typeof manifest !== 'object' || manifest === null) throw new Error('desktop policy: invalid application manifest')
-  const developmentPolicy = app.isPackaged ? undefined : process.env.DSH_DESKTOP_MANDATORY_UPDATE_CONFIG
-  const policyInput: unknown = app.isPackaged
-    ? ('dshMandatoryUpdatePolicy' in manifest ? manifest.dshMandatoryUpdatePolicy : undefined)
-    : developmentPolicy === undefined ? undefined : JSON.parse(developmentPolicy) as unknown
+  // Company build: no mandatory-update policy service, whatever the manifest or environment declares.
+  const policyInput: unknown = undefined
   const policyConfig = resolveDesktopPolicyConfig(policyInput, !app.isPackaged)
   if (policyConfig !== undefined) {
     if (policyConfig.authentication === 'feishu-test') {

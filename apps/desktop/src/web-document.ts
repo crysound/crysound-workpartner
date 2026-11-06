@@ -13,9 +13,10 @@ const BOOT = '<script>globalThis.__DSH_BOOT_READY__ = Promise.withResolvers()</s
  * Read an application-owned static asset; the index waits for asynchronous Host injections.
  * @param request - Local application request.
  * @param root - Packaged Web dist directory.
+ * @param transformIndex - Optional rewrite of the index document (company brand layer).
  * @returns Static response, or a missing/invalid path response.
  */
-export async function serveWebDocument(request: Request, root: string): Promise<Response> {
+export async function serveWebDocument(request: Request, root: string, transformIndex?: (html: string) => string): Promise<Response> {
   if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405 })
   const url = new URL(request.url)
   let pathname: string
@@ -29,7 +30,7 @@ export async function serveWebDocument(request: Request, root: string): Promise<
     throw error
   }
   const content = pathname === '/' || pathname === '/index.html'
-    ? body.toString().replace('<head>', '<head>' + BOOT) : new Uint8Array(body)
+    ? (transformIndex ?? ((html: string) => html))(body.toString().replace('<head>', '<head>' + BOOT)) : new Uint8Array(body)
   return new Response(request.method === 'HEAD' ? null : content, {
     headers: { 'content-type': MIME[extname(target)] ?? 'application/octet-stream' },
   })

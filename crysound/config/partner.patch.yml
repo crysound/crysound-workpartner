@@ -1,0 +1,39 @@
+# 兆华工作伙伴的默认配置：每人第一次启动时写进本人配置，之后本人可在设置页里改。桌面版与网页版共用这一份。
+# 所有模型请求都经公司模型网关，用量按人统计：桌面版用登录令牌连下面的公开地址；网页版构建时把地址换成内部 magpie，用每人一把的钥匙。
+# 默认用 ChatGPT；DeepSeek 内置路由的地址和钥匙在启动时同样改指网关。
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      magpie:
+        displayName: ChatGPT
+        api: openai-completions
+        baseURL: https://partner.corp.crysound.com/_zp/llm/v1
+        apiKeyEnv: MAGPIE_API_KEY
+        models:
+          - id: codex/gpt-6.1-sol
+            name: GPT-6.1 Sol
+            contextWindow: 272000
+            reasoningEfforts:
+              low: low
+              medium: medium
+              high: high
+          - id: codex/gpt-6.1-terra
+            name: GPT-6.1 Terra
+            contextWindow: 272000
+            reasoningEfforts:
+              low: low
+              medium: medium
+              high: high
+
+- id: agent-default-model
+  name: '@deepseek-ai/dsh-agent-default-model'
+  config:
+    provider: magpie
+    model: codex/gpt-6.1-sol
+
+# 预览版说明窗口按已读处理：新人第一次进来直接到输入框，首次进入后的飞书接入引导才不会被挡住。
+- id: ui-settings-general
+  name: '@deepseek-ai/dsh-client-ui-settings-general'
+  config:
+    welcomeNoticeVersion: 2026-09-28.1

@@ -1,0 +1,88 @@
+name: CRYSOUND WorkPartner · macOS arm64 desktop
+
+# Builds the company desktop app (apps/desktop) for Apple Silicon. The unsigned installer is always uploaded; when
+# all signing secrets exist, it is also re-signed, notarized and uploaded as a second artifact. Nothing is published.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['desktop/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-mac-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: macos-15
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+      # 'true' only when every signing secret exists; the signing step is skipped otherwise.
+      HAS_SIGNING: ${{ secrets.CSC_LINK != '' && secrets.CSC_KEY_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v5.0.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Package mac-arm64 (unsigned)
+        run: pnpm run package:desktop:mac:arm64:unsigned
+      - name: Locate installer
+        id: dmg
+        run: |
+          dmg=$(ls apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/*.dmg | head -n1)
+          test -f "$dmg"
+          echo "path=$dmg" >> "$GITHUB_OUTPUT"
+          ls -lh apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/
+      - name: Check installer contents
+        run: crysound/scripts/verify-mac-package.sh "${{ steps.dmg.outputs.path }}"
+      - name: Upload installer
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: crysound-workpartner-mac-arm64-unsigned
+          path: ${{ steps.dmg.outputs.path }}
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload packaging logs
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: packaging-logs-${{ github.run_id }}
+          path: apps/desktop/.desktop-build/packaging-runs/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Sign and notarize (runs only when all signing secrets exist)
+        if: env.HAS_SIGNING == 'true'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: crysound/scripts/sign-mac.sh "${{ steps.dmg.outputs.path }}" signed
+      - name: Verify signed installer (stapler, spctl, codesign)
+        if: env.HAS_SIGNING == 'true'
+        run: crysound/scripts/verify-signed.sh "$(ls signed/*.dmg | head -n1)"
+      - name: Upload signed installer
+        if: env.HAS_SIGNING == 'true'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: crysound-workpartner-mac-arm64-signed
+          path: signed/*.dmg
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+      - name: First-run workspace smoke test (plugins, patches, default configuration)
+        run: crysound/scripts/smoke-workspace.sh "${{ steps.dmg.outputs.path }}"
