@@ -59,7 +59,7 @@ test('invalid YAML and unexpected checksums leave the old lock untouched', (t) =
 });
 
 test('web plugin startup repairs both locks before replacing the remote dependency', { skip: process.platform === 'win32' ? 'container entrypoint uses a POSIX shell' : false }, (t) => {
-  const directory = temp(t), profile = join(directory, 'profiles/web');
+  const directory = join(temp(t), "web install 'quoted'"), profile = join(directory, 'profiles/web');
   mkdirSync(join(profile, 'node_modules/.pnpm'), { recursive: true });
   const config = join(directory, 'config'), bin = join(directory, 'bin');
   mkdirSync(config); mkdirSync(bin);
@@ -88,12 +88,18 @@ import fs from 'node:fs';
   // Let the repair CLI use this test's existing YAML package through a local package link.
   mkdirSync(join(modules, 'yaml'));
   writeFileSync(join(modules, 'yaml', 'package.json'), JSON.stringify({ main: '../yaml.cjs' }));
+  const helper = join(directory, 'plugin-artifacts.mjs');
+  cpSync(join(assets, 'plugin-artifacts.mjs'), helper);
   const entrypoint = readFileSync(join(assets, 'web/entrypoint.sh'), 'utf8');
   const section = entrypoint.slice(entrypoint.indexOf('# 旧远程'), entrypoint.indexOf('# 第三方'))
-    .replace('/opt/partner/plugin-artifacts.mjs', join(assets, 'plugin-artifacts.mjs'));
-  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, DSH_HOME: directory, CONFIG: config };
+    .replace('/opt/partner/plugin-artifacts.mjs', '"$PARTNER_TEST_ARTIFACTS"');
+  const script = join(directory, 'install.sh');
+  writeFileSync(script, section);
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, DSH_HOME: directory, CONFIG: config, PARTNER_TEST_ARTIFACTS: helper };
   for (let run = 0; run < 2; run++) {
-    const result = spawnSync('sh', ['-c', section], { env, encoding: 'utf8', timeout: 10000 });
+    const result = spawnSync('sh', [script], { env, encoding: 'utf8', timeout: 10000 });
+    assert.equal(result.error, undefined);
+    assert.equal(result.signal, null);
     assert.equal(result.status, 0, result.stderr);
     assert.doesNotMatch(result.stdout, /安装失败/);
   }

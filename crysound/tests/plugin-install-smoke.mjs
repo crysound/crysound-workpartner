@@ -16,6 +16,8 @@ const root = mkdtempSync(join(tmpdir(), 'partner-plugin-install-'));
 verifyArchive(readFileSync(WEB_SPEC.slice(5)));
 const entrypoint = readFileSync(new URL('../web/entrypoint.sh', import.meta.url), 'utf8');
 const installSection = entrypoint.slice(entrypoint.indexOf('# 旧远程'), entrypoint.indexOf('# 第三方'));
+const installScript = join(root, 'install.sh');
+writeFileSync(installScript, installSection);
 function run(command, args, env) {
   const result = spawnSync(command, args, { env, encoding: 'utf8', timeout: 180_000 });
   assert.equal(result.error, undefined);
@@ -64,7 +66,7 @@ try {
     };
     // Execute the exact entrypoint migration and install loop twice.
     for (let repeat = 0; repeat < 2; repeat++) {
-      const output = run('sh', ['-c', `CONFIG='${config}'\n${installSection}`], env);
+      const output = run('sh', [installScript], { ...env, CONFIG: config });
       assert.doesNotMatch(output, /安装失败/);
       check();
     }

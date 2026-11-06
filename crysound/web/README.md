@@ -16,7 +16,7 @@ dsh 的 bundle、个人、全局和启动覆盖层按顺序生效，patch 的 `c
 
 本次必须重建镜像并同步清单，先验证独立测试账号，再逐人空闲时换镜像；不能只更新清单后重启旧镜像。Mac/Windows 下个安装包携带同一校验后的归档，桌面会将共享清单中的网页路径转换为 profile 内的相对文件依赖。旧桌面包不支持这个本地路径，需随新包更新。
 
-轻量测试使用 Node 24 和已有 yaml：`node --test crysound/tests/plugin-artifacts.test.mjs`；默认从已有 dsh 运行时找 yaml，也可设置 `PARTNER_YAML_PACKAGE` 为已有 yaml 包路径。设置 `PARTNER_FEISHU_ARCHIVE` 为校验过的归档绝对路径后，覆盖桌面复制模板、旧版替换、重复启动、校验失败，以及从 `lib/types` 编译后目录加载资源；不设时跳过需要真实归档的用例。
+轻量测试使用 Node 24 和已有 yaml：`node --test crysound/tests/plugin-artifacts.test.mjs`；默认从已有 dsh 运行时找 yaml，也可设置 `PARTNER_YAML_PACKAGE` 为已有 yaml 包路径。设置 `PARTNER_FEISHU_ARCHIVE` 为校验过的归档绝对路径后，覆盖桌面复制模板、旧版替换、重复启动、校验失败，从 `lib/types` 编译后目录加载资源，以及含空格和引号的测试路径；不设时跳过需要真实归档的用例。
 
 交付验证由伙伴助理在重建的镜像里执行 `node /repo/crysound/tests/plugin-install-smoke.mjs`（仓库只读挂到 `/repo`，使用临时 profile，允许测试安装联网，限一核、512 MiB）。它用真实 dsh/pnpm 检查有、无校验值两种旧锁的入口迁移，重复启动，以及后续 add、add、remove 后远程条目消失且本地 integrity 保留。打包后另跑既有 Mac 首启动冒烟；Windows 需在目标系统核对资源路径与旧版升级。
 
