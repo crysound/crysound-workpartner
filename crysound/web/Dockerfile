@@ -20,13 +20,16 @@ ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ff
     HYPERFRAMES_BROWSER_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell \
     PUPPETEER_EXECUTABLE_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
+# 图标地址带品牌文件的版本号：换图后飞书内置浏览器不会继续用缓存里的旧图。
 COPY brand/ /tmp/brand/
 RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
  cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
  cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
+        -e 's#\(href="\./\(favicon[-a-z]*\.svg\|apple-touch-icon\.png\)\)"#\1?v='"$v"'"#g' \
         -e 's#</head>#  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
+ sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
  grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
 # 公司配置与桌面版共用：插件清单、插件修补、默认配置（网页版把模型地址换成内部 magpie）。
