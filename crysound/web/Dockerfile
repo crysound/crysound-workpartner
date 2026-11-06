@@ -32,10 +32,14 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
  sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
  grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
-# 公司配置由服务器只读挂载到 /opt/partner-config，不写进镜像。
+# 公司配置由服务器目录挂载；Host 钩子属于固定运行时代码。
+COPY host-hook.mjs /opt/partner/host-hook.mjs
+RUN chmod 644 /opt/partner/host-hook.mjs
 # 检出目录的权限随 umask 变化，这里统一放开，容器内的普通用户才能读和执行。
 COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 755 /usr/local/bin/entrypoint.sh
+ENV NODE_OPTIONS="--import=/opt/partner/host-hook.mjs" CRYSOUND_MARKET_ORIGIN=http://zhaohua-partner-gateway:3090 CRYSOUND_MARKET_TOKEN_FILE=/data/.zp-market-token
+ENV CRYSOUND_MARKET_REGISTRY=http://zhaohua-partner-gateway:3090/_zp/npm/ CRYSOUND_NPM_USERCONFIG=/data/.npmrc
 ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
 WORKDIR /data
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

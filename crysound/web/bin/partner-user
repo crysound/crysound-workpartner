@@ -4,7 +4,7 @@
   partner-user list                              列出名单和容器状态
   partner-user upgrade [代号…]                   用当前镜像重建容器（默认全部；数据和钥匙不动）
 AI工作台群成员可在网页上自助开通，本命令只用于给群外的人开通。"""
-import json, os, re, subprocess, sys
+import base64, hashlib, hmac, json, os, re, subprocess, sys, time, secrets
 from pathlib import Path
 
 # 部署参数与 compose 共用 crysound/web/.env；环境变量里已有的优先。
@@ -14,7 +14,7 @@ if ENV_FILE.exists():
         key, sep, value = line.partition('=')
         if sep and not key.lstrip().startswith('#'):
             os.environ.setdefault(key.strip(), value.strip())
-for key in ('PARTNER_DATA', 'PARTNER_SECURE', 'PARTNER_CONFIG', 'MAGPIE_BASE_URL'):
+for key in ('PARTNER_DATA', 'PARTNER_SECURE', 'PUBLIC_HOST', 'PARTNER_CONFIG', 'MAGPIE_BASE_URL'):
     if not os.environ.get(key):
         sys.exit(f'在 {ENV_FILE} 设置 {key}')
 ROOT = Path(os.environ['PARTNER_DATA'])
@@ -55,8 +55,24 @@ def magpie_key(slug):
     return path
 
 
+def market_token(slug, union_id):
+    key = (SECURE / 'gateway-session.key').read_text().strip().encode()
+    enc = lambda value: base64.urlsafe_b64encode(value).rstrip(b'=')
+    data = enc(json.dumps({'u': union_id, 'e': int(time.time()) + 180 * 86400}).encode())
+    mac = enc(hmac.new(key, b'zpd.' + data, hashlib.sha256).digest())
+    directory = ROOT / 'users' / slug
+    directory.mkdir(parents=True, exist_ok=True)
+    os.chown(directory, 1001, 1001)
+    target = directory / '.zp-market-token'
+    temp = directory / ('.zp-market-token.' + secrets.token_hex(12))
+    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'wb') as out:
+        out.write(b'zpd.' + data + b'.' + mac + b'\n')
+    temp.chmod(0o600); os.chown(temp, 1001, 1001); temp.replace(target)
+
+
 def require_config():
-    for file in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs'):
+    for file in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'):
         if not (CONFIG / file).is_file():
             sys.exit(f'公司配置缺失：{CONFIG / file}；请先同步服务器配置目录')
 
@@ -69,7 +85,7 @@ def container(slug, key):
     data = ROOT / 'users' / slug
     data.mkdir(parents=True, exist_ok=True)
     r = sh('docker', 'run', '-d', '--name', name, '--network', 'partner-net', '--restart', 'unless-stopped',
-           '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ.get('PUBLIC_HOST', 'workpartner.corp.crysound.com')}",
+           '--user', '1001:1001', '-e', f"PUBLIC_HOST={os.environ['PUBLIC_HOST']}",
            '-e', f"MAGPIE_BASE_URL={os.environ['MAGPIE_BASE_URL']}",
            '--mount', f'type=bind,src={CONFIG},dst=/opt/partner-config,readonly',
            '-v', f'{data}:/data', '-v', f'{key}:/etc/partner/magpie.key:ro',
@@ -92,6 +108,7 @@ def main():
             if sys.argv[2:] and u['slug'] not in sys.argv[2:]:
                 continue
             sh('docker', 'rm', '-f', f'zhaohua-partner-{u["slug"]}')
+            market_token(u['slug'], u['unionId'])
             container(u['slug'], SECURE / f'magpie-{u["slug"]}.key')
             print('已升级', u['slug'])
         return
@@ -102,6 +119,7 @@ def main():
         sys.exit('代号只用小写字母、数字和短横线')
     require_config()
     key = magpie_key(slug)
+    market_token(slug, union_id)
     container(slug, key)
     old = next((u for u in users if u['slug'] == slug), {})
     users = [u for u in users if u['slug'] != slug] + [{**old, 'slug': slug, 'name': name, 'unionId': union_id}]

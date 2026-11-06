@@ -1,15 +1,20 @@
 // 兆华工作伙伴网关：网关自己对接飞书登录（飞书内免确认），按飞书 union_id 把每个人带到自己的 dsh 容器。
 // 容器停了就启动；dsh 的一次性口令在这里换成登录 cookie，浏览器只和网关打交道。
+import { serveCompanyConfig } from "./company-config.mjs";
 import http from "node:http";
 import net from "node:net";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { desktopUser as authenticateDesktop } from "./desktop-auth.mjs";
-import { serveCompanyConfig } from "./company-config.mjs";
-import { authorizeUrl, identify, provision, readUsers, slugFor } from "./onboard.mjs";
+import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmins } from "./onboard.mjs";
+
+import { issueToken, tokenUser, writeContainerToken } from "./market-auth.mjs";
+import { createMarket } from "./market.mjs";
 
 const PORT = 3090;
-const PUBLIC_HOST = process.env.PUBLIC_HOST || "workpartner.corp.crysound.com";
+const PUBLIC_HOST = process.env.PUBLIC_HOST;
+if (!PUBLIC_HOST || !/^[a-z0-9.-]+(?::[0-9]+)?$/i.test(PUBLIC_HOST) || new URL(`https://${PUBLIC_HOST}`).host !== PUBLIC_HOST.toLowerCase()) {
+  throw new Error("在 .env 配置有效的 PUBLIC_HOST，然后重建网关");
+}
 // 旧网址：已装的桌面版按旧网址登录和调模型，这几处照常服务；其余访问跳到正式网址。
 const OLD_HOSTS = String(process.env.OLD_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean);
 const servedOnOldHost = (url) => url.pathname.startsWith("/_zp/config/") || url.pathname.startsWith("/_zp/llm/v1/")
@@ -55,14 +60,31 @@ function issueSession(who) {
 }
 
 // 桌面版通行证：同样签名，前缀 zpd.，180 天有效。桌面版用它调模型，网关换成本人的 magpie 钥匙再转发，钥匙不出服务器。
-const DESKTOP_DAYS = 180;
 function issueDesktopToken(who) {
-  const data = Buffer.from(JSON.stringify({ u: who.unionId, e: Math.floor(Date.now() / 1000) + DESKTOP_DAYS * 86400 })).toString("base64url");
-  return `zpd.${data}.${sign("zpd." + data)}`;
+  return issueToken(SESSION_KEY, who);
 }
 function desktopUser(req) {
-  return authenticateDesktop(req, SESSION_KEY, users);
+  return tokenUser(req, SESSION_KEY, users());
 }
+
+const marketAdmins = [...new Set((process.env.MARKET_ADMINS || "").split(",").map((s) => s.trim()).filter(Boolean))];
+if (!marketAdmins.length || marketAdmins.some((slug) => !users().some((user) => user.slug === slug))) {
+  throw new Error("在 .env 配置已开通的市场管理员 slug（首期 Jason），然后重建网关");
+}
+
+// 令牌随数据卷进入容器；旧容器在重建后由入口脚本写入 .npmrc。
+for (const user of users()) writeContainerToken(SESSION_KEY, user);
+const market = createMarket({
+  stateFile: "/state/market.json", registry: "http://verdaccio:4873",
+  authorization: `Basic ${Buffer.from(fs.readFileSync("/secure/market-npm-auth", "utf8").trim()).toString("base64")}`,
+  publicOrigin: `https://${PUBLIC_HOST}`,
+  authenticate: desktopUser,
+  readUsers: users,
+  sessionUser: (req) => userFor(req).user,
+  admins: marketAdmins,
+  notify: notifyMarketAdmins,
+  internalOrigin: "http://zhaohua-partner-gateway:3090",
+});
 
 // 桌面版的模型请求：核对通行证，换成本人的 magpie 钥匙，原样流式转给 magpie。
 function proxyModel(req, res, user, path) {
@@ -288,6 +310,7 @@ const server = http.createServer(async (req, res) => {
     const host = String(req.headers.host || "").toLowerCase();
     const oldHost = OLD_HOSTS.includes(host);
     if (oldHost && !servedOnOldHost(url)) return redirect(res, `https://${PUBLIC_HOST}${req.url}`);
+    if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);
     if (url.pathname.startsWith("/_zp/config/")) return await serveCompanyConfig(req, res, url.pathname, desktopUser);
     if (url.pathname.startsWith("/_zp/llm/v1/")) {

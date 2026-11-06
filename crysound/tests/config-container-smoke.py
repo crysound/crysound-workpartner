@@ -26,8 +26,8 @@ with tempfile.TemporaryDirectory(prefix='partner-config-smoke-', dir=REPO / '.ar
     config = root / 'config'
     shutil.copytree(REPO / 'crysound/config', config)
     config.chmod(0o755)
-    for file in config.iterdir():
-        file.chmod(0o644)
+    for file in config.rglob("*"):
+        file.chmod(0o755 if file.is_dir() else 0o644)
     # No plugin downloads in this local smoke; full plugin integration belongs to delivery verification.
     (config / 'plugins.json').write_text(json.dumps({'plugins': [], 'defaultBundles': []}))
     data = root / 'data'

@@ -28,7 +28,7 @@
 1. 5 个插件按 `plugins.json` 的固定版本，用包内 `dsh plugin --profile desktop add` 安装（已记录同版本则跳过）。
 2. 运行 `plugin-patches.mjs`（每次启动一次，已打过的跳过）。
 3. 4 个实验插件只开一次（标记 `userData/.zp-default-plugins-v1`）。
-4. 启动时从网关读取四文件公司配置快照，取不到时使用包内配置。默认值首次写入，之后每次只刷新 `providers.magpie`，保留个人其他提供方和已选默认值；详见 `crysound/web/README.md`。
+4. 启动时从网关读取公司配置快照，取不到时使用包内配置。默认值首次写入，之后每次只刷新 `providers.magpie`，保留个人其他提供方和已选默认值；详见 `crysound/web/README.md`。
 插件安装需要联网；某个插件装失败只记日志，应用照常启动，下次启动会重试。
 
 ### 打包
@@ -38,6 +38,9 @@
 - `.github/workflows/desktop-mac.yml`：macOS 托管机打包，见下。
 
 ## 打包
+
+本地开发桌面版前，先设置 `PUBLIC_HOST` 为公司网关域名（不带协议或路径），再运行 `pnpm run dev:desktop`。
+
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
 - CI：`.github/workflows/desktop-mac.yml`，手动触发或推送 `desktop/**` 分支，在 `macos-15`（Apple 芯片）上构建，依次做：打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里真实安装 5 个插件）。
 - 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；缺任何一项就跳过。
@@ -54,12 +57,17 @@
 
 部署（在仓库 `main` 的检出里执行）：
 ```sh
+PARTNER_BACKUP_TAG="zhaohua-partner:backup-$(date +%Y%m%d-%H%M%S)"
+docker tag zhaohua-partner:0.2.2-rc.1 "$PARTNER_BACKUP_TAG"                       # 换 partner-image 前先备份当前镜像，记下此 tag
 docker compose -f crysound/web/compose.yml --profile build build partner-image   # 新镜像
+docker compose -f crysound/web/compose.yml build gateway                        # 构建网关镜像
 docker compose -f crysound/web/compose.yml up -d --force-recreate gateway        # 网关改动（单文件挂载，必须重建才读到新文件）
 for s in $(crysound/web/bin/partner-user list | cut -d' ' -f1); do
   crysound/web/bin/upgrade-when-idle.sh "$s" &                                     # 每人空闲时换新镜像
 done
 ```
+回退每人容器镜像时，用记录的备份 tag 执行 `docker tag "$PARTNER_BACKUP_TAG" zhaohua-partner:0.2.2-rc.1`，再运行上面的空闲升级循环重建用户容器；不要重新构建 `partner-image` 覆盖备份。首次部署没有旧镜像时可跳过备份步骤。
+
 只改品牌层时，镜像里的文件版本号随内容变化，浏览器会取新文件。
 
 客户端安装包放公司 Cloudflare 账号的 R2 存储桶 `crysound-workpartner-downloads`（亚太位置，公开域名 `partner-dl.corp.crysound.com`，对象键带随机段）。在数据目录 `downloads/` 里放 `<文件名>.url`，内容是该对象的公开地址；下载页按文件名列出，点下载时跳到 R2。文件名含 `mac-arm64`、`mac-x64`、`win-x64` 才会出现在下载页上，不含的只能直链下载（用于测试包）。

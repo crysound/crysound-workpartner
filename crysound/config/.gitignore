@@ -1,0 +1,2 @@
+# 打包前从部署配置生成；只包含 PUBLIC_HOST。
+/public-host.json

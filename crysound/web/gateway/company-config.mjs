@@ -2,7 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const CONFIG_FILES = new Set(["plugins.json", "partner.patch.yml", "profile-upgrades.mjs", "plugin-patches.mjs"]);
+export const CONFIG_FILES = new Set(["plugins.json", "partner.patch.yml", "profile-upgrades.mjs", "plugin-patches.mjs", "market-profile.mjs", "market-npmrc.mjs", "skills/publish-zhaohua-market/SKILL.md"]);
 
 export async function serveCompanyConfig(req, res, pathname, desktopUser, directory = "/opt/partner-config") {
   res.setHeader("cache-control", "no-store");

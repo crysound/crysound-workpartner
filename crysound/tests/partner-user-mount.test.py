@@ -17,12 +17,13 @@ class ConfigMount(unittest.TestCase):
             root = Path(temporary)
             config = root / 'config'
             config.mkdir()
-            for name in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs'):
+            for name in ('plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'):
+                (config / name).parent.mkdir(parents=True, exist_ok=True)
                 (config / name).write_text('fixture')
             users = [{'slug': 'fake-user', 'name': 'Fake', 'unionId': 'fake-union'}]
             (root / 'users.json').write_text(json.dumps(users))
             environment = {'PARTNER_DATA': str(root), 'PARTNER_SECURE': str(root / 'secure'),
-                           'PARTNER_CONFIG': str(config), 'MAGPIE_BASE_URL': 'https://models.example.invalid/v1'}
+                           'PUBLIC_HOST': 'partner.example.invalid', 'PARTNER_CONFIG': str(config), 'MAGPIE_BASE_URL': 'https://models.example.invalid/v1'}
             self.enterContext(patch.dict(os.environ, environment))
             module = runpy.run_path(str(SCRIPT))
             calls = []
@@ -32,6 +33,7 @@ class ConfigMount(unittest.TestCase):
                 return subprocess.CompletedProcess(args, 1 if args[:2] == ('docker', 'inspect') else 0, '', '')
 
             module['container'].__globals__['sh'] = command
+            module['container'].__globals__['market_token'] = lambda *_args: None
             module['container']('fake-user', root / 'fake.key')
             with patch('sys.argv', [str(SCRIPT), 'upgrade', 'fake-user']):
                 module['main']()

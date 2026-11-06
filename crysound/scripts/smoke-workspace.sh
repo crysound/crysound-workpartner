@@ -9,6 +9,7 @@ hdiutil attach "$dmg" -mountpoint "$mount" -nobrowse -readonly -quiet
 trap 'hdiutil detach "$mount" -quiet || true' EXIT
 app=$(ls -d "$mount"/*.app | head -n1)
 home=$(mktemp -d)
+export CRYSOUND_LLM_BASE=https://partner.example.test/_zp/llm/v1
 export DSH_HOME="$home/dsh" SMOKE_APP="$app" SMOKE_USERDATA="$home/userdata"
 cd "$root/apps/desktop"
 node --import tsx scripts/crysound-smoke-workspace.ts

@@ -1,8 +1,8 @@
 /** Download one complete company config snapshot, or keep using the packaged snapshot when offline. */
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
-const CONFIG_FILES = ['plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs'] as const
+const CONFIG_FILES = ['plugins.json', 'partner.patch.yml', 'profile-upgrades.mjs', 'plugin-patches.mjs', 'market-profile.mjs', 'market-npmrc.mjs', 'skills/publish-zhaohua-market/SKILL.md'] as const
 
 /**
  * Use a private per-run directory so incomplete downloads never replace a working configuration.
@@ -41,6 +41,7 @@ export async function companyConfig(
           throw new Error('公司插件清单格式不正确')
         }
       }
+      await mkdir(dirname(join(directory, file.file)), { recursive: true })
       await writeFile(join(directory, file.file), file.text, { mode: 0o600 })
     }
     return { directory, dispose: async (): Promise<void> => { await rm(directory, { recursive: true, force: true }) } }

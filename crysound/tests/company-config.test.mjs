@@ -11,7 +11,7 @@ import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { refreshProfile } from "../config/profile-upgrades.mjs";
 import { serveCompanyConfig, CONFIG_FILES } from "../web/gateway/company-config.mjs";
-import { desktopUser } from "../web/gateway/desktop-auth.mjs";
+import { tokenUser } from "../web/gateway/market-auth.mjs";
 import { companyConfig } from "../../apps/desktop/src/crysound/company-config.ts";
 import { prepareCompanyWorkspace } from "../../apps/desktop/src/crysound/workspace.ts";
 
@@ -26,7 +26,7 @@ const sign = (payload) => {
   return `zpd.${data}.${crypto.createHmac("sha256", secret).update(`zpd.${data}`).digest("base64url")}`;
 };
 const token = sign({ u: "fake-user", e: Date.now() / 1000 + 3600 });
-const auth = (req) => desktopUser(req, secret, () => [{ unionId: "fake-user", slug: "fake-user" }]);
+const auth = (req) => tokenUser(req, secret, [{ unionId: "fake-user", slug: "fake-user" }]);
 async function temp(t) {
   const root = await mkdtemp(join(tmpdir(), "partner-config-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -65,7 +65,7 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   refreshProfile(file, seed, yaml, true);
   let text = await readFile(file, "utf8");
-  assert.equal(load(text).length, 3);
+  assert.equal(load(text).length, 4);
   text = text.replace("    reasoningEffort: medium\n", "");
   await writeFile(file, text);
   refreshProfile(file, seed, yaml);
@@ -87,9 +87,9 @@ test("invalid personal configuration fails without changing the file", async (t)
   }
 });
 
-test("gateway requires a valid active desktop token, serves only four files, and reflects file updates", async (t) => {
+test("gateway requires a valid active desktop token, serves only the allowlisted files, and reflects file updates", async (t) => {
   const root = await temp(t);
-  for (const file of CONFIG_FILES) await writeFile(join(root, file), `test ${file}`);
+  for (const file of CONFIG_FILES) { await mkdir(join(root, file, ".."), { recursive: true }); await writeFile(join(root, file), `test ${file}`); }
   const origin = await server(t, (req, res) => void serveCompanyConfig(req, res, new URL(req.url, "http://localhost").pathname, auth, root));
   const headers = { authorization: `Bearer ${token}` };
   for (const credential of [undefined, "fake-token", sign({ u: "fake-user", e: 1 }), sign({ u: "removed-user", e: Date.now() / 1000 + 3600 }), sign("bad-json"), sign(null), `${token}.extra`, `zpd.fake.${"é".repeat(43)}`]) {
@@ -120,7 +120,7 @@ test("desktop selects the gateway snapshot, otherwise the whole packaged snapsho
   let failure = false, invalid = false;
   const origin = await server(t, async (req, res) => {
     assert.equal(req.headers.authorization, `Bearer ${token}`);
-    const file = req.url.split("/").pop();
+    const file = req.url.slice("/_zp/config/".length);
     if (failure && file === "partner.patch.yml") { res.writeHead(503); return res.end(); }
     res.end(file === "plugins.json" ? (invalid ? "{}" : JSON.stringify({ plugins: [], defaultBundles: [] })) : `remote ${file}`);
   });
@@ -138,19 +138,19 @@ test("desktop selects the gateway snapshot, otherwise the whole packaged snapsho
 });
 
 test("desktop startup applies the selected plugin version and provider, then falls back to packaged config offline", async (t) => {
-  const root = await temp(t), profile = join(root, "profile"), userData = join(root, "userData");
+  const root = await temp(t), profile = join(root, "dsh/profiles/desktop"), userData = join(root, "userData");
   const packaged = join(root, "packaged"), config = join(packaged, "config"), fakeCli = join(root, "cli.cjs");
-  await mkdir(profile); await mkdir(config, { recursive: true });
+  await mkdir(profile, { recursive: true }); await mkdir(config, { recursive: true });
   // Exercise the real preparer and subprocess scripts; the fake installer only records the requested plugin.
   await symlink(resolve(runtime, "../../../../"), join(root, "node_modules"), "dir");
   await writeFile(join(profile, "package.json"), JSON.stringify({ dependencies: {} }));
   await writeFile(fakeCli, `const fs=require('fs'),p=process.env.TEST_MANIFEST,spec=process.argv.at(-1),m=JSON.parse(fs.readFileSync(p));m.dependencies['fake-plugin']=spec.split('@').at(-1);fs.writeFileSync(p,JSON.stringify(m));`);
-  for (const file of ["profile-upgrades.mjs", "plugin-patches.mjs", "partner.patch.yml"]) await writeFile(join(config, file), await readFile(join(assets, "config", file)));
+  for (const file of CONFIG_FILES) { await mkdir(join(config, file, ".."), { recursive: true }); await writeFile(join(config, file), await readFile(join(assets, "config", file))); }
   await writeFile(join(config, "plugins.json"), JSON.stringify({ plugins: [{ name: "fake-plugin", spec: "fake-plugin@1", want: "1" }], defaultBundles: ["fake-bundle"] }));
   let online = true, version = "2";
   const origin = await server(t, async (req, res) => {
     if (!online) { res.writeHead(503); return res.end(); }
-    const file = req.url.split("/").pop();
+    const file = req.url.slice("/_zp/config/".length);
     const text = await readFile(join(config, file), "utf8");
     res.end(file === "plugins.json" ? text.replaceAll('"1"', `"${version}"`).replace("fake-plugin@1", `fake-plugin@${version}`) : text.replaceAll("codex/gpt-6.1-sol", "codex/company-model"));
   });
@@ -166,7 +166,7 @@ test("desktop startup applies the selected plugin version and provider, then fal
   await prepareCompanyWorkspace(options);
   assert.equal(JSON.parse(await readFile(join(profile, "package.json"))).dependencies["fake-plugin"], "1");
   const manifest = JSON.parse(await readFile(join(profile, "package.json")));
-  assert.deepEqual(manifest.dsh.profile.bundles, ["fake-bundle"]);
+  assert.deepEqual(manifest.dsh.profile.bundles, ["fake-bundle", "@deepseek-ai/dsh-experimental-plugin-market-bundle"]);
   assert.equal(provider(load(await readFile(join(profile, "cordis.patch.yml"), "utf8"))).magpie.models[0].id, "codex/gpt-6.1-sol");
   assert.deepEqual((await readdir(userData)).filter(file => file.startsWith("company-config-")), []);
 });
@@ -181,9 +181,9 @@ test("self-service onboarding passes a read-only host config mount and model URL
   const filesystem = { existsSync: () => true, mkdirSync() {}, chownSync() {},
     readFileSync: () => JSON.stringify(users), writeFileSync: (_file, text) => { users = JSON.parse(text); } };
   const module = new SourceTextModule(await readFile(join(assets, "web/gateway/onboard.mjs"), "utf8"), { context });
-  await module.link((name) => new SyntheticModule(["default"], function () {
-    this.setExport("default", name === "node:fs" ? filesystem : crypto);
-  }, { context }));
+  await module.link((name) => name === "./market-auth.mjs"
+    ? new SyntheticModule(["writeContainerToken"], function () { this.setExport("writeContainerToken", () => {}); }, { context })
+    : new SyntheticModule(["default"], function () { this.setExport("default", name === "node:fs" ? filesystem : crypto); }, { context }));
   await module.evaluate();
   const calls = [];
   const docker = async (method, path, body) => {

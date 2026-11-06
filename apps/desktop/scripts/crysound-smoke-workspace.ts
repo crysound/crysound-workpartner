@@ -21,10 +21,12 @@ await prepareCompanyWorkspace(options)
 await prepareCompanyWorkspace(options)
 
 const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
-  plugins: { name: string; want: string }[]; defaultBundles: string[]
+  plugins: { name: string; want: string }[]
+  defaultBundles: string[]
 }
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
-  dependencies?: Record<string, string>; dsh?: { profile?: { bundles?: string[] } }
+  dependencies?: Record<string, string>
+  dsh?: { profile?: { bundles?: string[] } }
 }
 let failed = false
 const check = (ok: boolean, message: string): void => { console.log(`${ok ? 'ok  ' : 'FAIL'}  ${message}`); if (!ok) failed = true }
