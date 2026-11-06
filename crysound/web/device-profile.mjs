@@ -12,7 +12,7 @@ const row = `- insert:
         url: http://zhaohua-partner-gateway:3090/_zp/device-mcp
         headers: {}
         toolCallTimeoutMs: 300000
-        failOnStartupError: true
+        failOnStartupError: false
         reconnect:
           enabled: true
           initialDelayMs: 1000
