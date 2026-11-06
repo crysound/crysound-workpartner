@@ -18,6 +18,15 @@ for (const name of ['crysound/brand/zp-mark-32.svg', 'crysound/brand/favicon.svg
 }
 assert.deepEqual(read('crysound/brand/zp-mark.svg'), big);
 assert(!small.includes('<circle'), 'small logo must have no glints');
+// Render the production sweep geometry: valid gradient references alone do not
+// prove that any visible light actually intersects the moving rectangle.
+const petSource = read('crysound/brand/pet.js').toString();
+const sweepGradient = petSource.match(/<linearGradient id="\$\{id\}shine"[\s\S]*?<\/linearGradient>/)[0];
+const sweepShape = petSource.match(/<g class="shine">([\s\S]*?)<\/g>/)[1];
+const sweepSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-64 -32 128 128" width="128" height="128"><defs>${sweepGradient}</defs>${sweepShape}</svg>`.replaceAll('${id}', 'check-');
+const sweepPixels = await sharp(Buffer.from(sweepSvg)).ensureAlpha().raw().toBuffer();
+const sweepAlpha = sweepPixels.filter((_, index) => index % 4 === 3);
+assert(Math.max(...sweepAlpha) > 50, 'working-state sweep must render visible light');
 for (const [name, sizes] of [
   ['icon-windows.ico', [16, 24, 32, 48, 64, 128, 256]],
   ['tray-windows.ico', [16, 20, 24, 32, 40, 48, 64]],
@@ -61,4 +70,4 @@ const digest = () => outputs.map(n => createHash('sha256').update(read(n)).diges
 const before = digest();
 execFileSync(process.execPath, [new URL('gen.mjs', import.meta.url).pathname], { env: process.env });
 assert.deepEqual(digest(), before, 'generator must reproduce all committed artifacts');
-console.log('PASS: favicon copies, PNG sizes, Mac inset, maskable safe area, every ICO frame, generation idempotence');
+console.log('PASS: visible working sweep, favicon copies, PNG sizes, Mac inset, maskable safe area, every ICO frame, generation idempotence');

@@ -23,7 +23,7 @@ class ZpPet{
     host.dataset.state='idle';host.dataset.face='open';if(!fx)host.dataset.fx='off';
     host.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true">
       <defs>${art.defs}<clipPath id="${id}c"><path d="${SQ}"/></clipPath>
-        <linearGradient id="${id}shine" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="18" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+        <linearGradient id="${id}shine" gradientUnits="userSpaceOnUse" x1="-34" y1="0" x2="-16" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
       <g class="tile">${art.tile}
         <g clip-path="url(#${id}c)">
           <g class="body">${art.head}
