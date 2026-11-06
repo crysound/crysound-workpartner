@@ -23,6 +23,7 @@ CONFIG = Path(os.environ['PARTNER_CONFIG'])
 USERS = ROOT / 'users.json'
 IMAGE = os.environ.get('PARTNER_IMAGE', 'zhaohua-partner:0.2.2-rc.1')
 IA = os.environ.get('INFISICAL_ADMIN', '')
+KEY_PREFIX = os.environ.get('MAGPIE_KEY_PREFIX', 'magpie-')  # 钥匙文件 <前缀><slug>.key、预建池 <前缀>pool，与网关一致
 
 
 def sh(*a, **k):
@@ -30,11 +31,11 @@ def sh(*a, **k):
 
 
 def magpie_key(slug):
-    path = SECURE / f'magpie-{slug}.key'
+    path = SECURE / f'{KEY_PREFIX}{slug}.key'
     if path.exists():
         return path
     if os.environ.get('MAGPIE_KEYS') == 'pool':  # magpie 不在本机：领一把预建的钥匙（与网关自助开通同一个池）
-        pool = SECURE / 'magpie-pool'
+        pool = SECURE / f'{KEY_PREFIX}pool'
         spare = next(iter(sorted(pool.glob('*.key'))), None)
         if spare is None:
             sys.exit('预建的 magpie 钥匙用完了')
@@ -110,7 +111,7 @@ def main():
                 continue
             sh('docker', 'rm', '-f', f'zhaohua-partner-{u["slug"]}')
             market_token(u['slug'], u['unionId'])
-            container(u['slug'], SECURE / f'magpie-{u["slug"]}.key')
+            container(u['slug'], SECURE / f'{KEY_PREFIX}{u["slug"]}.key')
             print('已升级', u['slug'])
         return
     if sys.argv[1:2] != ['add'] or len(sys.argv) != 5:

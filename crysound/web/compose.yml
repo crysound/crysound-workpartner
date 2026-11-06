@@ -20,6 +20,7 @@ services:
       MEEGLE_HOST: ${MEEGLE_HOST:-}
       MARKET_ADMINS: ${MARKET_ADMINS:?在 .env 设置市场管理员（首期 Jason 的已开通 slug）}
       MAGPIE_KEYS: ${MAGPIE_KEYS:-exec}
+      MAGPIE_KEY_PREFIX: ${MAGPIE_KEY_PREFIX:-magpie-}
       HOST_PARTNER_DATA: ${PARTNER_DATA:?在 .env 设置 PARTNER_DATA}
       HOST_PARTNER_CONFIG: ${PARTNER_CONFIG:?在 .env 设置 PARTNER_CONFIG}
       MAGPIE_BASE_URL: ${MAGPIE_BASE_URL:?在 .env 设置 MAGPIE_BASE_URL}
