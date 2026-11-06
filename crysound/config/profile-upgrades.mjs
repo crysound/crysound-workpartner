@@ -39,9 +39,20 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
   }
   mine.setIn([index, "config", "providers", "magpie"], provider.clone());
 
-  // Preserve the search migration without replacing the user's existing search setup.
+  // Search uses the same company gateway on both web and desktop, including existing literal addresses.
   const searchIndex = find(seed, "web-search-deepseek");
-  if (searchIndex >= 0 && find(mine, "web-search-deepseek") < 0) mine.add(seed.contents.items[searchIndex].clone());
+  const searchConfig = seed.getIn([searchIndex, "config"], true);
+  if (!yaml.isMap(searchConfig) || !searchConfig.has("baseURL") || !searchConfig.has("model")) throw new Error("公司配置缺少网页搜索地址或模型");
+  const personalSearchIndex = find(mine, "web-search-deepseek");
+  if (personalSearchIndex < 0) {
+    mine.add(seed.contents.items[searchIndex].clone());
+  } else {
+    const path = [personalSearchIndex, "config"];
+    const config = mine.getIn(path, true);
+    if (config === undefined) mine.setIn(path, mine.createNode({}));
+    else if (!yaml.isMap(config)) throw new Error("个人网页搜索配置使用了动态表达式，无法安全刷新公司地址和模型；请把 config 改为映射");
+    for (const key of ["baseURL", "model"]) mine.setIn([...path, key], searchConfig.get(key, true).clone());
+  }
 
   // Historical default migration: leave the user's chosen model/effort alone.
   const defaultIndex = find(mine, "agent-default-model");
