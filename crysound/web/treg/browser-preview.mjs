@@ -82,6 +82,7 @@ try {
     { urlPattern: "*/_zp/market/data.json", requestStage: "Request" },
     { urlPattern: "*/_zp/market/index.json", requestStage: "Request" },
   ] });
+  await send("Page.bringToFront");
   await send("Page.reload", { ignoreCache: true });
   await until("!!window.__dataPreview");
   await evaluate('window.__dataPreview.ctx.locale.publish("zh", false); window.__dataPreview.ctx.pluginNavigation.openList();');
@@ -104,7 +105,11 @@ try {
   const shot = async (name, width, height) => {
     await evaluate('window.__dataPreview.ctx.locale.publish("zh", false)');
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+    await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
+    await evaluate('window.__dataPreview.controller.patch({ packages: [{name:"@crysound/data",enabled:true,rows:[{enabled:true}]}] });');
+    await until('document.querySelector("[data-zp-data-market] article button").textContent === "使用"');
     const clip = await evaluate('(()=>{const r=document.querySelector("[data-zp-data-market]").getBoundingClientRect();return {x:r.left,y:Math.max(0,r.top-84),width:r.width,height:r.height+Math.min(84,r.top),scale:1};})()');
+    assert.ok(clip.x >= 0 && clip.x + clip.width <= width + 1, "数据专栏必须在当前视口内");
     assert.ok(!(await evaluate("document.documentElement.scrollWidth > innerWidth")), "页面不应横向溢出");
     const image = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip });
     fs.writeFileSync(path.join(outputDir, name), Buffer.from(image.data, "base64"));
