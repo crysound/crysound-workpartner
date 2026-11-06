@@ -7,6 +7,11 @@ dmg=$1
 out=$2
 root=$(cd "$(dirname "$0")/../.." && pwd)
 entitlements="$root/apps/desktop/scripts/macos-entitlements.plist"
+release_version=${CRYSOUND_DESKTOP_VERSION:-}
+update_url=${CRYSOUND_DESKTOP_UPDATE_URL:-}
+if [ -n "$release_version" ] || [ -n "$update_url" ]; then
+  node "$root/crysound/scripts/mac-update-release.mjs" validate "$release_version" "$update_url"
+fi
 mkdir -p "$out"
 # Physical path: /var is a link to /private/var, and mount(8) lists mount points by their physical path.
 work=$(cd "$(mktemp -d)" && pwd -P)
@@ -36,6 +41,13 @@ name=$(basename "$app")
 ditto "$app" "$work/$name"
 hdiutil detach "$mount" -quiet
 target="$work/$name"
+
+# Only the Developer ID signing path embeds an update source. The original unsigned DMG stays unchanged.
+if [ -n "$release_version" ]; then
+  actual_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$target/Contents/Info.plist")
+  [ "$actual_version" = "$release_version" ] || { echo "app version does not match requested release" >&2; exit 1; }
+  node "$root/crysound/scripts/mac-update-release.mjs" configure "$target" "$update_url"
+fi
 
 sign() { codesign --force --timestamp --options runtime --entitlements "$entitlements" --sign "$identity" --keychain "$keychain" "$@"; }
 
@@ -99,3 +111,16 @@ fi
 retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" -lt 3 ] && sleep 20; done; return 1; }
 retry xcrun stapler staple "$signed"
 ls -lh "$signed"
+
+if [ -n "$release_version" ]; then
+  # The accepted DMG notarization covers the enclosed app's signature. Staple that same app before archiving.
+  retry xcrun stapler staple "$target"
+  xcrun stapler validate "$target"
+  codesign --verify --deep --strict "$target"
+  spctl -a -vv -t exec "$target"
+  zip="$out/crysound-workpartner-$release_version-mac-arm64.zip"
+  ditto -c -k --sequesterRsrc --keepParent "$target" "$zip"
+  node "$root/crysound/scripts/mac-update-release.mjs" metadata "$zip" "$release_version"
+  bash "$root/crysound/scripts/verify-mac-update.sh" "$zip" "$release_version" "$update_url"
+  ls -lh "$zip" "$out/latest-mac.yml"
+fi

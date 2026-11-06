@@ -1,0 +1,123 @@
+{
+  "repository": "https://github.com/alchaincyf/huashu-motion",
+  "commit": "52467f99c602b76ba86d511d37acdfe93fa1e16e",
+  "version": "0.3.1",
+  "files": {
+    "LICENSE": {
+      "upstream": "b8fa8ecfc57cf8339ecdab05e62e811a5d00d1e1f9373ff1de64cc9f261e2d3e",
+      "shipped": "b8fa8ecfc57cf8339ecdab05e62e811a5d00d1e1f9373ff1de64cc9f261e2d3e"
+    },
+    "cli/lib/audio.js": {
+      "upstream": "360ecd8f48df354b579278ea1232db7d4427ccea29a50986acb077366078b7c5",
+      "shipped": "9f2db1c787969c7d175a08fd40e98694f2cefba7823e9243a49a26c7828c7a95"
+    },
+    "cli/lib/browser.js": {
+      "upstream": "15b27e4051f32f41261da70479587fd6d04f4f3b868379cf1f5c0c0e01e98981",
+      "shipped": "1d80fe7eaa55b87e443d5f361ca3ea92aac9ba7bb8a8927d882f6577f9537cdb"
+    },
+    "cli/lib/capture.js": {
+      "upstream": "540a3d8de635a3ce6a550b6487cabae116f3082a8cac35d572c4305977850fb4",
+      "shipped": "e1d59e7efac3b16164d43dc3b6ac2a27eb3f9caf6608ca51b5e84d0620766afe"
+    },
+    "cli/lib/cdp.js": {
+      "upstream": "313d260d1dc50bec7a9b9063292e89bad3a2498046c9328c121eb9a4597d4b97",
+      "shipped": "bb54efdbcfcd2af8246bbefeb483653dbc17037ea3b9bd74df3313149965c5a2"
+    },
+    "cli/lib/check.js": {
+      "upstream": "d112421c8056f07910b78f49aabae286b73a7e87640592eb9d937661992ef606",
+      "shipped": "3340bff8b2e72333606de736c8bb85e6e565c6d45a53b531d16f7644096db0ee"
+    },
+    "cli/lib/composed.js": {
+      "upstream": "286609045ae111d0979ec27fd2c38356cae3916800b9f0b5cfaaade04319e8ac",
+      "shipped": "286609045ae111d0979ec27fd2c38356cae3916800b9f0b5cfaaade04319e8ac"
+    },
+    "cli/lib/composer.js": {
+      "upstream": "c01e42e1f56cd74ec1829e9e37f3052d68500480f1ca0dc3d4bfa3fd8f46e828",
+      "shipped": "82e9be643b74a00a5d285763d4752e06b0b17dad234a0bb534d6947d46b48b49"
+    },
+    "cli/lib/dsp.js": {
+      "upstream": "2609e6d93ac51667f67345d3ba84d71d83c3b792656de97e95d12da57c6235fa",
+      "shipped": "2609e6d93ac51667f67345d3ba84d71d83c3b792656de97e95d12da57c6235fa"
+    },
+    "cli/lib/frames.js": {
+      "upstream": "256eb60fd14db7cf8557c0e0d5bdb05a53bdde2f7389e6567b22cf2f8b025050",
+      "shipped": "49f85a3630f35121462096096ca9ea126e973c0561d4190617a638d23bb5bfea"
+    },
+    "cli/lib/fx.js": {
+      "upstream": "ea7f52c6cc313221b739dbd305419f06becdb0117387fc593ad8a945cc7989d1",
+      "shipped": "ea7f52c6cc313221b739dbd305419f06becdb0117387fc593ad8a945cc7989d1"
+    },
+    "cli/lib/project.js": {
+      "upstream": "d7140a102f421ff76248bc542481636d301f2d55c5bb7b336622eb40193dc4c8",
+      "shipped": "d7140a102f421ff76248bc542481636d301f2d55c5bb7b336622eb40193dc4c8"
+    },
+    "cli/lib/render-om.js": {
+      "upstream": "e1de8327e81a5c4270b46ec6cd11f4861246fb9678a58dc2f2e2716d32db2710",
+      "shipped": "9d4b0b0103e4bbba1390b76528dbeb5cb752c0a84fbd2890a640682bffe31fc6"
+    },
+    "cli/lib/render.js": {
+      "upstream": "d522b8492cde356136a55b01574ba6cf7897c1d7fb6d52b48468e2a900502801",
+      "shipped": "43f5412f6eafa4b2b07a920b69299006bc8519d84bf47af536e5c9502dc8994b"
+    },
+    "cli/lib/samples.js": {
+      "upstream": "834a5eaa0f0ed954a64ba75efe6226b4fe9bbf383a46b86767256e09cbd06bd1",
+      "shipped": "c8b0e7759868b66c461dc5c08a57f98d87dee9a1acfe8c6c3fa9d27cbc11d60c"
+    },
+    "cli/lib/score.js": {
+      "upstream": "5e753eb638d4e0aee80cc9e878809bbb8344cfbecc947e2da6cbf4801fbc6215",
+      "shipped": "5e753eb638d4e0aee80cc9e878809bbb8344cfbecc947e2da6cbf4801fbc6215"
+    },
+    "cli/lib/sound.js": {
+      "upstream": "2050c684ac0db4f9277be812a8a2bc7b731a29006fca2c0c6c70b71c1fa1eb7b",
+      "shipped": "fa6b4d05a713335af12d3a3a15b2bce093e1b15b5d6e45ef0f0f11812e95347e"
+    },
+    "cli/lib/soundprint.js": {
+      "upstream": "a4e42a7a054b53c9fe32673535dd92c3b911da831958bb4c69822f1b21bc493c",
+      "shipped": "a4e42a7a054b53c9fe32673535dd92c3b911da831958bb4c69822f1b21bc493c"
+    },
+    "cli/lib/still.js": {
+      "upstream": "13d1dfd39b98e573bdac716c4df6f3015d8045773692f5465bd6b35b01f90293",
+      "shipped": "13d1dfd39b98e573bdac716c4df6f3015d8045773692f5465bd6b35b01f90293"
+    },
+    "runtime/clip/clip.js": {
+      "upstream": "8a4b67e1cbd5627bc7e2d1a70e154edf4d5d011b1c0e8f6da0af5b1597ce7e1e",
+      "shipped": "8a4b67e1cbd5627bc7e2d1a70e154edf4d5d011b1c0e8f6da0af5b1597ce7e1e"
+    },
+    "runtime/om-engine.js": {
+      "upstream": "59d41ca9e6f1e35a1e2b8c9bbb3f7b665822b137939282cce8f6113aeb6873ce",
+      "shipped": "aacbc309787d8c57657db19c4312e76bdeec4ce90957b15289ed8fc601ab7876"
+    },
+    "runtime/om.js": {
+      "upstream": "be8b8fc0033c022f6c9f33607df001edd1096b0b6814061a62ea030028ca77f5",
+      "shipped": "be8b8fc0033c022f6c9f33607df001edd1096b0b6814061a62ea030028ca77f5"
+    },
+    "templates/blank/assets/fonts/LICENSES.md": {
+      "upstream": "00b5f86c4d5162e6fee6d600b527c052933eb2884a61a5fab0f89fa4d4656ecd",
+      "shipped": "00b5f86c4d5162e6fee6d600b527c052933eb2884a61a5fab0f89fa4d4656ecd"
+    },
+    "templates/blank/assets/fonts/NotoSansSC-500.woff": {
+      "upstream": "928d841b1ec663ebce82593568cbc19749fe652f88b8ec960723b7d87b551512",
+      "shipped": "928d841b1ec663ebce82593568cbc19749fe652f88b8ec960723b7d87b551512"
+    },
+    "templates/blank/assets/fonts/NotoSansSC-900.woff": {
+      "upstream": "d2d8a42438b18b65b6577434df4e41bb08c6b5051281757849af00ab743bb58f",
+      "shipped": "d2d8a42438b18b65b6577434df4e41bb08c6b5051281757849af00ab743bb58f"
+    },
+    "templates/blank/assets/fonts/OFL.txt": {
+      "upstream": "67c5d5206b96f8340b95fabd02ae60701e0b20ce2594d976216f1065e5aa3822",
+      "shipped": "9a7a141849f279ab87b36a39180bf7457724b16a408e684bce821f3fbf245068"
+    },
+    "templates/blank/vendor/GSAP-LICENSE.html": {
+      "upstream": "dee09c66ff27d61c2390da9cac6b558bc0c5c705f59abef900cc3563c81ee8b4",
+      "shipped": "6fbc4177b002f2c85c054ee29cf32e5e769f58bbf36cc1fb7883d870ea71c372"
+    },
+    "templates/blank/vendor/GSAP-LICENSE.txt": {
+      "upstream": "2e16f4e771c504532e976df3a422dc02d611f4a227bac77131be1fc6c9ab2baf",
+      "shipped": "2e16f4e771c504532e976df3a422dc02d611f4a227bac77131be1fc6c9ab2baf"
+    },
+    "templates/blank/vendor/gsap.min.js": {
+      "upstream": "c174bfce53a729418d57a8ad8625e7247c793a22fef8e2851e3cfa3de9cd8280",
+      "shipped": "19e3ad578c9c583ddf9bdca2ad87bb55c3d70b331058e28abacab898f799b2ee"
+    }
+  }
+}

@@ -26,10 +26,12 @@ RUN set -e; cd /opt/slidestudio-runtime; npm i --no-save --no-package-lock playw
  apt-get install -y --no-install-recommends fonts-noto-cjk; rm -rf /var/lib/apt/lists/* /root/.npm; chmod -R a+rX /opt/slidestudio-runtime
 ENV SLIDESTUDIO_PLAYWRIGHT_RUNTIME=/opt/slidestudio-runtime/runtime.mjs
 # 视频剪辑（dsh-video-editor / hyperframes）用的 ffmpeg、ffprobe，浏览器复用上面那份共用的。
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg util-linux && rm -rf /var/lib/apt/lists/*
 ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ffprobe \
     HYPERFRAMES_BROWSER_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell \
     PUPPETEER_EXECUTABLE_PATH=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
+# 公司动效复用同一份浏览器；口播和采样下载不随插件启用。
+ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell OM_SAMPLES=off
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
 # 图标地址带品牌文件的版本号：换图后飞书内置浏览器不会继续用缓存里的旧图。
 COPY brand/ /tmp/brand/

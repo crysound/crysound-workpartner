@@ -1,0 +1,17 @@
+{
+  "name": "@crysound/motion",
+  "version": "0.1.0",
+  "description": "公司产品动效：中文品牌模板、静帧校对、合成配乐与 MP4/GIF 导出；每次最多 2 个渲染浏览器。",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": { ".": "./index.mjs", "./package.json": "./package.json" },
+  "bin": { "om": "cli/om.mjs" },
+  "engines": { "node": ">=24.9.0", "dsh": ">=0.2.2-rc.1" },
+  "os": ["linux"],
+  "license": "MIT",
+  "files": ["index.mjs", "cordis.patch.yml", "cli", "runtime", "templates", "skills", "LICENSE", "THIRD_PARTY.md", "SOURCES.md", "SOURCES.json", "README.md"],
+  "scripts": { "test": "node --test tests/*.test.mjs", "verify": "node scripts/verify.mjs" },
+  "keywords": ["dsh-plugin", "motion", "crysound"],
+  "repository": { "type": "git", "url": "git+https://github.com/crysound/crysound-workpartner.git", "directory": "crysound/plugins/motion" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}

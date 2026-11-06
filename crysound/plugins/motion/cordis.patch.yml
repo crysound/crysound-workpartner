@@ -1,0 +1,3 @@
+- insert:
+    - id: crysound-motion
+      name: '@crysound/motion'

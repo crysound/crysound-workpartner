@@ -527,7 +527,7 @@ export async function packageTarget(
   // CRYSOUND: both desktop platforms carry the same verified local archive.
   await execute(['exec', 'node', '../../crysound/plugin-artifacts.mjs', 'download', join(buildPaths.root, 'company-plugins')], downloadEnv)
   // CRYSOUND: pre-install the company plugins so the first launch copies them instead of downloading.
-  if (target.platform === 'darwin') await execute(['exec', 'tsx', 'scripts/prepare-plugin-template.ts'], downloadEnv)
+  if (target.platform === 'darwin' || target.platform === 'win32') await execute(['exec', 'tsx', 'scripts/prepare-plugin-template.ts'], downloadEnv)
   if (invocation.prepareOnly) return
   const buildMacArtifact = (artifact: DesktopPrepackagedArtifact) => execute(
     desktopElectronBuilderArguments(target, false, artifact), artifact.format === 'zip'

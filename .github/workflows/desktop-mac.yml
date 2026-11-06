@@ -5,6 +5,15 @@ name: CRYSOUND WorkPartner · macOS arm64 desktop
 # 只在发版时手动触发。
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: '正式版本号，例如 0.2.3（必须高于已发布版本）'
+        required: true
+        type: string
+      update_url:
+        description: 'HTTPS 网关 /_zp/updates/mac/ 目录；留空使用仓库变量 CRYSOUND_DESKTOP_UPDATE_URL'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +31,8 @@ jobs:
         shell: bash
     env:
       DSH_TELEMETRY_DISABLED: '1'
+      CRYSOUND_DESKTOP_VERSION: ${{ inputs.version }}
+      CRYSOUND_DESKTOP_UPDATE_URL: ${{ inputs.update_url || vars.CRYSOUND_DESKTOP_UPDATE_URL }}
       # 'true' only when every signing secret exists; the signing step is skipped otherwise.
       HAS_SIGNING: ${{ secrets.CSC_LINK != '' && secrets.CSC_KEY_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     steps:
@@ -32,8 +43,12 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
+      - name: Validate release version and update directory
+        run: node crysound/scripts/mac-update-release.mjs validate "$CRYSOUND_DESKTOP_VERSION" "$CRYSOUND_DESKTOP_UPDATE_URL"
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: Company update behavior and release metadata tests
+        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/mac-update-release.test.mjs crysound/scripts/company-auto-update.test.mjs crysound/web/gateway/tests/updates.test.mjs
       - name: Workspace preparation tests (template copy, install time bounds)
         run: pnpm exec vitest run apps/desktop/tests/crysound-workspace.spec.ts
       - name: Package mac-arm64 (unsigned)
@@ -80,12 +95,15 @@ jobs:
       - name: Verify signed installer (stapler, spctl, codesign)
         if: env.HAS_SIGNING == 'true'
         run: crysound/scripts/verify-signed.sh "$(ls signed/*.dmg | head -n1)"
-      - name: Upload signed installer
+      - name: Upload signed installer and update feed
         if: env.HAS_SIGNING == 'true'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: crysound-workpartner-mac-arm64-signed
-          path: signed/*.dmg
+          path: |
+            signed/*.dmg
+            signed/*.zip
+            signed/latest-mac.yml
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
