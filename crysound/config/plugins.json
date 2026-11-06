@@ -1,6 +1,7 @@
 {
   "plugins": [
     { "name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz" },
+    { "name": "@crysound/design", "spec": "@crysound/design@0.2.0", "want": "0.2.0" },
     { "name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12" },
     { "name": "dsh-slidestudio", "spec": "dsh-slidestudio@0.2.9", "want": "0.2.9" },
     { "name": "dsh-oil-ui", "spec": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528", "want": "github:oil-oil/dsh-oil-ui#b4faf2b40996a24e640f91df9c7aae33d8466528" },

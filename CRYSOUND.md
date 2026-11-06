@@ -91,8 +91,8 @@ done
 
 上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
 
-## 公司维护的插件（`crysound/plugins/`）
-- `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
+## 公司维护的插件
+- `@crysound/design` 0.2.0：源码迁入独立私有仓库 [workpartner-plugin-design](https://github.com/crysound/workpartner-plugin-design)，基于 baoyu-design 2.12.0，包含演示、画布、设计系统与看板，保留 LICENSE/NOTICE 原文。主仓库仅固定预装版本，从已登录的兆华市场安装，不复制源码、不在镜像内打包。先由固定发布账号发布并审批 0.2.0，再同步 plugins.json；网页右侧栏编辑器依赖 #69。公司包自查、隔离验收与尚未验收项见独立仓库 PR，测试账号与界面审批通过后才发布。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
 - 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。桌面准备按 assets 资源目录加载共用脚本，不依赖源码或编译后文件的相对层级。

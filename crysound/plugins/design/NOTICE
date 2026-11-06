@@ -1,7 +1,0 @@
-CRYSOUND Design
-
-Includes portions of huashu-design, Copyright (c) 2026 alchaincyf (花叔 · 花生), under the MIT License (LICENSE). Upstream did not contain a NOTICE file at the pinned commit.
-
-Includes frontend-design from anthropics/skills, under the Apache License, Version 2.0 (licenses/frontend-design-Apache-2.0.txt). Upstream did not contain a separate skill NOTICE file at the pinned commit.
-
-Company adaptations: scope reduction to web/app/infographic/poster/critique, default brand, bundled skill registration, offline shared-browser rendering and concurrency limit. See SOURCES.md for pinned sources and modifications.
