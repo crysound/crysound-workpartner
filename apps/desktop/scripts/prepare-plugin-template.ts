@@ -14,7 +14,8 @@ import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetB
 
 const paths = resolveDesktopTargetBuildPaths()
 const target = desktopTargetPlatform(resolveDesktopBuildTarget())
-if (target.platform !== 'darwin' || target.arch !== process.arch) {
+const nativeWindows = target.platform === 'win32' && process.platform === 'win32' && target.arch === 'x64'
+if ((target.platform !== 'darwin' && !nativeWindows) || target.arch !== process.arch) {
   console.log(`plugin template: skipped for ${target.platform}-${target.arch} on ${process.platform}-${process.arch}; the app installs plugins online`)
   process.exit(0)
 }
@@ -30,7 +31,7 @@ if (existsSync(stamp) && readFileSync(stamp, 'utf8') === listText) {
 }
 rmSync(out, { recursive: true, force: true })
 
-const electron = join(paths.electron, 'Electron.app/Contents/MacOS/Electron')
+const electron = join(paths.electron, target.platform === 'win32' ? 'electron.exe' : 'Electron.app/Contents/MacOS/Electron')
 const cli = join(paths.dsh, 'node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js')
 const home = mkdtempSync(join(tmpdir(), 'zp-plugin-template-'))
 const profile = join(home, 'profiles', 'desktop')
