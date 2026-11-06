@@ -38,7 +38,7 @@ test('workspace-write permits first use with read-only HOME and falls back when 
     for (const args of [['new', 'proj', '--template', 'company'], ['check', 'proj', '--source'], ['--version']]) {
       const result = run([cli, ...args]);
       assert.equal(result.status, 0, result.stderr);
-      if (args[0] === '--version') assert.equal(result.stdout.trim(), '0.1.1');
+      if (args[0] === '--version') assert.equal(result.stdout.trim(), '0.1.2');
     }
     assert.ok(existsSync(join(cwd, 'proj/assets/fonts/NotoSansSC-500.woff')));
     // The history writer is exercised in the real worker environment, without rendering a full soundtrack.

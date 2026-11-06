@@ -4,7 +4,9 @@
 
 ## 安装与环境
 
-当前仅支持网页版 Linux：Node ≥24.9、Chromium headless shell、ffmpeg、ffprobe 和 util-linux 的 flock。本包零 npm 运行时依赖，无 install 脚本。镜像通过 `OM_CHROME` 指向 SlideStudio 共用浏览器，复用已有 ffmpeg；无需下载第二份浏览器。包不加入默认插件清单，发布并批准后由测试账号在兆华市场安装，或通过 `dsh plugin --profile <profile> add @crysound/motion@0.1.1` 安装。Mac 本机运行模式本版未支持；桌面连接云端工作区可使用云端插件。
+当前仅支持网页版 Linux：Node ≥24.9、Chromium headless shell、ffmpeg、ffprobe 和 util-linux 的 flock。本包零 npm 运行时依赖，无 install 脚本。镜像通过 `OM_CHROME` 指向 SlideStudio 共用浏览器，复用已有 ffmpeg；无需下载第二份浏览器。包不加入默认插件清单，发布并批准后由测试账号在兆华市场安装，或通过 `dsh plugin --profile <profile> add @crysound/motion@0.1.2` 安装。Mac 本机运行模式本版未支持；桌面连接云端工作区可使用云端插件。
+
+Linux 启动 Chrome 时，插件自动添加 `--no-sandbox --disable-dev-shm-usage`，兼容普通用户容器和默认 workspace-write 沙箱；浏览器共享内存改用任务临时目录，不写 `/dev/shm`。`OM_CHROME` 直接指向已有浏览器，无需编写包装脚本。Chrome 自身沙箱关闭，隔离依赖每人容器及工作伙伴的执行沙箱；其他平台的启动参数不变。
 
 安装后使用 `/crysound-motion`。技能载入时提供包内 Node/CLI 绝对路径，因此无需全局安装命令。直接调用示例（`<om入口>` 用技能给出的路径）：
 

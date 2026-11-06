@@ -10,7 +10,7 @@
 - 未导入上游 CLI、口播模块、Kokoro Python 程序、采样下载器、网络素材抓取、分享上传、服务器等入口；公司 CLI 仅提供 new/templates/scan/check/still/sound/render。
 - `render-om.js`：默认与硬上限均为 2 个浏览器；视频提取队列上限为 2。
 - 渲染依赖里的子进程调用改走 `cli/process.mjs`，ffmpeg 解码/编码最多 2 线程，过滤器 1 线程。
-- `cdp.js`：浏览器不再另开进程组，留在公司监督器管理的任务组；本地关闭浏览器仍调用 kill。公司监督器在退出、取消和超时后停止整个任务组并清理私有临时目录。
+- `cdp.js`：Linux 不论用户是否为 root，均添加 `--no-sandbox --disable-dev-shm-usage`，不依赖容器内 Chrome 沙箱与 `/dev/shm` 写权限；其他平台参数不变。浏览器不再另开进程组，留在公司监督器管理的任务组；本地关闭浏览器仍调用 kill。公司监督器在退出、取消和超时后停止整个任务组并清理私有临时目录。
 - `capture.js`：在开浏览器前限制尺寸，加载时间线后拒绝超过 30 秒的片长；外层监督器另设 5 分钟截止。
 - `check.js` 识别带空白的 script 结束标签；`sound.js` 以空白替换注释，避免删除后拼成新标签；`composer.js` 去掉无效的自替换；`om-engine.js` 只把本地文件变量绑定到图片或媒体元素，不给任意元素设置 src。
 - 新增独立 dsh 技能注册、bundle patch、Linux flock 并发控制、品牌模板、操作说明和行为测试；不修改上游 dsh。
