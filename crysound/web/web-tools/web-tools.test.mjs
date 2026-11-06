@@ -88,10 +88,7 @@ test("real HTTP transport sends browser headers and uses the checked DNS answer"
 });
 
 test("compressed responses decode before text extraction and unsupported encodings fail", async t => {
-  const compressors = new Map([
-    ["gzip", gzipSync], ["deflate", deflateSync], ["br", brotliCompressSync],
-    ["gzip, br", value => brotliCompressSync(gzipSync(value))],
-  ]);
+  const encodings = ["gzip", "deflate", "br", "gzip, br"];
   let closed;
   const connectionClosed = new Promise(resolve => { closed = resolve; });
   const origin = await server(t, (req, res) => {
@@ -106,12 +103,18 @@ test("compressed responses decode before text extraction and unsupported encodin
     const encoding = decodeURIComponent(req.url.slice(1));
     res.setHeader("content-type", "text/html; charset=utf-8");
     res.setHeader("content-encoding", encoding);
-    const compress = compressors.get(encoding);
-    res.end(compress ? compress(Buffer.from(content)) : "unsupported payload");
+    const bytes = Buffer.from(content);
+    switch (encoding) {
+      case "gzip": res.end(gzipSync(bytes)); break;
+      case "deflate": res.end(deflateSync(bytes)); break;
+      case "br": res.end(brotliCompressSync(bytes)); break;
+      case "gzip, br": res.end(brotliCompressSync(gzipSync(bytes))); break;
+      default: res.end("unsupported payload");
+    }
   });
   const { HttpFetchProvider } = await released("dsh-web-fetch-http");
   const fetcher = companyFetcher(HttpFetchProvider, WebError, limits, { request: fixtureRequest(origin) });
-  for (const encoding of compressors.keys()) {
+  for (const encoding of encodings) {
     const result = await fetcher.fetch({ url: `https://public.example/${encoding}` });
     assert.equal(result.body.content, content, encoding);
   }
