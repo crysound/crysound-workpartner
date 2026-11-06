@@ -1,11 +1,11 @@
 {
-  "name": "DeepSeek Harness",
-  "short_name": "DSH",
+  "name": "兆华工作伙伴",
+  "short_name": "兆华伙伴",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#170057",
   "icons": [
     {
       "src": "icon-192.png",

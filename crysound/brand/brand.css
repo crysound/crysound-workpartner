@@ -9,6 +9,7 @@
   display: inline-block;
   background: url("./zp-mark.svg") center / contain no-repeat;
 }
+[data-slot="sidebar.brand.mark"]::after { background-image: url("./zp-mark-32.svg"); }
 [data-slot="sidebar.brand.mark"]::after { width: 22px; height: 22px; vertical-align: middle; }
 [data-slot="conversation.hero.brand.mark"]::after { width: 40px; height: 40px; vertical-align: middle; }
 

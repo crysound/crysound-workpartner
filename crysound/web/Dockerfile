@@ -22,12 +22,8 @@ ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ff
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
 COPY brand/ /tmp/brand/
 RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
- cp /tmp/brand/zp-mark.svg $d/zp-mark.svg; cp /tmp/brand/zp-mark.svg $d/favicon.svg; cp /tmp/brand/zp-mark.svg $d/favicon-dark.svg; \
- cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark.svg $d/favicon*.svg $d/brand.* $d/welcome.js; \
- rsvg-convert -w 180 -h 180 /tmp/brand/zp-mark.svg -o $d/apple-touch-icon.png; \
- rsvg-convert -w 192 -h 192 /tmp/brand/zp-mark.svg -o $d/icon-192.png; \
- rsvg-convert -w 512 -h 512 /tmp/brand/zp-mark.svg -o $d/icon-512.png; \
- rsvg-convert -w 512 -h 512 /tmp/brand/zp-mark.svg -o $d/icon-maskable-512.png; \
+ cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
+ cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
         -e 's#</head>#  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
