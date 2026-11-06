@@ -156,6 +156,7 @@ test("桌面工作区升级实际补齐索引和可发现技能，重复启动�
     fs.copyFileSync(path.join(config, name), path.join(assets, "config", name));
   }
   fs.cpSync(fileURLToPath(new URL("../../../feishu/", import.meta.url)), path.join(assets, "feishu"), { recursive: true });
+  fs.copyFileSync(fileURLToPath(new URL("../../../plugin-artifacts.mjs", import.meta.url)), path.join(assets, "plugin-artifacts.mjs"));
   fs.writeFileSync(path.join(assets, "config/public-host.json"), JSON.stringify({ PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" }));
   const defaults = JSON.parse(fs.readFileSync(path.join(config, "plugins.json"))).defaultBundles;
   fs.writeFileSync(path.join(assets, "config/plugins.json"), JSON.stringify({ plugins: [], defaultBundles: defaults }));

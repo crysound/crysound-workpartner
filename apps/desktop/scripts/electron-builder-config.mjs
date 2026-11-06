@@ -164,7 +164,8 @@ export function createElectronBuilderConfig(
       { from: buildPaths.runtime, to: 'runtime' },
       { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
       // CRYSOUND: brand layer, default configuration, plugin list, Host hook.
-      { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'feishu/**/*', 'host-hook.mjs'] },
+      { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'feishu/**/*', 'host-hook.mjs', 'plugin-artifacts.mjs'] },
+      { from: join(buildPaths.root, 'company-plugins'), to: 'crysound/company-plugins' },
       // CRYSOUND: plugins pre-installed for this target (see prepare-plugin-template.ts); absent when the target cannot be built on this host.
       ...(existsSync(join(buildPaths.root, 'plugin-template', 'plugins.json')) ? [{ from: join(buildPaths.root, 'plugin-template'), to: 'crysound/plugin-template' }] : []),
       ...(packagesMacOS ? [{ from: fileURLToPath(new URL('../../../crysound/macos/zh_CN.lproj', import.meta.url)), to: 'zh_CN.lproj' }] : []),

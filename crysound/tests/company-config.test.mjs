@@ -148,6 +148,7 @@ test("desktop startup applies the selected plugin version and provider, then fal
   const packaged = join(root, "packaged"), config = join(packaged, "config"), fakeCli = join(root, "cli.cjs");
   await mkdir(profile, { recursive: true }); await mkdir(config, { recursive: true });
   await cp(join(assets, "feishu"), join(packaged, "feishu"), { recursive: true });
+  await cp(join(assets, "plugin-artifacts.mjs"), join(packaged, "plugin-artifacts.mjs"));
   await writeFile(join(config, "public-host.json"), JSON.stringify({ PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" }));
   // Exercise the real preparer and subprocess scripts; the fake installer only records the requested plugin.
   await symlink(resolve(runtime, "../../../../"), join(root, "node_modules"), "dir");
