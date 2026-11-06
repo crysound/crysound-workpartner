@@ -55,7 +55,7 @@
 部署（在仓库 `main` 的检出里执行）：
 ```sh
 docker compose -f crysound/web/compose.yml --profile build build partner-image   # 新镜像
-docker compose -f crysound/web/compose.yml up -d gateway                         # 网关改动
+docker compose -f crysound/web/compose.yml up -d --force-recreate gateway        # 网关改动（单文件挂载，必须重建才读到新文件）
 for s in $(PARTNER_DATA=/srv/xiaoman/zhaohua-partner crysound/web/bin/partner-user list | cut -d' ' -f1); do
   crysound/web/bin/upgrade-when-idle.sh "$s" &                                     # 每人空闲时换新镜像
 done
