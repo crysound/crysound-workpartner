@@ -1,6 +1,8 @@
-import { DESKTOP_WANT, FEISHU, WEB_SPEC, verifyArchive } from '../../../crysound/plugin-artifacts.mjs'
+import { DESKTOP_WANT, FEISHU, WEB_SPEC, isMarketPlugin, verifyArchive } from '../../../crysound/plugin-artifacts.mjs'
+import childProcess from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { syncBuiltinESMExports } from 'node:module'
 import { initProfile } from '@deepseek-ai/dsh-app-boot'
 import { PROFILE_TEMPLATES, type ProfileTemplate } from '@deepseek-ai/dsh-official-bundles'
 import { prepareCompanyWorkspace } from '../src/crysound/workspace.ts'
@@ -9,6 +11,12 @@ const app = process.env.SMOKE_APP as string
 const userData = process.env.SMOKE_USERDATA as string
 const profile = join(process.env.DSH_HOME as string, 'profiles', 'desktop')
 const assets = join(app, 'Contents', 'Resources', 'crysound')
+const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
+  plugins: { name: string; spec: string; want: string }[]
+  defaultBundles: string[]
+}
+const onlinePlugins = list.plugins.filter(isMarketPlugin)
+const onlineNames = onlinePlugins.map(plugin => plugin.name)
 initProfile(profile, (PROFILE_TEMPLATES.web as ProfileTemplate).bundles)
 
 // The registry points at a closed port: any plugin that still needed the network would fail to install.
@@ -22,23 +30,41 @@ const options = {
   cliEntry: join(app, 'Contents', 'Resources', 'app.asar', 'dsh', 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js'),
 }
 const started = Date.now()
-await prepareCompanyWorkspace(options)
-const seconds = (Date.now() - started) / 1000
-console.log(`first-run preparation (bundled plugins, no network): ${seconds.toFixed(1)} s`)
-// A second run must not repeat the once-only steps.
-await prepareCompanyWorkspace(options)
-
-const list = JSON.parse(readFileSync(join(assets, 'config', 'plugins.json'), 'utf8')) as {
-  plugins: { name: string; spec: string; want: string }[]
-  defaultBundles: string[]
+// Company packages need a desktop login; this offline packaging smoke must not contact their registry.
+const spawn = childProcess.spawn
+childProcess.spawn = ((...args: Parameters<typeof spawn>) => {
+  const argv = args[1]
+  if (Array.isArray(argv) && argv.includes('plugin') && argv.includes('add') && onlinePlugins.some(plugin => plugin.spec === argv.at(-1))) {
+    throw new Error('smoke: company market plugin requires login')
+  }
+  return spawn(...args)
+}) as typeof spawn
+syncBuiltinESMExports()
+let missing: readonly string[] = []
+let secondMissing: readonly string[] = []
+try {
+  missing = (await prepareCompanyWorkspace(options)).missing
+  // A second run must not repeat the once-only steps; online plugins remain pending login.
+  secondMissing = (await prepareCompanyWorkspace(options)).missing
+} finally {
+  childProcess.spawn = spawn
+  syncBuiltinESMExports()
 }
+const seconds = (Date.now() - started) / 1000
+console.log(`two preparation runs (bundled plugins, no network): ${seconds.toFixed(1)} s`)
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
   dependencies?: Record<string, string>
   dsh?: { profile?: { bundles?: string[] } }
 }
 let failed = false
 const check = (ok: boolean, message: string): void => { console.log(`${ok ? 'ok  ' : 'FAIL'}  ${message}`); if (!ok) failed = true }
+check(JSON.stringify(missing) === JSON.stringify(onlineNames), 'first run defers only company market plugins until login')
+check(JSON.stringify(secondMissing) === JSON.stringify(onlineNames), 'second run still reports company market plugins pending login')
 for (const plugin of list.plugins) {
+  if (isMarketPlugin(plugin)) {
+    check(manifest.dependencies?.[plugin.name] === undefined, `plugin ${plugin.name}: online installation after login (not verified by this offline smoke)`)
+    continue
+  }
   const want = plugin.name === FEISHU.name && plugin.want === WEB_SPEC ? DESKTOP_WANT : plugin.want
   check(manifest.dependencies?.[plugin.name] === want, `plugin ${plugin.name} installed (${want})`)
 }

@@ -127,7 +127,7 @@ async function applyPluginTemplate(assets: string, profile: string, list: Plugin
     } else await cp(join(template, 'modules'), staging, { recursive: true, verbatimSymlinks: true })
     await rm(modules, { recursive: true, force: true })
     await rename(staging, modules)
-    if (!existsSync(join(profile, 'pnpm-lock.yaml'))) await copyFile(join(template, 'pnpm-lock.yaml'), join(profile, 'pnpm-lock.yaml'))
+    if (existsSync(join(template, 'pnpm-lock.yaml')) && !existsSync(join(profile, 'pnpm-lock.yaml'))) await copyFile(join(template, 'pnpm-lock.yaml'), join(profile, 'pnpm-lock.yaml'))
     for (const plugin of list.plugins) dependencies[plugin.name] = bundled[plugin.name] as string
     await writeFile(manifestPath, `${JSON.stringify({ ...profileManifest, dependencies }, null, 2)}\n`)
     console.info(`CRYSOUND: installed ${String(list.plugins.length)} bundled plugins in ${String(Date.now() - started)} ms`)
@@ -140,7 +140,7 @@ async function applyPluginTemplate(assets: string, profile: string, list: Plugin
 }
 
 /**
- * Install the company plugins that the profile does not record yet (from the bundled template, else online), patch them, enable the experimental
+ * Install public/local plugins from the bundled template when available and company market packages online after login; patch them, enable the experimental
  * bundles once, seed defaults once, and refresh company models, market settings and skills.
  * Prepares user-only Feishu wrappers and the read-only pinned skills using packaged company resources.
  * Uses a complete gateway snapshot or the packaged fallback while the Host is stopped. A failed plugin
@@ -158,7 +158,7 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
   const config = await companyConfig(options.assets, userData, options.environment)
   try {
     // Resources keep the same layout when TypeScript emits this file under lib/types.
-    const { desktopPlugins }: typeof import('../../../../crysound/plugin-artifacts.mjs') =
+    const { desktopPlugins, isMarketPlugin }: typeof import('../../../../crysound/plugin-artifacts.mjs') =
       await import(pathToFileURL(join(assets, 'plugin-artifacts.mjs')).href)
     const configured = await readJson(join(config.directory, 'plugins.json')) as unknown as PluginList
     const list: PluginList = { ...configured, plugins: desktopPlugins(configured.plugins, join(assets, 'company-plugins'), profile) }
@@ -170,7 +170,7 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
 
     const repaired = await run(execPath, [join(assets, 'plugin-artifacts.mjs'), 'repair', profile, cliEntry], environment, limits.patch)
     if (repaired !== 0) throw new Error('CRYSOUND: company plugin lockfile repair failed')
-    await applyPluginTemplate(assets, profile, list, limits, onBusy)
+    await applyPluginTemplate(assets, profile, { ...list, plugins: list.plugins.filter(plugin => !isMarketPlugin(plugin)) }, limits, onBusy)
     const deadline = Date.now() + limits.installTotal
     const skipped: string[] = []
     for (const plugin of list.plugins) {
