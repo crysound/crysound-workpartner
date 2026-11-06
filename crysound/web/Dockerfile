@@ -41,7 +41,7 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
         -e 's#\(href="\./\(favicon[-a-z]*\.svg\|apple-touch-icon\.png\)\)"#\1?v='"$v"'"#g' \
-        -e 's#</head>#  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
+        -e 's#</head>#<script src="/_zp/preview/client.js"></script>  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
  sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
  grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
@@ -49,6 +49,10 @@ RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepse
 COPY host-hook.mjs /opt/partner/host-hook.mjs
 RUN chmod 644 /opt/partner/host-hook.mjs
 # 检出目录的权限随 umask 变化，这里统一放开，容器内的普通用户才能读和执行。
+COPY config/plugin-patches.mjs /opt/partner/preview-plugin-patches.mjs
+RUN node /opt/partner/preview-plugin-patches.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
+COPY web/preview/ /opt/partner/preview/
+RUN chmod -R a+rX /opt/partner/preview
 COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 755 /usr/local/bin/entrypoint.sh
 ENV NODE_OPTIONS="--import=/opt/partner/host-hook.mjs" CRYSOUND_MARKET_ORIGIN=http://zhaohua-partner-gateway:3090 CRYSOUND_MARKET_TOKEN_FILE=/data/.zp-market-token

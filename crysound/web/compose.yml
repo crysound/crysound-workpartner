@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST:?在 .env 设置 PUBLIC_HOST}
+      PREVIEW_HOST: ${PREVIEW_HOST:-}
       OLD_HOSTS: ${OLD_HOSTS:-}
       FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
       MEEGLE_HOST: ${MEEGLE_HOST:-}
@@ -30,6 +31,7 @@ services:
       PILOT_CHAT_ID: ${PILOT_CHAT_ID:?在 .env 设置 PILOT_CHAT_ID}
       PARTNER_IMAGE: zhaohua-partner:0.2.2-rc.1
     volumes:
+      - ./preview:/preview:ro
       - ./gateway/gateway.mjs:/app/gateway.mjs:ro
       - ./gateway/onboard.mjs:/app/onboard.mjs:ro
       - ./gateway/company-config.mjs:/app/company-config.mjs:ro

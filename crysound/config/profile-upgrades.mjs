@@ -1,9 +1,9 @@
-// Refresh company model and search settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
-// node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]
+// Refresh company model, search and Sidebar Browser settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]
 import fs from "node:fs";
 import { createRequire } from "node:module";
 
-export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
+export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enableWebBrowser = false) {
   const parse = (text) => {
     const document = yaml.parseDocument(text, {
       customTags: [{ tag: "tag:yaml.org,2002:js", resolve: (value) => value }],
@@ -54,6 +54,18 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
     for (const key of ["baseURL", "model"]) mine.setIn([...path, key], searchConfig.get(key, true).clone());
   }
 
+  // Existing Web profiles need the same Browser opt-in; desktop choices stay personal.
+  if (enableWebBrowser) {
+    const browserIndex = find(mine, "ui-sidebar-browser");
+    if (browserIndex < 0) {
+      const companyBrowser = find(seed, "ui-sidebar-browser");
+      if (companyBrowser < 0) throw new Error("公司配置缺少侧栏浏览器启用项");
+      mine.add(seed.contents.items[companyBrowser].clone());
+    } else {
+      mine.contents.items[browserIndex].set("disabled", mine.createNode(false));
+    }
+  }
+
   // Historical default migration: leave the user's chosen model/effort alone.
   const defaultIndex = find(mine, "agent-default-model");
   const defaults = mine.getIn([defaultIndex, "config"], true);
@@ -69,10 +81,11 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false) {
 }
 
 if (import.meta.main) {
-  const [file, seed, cliEntry, flag] = process.argv.slice(2);
-  if (!file || !seed || !cliEntry) throw new Error("用法：node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed]");
+  const [file, seed, cliEntry, ...flags] = process.argv.slice(2);
+  if (!file || !seed || !cliEntry) throw new Error("用法：node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]");
+  if (flags.some((flag) => !["--seed", "--web-preview"].includes(flag))) throw new Error("未知配置刷新选项");
   // Follow exported package manifests so both source checkouts and packaged dependency trees work without loading lib outputs.
   let require = createRequire(cliEntry);
   for (const name of ["@deepseek-ai/dsh/package.json", "@deepseek-ai/dsh-base/package.json", "@deepseek-ai/dsh-config-editor/package.json"]) require = createRequire(require.resolve(name));
-  refreshProfile(file, seed, require("yaml"), flag === "--seed");
+  refreshProfile(file, seed, require("yaml"), flags.includes("--seed"), flags.includes("--web-preview"));
 }
