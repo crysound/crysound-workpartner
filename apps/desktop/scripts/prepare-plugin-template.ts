@@ -1,10 +1,11 @@
 /**
- * CRYSOUND: install the company plugins once at build time into a throwaway desktop profile and keep the result
+ * CRYSOUND: install public and local company plugins once at build time into a throwaway desktop profile and keep the result
  * as `plugin-template/` (package.json, pnpm-lock.yaml, modules/). The installer ships it under
  * `Resources/crysound/plugin-template`; the first launch copies it into the user's profile instead of downloading.
+ * Company market packages require login and are installed online after desktop authentication.
  * `modules/` stands for the profile's `node_modules`, because electron-builder drops a source directory's root `node_modules`.
  */
-import { desktopPlugins } from '../../../crysound/plugin-artifacts.mjs'
+import { desktopPlugins, isMarketPlugin } from '../../../crysound/plugin-artifacts.mjs'
 import { spawn } from 'node:child_process'
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -24,6 +25,7 @@ if ((target.platform !== 'darwin' && !nativeWindows) || target.arch !== process.
 const listPath = resolve(import.meta.dirname, '../../../crysound/config/plugins.json')
 const listText = readFileSync(listPath, 'utf8')
 const list = JSON.parse(listText) as { plugins: { name: string; spec: string; want: string }[] }
+const bundledPlugins = list.plugins.filter(plugin => !isMarketPlugin(plugin))
 const out = join(paths.root, 'plugin-template')
 const stamp = join(out, 'plugins.json')
 if (existsSync(stamp) && readFileSync(stamp, 'utf8') === listText) {
@@ -47,7 +49,7 @@ const environment: NodeJS.ProcessEnv = {
 const recorded = (): Record<string, string> =>
   (JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> }).dependencies ?? {}
 
-for (const plugin of desktopPlugins(list.plugins, join(paths.root, 'company-plugins'), profile)) {
+for (const plugin of desktopPlugins(bundledPlugins, join(paths.root, 'company-plugins'), profile)) {
   const code = await new Promise<number>((done) => {
     const child = spawn(electron, ['--expose-internals', cli, 'plugin', '--profile', 'desktop', 'add', plugin.spec], { env: environment, stdio: 'inherit' })
     child.once('error', () => { done(1) })
@@ -60,8 +62,9 @@ for (const plugin of desktopPlugins(list.plugins, join(paths.root, 'company-plug
 mkdirSync(out, { recursive: true })
 const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { name?: string; dependencies?: Record<string, string> }
 writeFileSync(join(out, 'package.json'), `${JSON.stringify({ dependencies: manifest.dependencies ?? {} }, null, 2)}\n`)
-cpSync(join(profile, 'pnpm-lock.yaml'), join(out, 'pnpm-lock.yaml'))
+if (existsSync(join(profile, 'pnpm-lock.yaml'))) cpSync(join(profile, 'pnpm-lock.yaml'), join(out, 'pnpm-lock.yaml'))
 const modules = join(profile, 'node_modules')
+mkdirSync(modules, { recursive: true })
 if (nativeWindows) {
   // pnpm's workspace self-reference is not a dependency. Other Windows junctions must become portable files.
   const self = manifest.name ? join(modules, manifest.name) : undefined
@@ -76,4 +79,4 @@ for (const name of readdirSync(join(out, 'modules'))) {
 }
 writeFileSync(stamp, listText)
 rmSync(home, { recursive: true, force: true })
-console.log(`plugin template: ${list.plugins.length} plugins in ${out}`)
+console.log(`plugin template: ${bundledPlugins.length} bundled plugins in ${out}; ${list.plugins.length - bundledPlugins.length} company market plugins install after login`)
