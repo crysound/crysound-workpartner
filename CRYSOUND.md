@@ -88,6 +88,7 @@ done
 上线验收仍由负责人做：测试账号未连接时询问日程应得到授权链接；连接后列日程、搜索并读文档；发消息先展示完整内容请本人确认；项目登录后查本人待办；断开后不能再领取令牌；另一用户无法领取本人的令牌；重建容器后项目登录保留。桌面实际 Electron 导航、系统凭证存储、Windows 命令以及安装包内的 CLI 查找需在目标平台验证，本地的无界面测试不代替这些验收。
 
 ## 公司维护的插件（`crysound/plugins/`）
+- `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：没选会话时自动新建会话、只发回复正文不发进度卡、正常完成不发状态卡、提示先推荐 /new。
 - 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；`crysound/config/plugins.json` 里该插件的 `spec` 与 `want` 都写这个地址（pnpm 按地址记录依赖，已装同一地址就跳过）。网页版同步服务器配置后空闲重启生效，桌面版启动时从网关刷新，断网用包内版本。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。
