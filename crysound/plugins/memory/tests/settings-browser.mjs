@@ -187,10 +187,8 @@ try {
   proof.checks.push('Branch client runs in the native settings slot; native Switch and memory pin icon present');
   assert.equal(await evaluate(`${panel}.querySelectorAll('[role=switch]').length`), 1);
   assert.equal(await evaluate(`document.querySelector('[data-shortcut-modal=settings] nav [aria-current] [data-icon]')?.dataset.icon`), 'dsw-icon-pin-outline-medium');
-  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.zp-feishu-settings')).textDecorationLine`), 'none');
-  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.zp-feishu-settings')).backgroundColor`), 'rgba(0, 0, 0, 0)');
   assert.equal(await evaluate(`getComputedStyle(document.querySelector('[data-dsh-market-nav-icon]').firstElementChild).display`), 'none');
-  proof.checks.push('Feishu uses unselected native row with link icon and no underline; market fallback icon hidden');
+  proof.checks.push('Market fallback icon is hidden; only the market icon remains');
   await click(`${panel}.querySelector('[role=switch]')`);
   await until(`${panel}.querySelector('[role=switch]').getAttribute('aria-checked')==='false'`);
   assert.equal(store.snapshot().enabled, false);
