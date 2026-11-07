@@ -1,5 +1,5 @@
 本目录是兆华声学（CRYSOUND）维护的修改版，源自 fan56/dsh-feishu 的 5e5555d（npm 0.17.0），保留 Apache-2.0 许可。
-未选会话的普通消息会自动新建会话；关闭进度和轮次卡，逐轮发送回复正文，仅出错或停止时发状态卡，并统一推荐 /new 的提示。
+未选会话的普通消息会自动新建会话；整轮进度卡保留并原地显示完成、失败或停止状态，最终正文作为新消息发送。
 
 # dsh-feishu
 
@@ -16,7 +16,7 @@ Drive an existing [dsh](https://github.com/deepseek-ai/deepseek-harness) (DeepSe
 - **One-command onboarding**: `/feishu-onboard` on the desktop — scan-to-create the Feishu app, auto-writes credentials + operators, hot-activates without a restart
 - **Self-serve pairing**: empty allowlist → the first DM claims admin via a one-tap card
 - **Automatic sessions**: ordinary text without a selected session creates one with the default working directory and model; creation failures log a warning and show the `/new` / `/resume` hint.
-- **Turn replies (CRYSOUND .2)**: `OnIt` appears before session work. Visible output creates one temporary streaming preview (700 ms updates, safe Chinese tool summaries, no reasoning). On completion the preview is retracted, the final answer arrives as new messages, and `OnIt` is removed. Consumed steer messages become `DONE`.
+- **Turn replies (CRYSOUND .3)**: `OnIt` appears before session work. At turn start, one preview immediately shows “思考中…” in its body and list summary, before any model output; the first real content replaces it. CardKit previews receive cumulative text every 250 ms by default, with safe Chinese tool summaries and no reasoning. The card stays in place with a compact completion, failure or stop status and elapsed time. Final answers arrive as new messages; `OnIt` is removed and consumed steer messages become `DONE`.
 - **Approval cards**: when the host's approval waterfall asks for a sandbox escalation, the phone gets a **✅ 允许一次 / ❌ 拒绝** card — an unattended run no longer stalls at the desk (the session's approval policy must be `ask`; expiry fails closed)
 - **Interactive ask-user cards**: when the agent calls `ask_user_question`, your phone gets an **interactive card** (dropdown / multi-select / text input + submit); the answer flows straight back. Pair it with [ask-router](https://www.npmjs.com/package/@aiwayds/dsh-ask-router) for **both desktop and phone prompting — first answer wins**
 - **Group chats**: pull the bot into a Feishu group — @-mention it to dispatch work or run commands (allowlisted members only, silent to everyone else); in the group the bot is actively driving, images flow **without** a mention
@@ -273,7 +273,8 @@ Session running on your desktop → open Feishu on the train → /resume and pic
 | `operators` | `[]` | open_id allowlist — the effective list is the union of this, `pairedOperators` (the dsh-feishu-state.json state file) and `DSH_FEISHU_OPERATORS` (comma-separated open_ids); an empty list boots the bot into pairing mode |
 | `mode` | `"on"` | `"off"` disables the plugin entirely |
 | `domain` | `"feishu"` | `"feishu"` (CN) or `"lark"` (international) |
-| `statusIntervalMs` | `5000` | Existing btw refresh cadence, range [5000, 600000]; turn previews use a fixed 700 ms interval. |
+| `statusIntervalMs` | `5000` | Existing btw refresh cadence, range [5000, 600000]. |
+| `previewIntervalMs` | `250` | CardKit push interval, range [200, 5000]; whole-card fallback stays at least 700 ms apart. |
 | `bodySegmentChars` | `4000` | final-answer segmentation threshold; values outside [500, 30000] error the plugin off |
 | `resumeListStyle` | `"auto"` | `/resume` list: `auto`/`table`/`list` |
 | `backgroundPush` | `"off"` | Completion push for sessions the phone is not bound to, into the last active chat: `off` / `cron` (turns carrying a cron delivery or a subagent-settled notice) / `all` (every finished turn). Env override: `DSH_FEISHU_BACKGROUND_PUSH` |
@@ -345,9 +346,11 @@ npm test         # build + node --test (230+ pure-logic unit tests)
 
 *License: Apache-2.0. Author fan56.*
 
-## CRYSOUND .2 delivery and verification
+## CRYSOUND .3 delivery and verification
 
-This fork keeps the existing six onboarding scopes and event subscriptions. Message-fetch failures omit quote context; merged forwards ask the sender to paste the content instead. A denied preview retraction updates the same card with the final answer, so that first segment may not produce a new notification. No production permissions are changed.
+CardKit requires `cardkit:card:write` (create and update cards). The release owner must check whether it is enabled and obtain approval when missing; this change does not modify production permissions. Creation, content or closed-stream errors (including 300309) fall back to whole-card patches. The preview is never deleted or reused for final-answer delivery, so a failed status patch does not suppress the new reply. Quote and forward access failures keep their existing behavior. Event subscriptions and session bindings stay unchanged.
+
+The [Feishu example](https://open.feishu.cn/document/cardkit-v1/card/create) supplies `print_frequency_ms.default=70`, `print_step.default=1`, and `print_strategy=fast`. The initial body and list summary are “思考中…”. Each turn owns a 19-character element ID with a letter prefix and 18 random hexadecimal characters, and serializes content, close and replacement operations with increasing sequence numbers. The default 250 ms sits in the requested 200–300 ms range; scheduler tests verify cumulative content and pacing. Smoothness in an actual Feishu client still needs a long-reply acceptance check.
 
 `/stop` cancels immediately without a confirmation card. Normal, error and stop endings all use body messages. Bound sessions started from the web send only a final answer, with no preview or reaction. No conversation or thread-to-session remapping is introduced.
 
@@ -357,4 +360,4 @@ From this plugin directory, the release environment must run:
 npm ci && npm test && npm run check && npm run build && npm pack
 ```
 
-Focused source regression tests are in `test/turn-delivery.test.mjs` and the affected existing test files. Clean installation, packaging and the [thirteen real-account acceptance steps](https://github.com/crysound/crysound-workpartner/issues/112) remain release gates. Publish the resulting tarball and update download/config/image references only after review; those deployment files are outside this change.
+Focused behavior tests live in `test/turn-delivery.test.mjs` and `test/lark-client.test.mjs`. Run the release commands inside the existing partner image, record the archive checksum, and verify an actual crysound.2 upgrade through web and desktop paths, both locks, retained configuration and plugin activation. The release owner uploads the tarball, updates manifests and rebuilds the image. Upgrade only the designated pilot first; verify direct chats, quotes, files, groups and topics retain the settled card, send a new final reply with notification, and show neither duplicate nor deleted messages. Also verify the thought card appears within one second of sending a prompt, long-reply typewriter rendering, errors and stops. The one-second target still requires real-client measurement. Real Feishu delivery and desktop installer upgrades remain release acceptance gates.

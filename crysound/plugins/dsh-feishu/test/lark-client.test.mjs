@@ -182,22 +182,20 @@ test('reaction IDs, deletion, raw-card fetching, and thread replies use the inte
   const calls = []
   client.client.im.messageReaction.create = async args => { calls.push(['react', args]); return { code: 0, data: { reaction_id: 'r' } } }
   client.client.im.messageReaction.delete = async args => { calls.push(['unreact', args]); return { code: 0 } }
-  client.client.im.message.delete = async args => { calls.push(['delete', args]); return { code: 0 } }
   client.client.im.message.reply = async args => { calls.push(['reply', args]); return { code: 0, data: { message_id: 'reply' } } }
   client.client.im.message.create = async args => { calls.push(['send', args]); return { code: 0, data: { message_id: 'send' } } }
   client.client.request = async args => { calls.push(['get', args]); return { code: 0, data: { items: [{ message_id: 'm' }] } } }
   assert.equal(await client.react('m', 'OnIt'), 'r')
   await client.deleteReaction('m', 'r')
-  assert.equal(await client.deleteMessage('preview'), true)
   await client.sendMessage({ chatId: 'chat', threadId: 'thread', messageId: 'm' }, 'text', { text: 'body' })
   await client.sendMessage({ chatId: 'chat', messageId: 'm' }, 'text', { text: 'body' })
   assert.equal((await client.getMessages('m'))[0].message_id, 'm')
   assert.deepEqual(calls[0][1].data, { reaction_type: { emoji_type: 'OnIt' } })
   assert.deepEqual(calls[1][1].path, { message_id: 'm', reaction_id: 'r' })
-  assert.equal(calls[3][1].data.reply_in_thread, true)
-  assert.equal(calls[3][1].path.message_id, 'm')
-  assert.equal(calls[4][1].data.receive_id, 'chat')
-  assert.equal(calls[5][1].params.card_msg_content_type, 'raw_card_content')
+  assert.equal(calls[2][1].data.reply_in_thread, true)
+  assert.equal(calls[2][1].path.message_id, 'm')
+  assert.equal(calls[3][1].data.receive_id, 'chat')
+  assert.equal(calls[4][1].params.card_msg_content_type, 'raw_card_content')
 })
 
 test('preview limits skip the frame without retry; denied capabilities warn once; failed reactions log debug', async () => {
@@ -207,12 +205,45 @@ test('preview limits skip the frame without retry; denied capabilities warn once
   client.client.im.message.patch = async () => ({ code: 230020, msg: 'rate limited' })
   assert.equal(await client.updatePreview('m', {}), 'limited')
   assert.deepEqual(sleeps, [])
-  client.client.im.message.delete = async () => ({ code: 99991672, msg: 'scope denied' })
-  assert.equal(await client.deleteMessage('m'), false)
-  assert.equal(await client.deleteMessage('n'), false)
-  assert.deepEqual(errors, ['delete-message'])
+  client.client.request = async () => ({ code: 99991672, msg: 'scope denied' })
+  assert.equal(await client.createStreamingCard('a'), undefined)
+  assert.equal(await client.createStreamingCard('b'), undefined)
+  assert.deepEqual(errors, ['cardkit-create'])
   client.client.im.messageReaction.create = async () => ({ code: 99991672, msg: 'scope denied' })
   assert.equal(await client.react('m', 'OnIt'), undefined)
   assert.deepEqual(logs, ['debug'])
-  assert.deepEqual(errors, ['delete-message'])
+  assert.deepEqual(errors, ['cardkit-create'])
+})
+
+test('CardKit creates streaming JSON 2.0, sends card_id into threads, streams and closes before replacement', async () => {
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu' })
+  const calls = []
+  client.client.request = async args => { calls.push(args); return { code: 0, data: { card_id: 'card' } } }
+  client.client.im.message.reply = async args => { calls.push(args); return { code: 0, data: { message_id: 'message' } } }
+  assert.equal(await client.createStreamingCard('unique_element'), 'card')
+  const initial = JSON.parse(calls[0].data.data)
+  assert.equal(initial.config.streaming_mode, true)
+  assert.equal(initial.config.summary.content, '思考中…')
+  assert.deepEqual(initial.config.streaming_config, { print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast' })
+  assert.equal(initial.body.elements[0].element_id, 'unique_element')
+  await client.sendMessage({ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'interactive', { type: 'card', data: { card_id: 'card' } })
+  assert.deepEqual(JSON.parse(calls[1].data.content), { type: 'card', data: { card_id: 'card' } })
+  assert.equal(calls[1].data.reply_in_thread, true)
+  assert.equal(await client.streamCardContent('card', 'unique_element', '完整文本', 1), true)
+  const card = { schema: '2.0', config: { width_mode: 'fill' }, body: { elements: [{ tag: 'markdown', content: '已完成' }] } }
+  assert.equal(await client.settleStreamingCard('card', 2, card), true)
+  assert.deepEqual(calls.slice(2).map(c => [c.method, c.data.sequence]), [['PUT', 1], ['PATCH', 2], ['PUT', 3]])
+  assert.equal(calls[2].url, '/open-apis/cardkit/v1/cards/card/elements/unique_element/content')
+  assert.equal(calls[2].data.content, '完整文本')
+  assert.equal(JSON.parse(calls[3].data.settings).config.streaming_mode, false)
+  assert.deepEqual(JSON.parse(calls[4].data.card.data), card)
+})
+
+for (const code of [300309, 99991672]) test(`CardKit code ${code} reports fallback without retry or swallowed success`, async () => {
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu' })
+  const calls = []
+  client.client.request = async args => { calls.push(args); return { code, msg: 'denied or closed' } }
+  assert.equal(await client.streamCardContent('card', 'element', 'text', 1), false)
+  assert.equal(await client.settleStreamingCard('card', 2, {}), false)
+  assert.deepEqual(calls.map(c => c.data.sequence), [1, 2, 3])
 })

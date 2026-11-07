@@ -44,7 +44,11 @@ export interface LarkGateway {
   patchCard(messageId: string, card: AnyCard): Promise<boolean>
   react(messageId: string, emojiType: string): Promise<string | undefined>
   deleteReaction(messageId: string, reactionId: string): Promise<void>
-  deleteMessage(messageId: string): Promise<boolean>
+  /** Create a CardKit entity; undefined falls back to ordinary cards. */
+  createStreamingCard(elementId: string): Promise<string | undefined>
+  streamCardContent(cardId: string, elementId: string, content: string, sequence: number): Promise<boolean>
+  /** Close streaming at sequence, then replace the entity at sequence + 1. */
+  settleStreamingCard(cardId: string, sequence: number, card: AnyCard): Promise<boolean>
   sendMessage(target: MessageTarget, type: 'interactive' | 'post' | 'text', content: unknown): Promise<string | undefined>
   updatePreview(messageId: string, card: AnyCard): Promise<'ok' | 'limited' | 'failed'>
   getMessages(messageId: string): Promise<FetchedMessage[] | undefined>
@@ -425,11 +429,51 @@ export class LarkClient implements LarkGateway {
     } catch (error) { this.warnOnce('delete-reaction', error) }
   }
 
-  async deleteMessage(messageId: string): Promise<boolean> {
+  async createStreamingCard(elementId: string): Promise<string | undefined> {
     try {
-      await requestFeishu(() => this.client.im.message.delete({ path: { message_id: messageId } }), { sleep: this.sleep })
+      const response = await requestFeishu(() => this.client.request<{ data?: { card_id?: unknown } }>({
+        url: '/open-apis/cardkit/v1/cards', method: 'POST',
+        data: { type: 'card_json', data: JSON.stringify({
+          schema: '2.0', config: {
+            streaming_mode: true, summary: { content: '思考中…' },
+            streaming_config: {
+              print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast',
+            },
+          },
+          body: { elements: [{ tag: 'markdown', element_id: elementId, content: '思考中…' }] },
+        }) },
+      }), { maxRetries: 0 })
+      const id = response?.data?.card_id
+      return typeof id === 'string' && id !== '' ? id : undefined
+    } catch (error) { this.warnOnce('cardkit-create', error); return undefined }
+  }
+
+  async streamCardContent(cardId: string, elementId: string, content: string, sequence: number): Promise<boolean> {
+    try {
+      await requestFeishu(() => this.client.request({
+        url: `/open-apis/cardkit/v1/cards/${encodeURIComponent(cardId)}/elements/${encodeURIComponent(elementId)}/content`,
+        method: 'PUT', data: { content, sequence },
+      }), { maxRetries: 0 })
       return true
-    } catch (error) { this.warnOnce('delete-message', error); return false }
+    } catch (error) { this.warnOnce('cardkit-content', error); return false }
+  }
+
+  async settleStreamingCard(cardId: string, sequence: number, card: AnyCard): Promise<boolean> {
+    // Try the full replacement even if closing was denied or already closed.
+    let closed = true
+    try {
+      await requestFeishu(() => this.client.request({
+        url: `/open-apis/cardkit/v1/cards/${encodeURIComponent(cardId)}/settings`, method: 'PATCH',
+        data: { settings: JSON.stringify({ config: { streaming_mode: false } }), sequence },
+      }), { maxRetries: 0 })
+    } catch (error) { this.warnOnce('cardkit-close', error); closed = false }
+    try {
+      await requestFeishu(() => this.client.request({
+        url: `/open-apis/cardkit/v1/cards/${encodeURIComponent(cardId)}`, method: 'PUT',
+        data: { card: { type: 'card_json', data: JSON.stringify(card) }, sequence: sequence + 1 },
+      }), { maxRetries: 0 })
+      return closed
+    } catch (error) { this.warnOnce('cardkit-settle', error); return false }
   }
 
   async updatePreview(messageId: string, card: AnyCard): Promise<'ok' | 'limited' | 'failed'> {

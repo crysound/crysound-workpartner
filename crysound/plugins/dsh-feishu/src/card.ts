@@ -37,7 +37,7 @@ import type { ResumeRow } from './resume-table.ts'
  */
 export interface Schema2Card {
   schema: '2.0'
-  config: { width_mode: string }
+  config: { width_mode: string; summary?: { content: string } }
   header?: {
     title: { tag: 'plain_text'; content: string }
     subtitle?: { tag: 'plain_text'; content: string }
