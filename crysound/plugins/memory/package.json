@@ -1,6 +1,6 @@
 {
   "name": "@crysound/memory",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "个人记忆：自动记住稳定的个人事实与偏好，跨会话召回，支持开关、编辑与清空。",
   "type": "module",
   "main": "./index.mjs",
