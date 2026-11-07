@@ -26,7 +26,7 @@
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
 - 共用 `skin.js` 首屏选择“兆华柔和”；明确保存为 `default` 的设备保留经典外观。柔和页签和导航强调使用中性色，焦点、光标、开关和链接保留 Cindy 功能色，设置可切换；侧栏搜索在新对话下一行就地展开，固定版运行时补丁与验收见 `crysound/sidebar-a/README.md`。
-- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
+- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，三个标签共用两列推荐卡片、官方图标与名称首字回退，窄窗口一列；复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
 - 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。
 - 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 是独立编号的迁移数组，各自使用 `.zp-retired-<id>` 标记，保留已有迁移结果及本人之后重装的插件。公司配置、迁移脚本与网关需一起更新；用户文件和共用浏览器保持不变。发布与版本同步见市场说明。
@@ -71,6 +71,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 公司配置升级器生成独立的模型提示片段，指导批量读取文本、一次写完并运行小脚本、独立调用同轮并行；不改上游 dsh、工具或权限。通过原有公司配置下载与启动刷新覆盖已有用户，完整系统提示预设保持原生行为。部署与三类同题对比验收见 `crysound/web/README.md`。
 
 ### 打包
+- 网页镜像与 Mac/Windows 安装包随附 Mnemon CLI 0.2.13：从 npm `@mnemon-dev/mnemon` 的对应平台包提取原生程序（含许可证），无需用户安装 Node/npm，dsh 子进程 PATH 包含其 `bin`；版本与各平台 SHA-512 固定在 `crysound/mnemon/releases.json`，升级时更新该文件并重建镜像和桌面包，构建会核对摘要并在本机目标上实测存取；不自动安装或启用 dsh-mnemon 及第三方 Provider。
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
 - `desktop-package-environment.mjs`：本地未签名构建的默认 appId。
 - `package-target.ts`、`package-macos.ts`、`smoke-packaged-runtime.ts`、`cli/dsh`、`development-app.ts`：`.app` 名称与协议。

@@ -1,4 +1,5 @@
 // 公司市场的构建期补丁：网页版 npm 运行时与桌面打包运行时使用同一份，不修改上游插件源码。
+import { patchInstalledCards } from "./patch-market-cards.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { patchMarketCatalog } from "./patch-market-catalog.mjs";
@@ -14,8 +15,8 @@ import { marketLocales } from "../brand/market-locales.mjs";
  */
 export function patchMarketUi(text) {
   const marker = "/* CRYSOUND market navigation v1 */";
-  if (text.includes(marker)) return text;
-  text = patchMarketTabs(text);
+  if (text.includes(marker)) return patchInstalledCards(text);
+  text = patchInstalledCards(patchMarketTabs(text));
   const navigation = 'const disposeNavigation = ctx.reflect.provide("pluginNavigation", {';
   if (text.split(navigation).length !== 2) throw new Error("公司市场导航补丁未唯一命中");
   text = text.replace(navigation, `yield ctx.on("company-market/open", name => {

@@ -50,7 +50,7 @@ function readState(file) {
 export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, retiredPackages = [], notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
   if (!Array.isArray(retiredPackages) || retiredPackages.some((name) => !/^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/.test(name))) throw new Error("退役插件配置必须是包名列表");
   if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
-  if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()) || (entry.home !== undefined && typeof entry.home !== "boolean"))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
+  if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()) || (entry.home !== undefined && typeof entry.home !== "boolean") || (entry.icon !== undefined && (typeof entry.icon !== "string" || entry.icon.length > 44000 || !/^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+={0,2}$/.test(entry.icon))))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
   const maintainers = (name) => officialMaintainers[name] ?? officialPlugins[name]?.maintainers ?? [];
   const designated = (name) => Object.hasOwn(officialPlugins, name);
   const isOfficial = (name, owner) => designated(name) || (officialPublishers.includes(owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*")));
@@ -65,6 +65,19 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     return Object.keys(categories).find((id) => words.some((word) => typeof word === "string" && [id, categories[id].title.zh, categories[id].title.en.toLowerCase()].includes(word.toLowerCase()))) || "other";
   };
   let state = readState(stateFile);
+  // Aggregate completed package transfers only; no user ids or install history are stored.
+  const countsFile = `${stateFile}.installs`;
+  let counts;
+  try { counts = JSON.parse(fs.readFileSync(countsFile, "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; counts = {}; }
+  if (!counts || Array.isArray(counts) || typeof counts !== "object" || Object.entries(counts).some(([name, value]) => !PACKAGE.test(name) || !Number.isSafeInteger(value) || value < 0)) throw new Error("市场安装统计无效，请从备份恢复");
+  const countTransfer = (name) => serial(async () => {
+    const next = { ...counts, [name]: Math.min(Number.MAX_SAFE_INTEGER, (counts[name] ?? 0) + 1) };
+    fs.writeFileSync(`${countsFile}.tmp`, JSON.stringify(next) + "\n", { mode: 0o600 });
+    fs.chmodSync(`${countsFile}.tmp`, 0o600);
+    fs.renameSync(`${countsFile}.tmp`, countsFile);
+    counts = next;
+  });
   let queue = Promise.resolve();
   const serial = (work) => {
     const result = queue.then(work);
@@ -183,16 +196,16 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const image = typeof preview === "string" && preview.length <= 44000 ? /^data:image\/(?:png|jpeg|webp);base64,([a-zA-Z0-9+/]+={0,2})$/.exec(preview) : null;
       const bytes = image ? Buffer.from(image[1], "base64") : null;
       // The pinned native index reader limits inline icons to 32 KiB and canonical base64.
-      const icon = bytes && bytes.length <= 32 * 1024 && bytes.toString("base64") === image[1] ? preview : undefined;
+      const icon = (official ? officialPlugins[name]?.icon : undefined) ?? (bytes && bytes.length <= 32 * 1024 && bytes.toString("base64") === image[1] ? preview : undefined);
       plugins.push({ name, ...(icon ? { icon } : {}), ...(title === undefined ? {} : { title: title.trim() }), description: manifest.description,
         author: official ? "兆华工作伙伴" : users.find((user) => user.slug === pkg.owner)?.name || pkg.owner,
-        metadata: { category: categoryOf(manifest, name), keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: official ? ["crysound-official", ...maintenanceLabels] : [], sortKeys: {} },
+        metadata: { category: categoryOf(manifest, name), keywords: Array.isArray(manifest.keywords) ? manifest.keywords.filter((word) => typeof word === "string") : [], labels: official ? ["crysound-official", ...maintenanceLabels] : [], sortKeys: { "crysound-installs": counts[name] ?? 0 } },
         versions,
       });
     }
     plugins.sort((a, b) => Number(b.metadata.labels.includes("crysound-official")) - Number(a.metadata.labels.includes("crysound-official")) || Math.max(...b.versions.map((v) => v.publishTimestamp)) - Math.max(...a.versions.map((v) => v.publishTimestamp)) || a.name.localeCompare(b.name));
     if (guidesOnly) return json(res, 200, { guides: guides.sort((a, b) => Object.keys(officialPlugins).indexOf(a.name) - Object.keys(officialPlugins).indexOf(b.name)) });
-    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories, labels, sortKeys: {} }, plugins });
+    json(res, 200, { format: 1, title: "兆华市场", metadata: { categories, labels, sortKeys: { "crysound-installs": { title: { zh: "安装次数", en: "Installs" }, order: "desc" } } }, plugins });
   }
 
   async function admin(req, res) {
@@ -273,7 +286,11 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
         if (!r.ok) { await r.body?.cancel(); throw fail(r.status, "注册表未能读取这个包"); }
         res.writeHead(200, { "content-type": "application/octet-stream", "cache-control": "private, no-store" });
         if (req.method === "HEAD") { await r.body?.cancel(); res.end(); }
-        else await pipeline(Readable.fromWeb(r.body), res);
+        else {
+          await pipeline(Readable.fromWeb(r.body), res);
+          try { await countTransfer(name); }
+          catch (error) { console.error("市场安装统计保存失败，请管理员检查存储"); }
+        }
       } else {
         const version = selector && (Object.hasOwn(doc.versions, selector) ? selector : doc["dist-tags"][selector]);
         if (selector && (!version || !Object.hasOwn(doc.versions, version))) throw fail(404, "没有可安装的版本");
