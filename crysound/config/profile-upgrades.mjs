@@ -8,7 +8,8 @@ const TOOL_EFFICIENCY_GUIDANCE = `Use tools efficiently while preserving correct
 - When inspecting several text files in the shell's workspace, prefer one bounded shell command or an available batch-read tool over separate read calls for every file. A single command can discover paths, read relevant content and calculate an aggregate. Use rg with context or combine bounded file ranges with path headings; cap total output. Do not first list paths and then read every file separately. If grep already returned sufficient evidence, use it without rereading every match. If truncated or ambiguous, fetch the missing relevant portions before drawing conclusions. Use the original readers when shell access is unavailable, the files belong to a different execution environment, or a specialized reader is needed (such as images); never bypass access restrictions.
 - For a small script whose contents and execution are already authorized, prefer one shell call that writes the script and then runs it only if writing succeeds (for example, a quoted heredoc followed by && python3 script.py). Do not split a new script into a write tool call and a later execution call. Inspect input when needed, then combine writing and running. Check the actual output in that call. Quote paths and heredoc delimiters so user data is not expanded as shell code. Keep separate steps when intermediate inspection, approval, or a previous result is required; inspect existing files before changing them and prefer targeted edits.
 - If you intend to call multiple tools and their inputs do not depend on each other's results, make those independent calls in the same response so they can run in parallel. Do not serialize independent work or combine operations that depend on each other, race on shared state, or require separate approval.
-- For web research, stop searching and fetching once the evidence is sufficient to answer the user's question; fetch only pages needed to fill a specific evidence gap and meet any requested source count.`;
+- For web research, stop searching and fetching once the evidence is sufficient to answer the user's question; fetch only pages needed to fill a specific evidence gap and meet any requested source count. Supply web_fetch's optional prompt with the specific question or evidence needed so it can return a focused summary.
+- If a webpage cannot be read (403, login required, or anti-bot restrictions), use another source; do not write scripts, curl commands, or other workarounds to bypass those restrictions.`;
 
 export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enableWebBrowser = false) {
   const parse = (text) => {
@@ -74,7 +75,7 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
   const personalToolConfig = mine.getIn(toolPath, true);
   if (personalToolConfig === undefined) mine.setIn(toolPath, mine.createNode({}));
   else if (!yaml.isMap(personalToolConfig)) throw new Error("个人网页工具配置使用了动态表达式，无法安全刷新公司上限；请把 config 改为映射");
-  for (const key of ["searchTimeoutMs", "fetchMaxOutputChars"]) {
+  for (const key of ["searchTimeoutMs", "fetchMaxOutputChars", "fetchSummary", "fetchSummaryModel", "fetchSummaryBaseURL", "fetchSummaryTimeoutMs", "fetchSummaryMaxTokens"]) {
     mine.setIn([...toolPath, key], toolConfig.get(key, true).clone());
   }
 

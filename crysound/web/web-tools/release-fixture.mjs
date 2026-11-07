@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
+import { createRequire } from "node:module";
 
 export class WebError extends Error {
   constructor(message, code, options) { super(message, options); this.code = code; }
@@ -22,15 +23,17 @@ export async function released(packageName, { fetch = globalThis.fetch, root = p
     string: () => field(), number: () => field(), boolean: () => field(),
     object: fields => input => Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, value(input[key])])),
   };
+  const require = createRequire(join(process.env.DSH_WEB_TOOLS_RELEASE_ROOT ?? root, "@deepseek-ai/dsh-tool-web/lib/index.js"));
   const modules = {
     "@deepseek-ai/schemastery": { default: schema },
     "@deepseek-ai/dsh-web": { WebError },
     "@deepseek-ai/dsh-tools": { defineTool: value => value },
     "@deepseek-ai/dsh-output-retention": { truncateWithoutSplittingSurrogatePair: (value, max) => value.slice(0, max) },
-    "turndown": { default: class { use() {} addRule() {} } },
-    "@joplin/turndown-plugin-gfm": { gfm() {} },
+    "turndown": { default: require("turndown") },
+    "@joplin/turndown-plugin-gfm": require("@joplin/turndown-plugin-gfm"),
     "@deepseek-ai/dsh-util-values": { assertNever: value => { throw new Error(String(value)); } },
     "@deepseek-ai/dsh-credentials": { credentialRef: value => value },
+    "@deepseek-ai/dsh-session": { appendPluginRecord: (session, type, data) => session.append(type, data) },
     "@deepseek-ai/dsh-launch-environment": { launchEnvironmentOf: ctx => ctx.environment },
     "@deepseek-ai/dsh-timeout": {
       deadline: (signal, milliseconds, code) => {

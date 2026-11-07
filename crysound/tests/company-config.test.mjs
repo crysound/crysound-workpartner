@@ -150,6 +150,11 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     const config = load(after).findLast(row => row.id === "tool-web").config;
     assert.equal(config.fetchMaxOutputChars, 40000);
     assert.equal(config.searchTimeoutMs, 25000);
+    assert.equal(config.fetchSummary, true);
+    assert.equal(config.fetchSummaryModel, "deepseek/deepseek-flash");
+    assert.equal(config.fetchSummaryTimeoutMs, 15000);
+    assert.equal(config.fetchSummaryMaxTokens, 1600);
+    assert.match(config.fetchSummaryBaseURL, /CRYSOUND_LLM_BASE/);
     const tools = [];
     apply({ tools: { register: tool => tools.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, Config(config));
     assert.equal(tools.find(tool => tool.name === "web_search").timeoutMs, 25000);
@@ -166,6 +171,24 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     refreshProfile(file, seed, yaml);
     assert.equal(await readFile(file, "utf8"), after);
   }
+});
+
+test("company summary rollback and model changes reach existing profiles without disturbing personal options", async t => {
+  const root = await temp(t), seed = join(root, "company.yml"), file = join(root, "profile.yml");
+  const company = await readFile(join(assets, "config/partner.patch.yml"), "utf8");
+  await writeFile(seed, company);
+  await writeFile(file, "- id: tool-web\n  config: {fetchSummary: false, searchMaxResults: 6}\n");
+  refreshProfile(file, seed, yaml);
+  assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "tool-web").config.fetchSummary, true);
+  await writeFile(seed, company.replace("fetchSummary: true", "fetchSummary: false").replace("fetchSummaryModel: deepseek/deepseek-flash", "fetchSummaryModel: codex/gpt-6.1-sol"));
+  refreshProfile(file, seed, yaml);
+  const after = await readFile(file, "utf8"), config = load(after).find(row => row.id === "tool-web").config;
+  assert.equal(config.fetchSummary, false);
+  assert.equal(config.fetchSummaryModel, "codex/gpt-6.1-sol");
+  assert.equal(config.searchMaxResults, 6);
+  assert.match(after, /!!js process.env.CRYSOUND_LLM_BASE/);
+  refreshProfile(file, seed, yaml);
+  assert.equal(await readFile(file, "utf8"), after);
 });
 
 test("new and existing profiles load one company guidance module, refresh its contents and retain other settings", async (t) => {
