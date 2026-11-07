@@ -32,13 +32,13 @@ export async function searchWithFallback(Provider, WebError, options, request, s
  */
 export function searchAnswer(response, mapSources) {
   const blocks = response.content ?? [];
-  const firstResult = blocks.findIndex(block => block.type === "web_search_tool_result");
-  const answer = boundedText(blocks.slice(firstResult < 0 ? 0 : firstResult + 1)
+  const lastResult = blocks.findLastIndex(block => block.type === "web_search_tool_result");
+  const answer = boundedText(blocks.slice(lastResult < 0 ? 0 : lastResult + 1)
     .filter(block => block.type === "text" && typeof block.text === "string")
     .map(block => block.text).join("\n"));
   // The Codex gateway can return the searched answer without native source blocks.
   // With no answer, retain the released mapper's error and fallback behavior.
-  const result = firstResult < 0 && answer ? { sources: [], truncated: false } : mapSources(response);
+  const result = lastResult < 0 && answer ? { sources: [], truncated: false } : mapSources(response);
   return {
     ...result,
     ...(answer ? { content: answer } : {}),
