@@ -22,6 +22,7 @@ async function fixture(t) {
   await mkdir(join(assets, 'feishu'), { recursive: true });
   await mkdir(profile, { recursive: true });
   await cp(join(source, 'crysound/plugin-artifacts.mjs'), join(assets, 'plugin-artifacts.mjs'));
+  await cp(join(source, 'crysound/config/company-plugins.mjs'), join(assets, 'config/company-plugins.mjs'));
   await writeFile(join(assets, 'config/plugins.json'), JSON.stringify({ plugins: [publicPlugin, memory], defaultBundles: ['test-bundle'] }));
   await writeFile(join(assets, 'config/profile-upgrades.mjs'), 'process.exit(0)');
   await writeFile(join(assets, 'feishu/desktop-setup.mjs'), 'process.exit(0)');

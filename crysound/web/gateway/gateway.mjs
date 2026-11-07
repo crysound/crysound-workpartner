@@ -107,6 +107,7 @@ const market = createMarket({
   sessionUser: (req) => userFor(req).user,
   admins: marketAdmins,
   officialPublishers: (process.env.MARKET_OFFICIAL_PUBLISHERS || "").split(",").map((s) => s.trim()).filter(Boolean),
+  officialPlugins: JSON.parse(fs.readFileSync("/opt/partner-config/plugins.json", "utf8")).officialPlugins || {},
   officialMaintainers: JSON.parse(process.env.MARKET_OFFICIAL_MAINTAINERS || "{}"),
   officialPackages: (process.env.MARKET_OFFICIAL_PACKAGES || "").split(",").map((s) => s.trim()).filter(Boolean),
   notify: notifyMarketAdmins,

@@ -63,6 +63,7 @@ test('web plugin startup repairs both locks before replacing the remote dependen
   mkdirSync(join(profile, 'node_modules/.pnpm'), { recursive: true });
   const config = join(directory, 'config'), bin = join(directory, 'bin');
   mkdirSync(config); mkdirSync(bin);
+  cpSync(join(assets, 'config/company-plugins.mjs'), join(config, 'company-plugins.mjs'));
   writeFileSync(join(config, 'plugins.json'), JSON.stringify({ plugins: [plugin] }));
   writeFileSync(join(profile, 'package.json'), JSON.stringify({ dependencies: { [FEISHU.name]: FEISHU.url } }));
   for (const lock of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) writeFileSync(join(profile, lock), oldLock(false));
@@ -136,6 +137,7 @@ for (const [template, emitted] of [[false, false], [true, false], [true, true]])
   mkdirSync(join(packaged, 'feishu')); mkdirSync(join(packaged, 'company-plugins')); mkdirSync(profile, { recursive: true });
   cpSync(archive, join(packaged, 'company-plugins', FEISHU.file));
   cpSync(join(assets, 'plugin-artifacts.mjs'), join(packaged, 'plugin-artifacts.mjs'));
+  cpSync(join(assets, 'config/company-plugins.mjs'), join(packaged, 'config/company-plugins.mjs'));
   writeFileSync(join(packaged, 'config/plugins.json'), JSON.stringify({ plugins: [plugin], defaultBundles: [] }));
   writeFileSync(join(packaged, 'config/skills/publish-zhaohua-market/SKILL.md'), '# test\n');
   for (const script of ['config/profile-upgrades.mjs', 'feishu/desktop-setup.mjs']) writeFileSync(join(packaged, script), 'process.exit(0)\n');

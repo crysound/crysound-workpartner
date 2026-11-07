@@ -41,12 +41,17 @@ function readState(file) {
  * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份与用户列表读取器、管理员列表与通知函数。
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
  *   officialPublishers 与 officialPackages 必须同时命中才显示官方标识；后者允许 @crysound/*，缺省均为空。
- *   officialMaintainers 将包名映射到维护人 slug 列表，仅从 readUsers 取姓名，不改变发布授权。
+ *   officialPlugins 由公司 plugins.json 指定包名、中文名与维护人；officialMaintainers 可覆盖部署名单。
+ *   官方维护人可发布新版本但仍须逐版审批，其他包保持首发者所有权。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
   if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
-  const officialNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效", "@crysound/data": "兆华数据" };
+  if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
+  const maintainers = (name) => officialMaintainers[name] ?? officialPlugins[name]?.maintainers ?? [];
+  const designated = (name) => Object.hasOwn(officialPlugins, name);
+  const isOfficial = (name, owner) => designated(name) || (officialPublishers.includes(owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*")));
+  const legacyNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效", "@crysound/data": "兆华数据" };
   const categories = Object.fromEntries([
     ["design", "设计", "Design"], ["video", "视频", "Video"], ["documents", "文档与报告", "Documents and reports"],
     ["data", "数据", "Data"], ["development", "研发", "Development"], ["sales", "销售与市场", "Sales and marketing"], ["other", "其他", "Other"],
@@ -93,7 +98,10 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     const upload = JSON.stringify({ name, versions: { [version]: manifest }, "dist-tags": {}, _attachments: doc._attachments, readme: typeof doc.readme === "string" ? doc.readme : "" });
     await serial(async () => {
       const existing = state.packages[name];
-      if (existing && existing.owner !== user.slug) throw fail(403, "只有首个发布者能发布这个包的新版本");
+      const maintained = isOfficial(name, existing?.owner ?? user.slug) && maintainers(name).includes(user.slug);
+      if (designated(name) && !existing && !maintained && !officialPublishers.includes(user.slug)) throw fail(403, "这个包名由兆华官方保留，只有指定维护人或公司发布账号能首次发布");
+      if (existing && existing.owner !== user.slug && !maintained) throw fail(403, "只有首个发布者或指定的官方维护人能发布这个包的新版本");
+      if (!isOfficial(name, existing?.owner ?? user.slug) && [name.split("/").at(-1), manifest.displayName, manifest.title].some((value) => typeof value === "string" && value.trim().startsWith("兆华"))) throw fail(403, "“兆华”开头的名称仅供官方插件使用，请修改插件名称后重新发布");
       if (existing?.versions[version]) throw fail(409, "这个版本已记录，不能覆盖；请发布新版本或联系管理员核对 publishing 状态");
       const current = await upstream(path);
       if (current.status !== 404 && !current.ok) { await current.body?.cancel(); throw fail(502, "无法核对现有版本，请稍后重试"); }
@@ -149,10 +157,10 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       });
       if (!versions.length) continue;
       const manifest = doc.versions[(versions.find((v) => semver.prerelease(v.version) === null) ?? versions[0]).version];
-      const official = officialPublishers.includes(pkg.owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*"));
-      const title = (official ? officialNames[name] : undefined) || manifest.displayName || manifest.title;
+      const official = isOfficial(name, pkg.owner);
+      const title = (official ? (officialPlugins[name]?.displayName ?? legacyNames[name]) : undefined) || manifest.displayName || manifest.title;
       if (title !== undefined && (typeof title !== "string" || !title.trim() || title.length > 80)) throw fail(502, "已批准版本的显示名无效");
-      const maintenanceLabels = official ? (officialMaintainers[name] || [pkg.owner]).filter((slug, index, slugs) => slugs.indexOf(slug) === index).flatMap((slug) => {
+      const maintenanceLabels = official ? (maintainers(name).length ? maintainers(name) : [pkg.owner]).filter((slug, index, slugs) => slugs.indexOf(slug) === index).flatMap((slug) => {
         const person = users.find((user) => user.slug === slug)?.name;
         if (typeof person !== "string" || !person.trim()) return [];
         const id = `crysound-maintainer:${slug}`;
@@ -221,6 +229,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       let path;
       try { path = decodeURIComponent(url.pathname.slice(PREFIX.length)); } catch (error) { throw fail(400, "包路径无效"); }
       const match = /^(@crysound\/[a-z0-9][a-z0-9._~-]*)(?:\/([^/]+)|\/-\/([a-zA-Z0-9._~-]+\.tgz))?$/.exec(path);
+      if (req.method === "PUT" && /^(?:@[^/]+\/)?兆华/.test(path)) throw fail(403, "“兆华”开头的名称仅供官方插件使用，请修改插件包名后重新发布");
       if (!match || match[1].length > 214) throw fail(403, "市场只接受 @crysound/ 包及其 tarball");
       const [, name, selector, tarball] = match;
       if (req.method === "PUT" && !selector && !tarball) { await publish(req, res, user, name, `/${encodeURIComponent(name)}`); return true; }
@@ -237,7 +246,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       };
       doc.versions = Object.fromEntries(Object.entries(doc.versions ?? {}).filter(([version]) => readable(version)));
       const approved = Object.keys(doc.versions).filter((version) => state.packages[name].versions[version].status === "approved").sort(semver.rcompare);
-      if (!Object.keys(doc.versions).length || (!approved.length && pkg.owner !== user.slug)) throw fail(404, "没有可安装的版本");
+      if (!Object.keys(doc.versions).length) throw fail(404, "没有可安装的版本");
       doc.time = Object.fromEntries(Object.entries(doc.time ?? {}).filter(([version]) => Object.hasOwn(doc.versions, version)));
       doc["dist-tags"] = Object.fromEntries(Object.entries(doc["dist-tags"] ?? {}).filter(([tag, version]) => tag !== "latest" && approved.includes(version)));
       if (approved.length) doc["dist-tags"].latest = approved[0];

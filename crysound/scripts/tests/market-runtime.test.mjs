@@ -44,3 +44,18 @@ test("未知运行时标签结构会明确拒绝修补", () => {
   assert.throws(() => patchMarketUi(text.replace("const tab =", "const unsupportedTab =")));
   assert.throws(() => patchMarketUi(text.replace("label: item.label,", "label: item.newLabel,")));
 });
+
+test("官方 Host 补丁须在桌面校验记录前应用，重复修补通过而校验后修补会被拒绝", { skip: !process.env.OFFICIAL_MANAGER_MODULE }, async (t) => {
+  const { patchOfficialPluginsRuntime } = await import("../patch-official-plugins.mjs");
+  for (const beforeSeal of [true, false]) {
+    const { root } = runtime(t);
+    const host = path.join(root, "node_modules/@deepseek-ai/dsh-plugin-manager/lib/index.js");
+    fs.mkdirSync(path.dirname(host), { recursive: true });
+    fs.copyFileSync(process.env.OFFICIAL_MANAGER_MODULE, host);
+    if (beforeSeal) patchOfficialPluginsRuntime(path.join(root, "node_modules"));
+    runtimeFixture(root);
+    patchOfficialPluginsRuntime(path.join(root, "node_modules"));
+    if (beforeSeal) await assert.doesNotReject(() => verifyDesktopRuntime(root, "1.0.0"));
+    else await assert.rejects(() => verifyDesktopRuntime(root, "1.0.0"), /integrity verification failed/);
+  }
+});
