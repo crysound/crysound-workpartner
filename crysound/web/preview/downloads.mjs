@@ -1,8 +1,31 @@
 import { Transform } from "node:stream";
+import { createHash } from "node:crypto";
 import { createGunzip, createInflate, createBrotliDecompress } from "node:zlib";
 
-const SCRIPT = Buffer.from("<script>window.__baoyuNativeDownloads=true;</script>");
+const SOURCE = "window.__baoyuNativeDownloads=true;";
+const SCRIPT = Buffer.from(`<script>${SOURCE}</script>`);
+const SCRIPT_HASH = `'sha256-${createHash("sha256").update(SOURCE).digest("base64")}'`;
 const DECODERS = { gzip: createGunzip, deflate: createInflate, br: createBrotliDecompress };
+
+/** Authorize only our exact script in each enforced policy, preserving inline-only policies. */
+function nativeDownloadCsp(value) {
+  if (Array.isArray(value)) return value.map(nativeDownloadCsp);
+  return value.split(",").map((policy) => {
+    const directives = policy.split(";");
+    let at = -1;
+    for (const name of ["script-src-elem", "script-src", "default-src"]) {
+      at = directives.findIndex((part) => part.trim().split(/\s+/)[0].toLowerCase() === name);
+      if (at !== -1) break;
+    }
+    if (at === -1) return policy; // No restriction on scripts.
+    const sources = directives[at].trim().split(/\s+/).slice(1);
+    // A hash disables unsafe-inline. Add one only if inline scripts are already restricted.
+    if (sources.includes(SCRIPT_HASH) || (sources.includes("'unsafe-inline'")
+      && !sources.some((source) => /^'(?:sha256-|sha384-|sha512-|nonce-)/i.test(source)))) return policy;
+    directives[at] += ` ${SCRIPT_HASH}`;
+    return directives.join(";");
+  }).join(",");
+}
 
 /** Inject before editor scripts, retaining bytes and streaming after the head (at most 64 KiB). */
 export function nativeDownloadHtml() {
@@ -30,6 +53,7 @@ export function previewDownloadBody(reply, headers) {
     || headers["content-disposition"] || /charset\s*=\s*["']?(?!utf-8\b|utf8\b)[\w-]+/i.test(headers["content-type"])) return reply;
   const encoding = String(headers["content-encoding"] || "identity").toLowerCase();
   if (encoding !== "identity" && !Object.hasOwn(DECODERS, encoding)) return reply;
+  if (headers["content-security-policy"]) headers["content-security-policy"] = nativeDownloadCsp(headers["content-security-policy"]);
   for (const name of ["content-length", "content-encoding", "etag", "content-md5", "digest"]) delete headers[name];
   const output = nativeDownloadHtml();
   let input = reply;
