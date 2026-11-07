@@ -14,7 +14,7 @@
 
 | 检查 | 结果与边界 |
 | --- | --- |
-| search-api.test.mjs | 10 项通过；API 无模型调用、128 字符与 count、来源映射、真实工具多查询并发、网关关闭/缺钥匙/非法身份与地址、HTTP/网络/解析/空结果回退、本人取消、晚到身份读取与计时脱敏 |
+| search-api.test.mjs | 13 项通过；API 无模型调用、128 字符与 count、来源映射、真实工具多查询并发、网关关闭/缺钥匙/非法身份与地址、HTTP/网络/解析/空结果回退、本人取消、晚到身份读取与计时脱敏 |
 | web-tools.test.mjs | 26 项中 24 通过、2 跳过；跳过百度公网请求与 Chromium 渲染，本单未修改抓取或浏览器实现 |
 | exa.test.mjs | 7 项通过；保留英文并发、五秒截止线、来源去重、费用限制和实际发布入口的 Exa 计时 |
 | timing.test.mjs | 6 项通过；真实发布循环、工具调度与模型搜索事件关联、并行会话、启停和漂移检查保持通过 |
@@ -33,6 +33,14 @@
 DSH_WEB_TOOLS_RELEASE_ROOT="$RELEASE_ROOT" node --experimental-vm-modules --test crysound/web/web-tools/search-api.test.mjs crysound/web/web-tools/exa.test.mjs crysound/web/web-tools/web-tools.test.mjs
 DSH_TOOL_TIMING_RELEASE_ROOT="$TIMING_RELEASE_ROOT" node --test crysound/web/web-tools/timing.test.mjs
 ```
+
+## 搜索预算配置与评审修复
+
+搜索提供方 `web-search-deepseek` 新增四个可在 `cordis.yml` 调整的字段：`searchTotalTimeoutMs`（18000）、`searchApiTimeoutMs`（4000）、`searchFlashTimeoutMs`（12000）、`searchLunaReserveMs`（6000）。取值与组合约束见[网页工具说明](../../../web/web-tools/README.md)。加载前验证，下一次搜索重新读取动态值；传给搜索辅助函数的是已解析预算。`tool-web.searchTimeoutMs` 是独立的外层工具时限，改变总时限时应同步设置。英文补充来源保留最多 5 秒的上限，总时限更短时随之缩短。
+
+真实发布入口测试确认默认值、全部字段的非整数/非正数/非数字/超定时器范围拒绝，以及 API/Flash 大于总时限、预留不小于总时限的组合拒绝。自定义配置实际产生 1000/5000/3000 毫秒分配，设置刷新后变为 500/4000/2500；非法刷新在新请求派发前报错。另有 1 秒总时限限制英文补充停滞的用例。旧 Search API 修补产物升级后与全新修补字节相同，无重复导入；重复执行保持不变。
+
+当前四组定向测试合计 52 项，50 通过、2 跳过、0 失败。百度公网与 Chromium 项仍跳过，不能视作浏览器或线上验收。本次五个改动 JavaScript 文件通过语法检查，差异空白检查通过。新增测试初次存在同步异常断言、配置夹具缺字段及迁移夹具正则转义问题，修正后相关测试全部通过；未跳过失败用例。上述为夹具时钟与固定发布运行时验证，没有调用付费服务，不能替代实际性能测量。
 
 ## 费用、依赖与合入顺序
 

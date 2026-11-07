@@ -48,7 +48,17 @@ const patches = [
     package: "@deepseek-ai/dsh-web-search-deepseek",
     import: 'import { searchWithFallback } from "./crysound-search.mjs";\n',
     extraImport: 'import { searchAnswer } from "./crysound-search.mjs";\n',
+    additionalImports: ['import { resolveSearchBudget } from "./crysound-search.mjs";\n'],
     edits: [{
+      from: 'maxUses: z.number().step(1).min(1).default(5).volatile()\n',
+      to: 'maxUses: z.number().step(1).min(1).default(5).volatile(),\n\tsearchTotalTimeoutMs: z.number().step(1).min(1).default(18_000).volatile(),\n\tsearchApiTimeoutMs: z.number().step(1).min(1).default(4_000).volatile(),\n\tsearchFlashTimeoutMs: z.number().step(1).min(1).default(12_000).volatile(),\n\tsearchLunaReserveMs: z.number().step(1).min(1).default(6_000).volatile()\n',
+    }, {
+      from: 'const options = () => resolveOptions(ctx, {',
+      to: 'const options = () => ({ ...resolveOptions(ctx, {',
+    }, {
+      from: '\t});\n\tconst provider = new DeepSeekSearchProvider(options);',
+      to: '\t}), searchBudget: resolveSearchBudget({ searchTotalTimeoutMs: config.searchTotalTimeoutMs.get(), searchApiTimeoutMs: config.searchApiTimeoutMs.get(), searchFlashTimeoutMs: config.searchFlashTimeoutMs.get(), searchLunaReserveMs: config.searchLunaReserveMs.get() }) });\n\toptions();\n\tconst provider = new DeepSeekSearchProvider(options);',
+    }, {
       from: 'search: (request, signal) => provider.search(request, signal)',
       previous: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
       to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), request, signal)',
@@ -92,7 +102,9 @@ export function patchWebTools(root) {
       after = after.replace(from, to);
     }
     if (!alreadyPatched) after = patch.import + after;
-    if (patch.extraImport && !after.includes(patch.extraImport)) after = patch.import + patch.extraImport + after.slice(patch.import.length);
+    for (const extraImport of [patch.extraImport, ...(patch.additionalImports ?? [])].filter(Boolean)) {
+      if (!after.includes(extraImport)) after = patch.import + extraImport + after.slice(patch.import.length);
+    }
     for (const [source, destination] of Object.entries(patch.files)) {
       const target = path.join(directory, "lib", destination);
       let content = fs.readFileSync(path.join(here, source), "utf8");

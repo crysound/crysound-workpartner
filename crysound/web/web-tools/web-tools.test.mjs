@@ -327,7 +327,7 @@ test("released search dispatches after credentials and logging without a timer o
         requestContext: () => ({ provider: "magpie" }),
         append: () => events.push("request-log"),
       } }) } : undefined,
-  }, Object.fromEntries(Object.entries({ ...options, apiKey: undefined, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+  }, Object.fromEntries(Object.entries({ ...api.Config({}), ...options, apiKey: undefined, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   // No clock advance: an introduced sleep/debounce would prevent dispatch and fail this test.
   t.mock.timers.enable({ apis: ["setTimeout", "setImmediate"] });
   await provider.search({ query: "杭州天气" });
@@ -443,6 +443,14 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   await writeFile(file, native);
   patchWebTools(root);
   const fromNative = await readFile(file, "utf8");
+  const previousSearchApi = fromNative
+    .replace('import { resolveSearchBudget } from "./crysound-search.mjs";\n', '')
+    .replace(/,\n\tsearchTotalTimeoutMs:[\s\S]*?searchLunaReserveMs:[^\n]*\n/, '\n')
+    .replace('const options = () => ({ ...resolveOptions(ctx, {', 'const options = () => resolveOptions(ctx, {')
+    .replace(/\t\}\), searchBudget: resolveSearchBudget\([^\n]*\n\toptions\(\);/, '\t});');
+  await writeFile(file, previousSearchApi);
+  patchWebTools(root);
+  assert.equal(await readFile(file, "utf8"), fromNative, "previous Search API patch upgrades without duplicate imports");
   await writeFile(file, importLine + native.replace(originalCall, oldCall));
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), fromNative, "native and previous company artifacts converge");
@@ -468,7 +476,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => Response.json(searchResult) });
   let provider, selected = "claude-sonnet-4-5";
   const log = [];
-  api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+  api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...api.Config({}), ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   await provider.search({ query: "q" });
   selected = "deepseek/chat";
   await provider.search({ query: "q" });

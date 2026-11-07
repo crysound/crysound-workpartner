@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, cp, rm, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, cp, rm, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { searchWithFallback } from "./search.mjs";
@@ -40,6 +40,73 @@ function virtualTime(t) {
   });
   return milliseconds => { now += milliseconds; t.mock.timers.tick(milliseconds); };
 }
+
+test("released provider validates all search budgets before registering", async t => {
+  const f = await fixture(t);
+  const api = await released("dsh-web-search-deepseek", { root: f.root });
+  const defaults = api.Config({});
+  const expected = { searchTotalTimeoutMs: 18000, searchApiTimeoutMs: 4000, searchFlashTimeoutMs: 12000, searchLunaReserveMs: 6000 };
+  for (const [key, value] of Object.entries(expected)) assert.equal(defaults[key], value);
+  let registrations = 0;
+  const ctx = { environment: new Map(), get: () => undefined,
+    web: { registerSearchProvider: () => { registrations++; } } };
+  const apply = values => api.apply(ctx, Object.fromEntries(Object.entries({ ...defaults, ...values }).map(([key, value]) => [key, { get: () => value }])));
+  for (const key of Object.keys(expected)) {
+    for (const invalid of [0, -1, 1.5, NaN, Infinity, 2147483648, "1000", null, undefined]) {
+      assert.throws(() => apply({ [key]: invalid }), new RegExp(key));
+    }
+  }
+  for (const values of [{ searchApiTimeoutMs: 18001 }, { searchFlashTimeoutMs: 18001 }, { searchLunaReserveMs: 18000 }]) {
+    assert.throws(() => apply(values), /Search budgets/);
+  }
+  assert.equal(registrations, 0, "invalid configuration must fail before registering");
+  apply({});
+  assert.equal(registrations, 1);
+});
+
+test("released registration uses custom budgets and rereads volatile settings on the next search", async t => {
+  const f = await fixture(t);
+  const old = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  process.env.CRYSOUND_DS_TOOLS_BASE = env.CRYSOUND_DS_TOOLS_BASE;
+  process.env.CRYSOUND_DS_TOOLS_TOKEN_FILE = join(f.root, "identity");
+  await writeFile(process.env.CRYSOUND_DS_TOOLS_TOKEN_FILE, identity, { mode: 0o600 });
+  t.after(() => { for (const [key, value] of Object.entries(old)) {
+    if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  } });
+  const tick = virtualTime(t), budgets = [];
+  const timeout = AbortSignal.timeout;
+  t.mock.method(AbortSignal, "timeout", ms => { budgets.push(ms); return timeout(ms); });
+  let began;
+  let ready = new Promise(resolve => { began = resolve; });
+  t.mock.method(globalThis, "fetch", async () => { began(); return new Promise(() => {}); });
+  const api = await released("dsh-web-search-deepseek", { root: f.root, fetch: async (_url, init) => {
+    if (JSON.parse(init.body).model.includes("flash")) { began(); return new Promise(() => {}); }
+    return Response.json(native);
+  } });
+  const values = { ...api.Config({}), ...options, searchTotalTimeoutMs: 9000,
+    searchApiTimeoutMs: 1000, searchFlashTimeoutMs: 5000, searchLunaReserveMs: 3000 };
+  let provider;
+  api.apply({ environment: new Map(), get: () => undefined,
+    web: { registerSearchProvider: value => { provider = value; } } },
+  Object.fromEntries(Object.keys(values).map(key => [key, { get: () => values[key] }])));
+  const run = async (apiMs, flashMs) => {
+    ready = new Promise(resolve => { began = resolve; });
+    const pending = provider.search({ query: "杭州天气" });
+    await ready;
+    ready = new Promise(resolve => { began = resolve; }); tick(apiMs);
+    await ready; tick(flashMs);
+    assert.equal((await pending).sources[0].title, "备用天气");
+  };
+  await run(1000, 5000);
+  assert.deepEqual(budgets, [1000, 5000, 3000]);
+  Object.assign(values, { searchTotalTimeoutMs: 7000, searchApiTimeoutMs: 500,
+    searchFlashTimeoutMs: 4000, searchLunaReserveMs: 2500 });
+  budgets.length = 0;
+  await run(500, 4000);
+  assert.deepEqual(budgets, [500, 4000, 2500]);
+  values.searchTotalTimeoutMs = 0;
+  assert.throws(() => provider.search({ query: "杭州天气" }), /searchTotalTimeoutMs/);
+});
 
 test("API returns bounded per-source summaries, dates and links with no model call", async t => {
   const f = await fixture(t, async () => { assert.fail("API success must not call a model"); });
@@ -120,6 +187,25 @@ test("English API and Exa requests overlap, merge sources and retain both timing
   assert.deepEqual(report.searchPhases.map(phase => [phase.provider, phase.won]), [["search-api", true]]);
   assert.equal(report.exa.calls, 1);
   assert.equal(report.exa.adopted, true);
+});
+
+test("short configured total also bounds stalled English supplement", async t => {
+  const f = await fixture(t);
+  const tick = virtualTime(t);
+  let exaStarted, primaryFinished;
+  const exaReady = new Promise(resolve => { exaStarted = resolve; });
+  const primaryReady = new Promise(resolve => { primaryFinished = resolve; });
+  f.services.env = { ...env, CRYSOUND_MARKET_ORIGIN: "http://fixture-gateway", CRYSOUND_MARKET_TOKEN_FILE: "/fixture/identity" };
+  f.services.fetcher = async url => {
+    if (String(url).endsWith("/ds-tools/search")) return Response.json(apiResult());
+    exaStarted(); return new Promise(() => {});
+  };
+  const pending = searchWithFallback(f.Provider, WebError, { ...options,
+    searchBudget: { searchTotalTimeoutMs: 1000, searchApiTimeoutMs: 500, searchFlashTimeoutMs: 500, searchLunaReserveMs: 200 },
+    recordSearch: stage => { if (stage === "search-phase-end") primaryFinished(); },
+  }, { query: "latest stable Rust release" }, undefined, undefined, f.services);
+  await Promise.all([exaReady, primaryReady]); tick(1000);
+  assert.equal((await pending).sources[0].url, "https://weather.example/0");
 });
 
 test("missing gateway, disabled gateway, invalid identity and unsafe gateway go straight to Flash", async t => {

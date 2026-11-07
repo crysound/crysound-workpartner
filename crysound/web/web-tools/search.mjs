@@ -4,19 +4,20 @@ import { readFile } from "node:fs/promises";
  * @param Provider Released search class. @param WebError Released error class.
  * @param options Resolved options and optional search/Exa diagnostic callbacks.
  * @param request Search query. @param signal Optional caller cancellation.
- * @param timeoutMs Flash ceiling, bounded by the shared eighteen-second deadline.
+ * @param timeoutMs Optional caller Flash ceiling; absent uses the validated provider configuration.
  * @param services Optional offline transports; production uses existing gateway identity files.
  * @returns Primary answer with optional Exa sources; auxiliary work shares one five-second deadline.
  */
-export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs = 12_000, services = {}) {
+export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs, services = {}) {
   signal?.throwIfAborted();
-  const deadline = performance.now() + 18_000;
+  const budget = options.searchBudget ?? resolveSearchBudget();
+  const deadline = performance.now() + budget.searchTotalTimeoutMs;
   const stop = new AbortController();
   const extra = mostlyEnglish(request.query)
-    ? exaSearch(request.query, AbortSignal.any([stop.signal, ...(signal ? [signal] : [])]), options.recordExa, services)
+    ? exaSearch(request.query, AbortSignal.any([stop.signal, ...(signal ? [signal] : [])]), options.recordExa, services, budget.searchTotalTimeoutMs)
     : Promise.resolve([]);
   try {
-    const result = await primarySearch(Provider, WebError, options, request, signal, timeoutMs, services, deadline);
+    const result = await primarySearch(Provider, WebError, options, request, signal, timeoutMs ?? budget.searchFlashTimeoutMs, services, deadline, budget);
     const sources = await extra;
     signal?.throwIfAborted();
     if (!sources.length) return result;
@@ -26,7 +27,22 @@ export async function searchWithFallback(Provider, WebError, options, request, s
   } finally { stop.abort(); }
 }
 
-async function primarySearch(Provider, WebError, options, request, signal, timeoutMs, services, deadline) {
+/** Resolve provider timeout settings before registration or a settings refresh.
+ * @param values Optional configuration overrides; omitted fields use the shipped defaults.
+ * @returns Validated millisecond budgets; incompatible or non-integer values throw.
+ */
+export function resolveSearchBudget(values = {}) {
+  const budget = { searchTotalTimeoutMs: 18_000, searchApiTimeoutMs: 4_000,
+    searchFlashTimeoutMs: 12_000, searchLunaReserveMs: 6_000, ...values };
+  for (const [key, value] of Object.entries(budget)) {
+    if (!Number.isInteger(value) || value <= 0 || value > 2_147_483_647) throw new Error(`${key} must be a positive timer-safe integer`);
+  }
+  if (budget.searchApiTimeoutMs > budget.searchTotalTimeoutMs || budget.searchFlashTimeoutMs > budget.searchTotalTimeoutMs
+    || budget.searchLunaReserveMs >= budget.searchTotalTimeoutMs) throw new Error("Search budgets must fit within searchTotalTimeoutMs");
+  return budget;
+}
+
+async function primarySearch(Provider, WebError, options, request, signal, timeoutMs, services, deadline, limits) {
   signal?.throwIfAborted();
   const failures = [];
   const env = services.env ?? process.env;
@@ -38,9 +54,9 @@ async function primarySearch(Provider, WebError, options, request, signal, timeo
     signal?.throwIfAborted();
     const remaining = Math.max(0, Math.floor(deadline - performance.now()));
     if (!remaining) break;
-    // Flash keeps up to twelve seconds; reserve up to six seconds for a useful Luna attempt.
-    const budget = provider === "search-api" ? Math.min(4_000, remaining)
-      : provider === "flash" ? Math.min(timeoutMs, remaining - Math.min(6_000, Math.floor(remaining / 2))) : remaining;
+    // A short remainder is split evenly so the fallback remains usable.
+    const budget = provider === "search-api" ? Math.min(limits.searchApiTimeoutMs, remaining)
+      : provider === "flash" ? Math.min(timeoutMs, remaining - Math.min(limits.searchLunaReserveMs, Math.floor(remaining / 2))) : remaining;
     const stop = new AbortController();
     const attempt = AbortSignal.any([stop.signal, AbortSignal.timeout(budget), ...(signal ? [signal] : [])]);
     const started = performance.now();
@@ -152,10 +168,10 @@ function mostlyEnglish(query) {
   return compact.length > 0 && compact.filter(char => /[A-Za-z]/u.test(char)).length > compact.length / 2;
 }
 
-async function exaSearch(query, parent, record, services) {
+async function exaSearch(query, parent, record, services, totalTimeoutMs) {
   const env = services.env ?? process.env;
   if (!env.CRYSOUND_MARKET_ORIGIN || !env.CRYSOUND_MARKET_TOKEN_FILE) return [];
-  const signal = AbortSignal.any([parent, AbortSignal.timeout(5_000)]);
+  const signal = AbortSignal.any([parent, AbortSignal.timeout(Math.min(5_000, totalTimeoutMs))]);
   const started = performance.now();
   let dispatched = false, status = "failed";
   let onAbort;
