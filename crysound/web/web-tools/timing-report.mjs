@@ -27,6 +27,13 @@ export function timingReport(records) {
         executeToFirstSearch: between("tools-execute-start", "search-request-dispatch"),
         firstSearchToResult: between("search-request-dispatch", "tool-result-returned"),
       },
+      exa: {
+        calls: records.filter(record => record.stage === "exa-request-dispatch").length,
+        attempts: records.filter(record => record.stage === "exa-request-finished").map(record => ({
+          durationMs: record.durationMs, status: record.status,
+        })),
+        adopted: records.some(record => record.stage === "exa-result" && record.adopted === true),
+      },
       searchAttempts: records.filter(record => record.stage === "search-request-dispatch").map(record => {
         const logged = records.find(candidate => candidate.stage === "search-request-record" && candidate.searchAttempt === record.searchAttempt);
         return {

@@ -78,6 +78,12 @@ class ToolTiming {
     this.context.getStore()?.mark("tool-result-finalized", callId, { isError: isError === true });
   }
 
+  exa(stage, extra = {}) {
+    const context = this.context.getStore();
+    if (context?.callId === undefined) return;
+    context.mark(stage, context.callId, extra);
+  }
+
   search(stage) {
     const context = this.context.getStore();
     if (context?.callId === undefined) return;
