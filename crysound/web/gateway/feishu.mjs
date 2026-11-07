@@ -50,7 +50,7 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
     try { data = await response.json(); } catch (error) { throw failure(502, "飞书返回了无法读取的结果"); }
     if (!response.ok || data.error || (data.code !== undefined && data.code !== 0)) {
       // 不向日志或客户端透传上游正文，错误描述可能包含授权码或令牌。
-      throw Object.assign(failure(502, "飞书未接受请求，请稍后重试或重新授权"), { invalidGrant: data.error === "invalid_grant" || [20064, 20065].includes(data.code) });
+      throw Object.assign(failure(502, "飞书未接受这次授权请求，请查看连接状态；仍无法连接请联系管理员"), { invalidGrant: data.error === "invalid_grant" || [20064, 20065].includes(data.code) });
     }
     return data;
   }
@@ -173,7 +173,7 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
         const query = new URLSearchParams({ client_id: appId, response_type: "code", redirect_uri: `${publicOrigin}/_zp/callback`, state, scope });
         redirect(res, `https://accounts.feishu.cn/open-apis/authen/v1/authorize?${query}`, `zp_feishu=${state}; Path=/_zp; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
       } else return false;
-    } catch (error) { json(res, error.status || 503, { message: error.status ? error.message : "暂时无法处理飞书授权，请稍后重试" }); }
+    } catch (error) { json(res, error.status || 503, { message: error.status ? error.message : "飞书授权未处理完成，请查看连接状态；仍无法处理请联系管理员" }); }
     return true;
   }
   async function maintain() {
