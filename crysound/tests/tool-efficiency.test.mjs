@@ -1,0 +1,56 @@
+// Run with Node 24 and DSH_CLI_ENTRY pointing at an existing pinned dsh runtime; no installs or model requests.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
+import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { refreshProfile } from "../config/profile-upgrades.mjs";
+
+const runtime = process.env.DSH_CLI_ENTRY || "/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js";
+const require = createRequire(runtime);
+const load = (name) => import(pathToFileURL(require.resolve(name)).href);
+const { Context } = await load("@deepseek-ai/cordis");
+const { default: SystemPrompt, renderPrompt } = await load("@deepseek-ai/dsh-system-prompt");
+const { default: Loader } = await load("@deepseek-ai/cordis-plugin-loader");
+const { createScope } = await load("@deepseek-ai/dsh-scope");
+const Persona = await load("@deepseek-ai/dsh-persona");
+const yaml = require("yaml");
+
+test("refreshed profile loads real company guidance through Loader and ordinary persona replacement retains it", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "tool-efficiency-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(join(root, "package.json"), '{"type":"module"}\n');
+  const file = join(root, "cordis.patch.yml");
+  refreshProfile(file, resolve(import.meta.dirname, "../config/partner.patch.yml"), yaml, true);
+  const rows = yaml.parse(await readFile(file, "utf8"), { customTags: [{ tag: "tag:yaml.org,2002:js", resolve: value => value }] });
+  const entry = rows.flatMap(row => row.insert || []).find(row => row.id === "crysound-tool-efficiency");
+  assert.ok(entry, "a new plugin must be inserted, not silently skipped as an unknown patch target");
+  const ctx = new Context();
+  t.after(() => ctx.fiber.dispose());
+  await ctx.plugin(SystemPrompt, { personaPrefix: "Deployment persona." });
+  await ctx.plugin(Loader, { baseUrl: pathToFileURL(file).href });
+  const id = await ctx.loader.create(entry);
+  const fiber = ctx.loader.resolve(id).fiber;
+  await fiber.await();
+  const key = { agent: "standard-preset" };
+  const scope = createScope(ctx, key);
+  await scope.ctx.plugin(Persona, { prefix: "Standard persona." });
+  const assembly = await ctx.systemPrompt.assemble({ scope: key });
+  const text = renderPrompt(assembly);
+  assert.match(text, /Standard persona\./);
+  assert.doesNotMatch(text, /Deployment persona\./);
+  assert.equal(assembly.sections.filter(section => section.name === "crysound:tool-efficiency").length, 1);
+  assert.match(text, /one bounded shell command/);
+  assert.match(text, /path headings/);
+  assert.match(text, /cap total output/);
+  assert.match(text, /writes the script and then runs it only if writing succeeds/);
+  assert.match(text, /independent calls in the same response/);
+  assert.match(text, /approval/);
+  const complete = { agent: "complete-preset" };
+  await createScope(ctx, complete).ctx.plugin(Persona, { prefix: "Complete persona.", complete: true });
+  assert.equal(renderPrompt(await ctx.systemPrompt.assemble({ scope: complete })), "Complete persona.");
+  await fiber.dispose();
+  assert.doesNotMatch(renderPrompt(await ctx.systemPrompt.assemble({ scope: key })), /Use tools efficiently/);
+});
