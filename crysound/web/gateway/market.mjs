@@ -40,6 +40,7 @@ function readState(file) {
 /**
  * 创建市场 HTTP 处理器；发布与审批串行、原子保存。未知上传结果保留 publishing，需管理员核对。
  * @param options 存储文件、内部注册表及凭据、公网/内网 origin、身份与用户列表读取器、管理员列表与通知函数。
+ *   notifyPublisher 在审批保存后发送结果，返回 sent/unavailable；异常记录为 failed，不撤销审批。
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
  *   officialPublishers 与 officialPackages 必须同时命中才显示官方标识；后者允许 @crysound/*，缺省均为空。
  *   officialPlugins 由公司 plugins.json 指定包名、中文名与维护人；officialMaintainers 可覆盖部署名单。
@@ -47,7 +48,7 @@ function readState(file) {
  *   官方维护人可发布新版本但仍须逐版审批，其他包保持首发者所有权。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, retiredPackages = [], notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, retiredPackages = [], notify = async () => {}, notifyPublisher = async () => ({ status: "unavailable", message: "未配置发布结果通知，结果仅在审批页记录。" }), fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
   if (!Array.isArray(retiredPackages) || retiredPackages.some((name) => !/^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/.test(name))) throw new Error("退役插件配置必须是包名列表");
   if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
   if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()) || (entry.home !== undefined && typeof entry.home !== "boolean") || (entry.icon !== undefined && (typeof entry.icon !== "string" || entry.icon.length > 44000 || !/^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+={0,2}$/.test(entry.icon))))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
@@ -130,6 +131,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const pkg = next.packages[name] ??= { owner: user.slug, versions: {} };
       pkg.versions[version] = {
         status: "publishing", publisher: user.slug, publishTimestamp: Math.floor(Date.now() / 1000),
+        displayName: (manifest.displayName || manifest.title || name).trim(),
         description: manifest.description.slice(0, 2000), readme: String(doc.readme || manifest.readme || "").slice(0, 4000),
       };
       save(next);
@@ -217,6 +219,8 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const form = new URLSearchParams(await readBody(req, 16384));
       const name = form.get("name"), version = form.get("version"), action = form.get("action");
       if (!PACKAGE.test(name) || !VERSION.test(version) || !["approved", "rejected", "notify"].includes(action)) throw fail(400, "审批参数无效");
+      const reason = action === "rejected" ? (form.get("reason") || "").trim() : "";
+      if (reason.length > 1000) throw fail(400, "拒绝原因请控制在 1000 字以内");
       await serial(async () => {
         const row = state.packages[name]?.versions[version];
         if (row?.status !== "pending") throw fail(409, "版本已处理或尚未完成上传，请刷新页面");
@@ -231,16 +235,34 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
           if (!(await response.json()).versions?.[version]) throw fail(409, "注册表缺少这个版本，请管理员核对后再审批");
         }
         const next = structuredClone(state);
-        Object.assign(next.packages[name].versions[version], { status: action, reviewer: user.slug, reviewedAt: new Date().toISOString() });
+        Object.assign(next.packages[name].versions[version], {
+          status: action, reviewer: user.slug, reviewedAt: new Date().toISOString(), rejectionReason: reason,
+          reviewNotification: { status: "pending" },
+        });
+        // Commit the decision before contacting Feishu; duplicate review submissions cannot send twice.
         save(next);
+        let notification;
+        try {
+          notification = await notifyPublisher({ name, displayName: row.displayName || name, version, publisher: row.publisher, status: action, reason });
+        } catch (error) {
+          notification = { status: "failed", message: "暂未确认通知送达，审批结果已保存，请管理员核对。" };
+        }
+        const delivered = structuredClone(state);
+        delivered.packages[name].versions[version].reviewNotification = { ...notification, at: new Date().toISOString() };
+        try { save(delivered); }
+        catch (error) { console.log("市场审批已保存，但通知结果未能保存；请从审批页核对，勿重复审批"); }
       });
       res.writeHead(303, { location: "/_zp/market/admin", "cache-control": "no-store" }); return res.end();
     }
     if (req.method !== "GET") throw fail(405, "不支持此方法");
-    const rows = Object.entries(state.packages).flatMap(([name, pkg]) => Object.entries(pkg.versions).filter(([, row]) => row.status === "pending").map(([version, row]) =>
-      `<article><h2>${esc(name)} · ${esc(version)}</h2><p>发布者：${esc(row.publisher)}</p><p>${esc(row.description)}</p><pre>${esc(row.readme)}</pre><form method="post"><input type="hidden" name="name" value="${esc(name)}"><input type="hidden" name="version" value="${esc(version)}"><button name="action" value="approved">批准上架</button> <button name="action" value="rejected">拒绝上架</button> <button name="action" value="notify">重发审批卡片</button></form></article>`)).join("");
+    const entries = Object.entries(state.packages).flatMap(([name, pkg]) => Object.entries(pkg.versions).map(([version, row]) => ({ name, version, row })));
+    const rows = entries.filter(({ row }) => row.status === "pending").map(({ name, version, row }) =>
+      `<article><h2>${esc(row.displayName || name)} · ${esc(version)}</h2><p>${esc(name)} · 发布者：${esc(row.publisher)}</p><p>${esc(row.description)}</p><pre>${esc(row.readme)}</pre><form method="post"><input type="hidden" name="name" value="${esc(name)}"><input type="hidden" name="version" value="${esc(version)}"><label>拒绝原因（选填，最多 1000 字）<textarea name="reason" maxlength="1000" rows="2"></textarea></label><p><button name="action" value="approved">批准上架</button> <button name="action" value="rejected">拒绝上架</button> <button name="action" value="notify">重发审批卡片</button></p></form></article>`).join("");
+    const notificationText = (notice) => notice?.status === "sent" ? "发布人机器人通知已发送" : notice?.message || "未确认通知送达，请管理员核对；不要重复审批。";
+    const reviewed = entries.filter(({ row }) => ["approved", "rejected"].includes(row.status)).sort((a, b) => String(b.row.reviewedAt).localeCompare(String(a.row.reviewedAt))).map(({ name, version, row }) =>
+      `<article><h3>${esc(row.displayName || name)} · ${esc(version)}</h3><p>${esc(name)} · 发布者：${esc(row.publisher)}</p><p>结果：${row.status === "approved" ? "已批准上架" : "未通过审批"}</p>${row.rejectionReason ? `<p>拒绝原因：${esc(row.rejectionReason)}</p>` : ""}<p>${esc(notificationText(row.reviewNotification))}</p></article>`).join("");
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'", "x-content-type-options": "nosniff" });
-    res.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>兆华市场审批</title><style>body{font:16px/1.6 sans-serif;max-width:850px;margin:32px auto;padding:0 20px;color:#170057}article{border-bottom:1px solid #ddd;padding:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:8px 20px}</style><h1>兆华市场 · 待审批</h1>${rows || "<p>暂无待审批版本。</p>"}</html>`);
+    res.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>兆华市场审批</title><style>body{font:16px/1.6 sans-serif;max-width:850px;margin:32px auto;padding:0 20px;color:#170057}article{border-bottom:1px solid #ddd;padding:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:8px 20px}textarea{display:block;box-sizing:border-box;width:100%;font:inherit}</style><h1>兆华市场 · 待审批</h1>${rows || "<p>暂无待审批版本。</p>"}<h2>已审批记录</h2>${reviewed || "<p>暂无审批记录。</p>"}</html>`);
   }
 
   return async function market(req, res, url) {

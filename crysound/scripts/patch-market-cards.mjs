@@ -24,10 +24,10 @@ function browserHelpers(React, { jsx, jsxs }, icons, locales) {
         : Array.from(title.trim() || name)[0].toLocaleUpperCase(),
     });
   }
-  function ZpHeader({ language, total, officialCount, active, onSelect }) {
+  function ZpHeader({ language, total, officialCount, active, onSelect, publishing = false }) {
     const copy = zpCopy(language);
     return jsxs('div', { className: 'zp-market-heading', children: [
-      jsxs('div', { children: [jsx('h2', { children: copy.zpRecommended }), jsx('p', { children: document.documentElement.hasAttribute("data-platform") ? copy.zpInstallLocal : copy.zpInstallCloud })] }),
+      jsxs('div', { children: [jsx('h2', { children: copy.zpRecommended }), jsx('p', { children: document.documentElement.hasAttribute("data-platform") ? copy.zpInstallLocal : copy.zpInstallCloud }), publishing ? jsx('p', { 'data-company-publish-hint': true, children: copy.zpPublishHint }) : null] }),
       onSelect ? jsxs('div', { className: 'zp-market-segments', role: 'group', 'aria-label': copy.zpFilter,
         children: [[false, copy.zpAll, total], [true, copy.zpOfficial, officialCount]].map(([value, label, count]) => jsx('button', {
           type: 'button', 'aria-pressed': active === value, onClick: () => onSelect(value), children: `${label} ${count}`,

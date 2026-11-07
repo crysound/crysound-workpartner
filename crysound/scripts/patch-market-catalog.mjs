@@ -56,7 +56,7 @@ ctx.effect(() => ctx.locale.register(NS, {`);
   replace('const { query, value } = listing;', `const { query, value } = listing;
     const [zpOnlyOfficial, zpSetOfficial] = (0, react.useState)(false);`);
   const toolbar = '(0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [\n\t\t\t\t(0, react_jsx_runtime.jsxs)("div", {\n\t\t\t\t\tclassName: DiscoverSection_module_css_default.toolbar,';
-  replace(toolbar, toolbar.replace('children: [', `children: [(0, react_jsx_runtime.jsx)(ZpHeader, { language, total:value?.entries.length ?? 0,
+  replace(toolbar, toolbar.replace('children: [', `children: [(0, react_jsx_runtime.jsx)(ZpHeader, { language, publishing:true, total:value?.entries.length ?? 0,
     officialCount:value?.entries.filter(entry => entry.metadata.labels.includes("crysound-official")).length ?? 0,
     active:zpOnlyOfficial,onSelect:zpSetOfficial }),`));
   // Maintenance declarations are display metadata, not an end-user filter.

@@ -1,4 +1,4 @@
-/** @typedef {Record<"zpCompanyMarket" | "zpThirdPartyMarket" | "zpMarketPanel" | "zpRecommended" | "zpAll" | "zpOfficial" | "zpThirdParty" | "zpUse" | "zpInstallLocal" | "zpInstallCloud" | "zpFilter" | "zpUnknownAuthor" | "zpDownloadCount" | "zpClose" | "zpCompanyAuthor" | "zpBuiltIn", string>} MarketCopy */
+/** @typedef {Record<"zpCompanyMarket" | "zpThirdPartyMarket" | "zpMarketPanel" | "zpRecommended" | "zpAll" | "zpOfficial" | "zpThirdParty" | "zpUse" | "zpInstallLocal" | "zpInstallCloud" | "zpFilter" | "zpUnknownAuthor" | "zpDownloadCount" | "zpClose" | "zpCompanyAuthor" | "zpBuiltIn" | "zpPublishHint", string>} MarketCopy */
 
 /** Company copy merged into the plugin manager dictionaries before registration; other locales use normal fallback. */
 export const marketLocales = /** @satisfies {Record<'zh' | 'en', MarketCopy>} */ ({
@@ -9,6 +9,7 @@ export const marketLocales = /** @satisfies {Record<'zh' | 'en', MarketCopy>} */
     zpRecommended: "推荐", zpAll: "全部", zpOfficial: "官方", zpThirdParty: "第三方", zpUse: "使用",
     zpInstallLocal: "安装到：当前电脑", zpInstallCloud: "安装到：我的工作伙伴",
     zpFilter: "筛选插件",
+    zpPublishHint: "自己做的插件，对工作伙伴说‘发布到兆华市场’，管理员批准后全公司都能装。",
     zpUnknownAuthor: "未提供作者", zpDownloadCount: "{count} 次下载", zpClose: "关闭详情", zpCompanyAuthor: "兆华工作伙伴", zpBuiltIn: "内置插件",
   },
   en: {
@@ -18,6 +19,7 @@ export const marketLocales = /** @satisfies {Record<'zh' | 'en', MarketCopy>} */
     zpRecommended: "Recommended", zpAll: "All", zpOfficial: "Official", zpThirdParty: "Third-party", zpUse: "Use",
     zpInstallLocal: "Install to: This computer", zpInstallCloud: "Install to: My WorkPartner",
     zpFilter: "Filter plugins",
+    zpPublishHint: "Share your own plugin: tell WorkPartner ‘publish to CRYSOUND market’; everyone can install it after admin approval.",
     zpUnknownAuthor: "Author unavailable", zpDownloadCount: "{count} downloads", zpClose: "Close details", zpCompanyAuthor: "CRYSOUND WorkPartner", zpBuiltIn: "Built-in plugin",
   },
 });

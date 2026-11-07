@@ -47,3 +47,36 @@ test("数据额度提醒复用管理员渠道，只包含中文处置说明和�
   assert.equal(card.elements[1].actions[0].url, "https://treg.to/app");
   assert.doesNotMatch(messages[0].content, /undefined|fake-tenant|fake-secret/);
 });
+
+test("批准和拒绝结果仅发给发布人，包含中文名、版本、结论和可选拒绝原因", async () => {
+  const { notifyMarketPublisher } = await import("../onboard.mjs");
+  for (const [status, reason] of [["approved", "缺少使用说明"], ["rejected", "缺少使用说明"], ["rejected", ""]]) {
+    const calls = [];
+    const result = await notifyMarketPublisher({ ...payload, displayName: "示例插件", status, reason }, {
+      ...settings, loadUsers: () => [{ slug: "alice", unionId: "fake-alice" }, { slug: "admin", unionId: "fake-admin" }],
+      request: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return path.startsWith("/auth/") ? { tenant_access_token: "fake-tenant" } : { code: 0 }; },
+    });
+    assert.equal(result.status, "sent");
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].body.receive_id, "fake-alice");
+    assert.equal(calls[1].body.msg_type, "text");
+    const text = JSON.parse(calls[1].body.content).text;
+    assert.match(text, /示例插件（@crysound\/demo）/);
+    assert.match(text, /版本：1.0.0/);
+    assert.match(text, status === "approved" ? /已批准上架/ : reason ? /未通过审批\n原因：缺少使用说明/ : /未通过审批/);
+    if (status === "approved" || !reason) assert.doesNotMatch(text, /原因：/);
+    assert.doesNotMatch(text, /fake-tenant|fake-secret/);
+  }
+});
+
+test("缺少发布人身份或机器人不可达时返回记录结果，网络失败交调用方记录", async () => {
+  const { notifyMarketPublisher } = await import("../onboard.mjs");
+  const notice = { ...payload, status: "rejected", version: "2.0.0" };
+  const absent = await notifyMarketPublisher(notice, { ...settings, request: () => { throw new Error("must not call"); } });
+  assert.equal(absent.status, "unavailable");
+  const deps = { ...settings, loadUsers: () => [{ slug: "alice", unionId: "fake-alice" }] };
+  const unavailable = await notifyMarketPublisher(notice, { ...deps, request: async (path) => path.startsWith("/auth/") ? { tenant_access_token: "fake" } : { code: 230013 } });
+  assert.equal(unavailable.status, "unavailable");
+  await assert.rejects(notifyMarketPublisher(notice, { ...deps, request: async () => { throw new Error("offline"); } }), /offline/);
+  await assert.rejects(notifyMarketPublisher(notice, { ...deps, request: async () => ({ code: 999 }) }), /令牌/);
+});

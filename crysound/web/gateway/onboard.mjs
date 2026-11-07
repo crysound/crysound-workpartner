@@ -165,3 +165,28 @@ export async function notifyMarketAdmins({ name, version, publisher, admins, quo
   }
   if (failed.length) throw new Error(`市场审批卡片未送达：${failed.join(", ")}；请从审批页重发`);
 }
+
+/** Notify only the recorded publisher of a completed review; unavailable recipients are recorded, not thrown.
+ * @param notice Package name, display name, version, publisher slug, review status and optional rejection reason.
+ * @param dependencies Injected Feishu request, user reader and application credentials.
+ * @returns Delivery status for the approval page; transport/authentication failures reject for the caller to record.
+ */
+export async function notifyMarketPublisher({ name, displayName, version, publisher, status, reason }, {
+  request = feishu, loadUsers = readUsers, appSecret = secret, appId = APP_ID,
+} = {}) {
+  const user = loadUsers().find((item) => item.slug === publisher);
+  if (!user?.unionId) return { status: "unavailable", message: "发布者尚不能接收公司机器人消息，结果仅在审批页记录。" };
+  const tok = await request("/auth/v3/tenant_access_token/internal", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ app_id: appId, app_secret: appSecret() }),
+  });
+  if (!tok.tenant_access_token) throw new Error("无法取得飞书应用令牌");
+  const title = displayName && displayName !== name ? `${displayName}（${name}）` : name;
+  const text = `兆华市场 · 审批结果\n插件：${title}\n版本：${version}\n结果：${status === "approved" ? "已批准上架" : "未通过审批"}${status === "rejected" && reason ? `\n原因：${reason}` : ""}`;
+  const result = await request("/im/v1/messages?receive_id_type=union_id", {
+    method: "POST", headers: { authorization: `Bearer ${tok.tenant_access_token}`, "content-type": "application/json" },
+    body: JSON.stringify({ receive_id: user.unionId, msg_type: "text", content: JSON.stringify({ text }) }),
+  });
+  if (result.code !== 0) return { status: "unavailable", message: "机器人消息未送达，请核对发布者是否在机器人可用范围内；审批结果已记录。" };
+  return { status: "sent" };
+}

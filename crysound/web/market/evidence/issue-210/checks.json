@@ -1,0 +1,32 @@
+{
+  "gateway": {
+    "passed": 39,
+    "failed": 0,
+    "method": "Node24, existing market HTTP fixtures and injected Feishu requests; no real messages"
+  },
+  "profile": {
+    "passed": 1,
+    "failed": 0,
+    "method": "new/existing temporary profiles; load generated module and register guidance; repeat refresh byte-identical"
+  },
+  "published_runtime": {
+    "passed": 4,
+    "failed": 0,
+    "method": "five released browser modules and published third-party module; parse, repeated patch, permissions, hard-link separation, unknown-version rejection"
+  },
+  "browser": {
+    "zh": 13,
+    "en": 13,
+    "errors": []
+  },
+  "negative_control": "new publication HTTP tests reject original main before implementation",
+  "syntax": {
+    "files": 12,
+    "passed": true
+  },
+  "unverified": [
+    "real Creator dialogue",
+    "real publication and Feishu receipts",
+    "deployment and packaged desktop"
+  ]
+}
