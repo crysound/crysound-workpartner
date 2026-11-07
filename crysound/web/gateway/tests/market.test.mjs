@@ -576,7 +576,7 @@ test("审批持久化后通知原发布人，拒绝原因转义且重启可见�
     method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin },
     body: new URLSearchParams({ name, version, action, reason, publisher: "bob" }),
   });
-  for (const [version, action, reason] of [["1.0.0", "approved", ""], ["2.0.0", "rejected", "请补说明 <script>alert(1)</script>"]]) {
+  for (const [version, action, reason] of [["1.0.0", "approved", ""], ["2.0.0", "rejected", "请补说明 <script>alert(1)</script> <SCRIPT>alert(2)</SCRIPT>"]]) {
     const body = doc(version); body.versions[version].displayName = "示例插件";
     assert.equal((await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) })).status, 201);
     assert.equal((await submit(version, action, reason)).status, 303);
@@ -585,12 +585,12 @@ test("审批持久化后通知原发布人，拒绝原因转义且重启可见�
   assert.deepEqual(deliveries.map(({ publisher, status, displayName }) => ({ publisher, status, displayName })), [
     { publisher: "alice", status: "approved", displayName: "示例插件" }, { publisher: "alice", status: "rejected", displayName: "示例插件" },
   ]);
-  assert.equal(deliveries[1].reason, "请补说明 <script>alert(1)</script>");
+  assert.equal(deliveries[1].reason, "请补说明 <script>alert(1)</script> <SCRIPT>alert(2)</SCRIPT>");
   f.restart();
   const page = await f.request("/_zp/market/admin", { headers: { cookie: "test-session=admin" } });
   assert.match(page.text, /已审批记录/); assert.match(page.text, /已批准上架/); assert.match(page.text, /未通过审批/);
-  assert.match(page.text, /请补说明 &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-  assert.doesNotMatch(page.text, /<script>/);
+  assert.match(page.text, /请补说明 &lt;script&gt;alert\(1\)&lt;\/script&gt; &lt;SCRIPT&gt;alert\(2\)&lt;\/SCRIPT&gt;/);
+  assert.doesNotMatch(page.text, /<script\b/i);
   assert.equal((page.text.match(/发布人机器人通知已发送/g) || []).length, 2);
   const index = await f.index();
   assert.deepEqual(index.plugins[0].versions.map(({ version }) => version), ["1.0.0"]);
