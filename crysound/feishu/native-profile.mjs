@@ -13,7 +13,7 @@ export function prepareNativeProfile(patch) {
   // Copying, rather than linking, also works on Windows without symlink privileges.
   for (const target of [bundled, installed]) {
     fs.mkdirSync(target, { recursive: true });
-    for (const file of ['package.json', 'index.mjs', 'client.js']) {
+    for (const file of ['package.json', 'index.mjs', 'client.js', 'daily-host.mjs']) {
       const bytes = fs.readFileSync(path.join(source, file));
       const destination = path.join(target, file);
       if (!fs.existsSync(destination) || !fs.readFileSync(destination).equals(bytes)) {

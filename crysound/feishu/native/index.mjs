@@ -1,4 +1,5 @@
-/** Company settings use existing gateway/desktop routes; no credentials enter the Host plugin. */
+import { installDailyReader } from './daily-host.mjs';
+
 export const name = 'crysound-feishu-settings';
-/** The browser half owns the settings registrations. */
-export function apply() {}
+export const inject = ['sessions', 'sessionPersistence', 'sessionController'];
+export function apply(ctx) { installDailyReader(ctx); }
