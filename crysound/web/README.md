@@ -32,7 +32,7 @@ dsh 的 bundle、个人、全局和启动覆盖层按顺序生效，patch 的 `c
 
 轻量测试使用 Node 24 和已有 yaml：`node --test crysound/tests/plugin-artifacts.test.mjs`；默认从已有 dsh 运行时找 yaml，也可设置 `PARTNER_YAML_PACKAGE` 为已有 yaml 包路径。设置 `PARTNER_FEISHU_ARCHIVE` 为校验过的归档绝对路径后，覆盖桌面复制模板、旧版替换、重复启动、校验失败，从 `lib/types` 目录加载资源，以及含空格和引号的测试路径；不设时跳过需要真实归档的用例。
 
-真实升级检查用同一个临时可写目录挂到旧、新镜像的 `/test`，本检出只读挂到 `/src`，设置 `PARTNER_TEST_ROOT=/test` 并清空 `NODE_OPTIONS`。先在含 crysound.1 归档的旧镜像执行 `node /src/crysound/tests/plugin-install-smoke.mjs seed`，再在只含 crysound.2 的候选镜像执行同一脚本的 `upgrade` 子命令；候选镜像必须包含本提交的 `plugin-artifacts.mjs`，本地预检也可只读覆盖 `/opt/partner/plugin-artifacts.mjs`。脚本用真实 dsh/pnpm 验证旧本地包、旧远程地址有/无校验值、桌面相对包路径，核对新版、两份锁、其他插件及配置保留，重复启动和后续 add/remove。测试安装允许联网，限一核、1 GiB，不连接真实飞书账号。镜像 CLI 将 desktop 留给 Electron，因此相对路径检查使用独立自定义 profile；真正桌面准备流程由上述轻量测试覆盖，打包后另跑既有 Mac 首启动冒烟，Windows 仍需在目标系统核对升级。
+真实升级检查用同一个临时可写目录挂到旧、新镜像的 `/test`，本检出只读挂到 `/src`，设置 `PARTNER_TEST_ROOT=/test` 并清空 `NODE_OPTIONS`。先在含 crysound.1 归档的旧镜像执行 `node /src/crysound/tests/plugin-install-smoke.mjs seed`，再在只含 crysound.2 的候选镜像执行同一脚本的 `upgrade` 子命令；候选镜像必须包含本提交的 `plugin-artifacts.mjs`，本地预检也可只读覆盖 `/opt/partner/plugin-artifacts.mjs`。脚本用真实 dsh/pnpm 验证旧本地包、旧远程地址有/无校验值、桌面相对包路径，核对新版、两份锁、其他插件及配置保留，重复启动和后续 add/remove，并从实际运行时查询飞书插件处于 active、网页正常响应。测试安装允许联网，限一核、1 GiB，不连接真实飞书账号。镜像 CLI 将 desktop 留给 Electron，因此相对路径检查使用独立自定义 profile；真正桌面准备流程由上述轻量测试覆盖，打包后另跑既有 Mac 首启动冒烟，Windows 仍需在目标系统核对升级。
 
 ## 上线顺序
 

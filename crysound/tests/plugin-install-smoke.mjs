@@ -41,21 +41,34 @@ async function boot(profileName, env, home) {
   try {
     const deadline = Date.now() + 60_000;
     while (!closed && Date.now() < deadline) {
-      if (output.includes('dsh web:') && /dsh-feishu: no Lark credentials/.test(output)) break;
+      if (output.includes('dsh web:')) break;
       await delay(100);
     }
     assert.equal(closed, false, output);
     assert.match(output, /dsh web:/);
-    // This log is emitted inside plugin apply, after registering the configuration skill.
-    // No credentials are supplied, so it loads without opening a real bot connection.
-    assert.match(output, /dsh-feishu: no Lark credentials/);
-    assert.doesNotMatch(output, /dsh-feishu: (?:startup failed|invalid config)/);
-    assert.equal((await fetch('http://127.0.0.1:3080/')).status, 200);
+    const launchUrl = output.match(/dsh web: (http:\/\/[^\s]+)/)[1];
+    const login = await fetch(launchUrl, { redirect: 'manual' });
+    const cookie = login.headers.get('set-cookie')?.split(';')[0];
+    assert.ok(cookie, 'test launch token exchanged for an isolated test cookie');
+    const origin = new URL(launchUrl).origin;
+    const response = await fetch(`${origin}/api/pluginInventory/list`, {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie, origin },
+      body: JSON.stringify({ type: 'client-request', rpcId: 'upgrade-smoke', method: 'pluginInventory/list', payload: { args: {} } }),
+    });
+    const envelope = await response.json();
+    assert.equal(envelope.result?.ok, true, JSON.stringify(envelope));
+    const inventory = envelope.result.value;
+    writeFileSync(join(home, 'inventory.json'), JSON.stringify(inventory, null, 2));
+    const feishu = inventory.entries.find(entry => entry.moduleName === FEISHU.name);
+    assert.ok(feishu, 'Feishu appears in the actual running Loader');
+    assert.equal(feishu.enabled, true);
+    assert.equal(feishu.fiberPhase, 'active', JSON.stringify(feishu));
+    assert.equal((await fetch(origin, { headers: { cookie } })).status, 200);
   } finally {
     if (!closed) process.kill(-child.pid, 'SIGTERM');
-    await Promise.race([finished, delay(5000)]);
+    await Promise.race([finished, delay(5000, undefined, { ref: false })]);
     if (!closed) { process.kill(-child.pid, 'SIGKILL'); await finished; }
-    writeFileSync(join(home, 'boot.log'), output);
+    writeFileSync(join(home, 'boot.log'), output.replace(/token=[^\s]+/g, 'token=<test-token>'));
   }
 }
 for (const name of cases) {
@@ -65,6 +78,7 @@ for (const name of cases) {
   const env = { ...process.env, NODE_OPTIONS: '', DSH_HOME: home, DSH_TELEMETRY_DISABLED: '1' };
   const dsh = (...args) => run('dsh', args, env);
   if (process.argv[2] === 'seed') {
+    rmSync(home, { recursive: true, force: true });
     mkdirSync(config, { recursive: true });
     dsh('--profile', 'web', '--dump-config');
     if (desktop) {
