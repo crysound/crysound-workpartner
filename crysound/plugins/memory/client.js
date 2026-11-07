@@ -13,6 +13,13 @@ window.__ModuleLoader__.load({
       preference: '偏好', identity: '个人背景', project: '长期项目',
       capacity: '个人记忆接近或已达上限。伙伴会先提出合并或删除方案，得到你同意后再整理并记下新内容。',
       enabled: '使用记忆', disabled: '已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
+      autoLearning: '自动学习', learningOff: '已关闭自动学习。后台不会读取对话或调用模型；对话中主动保存与已有记忆仍可使用。',
+      learning: '学习记录', learningEmpty: '还没有学习记录。记录保留 30 天，可逐条撤销。',
+      learningUnavailable: '学习记录尚未读取完成，请刷新记忆。',
+      learningNote: '撤销不会覆盖后来修改的记忆。删除记忆时，相关学习记录也会删除；原聊天和备份仍会保留。',
+      addAction: '新记住', updateAction: '整理了', deleteAction: '删除了', mergeAction: '合并了',
+      undo: '撤销这次改动', undoConfirm: '确认撤销这次改动', undone: '已撤销',
+      before: '改动前', after: '改动后', none: '无', learningSource: '后台学到',
       clear: '清空全部', clearConfirm: '确认清空全部个人记忆', clearNote: '全部条目会被删除，无法在这里恢复。',
       add: '添加一条', edit: '编辑', save: '保存', kind: '类别', factTitle: '标题', content: '内容',
       conversation: '对话中记下', manual: '手动添加', edited: '页面修改', created: '创建于', updated: '更新于',
@@ -37,7 +44,7 @@ window.__ModuleLoader__.load({
       const [busy, setBusy] = useState(false);
       useEffect(() => {
         const controller = new AbortController();
-        request('list', { signal: controller.signal }).then(setData).catch(error => {
+        request('learning', { signal: controller.signal }).then(setData).catch(error => {
           if (!controller.signal.aborted) setError(error.message);
         });
         return () => controller.abort();
@@ -50,17 +57,20 @@ window.__ModuleLoader__.load({
       }, [data, focusId]);
       async function refresh() {
         setBusy(true); setError('');
-        try { setData(await request('list')); setAction(null); }
+        try { setData(await request('learning')); setAction(null); }
         catch (error) { setError(error.message); }
         finally { setBusy(false); }
       }
       async function change(path, input) {
         setBusy(true); setError('');
         try {
-          setData(await request(path, {
+          const result = await request(path, {
             method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...input, revision: data.revision }),
-          }));
+          });
+          // Show the committed facts even if the following history refresh fails.
+          setData({ ...result, learning: null });
           setAction(null);
+          setData(await request('learning'));
         } catch (error) { setError(error.message); }
         finally { setBusy(false); }
       }
@@ -88,6 +98,9 @@ window.__ModuleLoader__.load({
           h('label', null, h('input', { type: 'checkbox', checked: data.enabled, disabled: busy || action !== null,
             onChange: event => change('enabled', { enabled: event.target.checked }) }), copy.enabled),
           !data.enabled ? h('p', { role: 'status' }, copy.disabled) : null,
+          h('label', { style: { display: 'block' } }, h('input', { type: 'checkbox', checked: data.autoLearning, disabled: busy || action !== null,
+            onChange: event => change('auto-learning', { autoLearning: event.target.checked }) }), copy.autoLearning),
+          !data.autoLearning ? h('p', { role: 'status' }, copy.learningOff) : null,
           h('p', { role: 'status' }, `已用 ${data.usage.count}/${data.limits.maxMemories} 条、${data.usage.chars}/${data.limits.recallChars} 字。`),
           data.usage.nearCapacity ? h('p', null, copy.capacity) : null,
           h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'edit', fact: { kind: 'preference', title: '', content: '' } }); } }, copy.add),
@@ -101,13 +114,26 @@ window.__ModuleLoader__.load({
             h('ul', { style: { padding: 0, listStyle: 'none' } }, data.facts.map(fact =>
               h('li', { key: fact.id, tabIndex: -1, 'data-memory-id': fact.id, style: { outline: fact.id === focusId ? '2px solid var(--border, #8885)' : undefined, borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },
                 h('small', { title: `${copy.created} ${new Date(fact.createdAt).toLocaleString('zh-CN')}；${copy.updated} ${new Date(fact.updatedAt).toLocaleString('zh-CN')}` },
-                  `${copy[fact.kind]} · ${date(fact.updatedAt)} · ${copy[fact.source]}`),
+                  `${copy[fact.kind]} · ${date(fact.updatedAt)} · ${fact.source === 'learning' ? copy.learningSource : copy[fact.source]}`),
                 h('h3', { style: { margin: '4px 0' } }, fact.title), h('p', { style: { overflowWrap: 'anywhere' } }, fact.content),
                 action?.type === 'delete' && action.id === fact.id ? h('div', null,
                   h('p', null, copy.note), h('button', { style: buttonStyle, disabled: busy, onClick: () => change('delete', { id: fact.id }) }, copy.confirm),
                   h('button', { style: buttonStyle, disabled: busy, onClick: () => setAction(null) }, copy.cancel)) : h('div', null,
                   h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'edit', fact: { id: fact.id, kind: fact.kind, title: fact.title, content: fact.content } }); }, 'aria-label': copy.edit + '：' + fact.title }, copy.edit),
-                  h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'delete', id: fact.id }); }, 'aria-label': copy.remove + '：' + fact.title }, copy.remove)))))),
+                  h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'delete', id: fact.id }); }, 'aria-label': copy.remove + '：' + fact.title }, copy.remove))))),
+          h('h3', null, copy.learning), h('p', null, copy.learningNote),
+          data.learning === null ? h('p', { role: 'status' }, copy.learningUnavailable) : data.learning.length === 0 ? h('p', null, copy.learningEmpty) : h('ul', { style: { padding: 0, listStyle: 'none' } },
+            data.learning.map(entry => h('li', { key: entry.id, style: { borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },
+              h('strong', null, copy[entry.action + 'Action']), ' · ', h('time', { dateTime: entry.createdAt }, new Date(entry.createdAt).toLocaleString('zh-CN')),
+              h('p', null, entry.reason),
+              h('p', null, copy.before + '：' + (entry.before.map(fact => fact.title + '：' + fact.content).join('；') || copy.none)),
+              h('p', null, copy.after + '：' + (entry.after.map(fact => fact.title + '：' + fact.content).join('；') || copy.none)),
+              entry.undone ? h('span', null, copy.undone) : action?.type === 'undo-learning' && action.id === entry.id
+                ? h('div', null,
+                  h('button', { style: buttonStyle, disabled: busy, onClick: () => change('undo-learning', { id: entry.id }) }, copy.undoConfirm),
+                  h('button', { style: buttonStyle, disabled: busy, onClick: () => setAction(null) }, copy.cancel))
+                : h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'undo-learning', id: entry.id }); },
+                  'aria-label': copy.undo + '：' + (entry.after[0]?.title || entry.before[0]?.title || copy.learning) }, copy.undo))))),
         h('p', null, copy.note));
     }
     // The same management component is used in Settings and this fallback dialog.

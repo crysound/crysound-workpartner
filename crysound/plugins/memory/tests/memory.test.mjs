@@ -155,6 +155,20 @@ test('real HTTP panel reads and deletes with revision checks, method and content
   assert.equal((await action('auto-learning', { revision: 6, autoLearning: true })).status, 409);
   assert.equal((await action('auto-learning', { revision: 7, autoLearning: 'true' })).status, 409);
   assert.equal(store.snapshot().autoLearning, false);
+  store.setEnabled({ revision: 7, enabled: true });
+  store.setAutoLearning({ revision: 8, autoLearning: true });
+  store.applyLearning({ revision: 9, changes: [{ action: 'add', ids: [], fact: report, reason: '本人长期偏好' }] });
+  const logResponse = await fetch(base + 'learning');
+  assert.equal(logResponse.status, 200);
+  const log = await logResponse.json();
+  assert.equal(log.learning.length, 1);
+  assert.equal(log.learning[0].action, 'add');
+  assert.equal((await fetch(base + 'learning', { headers: { origin: 'https://other.example' } })).status, 403);
+  assert.equal((await action('undo-learning', { revision: 9, id: log.learning[0].id })).status, 409);
+  const undo = await action('undo-learning', { revision: 10, id: log.learning[0].id });
+  assert.equal(undo.status, 200);
+  assert.equal((await undo.json()).facts.length, 0);
+  assert.equal((await (await fetch(base + 'learning')).json()).learning.length, 0);
 });
 
 test('learning defaults on, persists independently of recall, and rejects stale writers', t => {
@@ -192,7 +206,16 @@ test('released format 1 upgrades once without changing facts, revision, or the d
         createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, source TEXT NOT NULL);
       PRAGMA user_version=1;`);
     db.prepare('INSERT INTO facts VALUES (?,?,?,?,?,?,?)').run(fact.id, fact.kind, fact.title, fact.content, fact.createdAt, fact.updatedAt, fact.source);
+    db.exec("UPDATE facts SET source='invalid'");
   } finally { db.close(); }
+  assert.throws(() => new MemoryStore(dir), /数据损坏/u);
+  const failed = new DatabaseSync(join(dir, 'memory.sqlite'));
+  try {
+    assert.equal(failed.prepare('PRAGMA user_version').get().user_version, 1);
+    assert.equal(failed.prepare('PRAGMA table_info(meta)').all().some(column => column.name === 'autoLearning'), false);
+    assert.equal(failed.prepare('SELECT content FROM facts').get().content, fact.content);
+    failed.prepare('UPDATE facts SET source=?').run(fact.source);
+  } finally { failed.close(); }
   const first = new MemoryStore(dir);
   try {
     const upgraded = first.snapshot();

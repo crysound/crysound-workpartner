@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 
 const kinds = new Set(['preference', 'identity', 'project']);
-const sources = new Set(['conversation', 'manual', 'edited']);
+const sources = new Set(['conversation', 'manual', 'edited', 'learning']);
+const learningActions = new Set(['add', 'update', 'delete', 'merge']);
+const retentionMs = 30 * 24 * 60 * 60 * 1000;
 const sensitive = /密码|口令|令牌|密钥|验证码|私钥|助记词|password|passwd|passphrase|passcode|api[ _-]?key|\btoken\b|credential|private[ _-]?key|secret|bearer\s|-----BEGIN|\b(?:sk-|ghp_|github_pat_|xox[baprs]-)[\w-]+|\beyJ[\w-]+\.[\w-]+\.[\w-]+/iu;
 // Reject digit sequences even when written without a descriptive label. No checksum is needed.
 const personalNumber = /(?<!\d)(?:\d{17}[\dXx]|\d{16,19})(?!\d)/u;
@@ -29,6 +31,25 @@ function factInput(input) {
 function factId(id) {
   if (typeof id !== 'string' || !idPattern.test(id)) throw new Error('请选择有效的记忆编号。');
   return id;
+}
+
+function storedFact(row) {
+  const fact = factInput(row);
+  if (!idPattern.test(row.id) || !sources.has(row.source) || !datePattern.test(row.createdAt) || !datePattern.test(row.updatedAt)) {
+    throw new Error('记忆数据损坏，请检查存储。');
+  }
+  return { id: row.id, ...fact, createdAt: row.createdAt, updatedAt: row.updatedAt, source: row.source };
+}
+
+function learningRecord(row) {
+  const before = JSON.parse(row.beforeFacts);
+  const after = JSON.parse(row.afterFacts);
+  if (!idPattern.test(row.id) || !idPattern.test(row.runId) || !learningActions.has(row.action)
+    || !datePattern.test(row.createdAt) || ![0, 1].includes(row.undone)
+    || !Array.isArray(before) || !Array.isArray(after)) throw new Error('学习记录损坏，请检查存储。');
+  const reason = factInput({ kind: 'preference', title: '整理原因', content: row.reason }).content;
+  return { id: row.id, runId: row.runId, action: row.action, createdAt: row.createdAt,
+    before: before.map(storedFact), after: after.map(storedFact), reason, undone: row.undone === 1 };
 }
 
 /** Model-facing facts include update dates; private UI metadata stays outside the recall budget. */
@@ -65,7 +86,11 @@ export class MemoryStore {
         INSERT OR IGNORE INTO meta (id,revision,enabled,autoLearning) VALUES (1, 0, 1, 1);
         CREATE TABLE IF NOT EXISTS facts (id TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, content TEXT NOT NULL,
           createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, source TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS learning_changes (id TEXT PRIMARY KEY, runId TEXT NOT NULL, action TEXT NOT NULL,
+          createdAt TEXT NOT NULL, beforeFacts TEXT NOT NULL, afterFacts TEXT NOT NULL, reason TEXT NOT NULL,
+          undone INTEGER NOT NULL DEFAULT 0 CHECK(undone IN (0,1)));
         PRAGMA user_version=2;`);
+      this.pruneLearning();
       this.read();
       this.db.exec('COMMIT');
     } catch (error) {
@@ -74,11 +99,13 @@ export class MemoryStore {
     }
   }
 
-  /** Read one consistent snapshot; never trim silently when configuration is reduced. */
-  snapshot() {
-    this.db.exec('BEGIN');
+  /** Return bounded facts; includeLearning also erases expired records and returns the private journal. */
+  snapshot({ includeLearning = false } = {}) {
+    this.db.exec(includeLearning ? 'BEGIN IMMEDIATE' : 'BEGIN');
     try {
+      if (includeLearning) this.pruneLearning();
       const value = this.read();
+      if (includeLearning) value.learning = this.db.prepare('SELECT * FROM learning_changes ORDER BY createdAt DESC,rowid DESC').all().map(learningRecord);
       this.db.exec('COMMIT');
       return value;
     } catch (error) {
@@ -90,13 +117,7 @@ export class MemoryStore {
   /** Read within the caller's transaction; validate disk data before model exposure. */
   read() {
     const { revision, enabled, autoLearning } = this.db.prepare('SELECT revision,enabled,autoLearning FROM meta WHERE id=1').get();
-    const facts = this.db.prepare('SELECT * FROM facts ORDER BY createdAt,id').all().map(row => {
-      const fact = factInput(row);
-      if (!idPattern.test(row.id) || !sources.has(row.source) || !datePattern.test(row.createdAt) || !datePattern.test(row.updatedAt)) {
-        throw new Error('记忆数据损坏，请检查存储。');
-      }
-      return { id: row.id, ...fact, createdAt: row.createdAt, updatedAt: row.updatedAt, source: row.source };
-    });
+    const facts = this.db.prepare('SELECT * FROM facts ORDER BY createdAt,id').all().map(storedFact);
     if (!Number.isSafeInteger(revision) || revision < 0 || ![0, 1].includes(enabled) || ![0, 1].includes(autoLearning)) throw new Error('记忆版本或开关无效。');
     const value = { revision, enabled: enabled === 1, autoLearning: autoLearning === 1, facts };
     // Count the full enabled recall JSON even when disabled, so toggling never hides an overrun.
@@ -112,6 +133,7 @@ export class MemoryStore {
     if (!Number.isSafeInteger(revision) || revision < 0) throw new Error('请先读取当前记忆版本。');
     this.db.exec('BEGIN IMMEDIATE');
     try {
+      this.pruneLearning();
       const before = this.read();
       if (before.revision !== revision) throw new Error('记忆已变化，请重新读取；不要用旧会话内容恢复已删记忆。');
       update(before);
@@ -169,8 +191,75 @@ export class MemoryStore {
     }
   }
 
-  deleteFact(id) {
+  deleteFact(id, { forgetHistory = true } = {}) {
     if (this.db.prepare('DELETE FROM facts WHERE id=?').run(id).changes !== 1) throw new Error('这条记忆已不存在，请刷新。');
+    if (forgetHistory) this.db.prepare(`DELETE FROM learning_changes WHERE
+      EXISTS (SELECT 1 FROM json_each(beforeFacts) WHERE json_extract(value,'$.id')=?) OR
+      EXISTS (SELECT 1 FROM json_each(afterFacts) WHERE json_extract(value,'$.id')=?)`).run(id, id);
+  }
+
+  /** Erase expired originals on startup, mutation and history reads; caller owns the transaction. */
+  pruneLearning() {
+    this.db.prepare('DELETE FROM learning_changes WHERE createdAt<=?').run(new Date(Date.now() - retentionMs).toISOString());
+  }
+
+  /** Internal commit for evidence-validated proposals; no HTTP or model tool exposes this writer. */
+  applyLearning({ revision, changes }) {
+    if (!Array.isArray(changes) || changes.length === 0 || changes.length > this.maxMemories) throw new Error('学习改动无效。');
+    if (changes.filter(change => change?.action === 'add').length > 3) throw new Error('一次最多新增三条记忆。');
+    const runId = randomBytes(12).toString('hex');
+    return this.change(revision, before => {
+      if (!before.enabled || !before.autoLearning) throw new Error('自动学习已关闭。');
+      const touched = new Set();
+      for (const change of changes) {
+        if (!change || !learningActions.has(change.action) || !Array.isArray(change.ids)) throw new Error('学习改动无效。');
+        const { action, ids } = change;
+        const required = { add: ids.length === 0, update: ids.length === 1, delete: ids.length === 1, merge: ids.length >= 2 };
+        if (!required[action] || ids.length > this.maxMemories) throw new Error('学习改动无效。');
+        if (action === 'add' && this.read().usage.nearCapacity) throw new Error('记忆用量已达八成，只能整理。');
+        const previous = ids.map(id => {
+          factId(id);
+          if (touched.has(id)) throw new Error('学习改动有重复的记忆。');
+          touched.add(id);
+          const fact = before.facts.find(fact => fact.id === id);
+          if (!fact) throw new Error('这条记忆已不存在，请刷新。');
+          return fact;
+        });
+        const reason = factInput({ kind: 'preference', title: '整理原因', content: change.reason }).content;
+        const nextId = action === 'add' ? randomBytes(12).toString('hex') : ids[0];
+        if (action === 'delete') this.deleteFact(nextId, { forgetHistory: false });
+        else {
+          const fact = factInput(change.fact);
+          for (const id of ids.slice(1)) this.deleteFact(id, { forgetHistory: false });
+          this.writeFact(nextId, fact, 'learning', action !== 'add');
+        }
+        const next = action === 'delete' ? [] : [storedFact(this.db.prepare('SELECT * FROM facts WHERE id=?').get(nextId))];
+        this.db.prepare('INSERT INTO learning_changes (id,runId,action,createdAt,beforeFacts,afterFacts,reason) VALUES (?,?,?,?,?,?,?)')
+          .run(randomBytes(12).toString('hex'), runId, action, new Date().toISOString(), JSON.stringify(previous), JSON.stringify(next), reason);
+      }
+    });
+  }
+
+  /** Undo one recorded operation only if all its facts still match its committed after-images. */
+  undoLearning({ id, revision }) {
+    factId(id);
+    return this.change(revision, current => {
+      const row = this.db.prepare('SELECT * FROM learning_changes WHERE id=? AND undone=0').get(id);
+      if (!row) throw new Error('这条学习记录已撤销、删除或到期。');
+      const entry = learningRecord(row);
+      const ids = new Set([...entry.before, ...entry.after].map(fact => fact.id));
+      for (const factId of ids) {
+        const expected = entry.after.find(fact => fact.id === factId);
+        const actual = current.facts.find(fact => fact.id === factId);
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error('这条记忆后来已被修改，不能直接撤销。');
+      }
+      for (const fact of entry.after) {
+        if (!entry.before.some(previous => previous.id === fact.id)) this.deleteFact(fact.id);
+      }
+      for (const fact of entry.before) this.db.prepare(`INSERT OR REPLACE INTO facts VALUES (?,?,?,?,?,?,?)`)
+        .run(fact.id, fact.kind, fact.title, fact.content, fact.createdAt, fact.updatedAt, fact.source);
+      this.db.prepare('UPDATE learning_changes SET undone=1 WHERE id=?').run(id);
+    });
   }
 
   /** Remove one fact without a content-bearing tombstone or backup. */
@@ -194,7 +283,7 @@ export class MemoryStore {
   /** Securely clear every fact in one revision-checked transaction after confirmation. */
   clear({ revision, confirmed }) {
     if (confirmed !== true) throw new Error('请再次确认清空全部个人记忆。');
-    return this.change(revision, () => this.db.exec('DELETE FROM facts'));
+    return this.change(revision, () => this.db.exec('DELETE FROM facts; DELETE FROM learning_changes;'));
   }
 
   /** Release the database when the plugin is disposed. */
