@@ -2,7 +2,7 @@
   "plugins": [
     {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.8.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.8.tgz"},
     {"name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12"},
-    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.4", "want": "0.1.4"},
+    {"name": "dsh-mnemon", "spec": "dsh-mnemon@0.5.42", "want": "0.5.42"},
     {"name": "@crysound/artifacts", "spec": "@crysound/artifacts@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/design-system", "spec": "@crysound/design-system@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/slides", "spec": "@crysound/slides@1.1.0", "want": "1.1.0", "missingOnly": true},
@@ -11,6 +11,7 @@
     {"name": "@crysound/motion", "spec": "@crysound/motion@1.1.0", "want": "1.1.0", "missingOnly": true}
   ],
   "defaultBundles": [
+    "dsh-mnemon",
     "@deepseek-ai/dsh-experimental-plugin-market-bundle",
     "@deepseek-ai/dsh-experimental-voice-input-bundle",
     "@deepseek-ai/dsh-experimental-auto-review",
@@ -25,8 +26,10 @@
     "@crysound/slides": {"displayName": "兆华幻灯片", "maintainers": [], "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9InNsaWRlcy1iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNFREM4NUIiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNDRjk0MjciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNSIgZmlsbD0idXJsKCNzbGlkZXMtYmcpIi8+PHJlY3QgeD0iMTIiIHk9IjE0IiB3aWR0aD0iNDAiIGhlaWdodD0iMzEiIHJ4PSI1IiBmaWxsPSJ3aGl0ZSIvPjxwYXRoIGQ9Ik0zMiA0NXY4bTAtNy0xMCA3bTEwLTcgMTAgNyIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cmVjdCB4PSIxOSIgeT0iMjIiIHdpZHRoPSIyNSIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iI0Q2QTEzMyIvPjxyZWN0IHg9IjE5IiB5PSIzMSIgd2lkdGg9IjE3IiBoZWlnaHQ9IjQiIHJ4PSIyIiBmaWxsPSIjRDZBMTMzIi8+PC9zdmc+"},
     "@crysound/dashboard": {"displayName": "兆华看板", "maintainers": [], "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImRhc2hib2FyZC1iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiM5NEM5NkEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM1NTlENDkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNSIgZmlsbD0idXJsKCNkYXNoYm9hcmQtYmcpIi8+PHJlY3QgeD0iMTMiIHk9IjE0IiB3aWR0aD0iMzgiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSJ3aGl0ZSIvPjxyZWN0IHg9IjIwIiB5PSIzMCIgd2lkdGg9IjUiIGhlaWdodD0iMTMiIHJ4PSIyIiBmaWxsPSIjNjhBQTUyIi8+PHJlY3QgeD0iMjkuNSIgeT0iMjEiIHdpZHRoPSI1IiBoZWlnaHQ9IjIyIiByeD0iMiIgZmlsbD0iIzY4QUE1MiIvPjxyZWN0IHg9IjM5IiB5PSIyNiIgd2lkdGg9IjUiIGhlaWdodD0iMTciIHJ4PSIyIiBmaWxsPSIjNjhBQTUyIi8+PC9zdmc+"},
     "@crysound/data": {"displayName": "兆华数据", "maintainers": [], "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImRhdGEtYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjNTlDNkIyIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMjc5Qjg3Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTUiIGZpbGw9InVybCgjZGF0YS1iZykiLz48cGF0aCBkPSJNMTUgMjJjMyA3IDMxIDcgMzQgMHYxMGMtMyA4LTMxIDgtMzQgMHptMCAxNGMzIDcgMzEgNyAzNCAwdjEwYzAgOS0zNCA5LTM0IDB6IiBmaWxsPSJ3aGl0ZSIvPjxlbGxpcHNlIGN4PSIzMiIgY3k9IjE3IiByeD0iMTciIHJ5PSI3IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg=="},
-    "@crysound/memory": {"displayName": "兆华记忆", "maintainers": [], "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im1lbW9yeS1iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNCREIxNkEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM4RTg3NDAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNSIgZmlsbD0idXJsKCNtZW1vcnktYmcpIi8+PHBhdGggZD0iTTE3IDIwYTggOCAwIDAgMSA4LThoMTRhOCA4IDAgMCAxIDggOHYzMkwzMiA0NGwtMTUgOHoiIGZpbGw9IndoaXRlIi8+PHJlY3QgeD0iMjQiIHk9IjIyIiB3aWR0aD0iMTYiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9IiM5RDk1NEQiLz48cmVjdCB4PSIyNCIgeT0iMzEiIHdpZHRoPSIxMiIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzlEOTU0RCIvPjwvc3ZnPg=="},
     "@crysound/image": {"displayName": "兆华生图", "maintainers": [], "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImltYWdlLWJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iI0M0OUFFNCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzkzNTZCQSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE1IiBmaWxsPSJ1cmwoI2ltYWdlLWJnKSIvPjxyZWN0IHg9IjEyIiB5PSIxMyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjM4IiByeD0iNiIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjI0IiByPSI1IiBmaWxsPSIjQTU2Q0M4Ii8+PHBhdGggZD0ibTE2IDQ0IDExLTE0IDkgMTEgNS02IDcgOXYzSDE2eiIgZmlsbD0iI0E1NkNDOCIvPjwvc3ZnPg=="}
   },
-  "retire": {"id": "market-v1", "packages": ["dsh-slidestudio", "dsh-video-editor", "dsh-oil-ui"]}
+  "retire": [
+    {"id": "market-v1", "packages": ["dsh-slidestudio", "dsh-video-editor", "dsh-oil-ui"]},
+    {"id": "mnemon-v1", "packages": ["@crysound/memory"]}
+  ]
 }

@@ -10,7 +10,7 @@ import { preparePluginPolicy } from "../config/company-plugins.mjs";
 import { patchOfficialPlugins, patchOfficialPluginsRuntime } from "../scripts/patch-official-plugins.mjs";
 
 const official = "@crysound/design", thirdParty = "dsh-slidestudio";
-const config = { officialPlugins: { [official]: { displayName: "兆华设计", maintainers: [] } }, retire: { id: "market-v1", packages: [thirdParty, "dsh-video-editor", "dsh-oil-ui"] } };
+const config = { officialPlugins: { [official]: { displayName: "兆华设计", maintainers: [] } }, retire: [{ id: "market-v1", packages: [thirdParty, "dsh-video-editor", "dsh-oil-ui"] }] };
 function fixture(t, old = true) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "company-plugins-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));

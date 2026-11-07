@@ -492,6 +492,22 @@ test("官方中文名和维护姓名来自配置，部署名单优先；无效�
   }
 });
 
+test("退役插件从索引和引导消失，包、审批记录及其他插件保留", async (t) => {
+  const f = await fixture(t, { officialPlugins: { [name]: { displayName: "兆华示例", maintainers: ['alice'] } } });
+  await f.publish("alice", "1.0.0");
+  await f.review("1.0.0");
+  assert.equal((await f.index()).plugins[0].name, name);
+  const before = fs.readFileSync(f.stateFile, 'utf8');
+  f.options.retiredPackages = [name, 'dsh-slidestudio']; f.restart();
+  assert.deepEqual((await f.index()).plugins, []);
+  assert.deepEqual(JSON.parse((await f.request('/_zp/market/guides.json', { headers: bearer('alice') })).text).guides, []);
+  assert.equal(fs.readFileSync(f.stateFile, 'utf8'), before);
+  assert.ok(f.packages.has(name));
+  f.options.retiredPackages = ['@crysound/memory']; f.restart();
+  assert.equal((await f.index()).plugins[0].name, name);
+  for (const retiredPackages of [null, {}, ['../invalid']]) assert.throws(() => createMarket({ ...f.options, retiredPackages }), /退役插件配置/);
+});
+
 test("非官方显示名、备用名称及包名不得以兆华开头，拒绝发生在注册表写入前", async (t) => {
   const f = await fixture(t);
   for (const field of ["displayName", "title"]) {
