@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { buildBodyCard } from './card.ts'
 import type { LarkGateway, MessageTarget } from './lark-client.ts'
 
@@ -27,7 +27,7 @@ export class Preview {
   private paragraph = ''
   private messageId: string | undefined
   private cardId: string | undefined
-  private readonly elementId = `preview_${randomUUID()}`
+  private readonly elementId = randomBytes(10).toString('hex')
   private sequence = 0
   private readonly startedAt: number
   private readonly intervalMs: number
@@ -35,6 +35,7 @@ export class Preview {
   private lastSent = -Infinity
   private timer: ReturnType<typeof setTimeout> | undefined
   private flight: Promise<void> | undefined
+  private finishFlight: Promise<void> | undefined
   private stopped = false
   private disabled = false
   private readonly lark: LarkGateway
@@ -43,6 +44,12 @@ export class Preview {
   constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS) {
     this.lark = lark; this.target = target; this.now = now
     this.startedAt = now(); this.intervalMs = intervalMs
+  }
+
+  /** Start once, before any model output; subsequent content reuses this publisher. */
+  start(): void {
+    if (this.stopped || this.disabled || this.messageId || this.flight) return
+    this.flight = this.publish('').finally(() => { this.flight = undefined; this.schedule() })
   }
 
   line(text: string): void { if (text) { this.lines.push(text); this.schedule() } }
@@ -66,7 +73,7 @@ export class Preview {
     if (!this.messageId) {
       this.cardId = await this.lark.createStreamingCard(this.elementId)
       this.messageId = await this.lark.sendMessage(this.target, 'interactive', this.cardId
-        ? { type: 'card', data: { card_id: this.cardId } } : buildBodyCard('正在处理…'))
+        ? { type: 'card', data: { card_id: this.cardId } } : this.placeholderCard())
       if (!this.messageId) this.disabled = true
       return
     }
@@ -85,7 +92,16 @@ export class Preview {
     // A rate-limited frame is skipped; only a subsequent change retries it.
     this.lastBody = body
   }
-  async finish(status = '已完成'): Promise<void> {
+  private placeholderCard() {
+    const card = buildBodyCard('思考中…')
+    card.config.summary = { content: '思考中…' }
+    return card
+  }
+  finish(status = '已完成'): Promise<void> {
+    return this.finishFlight ??= this.settle(status)
+  }
+  private async settle(status: string): Promise<void> {
+    this.start()
     this.stopped = true
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined

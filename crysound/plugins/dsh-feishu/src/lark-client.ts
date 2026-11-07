@@ -435,12 +435,12 @@ export class LarkClient implements LarkGateway {
         url: '/open-apis/cardkit/v1/cards', method: 'POST',
         data: { type: 'card_json', data: JSON.stringify({
           schema: '2.0', config: {
-            streaming_mode: true, summary: { content: '正在处理…' },
+            streaming_mode: true, summary: { content: '思考中…' },
             streaming_config: {
               print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast',
             },
           },
-          body: { elements: [{ tag: 'markdown', element_id: elementId, content: '正在处理…' }] },
+          body: { elements: [{ tag: 'markdown', element_id: elementId, content: '思考中…' }] },
         }) },
       }), { maxRetries: 0 })
       const id = response?.data?.card_id

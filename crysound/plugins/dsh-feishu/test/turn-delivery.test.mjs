@@ -432,3 +432,87 @@ for (const scenario of [
   assert.equal(sends[1][1].threadId, scenario.threadId)
   assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^已完成/)
 })
+
+test('generated CardKit element identifiers meet the JSON 2.0 format and stay distinct across turns', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const elements = []
+  const h = harness({ lark: {
+    async createStreamingCard(element) { elements.push(element); return `card-${elements.length}` },
+    async streamCardContent() { return true },
+    async settleStreamingCard() { return true },
+  } })
+  for (let i = 0; i < 2; i++) {
+    const preview = new Preview(h.lark, { chatId: 'chat' })
+    preview.delta('text'); await tick()
+    await preview.finish()
+  }
+  assert.equal(elements.length, 2)
+  for (const element of elements) assert.match(element, /^[A-Za-z0-9_]{1,20}$/)
+  assert.notEqual(elements[0], elements[1])
+})
+
+for (const scenario of [
+  { chatType: 'p2p' }, { chatType: 'group' }, { chatType: 'group', threadId: 'thread' },
+  { parentId: 'quote' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
+]) test(`thought placeholder appears before any model output and is reused: ${JSON.stringify(scenario)}`, async () => {
+  const h = harness()
+  const incoming = message('origin', scenario)
+  if (scenario.messageType === 'file') await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
+  h.event('turn/start'); h.consume(); await tick()
+  const sends = h.calls.filter(c => c[0] === 'send')
+  assert.equal(sends.length, 1)
+  assert.equal(sends[0][3].body.elements[0].content, '思考中…')
+  assert.equal(sends[0][3].config.summary.content, '思考中…')
+  h.assistant('final'); await h.end()
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^已完成/)
+})
+
+for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progress content retains one thought card on ${reason}`, async () => {
+  const h = harness()
+  await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
+  await h.end(reason, { error: { message: 'preparation failed' } })
+  const sends = h.calls.filter(c => c[0] === 'send')
+  assert.equal(sends.length, 2)
+  assert.equal(sends[0][3].body.elements[0].content, '思考中…')
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content,
+    reason === 'completed' ? /^已完成/ : reason === 'error' ? /^失败：preparation failed/ : /^已停止/)
+})
+
+test('turn/start publishes immediately before the first user event; preparation failure settles that one card', async () => {
+  const h = harness()
+  await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); await tick()
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+  assert.equal(h.calls.at(-1)[3].body.elements[0].content, '思考中…')
+  await h.end('error', { error: { message: 'preparation failed' } })
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^失败/)
+  assert.equal(h.calls.at(-1)[0], 'unreact')
+})
+
+test('a queued phone prompt keeps its one placeholder while an earlier web message owns the turn', async () => {
+  const h = harness()
+  await h.bot.handlePrompt(message(), 'phone prompt'); h.event('turn/start'); await tick()
+  h.event('user/message', { id: 'web', source: { kind: 'user' }, content: [{ type: 'text', text: 'web prompt' }] })
+  h.assistant('web answer'); await h.end()
+  assert.equal(h.calls.filter(c => c[0] === 'fallback').length, 0)
+  h.event('turn/start'); h.consume(); await tick()
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2) // one thought card and the web reply
+  h.assistant('phone answer'); await h.end()
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 3)
+  assert.equal(h.calls.filter(c => c[0] === 'fallback').length, 1)
+  assert.equal(h.calls.at(-1)[0], 'unreact')
+})
+
+test('fast completion and repeated finish wait for the same in-flight card creation', async () => {
+  let release
+  const h = harness({ lark: { createStreamingCard: () => new Promise(resolve => { release = resolve }) } })
+  const preview = new Preview(h.lark, { chatId: 'chat' })
+  preview.start(); preview.start()
+  const first = preview.finish(), second = preview.finish('已停止')
+  assert.equal(first, second)
+  assert.equal(h.calls.length, 0)
+  release(undefined); await second
+  assert.deepEqual(h.calls.map(c => c[0]), ['send', 'fallback'])
+  assert.match(h.calls[1][2].body.elements[0].content, /^已完成/)
+})

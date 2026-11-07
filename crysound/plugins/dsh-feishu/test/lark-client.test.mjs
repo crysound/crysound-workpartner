@@ -220,20 +220,20 @@ test('CardKit creates streaming JSON 2.0, sends card_id into threads, streams an
   const calls = []
   client.client.request = async args => { calls.push(args); return { code: 0, data: { card_id: 'card' } } }
   client.client.im.message.reply = async args => { calls.push(args); return { code: 0, data: { message_id: 'message' } } }
-  assert.equal(await client.createStreamingCard('unique-element'), 'card')
+  assert.equal(await client.createStreamingCard('unique_element'), 'card')
   const initial = JSON.parse(calls[0].data.data)
   assert.equal(initial.config.streaming_mode, true)
-  assert.equal(initial.config.summary.content, '正在处理…')
+  assert.equal(initial.config.summary.content, '思考中…')
   assert.deepEqual(initial.config.streaming_config, { print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast' })
-  assert.equal(initial.body.elements[0].element_id, 'unique-element')
+  assert.equal(initial.body.elements[0].element_id, 'unique_element')
   await client.sendMessage({ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'interactive', { type: 'card', data: { card_id: 'card' } })
   assert.deepEqual(JSON.parse(calls[1].data.content), { type: 'card', data: { card_id: 'card' } })
   assert.equal(calls[1].data.reply_in_thread, true)
-  assert.equal(await client.streamCardContent('card', 'unique-element', '完整文本', 1), true)
+  assert.equal(await client.streamCardContent('card', 'unique_element', '完整文本', 1), true)
   const card = { schema: '2.0', config: { width_mode: 'fill' }, body: { elements: [{ tag: 'markdown', content: '已完成' }] } }
   assert.equal(await client.settleStreamingCard('card', 2, card), true)
   assert.deepEqual(calls.slice(2).map(c => [c.method, c.data.sequence]), [['PUT', 1], ['PATCH', 2], ['PUT', 3]])
-  assert.equal(calls[2].url, '/open-apis/cardkit/v1/cards/card/elements/unique-element/content')
+  assert.equal(calls[2].url, '/open-apis/cardkit/v1/cards/card/elements/unique_element/content')
   assert.equal(calls[2].data.content, '完整文本')
   assert.equal(JSON.parse(calls[3].data.settings).config.streaming_mode, false)
   assert.deepEqual(JSON.parse(calls[4].data.card.data), card)

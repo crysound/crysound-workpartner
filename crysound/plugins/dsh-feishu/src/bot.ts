@@ -254,7 +254,7 @@ export class FeishuBot {
   private turnHasUser = false
   private queuedMessages: InboundMessage[] = []
   private readonly acknowledgements = new Map<string, Promise<string | undefined>>()
-  private readonly pendingPrompts = new Map<string, { messages: InboundMessage[]; sessionId: string }>()
+  private readonly pendingPrompts = new Map<string, { messages: InboundMessage[]; sessionId: string; preview?: Preview }>()
   private readonly imageBatches = new Map<string, { messages: InboundMessage[]; timer: ReturnType<typeof setTimeout> }>()
   /** The bot's own open_id — group mention routing (resolved at start; optional). */
   private botOpenId: string | undefined
@@ -1503,6 +1503,7 @@ export class FeishuBot {
       agent.followup(userMessage)
       return 'opened'
     } catch (error) {
+      await this.pendingPrompts.get(userMessage.id)?.preview?.finish('消息未能进入会话')
       this.pendingPrompts.delete(userMessage.id)
       throw error
     }
@@ -1575,7 +1576,10 @@ export class FeishuBot {
         await this.sendFinal(this.target(trigger), '还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
       }
     } catch (error) {
-      for (const [id, pending] of this.pendingPrompts) if (pending.messages === messages) this.pendingPrompts.delete(id)
+      for (const [id, pending] of this.pendingPrompts) if (pending.messages === messages) {
+        await pending.preview?.finish('消息未能进入会话')
+        this.pendingPrompts.delete(id)
+      }
       await this.clearAcknowledgements(messages)
       await this.sendFinal(this.target(trigger), '消息未能进入会话，请重发一次。')
       this.ctx.logger.warn('dsh-feishu: injection failed: %o', error)
@@ -1765,7 +1769,11 @@ export class FeishuBot {
         const waiting = [...this.pendingPrompts.values()].find(pending => pending.sessionId === sessionId)
         this.turnMessages = waiting?.messages ?? []
         const target = waiting ? this.target(waiting.messages.at(-1)!) : undefined
-        this.turnOutput = new TurnOutput(target ? new Preview(this.lark, target, this.now, this.config.previewIntervalMs) : undefined, target)
+        if (waiting && target) {
+          waiting.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs)
+          waiting.preview.start()
+        }
+        this.turnOutput = new TurnOutput(waiting?.preview, target)
         this.turnHasUser = false
       } else if (event.type === 'user/message') {
         const pending = this.pendingPrompts.get(event.data.id)
@@ -1779,8 +1787,13 @@ export class FeishuBot {
           if (!this.turnHasUser) {
             this.turnMessages = pending.messages
             const target = this.target(pending.messages.at(-1)!)
-            this.turnOutput = new TurnOutput(new Preview(this.lark, target, this.now, this.config.previewIntervalMs), target)
-          } else void this.clearAcknowledgements(pending.messages, true)
+            pending.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs)
+            pending.preview.start()
+            this.turnOutput = new TurnOutput(pending.preview, target)
+          } else {
+            void pending.preview?.finish('已加入本轮')
+            void this.clearAcknowledgements(pending.messages, true)
+          }
         }
         this.turnHasUser = true
       } else if (event.type === 'assistant/message') {
@@ -1991,7 +2004,10 @@ export class FeishuBot {
     await this.clearAcknowledgements(this.turnMessages)
     await this.clearAcknowledgements(this.queuedMessages)
     this.queuedMessages = []
-    for (const pending of this.pendingPrompts.values()) await this.clearAcknowledgements(pending.messages)
+    for (const pending of this.pendingPrompts.values()) {
+      await pending.preview?.finish('会话已解绑（/resume 可重新进入）')
+      await this.clearAcknowledgements(pending.messages)
+    }
     this.pendingPrompts.clear()
     for (const batch of this.imageBatches.values()) {
       clearTimeout(batch.timer)

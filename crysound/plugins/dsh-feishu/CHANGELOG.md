@@ -6,6 +6,8 @@ All notable changes to dsh-feishu are documented here. The format follows
 ## [0.17.0-crysound.3] - 2026-11-07
 
 ### Changed (CRYSOUND)
+- Publish one “思考中…” placeholder at turn start, before any model content, and reuse it on prompt consumption; very short turns settle that same card. Keep queued-prompt preview ownership across web turns.
+- Generate schema-valid, distinct 20-character hexadecimal CardKit element IDs.
 - Retain turn previews and settle them in place with completion/stop/error/limit status and elapsed seconds. Always send final answers as new messages; remove preview-deletion code entirely.
 - Use CardKit streaming entities with cumulative text, unique markdown element IDs, strictly increasing sequences, an explicit list summary and the documented print settings. Close streaming before replacing the card; fall back to whole-card patches on CardKit failures, including closed streams.
 - Add `previewIntervalMs` (default 250 ms, range 200–5000); whole-card fallback keeps a minimum 700 ms interval. Preserve streamed whitespace and open fences to keep cumulative frames as prefixes.
