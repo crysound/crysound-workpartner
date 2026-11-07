@@ -27,7 +27,7 @@ export class Preview {
   private paragraph = ''
   private messageId: string | undefined
   private cardId: string | undefined
-  private readonly elementId = randomBytes(10).toString('hex')
+  private readonly elementId = 'p' + randomBytes(9).toString('hex')
   private sequence = 0
   private readonly startedAt: number
   private readonly intervalMs: number

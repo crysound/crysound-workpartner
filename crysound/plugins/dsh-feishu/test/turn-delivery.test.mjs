@@ -441,14 +441,14 @@ test('generated CardKit element identifiers meet the JSON 2.0 format and stay di
     async streamCardContent() { return true },
     async settleStreamingCard() { return true },
   } })
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1000; i++) {
     const preview = new Preview(h.lark, { chatId: 'chat' })
     preview.delta('text'); await tick()
     await preview.finish()
   }
-  assert.equal(elements.length, 2)
-  for (const element of elements) assert.match(element, /^[A-Za-z0-9_]{1,20}$/)
-  assert.notEqual(elements[0], elements[1])
+  assert.equal(elements.length, 1000)
+  for (const element of elements) assert.match(element, /^[A-Za-z][A-Za-z0-9_]{0,19}$/)
+  assert.equal(new Set(elements).size, elements.length)
 })
 
 for (const scenario of [

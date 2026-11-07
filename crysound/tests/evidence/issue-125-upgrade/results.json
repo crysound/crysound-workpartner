@@ -1,13 +1,19 @@
 {
   "image": "zhaohua-partner:0.2.2-rc.1",
   "cpuLimit": 1,
-  "archiveIntegrity": "sha512-gp0jVYBHebTgNh0f7qIqCPRAIEbEV/VK08If5ncxvDQBuVyR455jE7cFWudKO5RruZc082mfGxdLVZUG2BZz5A==",
+  "archiveIntegrity": "sha512-wV4vD3szEFZTLjGseDtcA1O1KSqXKzgsU6nIGaJCjs6E14Wdv9nRDWdJKWJhLl1cS8awnrSpXqSRKEw3W07uOQ==",
   "tests": {
     "total": 564,
     "passed": 562,
     "skipped": 2,
     "failed": 0,
     "skipReason": "zstd binary unavailable"
+  },
+  "elementIdCheck": {
+    "generated": 1000,
+    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,19}$",
+    "allDistinct": true,
+    "oldGeneratorRejected": true
   },
   "cases": [
     {
@@ -21,48 +27,21 @@
       "configurationAndOtherPluginRetained": true,
       "bothLocksUpdated": true,
       "authenticatedHomeHttp": 200,
-      "subsequentPluginAddRemove": "passed"
-    },
-    {
-      "case": "web-remote-integrity",
-      "seedVersion": "0.17.0-crysound.2",
-      "installedVersion": "0.17.0-crysound.3",
-      "enabled": true,
-      "fiberPhase": "active",
-      "oldArchiveAbsent": true,
-      "repeatedInstall": 2,
-      "configurationAndOtherPluginRetained": true,
-      "bothLocksUpdated": true,
-      "authenticatedHomeHttp": 200,
-      "subsequentPluginAddRemove": "passed"
-    },
-    {
-      "case": "web-remote-no-integrity",
-      "seedVersion": "0.17.0-crysound.2",
-      "installedVersion": "0.17.0-crysound.3",
-      "enabled": true,
-      "fiberPhase": "active",
-      "oldArchiveAbsent": true,
-      "repeatedInstall": 2,
-      "configurationAndOtherPluginRetained": true,
-      "bothLocksUpdated": true,
-      "authenticatedHomeHttp": 200,
-      "subsequentPluginAddRemove": "passed"
-    },
-    {
-      "case": "desktop-file",
-      "seedVersion": "0.17.0-crysound.2",
-      "installedVersion": "0.17.0-crysound.3",
-      "enabled": true,
-      "fiberPhase": "active",
-      "oldArchiveAbsent": true,
-      "repeatedInstall": 2,
-      "configurationAndOtherPluginRetained": true,
-      "bothLocksUpdated": true,
-      "authenticatedHomeHttp": 200,
-      "subsequentPluginAddRemove": "passed"
+      "subsequentPluginAddRemove": "passed",
+      "installedPreviewMatchesNewArchive": true
     }
   ],
+  "previousFourPathEvidence": {
+    "commit": "865f3578b919b94ffe57230e42572b0d07ea0d2e",
+    "archiveIntegrity": "sha512-gp0jVYBHebTgNh0f7qIqCPRAIEbEV/VK08If5ncxvDQBuVyR455jE7cFWudKO5RruZc082mfGxdLVZUG2BZz5A==",
+    "cases": [
+      "web-file",
+      "web-remote-integrity",
+      "web-remote-no-integrity",
+      "desktop-file"
+    ],
+    "note": "Previous same-version archive; this follow-up reruns only web-file with the letter-prefixed archive."
+  },
   "notValidated": [
     "real Feishu notification and duplicate/deletion behavior",
     "real-client typewriter smoothness",
