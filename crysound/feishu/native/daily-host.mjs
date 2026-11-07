@@ -30,7 +30,7 @@ export async function deliverDailyReport(ctx, record, signal, stillPending = asy
   if (!await stillPending()) return false;
   signal.throwIfAborted();
   if (!exists) {
-    const text = `${record.date} · 每天帮我查一次\n\n${record.report.text}`;
+    const text = `${record.date} · 主动提醒\n\n${record.report.text}`;
     session.append('assistant/message', { turn: 0, step: 0,
       message: { id: record.id, role: 'assistant', content: [{ type: 'text', text }], source: { kind: 'model', provider: 'magpie', model: record.report.model } },
       stream: [{ type: 'text-chunks', time0: record.at, index: 0, dt: [], texts: [text] }],

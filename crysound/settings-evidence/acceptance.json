@@ -1,0 +1,455 @@
+{
+  "backend": "Temporary real SQLite memory store + real HTTP handlers; synthetic saved reminder state",
+  "skinSha256": "a6129ef535000a7e122eb31bc2c31c39f52679a3115b77f422d47eb7f919bd33",
+  "measurements": [
+    {
+      "appearance": "default",
+      "mode": "light",
+      "titleSize": "16px",
+      "text": "rgb(15, 17, 21)",
+      "secondary": "rgb(97, 102, 107)",
+      "danger": "rgb(236, 19, 19)",
+      "dangerToken": "#ec1313",
+      "fieldOverflow": false,
+      "dailyTitleSize": "16px",
+      "icons": [
+        {
+          "label": "通用设置",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ]
+        },
+        {
+          "label": "模型",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ]
+        },
+        {
+          "label": "内置插件",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ]
+        },
+        {
+          "label": "Agent 预设",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ]
+        },
+        {
+          "label": "插件市场",
+          "before": "\"\"",
+          "visibleSvg": []
+        },
+        {
+          "label": "飞书授权",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ]
+        },
+        {
+          "label": "主动提醒",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ]
+        },
+        {
+          "label": "记忆",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ]
+        }
+      ]
+    },
+    {
+      "appearance": "default",
+      "mode": "dark",
+      "titleSize": "16px",
+      "text": "rgb(249, 250, 251)",
+      "secondary": "rgb(207, 211, 214)",
+      "danger": "rgb(242, 90, 90)",
+      "dangerToken": "#f25a5a",
+      "fieldOverflow": false,
+      "dailyTitleSize": "16px",
+      "icons": [
+        {
+          "label": "通用设置",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ]
+        },
+        {
+          "label": "模型",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ]
+        },
+        {
+          "label": "内置插件",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ]
+        },
+        {
+          "label": "Agent 预设",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ]
+        },
+        {
+          "label": "插件市场",
+          "before": "\"\"",
+          "visibleSvg": []
+        },
+        {
+          "label": "飞书授权",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ]
+        },
+        {
+          "label": "主动提醒",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ]
+        },
+        {
+          "label": "记忆",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ]
+        }
+      ]
+    },
+    {
+      "appearance": "soft",
+      "mode": "light",
+      "titleSize": "16px",
+      "text": "rgb(29, 29, 28)",
+      "secondary": "rgb(107, 107, 104)",
+      "danger": "rgb(236, 19, 19)",
+      "dangerToken": "#ec1313",
+      "fieldOverflow": false,
+      "dailyTitleSize": "16px",
+      "icons": [
+        {
+          "label": "通用设置",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ]
+        },
+        {
+          "label": "模型",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ]
+        },
+        {
+          "label": "内置插件",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ]
+        },
+        {
+          "label": "Agent 预设",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ]
+        },
+        {
+          "label": "插件市场",
+          "before": "\"\"",
+          "visibleSvg": []
+        },
+        {
+          "label": "飞书授权",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ]
+        },
+        {
+          "label": "主动提醒",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ]
+        },
+        {
+          "label": "记忆",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ]
+        }
+      ]
+    },
+    {
+      "appearance": "soft",
+      "mode": "dark",
+      "titleSize": "16px",
+      "text": "rgb(213, 213, 213)",
+      "secondary": "rgb(151, 151, 151)",
+      "danger": "rgb(242, 90, 90)",
+      "dangerToken": "#f25a5a",
+      "fieldOverflow": false,
+      "dailyTitleSize": "16px",
+      "icons": [
+        {
+          "label": "通用设置",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ]
+        },
+        {
+          "label": "模型",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ]
+        },
+        {
+          "label": "内置插件",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ]
+        },
+        {
+          "label": "Agent 预设",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ]
+        },
+        {
+          "label": "插件市场",
+          "before": "\"\"",
+          "visibleSvg": []
+        },
+        {
+          "label": "飞书授权",
+          "before": "none",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ]
+        },
+        {
+          "label": "主动提醒",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ]
+        },
+        {
+          "label": "记忆",
+          "before": "none",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ]
+        }
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/enabled",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/enabled",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/delete",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/clear",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/delete",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/clear",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/delete",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/clear",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/delete",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/clear",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/_zp/daily-check/status",
+      "method": "GET"
+    },
+    {
+      "route": "/_zp/daily-check/settings",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/settings",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/settings",
+      "method": "POST"
+    },
+    {
+      "route": "/_zp/daily-check/settings",
+      "method": "POST"
+    },
+    {
+      "route": "/crysound-memory/api/list",
+      "method": "GET"
+    },
+    {
+      "route": "/crysound-memory/api/save",
+      "method": "POST"
+    }
+  ],
+  "errors": [],
+  "reminderFileUnchanged": true,
+  "marketPatchIdempotent": true,
+  "unverified": [
+    "Production deployment and real user data",
+    "Desktop installed package"
+  ]
+}

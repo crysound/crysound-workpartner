@@ -153,6 +153,8 @@ test('pinned browser modules parse, preserve hard links and mode, and are idempo
   patchCompanySidebarRuntime(root);
   const first = files.map(file => fs.readFileSync(file, 'utf8'));
   first.forEach(text => new vm.Script(text));
+  assert.ok(!first[0].includes('zp.marketHint'));
+  assert.ok(!first[0].includes('zp-sidebar-market-title'));
   patchCompanySidebarRuntime(root);
   assert.deepEqual(files.map(file => fs.readFileSync(file, 'utf8')), first);
   assert.equal(fs.readFileSync(linked, 'utf8'), original);
@@ -253,7 +255,12 @@ test('published sidebar activates with declared dependencies, resolves inventory
   assert.equal(selected, 'p2');
   const visibleRows = rows.map(n => n.type(n.props));
   const market = allNodes(visibleRows[2]).find(n => n.type === 'button');
-  assert.equal(market.props['aria-label'], '市场 · 插件·技能');
+  assert.equal(market.props['aria-label'], '市场');
+  assert.equal(allNodes(market).filter(n => n.type === 'small').length, 0);
+  assert.ok(allNodes(market).some(n => n.type === 'span' && n.props.children === '市场'));
+  const railMarket = allNodes(rows[2].type({ ...rows[2].props, wide: false })).find(n => n.type === 'button');
+  assert.equal(railMarket.props['aria-label'], '市场');
+  assert.equal(Object.hasOwn(dictionaries.sidebar, 'zp.marketHint'), false);
   const denied = allNodes(component({ ...props, useRemoteAccess: () => false }));
   assert.ok(!denied.some(n => n.type === 'button' && n.props['aria-label'] === '新对话'));
 });

@@ -39,6 +39,12 @@ const PATCHES = [
     replace: "作品",
     all: true,
   },
+  // dshmarket hides only a direct SVG, but the settings shell now wraps its glyph.
+  {
+    file: "dshmarket/lib/client.js",
+    find: '[${NAV_ICON_MARKER}] > svg',
+    replace: '[${NAV_ICON_MARKER}] > svg, [${NAV_ICON_MARKER}] > [aria-hidden="true"]',
+  },
   // An explicit settings return owns the viewport until it closes; first-run onboarding resumes afterwards.
   {
     file: "@deepseek-ai/dsh-client-ui-settings-general/lib/client.js",

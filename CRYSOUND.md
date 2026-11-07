@@ -11,7 +11,7 @@
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
 ### 品牌
-- 侧栏方案 A：`crysound/scripts/patch-sidebar.mjs` 对固定版共享侧栏和工作区客户端产物做版本检查与幂等修补；网页安装运行时后、桌面生成完整性清单前使用同一份。固定入口按新对话 / 作品 / 自动化 / 市场排列，其他插件按名称排序，超过两个全收进更多；单工作区默认平铺、多个默认分组，保留搜索和管理。和皮肤 #133 同批更新镜像，发布及验收见 `crysound/sidebar-a/README.md`。不改上游 `packages/` 源码。
+- 侧栏方案 A：`crysound/scripts/patch-sidebar.mjs` 对固定版共享侧栏和工作区客户端产物做版本检查与幂等修补；网页安装运行时后、桌面生成完整性清单前使用同一份。固定入口按新对话 / 作品 / 自动化 / 市场排列，市场只保留图标和名称，其他插件按名称排序，超过两个全收进更多；单工作区默认平铺、多个默认分组，保留搜索和管理。和皮肤 #133 同批更新镜像，发布及验收见 `crysound/sidebar-a/README.md`。不改上游 `packages/` 源码。
 - 可选“兆华柔和”皮肤：设置→通用→外观下方切换，默认关闭，按设备保存。`skin.js` 在首屏前同步读取，`skin.css` 仅在 `data-zp-skin="soft"` 下覆盖外观，不改导航结构；网页重建镜像，桌面版随下一安装包。选回“默认”可立即回退，移除皮肤资源也不影响默认界面。
 - `crysound/brand/timezone.js` 在网页与桌面前端启动前加载：仅在浏览器同时报告零偏移与 UTC/GMT 类时区时，默认日期格式化改用北京时间；显式时区保留。dsh 使用的本地日期取值、设值与日期字符串按现代北京时间（UTC+08:00）兜底，时间戳、UTC 方法与序列化不变。此脚本不模拟历史夏令时，也不改变原生日期构造或解析规则；回退时撤下两端 HTML 的该脚本入口。网页版需重建用户镜像并在空闲时更新容器，网关无改动；桌面版随下次打包生效。轻量回归：`node crysound/scripts/check-timezone.mjs`；截图与验收边界见 `crysound/web/tests/evidence/issue-80/`。
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
