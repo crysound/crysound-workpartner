@@ -176,3 +176,43 @@ test('patchCard returns true on a zero-code success body', async () => {
   assert.equal(await client.patchCard('om_1', card), true)
   assert.deepEqual(errors, [])
 })
+
+test('reaction IDs, deletion, raw-card fetching, and thread replies use the intended API shape', async () => {
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu', sleep: async () => {} })
+  const calls = []
+  client.client.im.messageReaction.create = async args => { calls.push(['react', args]); return { code: 0, data: { reaction_id: 'r' } } }
+  client.client.im.messageReaction.delete = async args => { calls.push(['unreact', args]); return { code: 0 } }
+  client.client.im.message.delete = async args => { calls.push(['delete', args]); return { code: 0 } }
+  client.client.im.message.reply = async args => { calls.push(['reply', args]); return { code: 0, data: { message_id: 'reply' } } }
+  client.client.im.message.create = async args => { calls.push(['send', args]); return { code: 0, data: { message_id: 'send' } } }
+  client.client.request = async args => { calls.push(['get', args]); return { code: 0, data: { items: [{ message_id: 'm' }] } } }
+  assert.equal(await client.react('m', 'OnIt'), 'r')
+  await client.deleteReaction('m', 'r')
+  assert.equal(await client.deleteMessage('preview'), true)
+  await client.sendMessage({ chatId: 'chat', threadId: 'thread', messageId: 'm' }, 'text', { text: 'body' })
+  await client.sendMessage({ chatId: 'chat', messageId: 'm' }, 'text', { text: 'body' })
+  assert.equal((await client.getMessages('m'))[0].message_id, 'm')
+  assert.deepEqual(calls[0][1].data, { reaction_type: { emoji_type: 'OnIt' } })
+  assert.deepEqual(calls[1][1].path, { message_id: 'm', reaction_id: 'r' })
+  assert.equal(calls[3][1].data.reply_in_thread, true)
+  assert.equal(calls[3][1].path.message_id, 'm')
+  assert.equal(calls[4][1].data.receive_id, 'chat')
+  assert.equal(calls[5][1].params.card_msg_content_type, 'raw_card_content')
+})
+
+test('preview limits skip the frame without retry; denied capabilities warn once; failed reactions log debug', async () => {
+  const errors = [], logs = [], sleeps = []
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu', sleep: async ms => sleeps.push(ms),
+    onError: what => errors.push(what), onLog: level => logs.push(level) })
+  client.client.im.message.patch = async () => ({ code: 230020, msg: 'rate limited' })
+  assert.equal(await client.updatePreview('m', {}), 'limited')
+  assert.deepEqual(sleeps, [])
+  client.client.im.message.delete = async () => ({ code: 99991672, msg: 'scope denied' })
+  assert.equal(await client.deleteMessage('m'), false)
+  assert.equal(await client.deleteMessage('n'), false)
+  assert.deepEqual(errors, ['delete-message'])
+  client.client.im.messageReaction.create = async () => ({ code: 99991672, msg: 'scope denied' })
+  assert.equal(await client.react('m', 'OnIt'), undefined)
+  assert.deepEqual(logs, ['debug'])
+  assert.deepEqual(errors, ['delete-message'])
+})

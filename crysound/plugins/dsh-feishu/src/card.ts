@@ -25,7 +25,7 @@
 
 import type { RunState } from './run-state.ts'
 import { contextTokensEstimate, reasoningTail, streamingTextTail, subagentDisplayLabel, subagentRows } from './run-state.ts'
-import { clipLine, closeOpenFence, formatDuration, formatWhen, repairMojibake } from './text.ts'
+import { clipLine, closeOpenFence, formatDuration, formatWhen, repairMojibake, preprocessCardMarkdown } from './text.ts'
 import type { ResumeRow } from './resume-table.ts'
 
 /**
@@ -572,7 +572,7 @@ export function buildBodyCard(body: string): Schema2Card {
     schema: '2.0',
     config: { width_mode: 'fill' },
     body: {
-      elements: [{ tag: 'markdown', content: repairMojibake(body) }],
+      elements: [{ tag: 'markdown', content: preprocessCardMarkdown(repairMojibake(body)) }],
     },
   }
 }

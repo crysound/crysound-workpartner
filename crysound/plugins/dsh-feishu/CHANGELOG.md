@@ -3,6 +3,20 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.2] - 2026-11-07
+
+### Changed (CRYSOUND)
+- Acknowledge admitted prompts with `OnIt` before session creation/resume or resource downloads. Track reaction IDs, remove them after final delivery, and mark consumed steer messages `DONE`.
+- Replace per-round sends with a single temporary, throttled preview per turn. Show safe Chinese tool summaries and streamed text, hide reasoning/tool results, fold old progress, and retract the preview before sending the final reply as new messages. Retraction denial updates the existing card instead.
+- Keep substantial intermediate content in the final answer; segment at 4000 characters by default, preprocess card Markdown, use rich posts for more than five tables, and fall back to text after delivery retries.
+- Preserve topic destinations and named mentions. Support reply chains, posts with images, files, merged forwards, and image bursts within 800 ms. Resource access failures degrade without adding permissions or event subscriptions.
+- Preserve fenced code examples during card formatting and keep rich-text hyperlink destinations in direct, quoted and forwarded prompts.
+- `/stop` cancels immediately, including child agents and btw, and finishes with a plain body message. Errors no longer send status cards. Web-originated turns send only the final answer to Feishu.
+
+### Validation
+- Source typecheck and focused `node:test` regression suites cover delivery order, throttling, in-flight cleanup, steer identity, routing, attachments, Markdown and API degradation.
+- Release must still run the clean dependency/test/check/build/pack sequence and the thirteen real-account acceptance steps in the linked issue. No release artifacts or deployment manifests are changed here.
+
 ## [Unreleased]
 
 ### Fixed

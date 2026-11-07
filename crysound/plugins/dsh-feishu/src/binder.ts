@@ -243,14 +243,13 @@ export class SessionBinder {
   }
 
   /** Send the drained follow-ups into the freshly bound local agent. */
-  drainOutboxIntoAgent(): void {
+  drainOutboxIntoAgent(beforeSend?: (id: string) => void): void {
     const agent = this.getAgent()
     if (agent === undefined) return
     for (const text of this.takeOutbox()) {
-      agent.followup(createUserMessage({
-        content: [{ type: 'text', text }],
-        source: { kind: 'user' },
-      }))
+      const message = createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } })
+      beforeSend?.(message.id)
+      agent.followup(message)
     }
   }
 
