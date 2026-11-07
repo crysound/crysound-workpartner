@@ -35,6 +35,8 @@ export interface Config {
   appSecretRef?: string
   /** Status-card update beat in ms (default 5000 — pseudo-streaming; clamped to [5000, 600000]). */
   statusIntervalMs?: number
+  /** CardKit update interval in ms (default 250; legacy fallback stays at least 700). */
+  previewIntervalMs?: number
   /**
    * Minimum interval between mid-turn progress-card pushes in ms
    * (default 180000 = 3 min; clamped to [30000, 3600000]). Output produced
@@ -89,6 +91,7 @@ export const Config = z.object({
   appIdRef: z.string().default('DSH_FEISHU_APP_ID'),
   appSecretRef: z.string().default('DSH_FEISHU_APP_SECRET'),
   statusIntervalMs: z.number().min(5000).max(600000).step(1).default(5000),
+  previewIntervalMs: z.number().min(200).max(5000).step(1).default(250),
   bodySegmentChars: z.number().min(500).max(30000).step(1).default(4000),
   resumeListStyle: z.union([z.const('auto'), z.const('table'), z.const('list')]).default('auto'),
   btwContextMessages: z.number().min(0).max(50).step(1).default(6),
@@ -107,6 +110,7 @@ export interface ResolvedConfig {
   readonly appIdRef: string
   readonly appSecretRef: string
   readonly statusIntervalMs: number
+  readonly previewIntervalMs: number
   readonly bodySegmentChars: number
   readonly resumeListStyle: 'auto' | 'table' | 'list'
   readonly btwContextMessages: number
@@ -117,7 +121,7 @@ export interface ResolvedConfig {
 
 const CONFIG_KEYS: ReadonlySet<string> = new Set([
   'mode', 'domain', 'operators', 'appId', 'appSecret', 'appIdRef', 'appSecretRef',
-  'statusIntervalMs', 'bodySegmentChars', 'resumeListStyle', 'btwContextMessages',
+  'statusIntervalMs', 'previewIntervalMs', 'bodySegmentChars', 'resumeListStyle', 'btwContextMessages',
   'backgroundPush', 'roundButtons', 'toolDetail',
 ])
 
@@ -142,6 +146,10 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
   const statusIntervalMs = config?.statusIntervalMs ?? 5000
   if (!Number.isSafeInteger(statusIntervalMs) || statusIntervalMs < 5000 || statusIntervalMs > 600000) {
     throw new Error('dsh-feishu: statusIntervalMs must be an integer in [5000, 600000]')
+  }
+  const previewIntervalMs = config?.previewIntervalMs ?? 250
+  if (!Number.isSafeInteger(previewIntervalMs) || previewIntervalMs < 200 || previewIntervalMs > 5000) {
+    throw new Error('dsh-feishu: previewIntervalMs must be an integer in [200, 5000]')
   }
   const bodySegmentChars = config?.bodySegmentChars ?? 4000
   if (!Number.isSafeInteger(bodySegmentChars) || bodySegmentChars < 500 || bodySegmentChars > 30000) {
@@ -200,6 +208,7 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
     appIdRef,
     appSecretRef,
     statusIntervalMs,
+    previewIntervalMs,
     bodySegmentChars,
     resumeListStyle,
     btwContextMessages: btwConfigValue ?? 6,

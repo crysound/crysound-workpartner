@@ -54,14 +54,14 @@ ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chr
 COPY brand/ /tmp/brand/
 RUN set -e; v=$(find /tmp/brand -maxdepth 1 -type f -print0 | sort -z | xargs -0 cat | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
  cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
- cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/timezone.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/timezone.js $d/pet.js $d/welcome.js; \
+ cp /tmp/brand/skin.css /tmp/brand/skin.js /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/timezone.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/skin.* $d/timezone.js $d/pet.js $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \
         -e 's#content="DSH"#content="兆华工作伙伴"#' \
         -e 's#\(href="\./\(favicon[-a-z]*\.svg\|apple-touch-icon\.png\)\)"#\1?v='"$v"'"#g' \
-        -e 's#</head>#<script src="./timezone.js?v='"$v"'"></script><script src="/_zp/preview/client.js"></script>  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
+        -e 's#</head>#<script src="./timezone.js?v='"$v"'"></script><script src="./skin.js?v='"$v"'"></script><script src="/_zp/preview/client.js"></script>  <link rel="stylesheet" href="./brand.css?v='"$v"'" />\n    <link rel="stylesheet" href="./skin.css?v='"$v"'" />\n    <script src="./brand.js?v='"$v"'" defer></script>\n    <script src="./welcome.js?v='"$v"'" defer></script>\n  </head>#' $d/index.html; \
  sed -i 's#\.svg")#.svg?v='"$v"'")#g' $d/brand.css; grep -q "zp-mark.svg?v=$v" $d/brand.css; \
  sed -i -e 's#"DeepSeek Harness"#"兆华工作伙伴"#g' -e 's#"DSH"#"兆华伙伴"#g' $d/manifest.webmanifest; \
- grep -q timezone.js $d/index.html; grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
+ grep -q skin.js $d/index.html; grep -q skin.css $d/index.html; grep -q timezone.js $d/index.html; grep -q brand.js $d/index.html; grep -q welcome.js $d/index.html; chmod 644 $d/*.png; rm -rf /tmp/brand
 # 公司配置由服务器目录挂载；Host 钩子属于固定运行时代码。
 COPY host-hook.mjs /opt/partner/host-hook.mjs
 RUN chmod 644 /opt/partner/host-hook.mjs

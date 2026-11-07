@@ -133,7 +133,7 @@ for (const name of cases) {
     assert.equal(manifest.dependencies[FEISHU.name], want);
     assert.equal(manifest.dependencies['is-number'], '7.0.0');
     assert.deepEqual(manifest.dsh, JSON.parse(readFileSync(join(home, 'selection.json'))));
-    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.2');
+    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.3');
     for (const file of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) {
       const text = readFileSync(join(profile, file), 'utf8');
       assert.ok(!text.includes(oldFile));
@@ -148,5 +148,5 @@ for (const name of cases) {
   await boot(profileName, env, home);
   dsh('plugin', '--profile', profileName, 'add', 'is-odd@3.0.1');
   dsh('plugin', '--profile', profileName, 'remove', 'is-odd');
-  console.log(`PASS upgrade: ${name} → crysound.2, locks/config/other plugin retained, composition twice, real plugin apply + HTTP ready, subsequent add/remove`);
+  console.log(`PASS upgrade: ${name} → crysound.3, locks/config/other plugin retained, composition twice, real plugin apply + HTTP ready, subsequent add/remove`);
 }

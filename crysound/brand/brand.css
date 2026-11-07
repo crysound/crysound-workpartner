@@ -148,3 +148,10 @@ html[data-windows-titlebar]:has([data-sidebar-collapsed="true"]) { --dsh-windows
   .zp-pet .fx, .zp-pet .shine { display: none !important; }
   .zp-pet *, .zp-pet { transition: none !important; }
 }
+
+/* Device appearance setting contributed by the company client module. */
+.zp-skin-setting{padding:20px 0;border-bottom:1px solid var(--dsw-alias-border-l2);font-size:14px;color:var(--dsw-alias-label-primary)}
+.zp-skin-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.zp-skin-choices{display:flex;gap:8px}
+.zp-skin-choices [aria-pressed="true"]{background:var(--dsw-alias-interactive-bg-active);border-color:var(--dsw-alias-label-secondary)}
+.zp-skin-setting p{font-size:13px;color:var(--dsw-alias-label-secondary)}

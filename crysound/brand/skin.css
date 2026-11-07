@@ -1,0 +1,300 @@
+/*
+ * 兆华柔和皮肤（适配 dsh 0.2.2-rc.1）
+ *
+ * 用法：整份放进 <style> 或 <link rel="stylesheet">，网页版和桌面版都可直接注入，不依赖构建。
+ * 开启：仅 <html data-zp-skin="soft"> 生效；无偏好或 default 时保持原样。
+ *
+ * 选择器只用三类钩子：
+ *   1. dsh 的 --dsw-* 变量（主题正式接口）；
+ *   2. dsh 源码里的 data-* / aria-* 属性（data-composer-card、data-signed-out、aria-current 等）；
+ *   3. CSS module 类名的后半段，例如 [class*="_panelRow"]。类名格式是“哈希_原名”，
+ *      哈希随构建路径变（网页版用 npm 包，桌面版在本仓库 CI 构建，两边哈希不同），后半段不变。
+ *      这里用到的后半段在 0.2.2-rc.1 全部包里各只出现一次（sidebarCol、panelRow、logoRow、
+ *      projectRow、cardWorkspaceTrigger），升级 dsh 后要复核。
+ *
+ * 门槛选择器 :root[data-zp-skin="soft"] 同时把优先级抬过 dsh 的同名规则
+ * （dsh 的样式表在运行时追加到 <head> 末尾，同优先级时它赢）。
+ *
+ * 数值来源：标【取值】的数值直接取自 Cindy 设计 token（Apache-2.0，提交 d920573a），
+ * 出处见 THIRD_PARTY_NOTICES.md；其余数值和全部选择器为本项目自写。交互使用中性色。
+ */
+
+/* ───────────── 1. 色板：浅色 ───────────── */
+
+:root[data-zp-skin="soft"] > body {
+  /* 皮肤自用变量（改观感先改这里） */
+  --zp-line: rgb(0 0 0 / 0.08);                 /* 【取值】边框墨水 8% */
+  --zp-row-selected: #FDFDF8;                   /* 【取值】选中行=卡片色，浮在侧栏上的近白胶囊 */
+  --zp-row-selected-ink: #141413;
+  --zp-card-fill: rgb(255 255 255 / 0.20);      /* 【取值】账号胶囊底 */
+  --zp-card-line: rgb(26 26 26 / 0.10);         /* 【取值】账号胶囊描边 */
+  --zp-card-hover: rgb(26 26 26 / 0.06);        /* 【取值】账号胶囊悬停 */
+  --zp-composer-radius: 16px;
+  --zp-composer-focus-line: rgb(107 107 103 / 0.30); /* 【取值】输入框聚焦描边 */
+  --zp-send: #3C3F43;                           /* 【取值】Cindy 反相按钮 */
+  --zp-send-hover: #2E3237;                   /* 【取值】 */
+  --zp-send-ink: #FCFCFC;                      /* 【取值】 */
+  --dsw-alias-label-primary-foreground: #FCFCFC;    /* 【取值】 */
+
+  /* 表面层级：页底 < 卡片/输入框；侧栏比页底深一档 */
+  --dsw-alias-bg-base: #F2F2ED;                 /* 【取值】暖象牙页底 */
+  --dsw-alias-bg-layer-1: #FDFDF8;              /* 【取值】卡片 */
+  --dsw-alias-bg-layer-2: #FDFDF8;              /* 【取值】卡片（设置卡片也走这里） */
+  --dsw-alias-bg-layer-3: #FFFFFF;
+  --dsw-alias-bg-module-platform: #EDEDE8;
+  --dsw-alias-bg-multi-select: #EDEDE8;
+  --dsw-specific-sidebar-fill: #EEEEE9;         /* 【取值】侧栏面 */
+  --dsw-specific-input-major: #FDFDF8;          /* 【取值】输入框 */
+  --dsw-specific-login-input: #FAFAF5;          /* 【取值】次级卡片 */
+
+  /* 线 */
+  --dsw-alias-border-l1: rgb(0 0 0 / 0.05);
+  --dsw-alias-border-l2: rgb(0 0 0 / 0.08);     /* 【取值】 */
+  --dsw-alias-border-l3: rgb(0 0 0 / 0.08);     /* 【取值】 */
+  --dsw-alias-border-l4: rgb(0 0 0 / 0.14);
+
+  /* 文字：Cindy 墨水阶梯 88/56/44/32% 在页底上折算的实色（实色避免多段图标交叠变深） */
+  --dsw-alias-label-primary: #1D1D1C;           /* 【取值·折算】 */
+  --dsw-alias-label-secondary: #6B6B68;         /* 【取值·折算】 */
+  --dsw-alias-label-tertiary: #878785;          /* 【取值·折算】 */
+  --dsw-alias-label-caption: #A5A5A2;           /* 【取值·折算】占位符 */
+
+  /* 交互填充 */
+  --dsw-alias-interactive-bg-hover: rgb(0 0 0 / 0.05);   /* 【取值】 */
+  --dsw-alias-interactive-bg-active: rgb(0 0 0 / 0.08);  /* 【取值】 */
+  --dsw-alias-interactive-bg-hover-accent: rgb(0 0 0 / 0.10);
+  --dsw-alias-interactive-bg-hover-solid: #E6E6E1;
+  --dsw-specific-selector: rgb(0 0 0 / 0.05);
+  --dsw-specific-tip: rgb(0 0 0 / 0.04);
+  --dsw-specific-sidebar-nav-item-active: rgb(0 0 0 / 0.08); /* 【取值】设置页左栏选中 */
+  --dsw-specific-sidebar-nav-item-active-accent: #E6E6E1;
+
+  /* 按钮：主按钮、开关、勾选用中性色；其余中性 */
+  --dsw-alias-brand-primary: #3C3F43; /* 【取值】 */
+  --dsw-alias-button-primary-fill: #3C3F43; /* 【取值】 */
+  --dsw-alias-button-primary-hover: #2E3237; /* 【取值】 */
+  --dsw-alias-button-elevated-fill: #FDFDF8; /* 【取值】 */
+  --dsw-alias-button-floating-fill: #FDFDF8; /* 【取值】 */
+  --dsw-alias-button-floating-hover: #F5F5F0;
+  --dsw-alias-button-ghost-active-fill: rgb(0 0 0 / 0.06);
+  --dsw-alias-button-ghost-active-hover: rgb(0 0 0 / 0.09);
+
+  /* 强调色：焦点环用原始蓝色；链接、徽标底为中性色 */
+  --dsw-alias-state-business-primary: #417CDD; /* 【取值】 */
+  --dsw-alias-state-business-tertiary: #EDEDE8;
+  --dsw-alias-link: #1D1D1C; /* 【取值】 */
+
+  /* 对话 */
+  --dsw-specific-bubble: #FDFDF8; /* 【取值】 */
+  --dsw-specific-bubble-highlight: #EDEDE8;
+  --dsw-alias-markdown-code-block: #FAFAF5;     /* 【取值】次级卡片 */
+  --dsw-alias-markdown-code-block-banner: #F5F5F0;
+  --dsw-alias-markdown-inline-code: rgb(0 0 0 / 0.05);
+  --dsw-alias-markdown-tag: rgb(0 0 0 / 0.05);
+
+  /* 浮层 */
+  --dsw-alias-tooltip-bg: #3C3F43;              /* 【取值】 */
+  --dsw-menu-surface-fill: rgb(251 251 246 / 0.90); /* 【取值】浮层玻璃 */
+  --dsw-alias-menu-group-header-fill: rgb(251 251 246 / 0.96);
+  --dsw-specific-menu: var(--dsw-menu-surface-fill);
+}
+
+/* ───────────── 2. 色板：深色（中性近黑） ───────────── */
+
+:root[data-zp-skin="soft"] > body[data-ds-dark-theme] {
+  --zp-line: rgb(255 255 255 / 0.10);           /* 【取值】 */
+  --zp-row-selected: rgb(255 255 255 / 0.10);
+  --zp-row-selected-ink: #F2F2F2;
+  --zp-card-fill: rgb(255 255 255 / 0.05);      /* 【取值】 */
+  --zp-card-line: rgb(255 255 255 / 0.13);      /* 【取值】 */
+  --zp-card-hover: rgb(255 255 255 / 0.10);     /* 【取值】 */
+  --zp-composer-focus-line: rgb(193 193 193 / 0.30); /* 【取值】 */
+  --zp-send: #EEEEEE; /* 【取值】 */
+  --zp-send-hover: #FCFCFC;                   /* 【取值】 */
+  --zp-send-ink: #151515;                      /* 【取值】 */
+  --dsw-alias-label-primary-foreground: #151515;    /* 【取值】 */
+
+  --dsw-alias-bg-base: #181818;                 /* 【取值】 */
+  --dsw-alias-bg-layer-1: #1F1F1F;              /* 【取值】 */
+  --dsw-alias-bg-layer-2: #1F1F1F;              /* 【取值】 */
+  --dsw-alias-bg-layer-3: #262626;
+  --dsw-alias-bg-module-platform: #222222;
+  --dsw-alias-bg-multi-select: #222222;
+  --dsw-specific-sidebar-fill: #141414;
+  --dsw-specific-input-major: #1F1F1F;          /* 【取值】 */
+  --dsw-specific-login-input: #1D1D1D;          /* 【取值】 */
+
+  --dsw-alias-border-l1: rgb(255 255 255 / 0.06);
+  --dsw-alias-border-l2: rgb(255 255 255 / 0.10); /* 【取值】 */
+  --dsw-alias-border-l3: rgb(255 255 255 / 0.10); /* 【取值】 */
+  --dsw-alias-border-l4: rgb(255 255 255 / 0.16);
+
+  /* 墨水阶梯 82/55/40/30% 在 #181818 上折算 */
+  --dsw-alias-label-primary: #D5D5D5;           /* 【取值·折算】 */
+  --dsw-alias-label-secondary: #979797;         /* 【取值·折算】 */
+  --dsw-alias-label-tertiary: #747474;          /* 【取值·折算】 */
+  --dsw-alias-label-caption: #5D5D5D;           /* 【取值·折算】 */
+
+  --dsw-alias-interactive-bg-hover: rgb(255 255 255 / 0.06);  /* 【取值】 */
+  --dsw-alias-interactive-bg-active: rgb(255 255 255 / 0.10); /* 【取值】 */
+  --dsw-alias-interactive-bg-hover-accent: rgb(255 255 255 / 0.13);
+  --dsw-alias-interactive-bg-hover-solid: #232323;
+  --dsw-specific-selector: rgb(255 255 255 / 0.06);
+  --dsw-specific-tip: rgb(255 255 255 / 0.05);
+  --dsw-specific-sidebar-nav-item-active: rgb(255 255 255 / 0.10); /* 【取值】 */
+  --dsw-specific-sidebar-nav-item-active-accent: #2B2B2B;
+
+  --dsw-alias-brand-primary: #EEEEEE; /* 【取值】 */
+  --dsw-alias-button-primary-fill: #EEEEEE; /* 【取值】 */
+  --dsw-alias-button-primary-hover: #FCFCFC; /* 【取值】 */
+  --dsw-alias-button-elevated-fill: #262626;
+  --dsw-alias-button-floating-fill: #1F1F1F;
+  --dsw-alias-button-floating-hover: #262626;
+  --dsw-alias-button-ghost-active-fill: rgb(255 255 255 / 0.08);
+  --dsw-alias-button-ghost-active-hover: rgb(255 255 255 / 0.12);
+
+  --dsw-alias-state-business-primary: #417CDD; /* 【取值】 */
+  --dsw-alias-state-business-tertiary: #292929;
+  --dsw-alias-link: #D5D5D5;
+
+  --dsw-specific-bubble: #1F1F1F;
+  --dsw-specific-bubble-highlight: #2B2B2B;
+  --dsw-alias-markdown-code-block: #1D1D1D;     /* 【取值】 */
+  --dsw-alias-markdown-code-block-banner: #222222;
+  --dsw-alias-markdown-inline-code: rgb(255 255 255 / 0.06);
+  --dsw-alias-markdown-tag: rgb(255 255 255 / 0.06);
+
+  --dsw-alias-tooltip-bg: #2A2A2A;
+  --dsw-menu-surface-fill: rgb(21 21 21 / 0.80); /* 【取值】 */
+  --dsw-alias-menu-group-header-fill: rgb(24 24 24 / 0.96);
+  --dsw-specific-menu: var(--dsw-menu-surface-fill);
+}
+
+/* ───────────── 3. 桌面版 macOS：毛玻璃侧栏 ─────────────
+ * dsh 在 macOS 上已开窗口原生毛玻璃，侧栏列只铺一层半透明底（原来带蓝色渐变）。
+ * 换成暖灰 85% 单色底。属性选择器写两遍只为抬优先级，盖过 dsh 深色规则。 */
+
+:root[data-platform="darwin"][data-zp-skin="soft"] > body {
+  --dsw-specific-menu: rgb(251 251 246 / 0.94);
+}
+:root[data-platform="darwin"][data-zp-skin="soft"] > body[data-ds-dark-theme] {
+  --dsw-specific-menu: rgb(30 30 30 / 0.94);
+}
+:root[data-platform="darwin"][data-zp-skin="soft"] [class*="_sidebarCol"][class*="_sidebarCol"] {
+  background: rgb(238 238 233 / 0.85);          /* 【取值】侧栏玻璃 */
+}
+:root[data-platform="darwin"][data-zp-skin="soft"] > body[data-ds-dark-theme] [class*="_sidebarCol"][class*="_sidebarCol"] {
+  background: rgb(5 5 5 / 0.85);                /* 【取值】 */
+}
+
+/* ───────────── 4. 侧栏：舒展的胶囊行（只在展开时生效，收窄的图标栏保持原样） ───────────── */
+
+/* 侧栏根（直接子元素里有 logo 行的那一层）：行内边距、图标与文字间距 */
+:root[data-zp-skin="soft"] [class*="_root"]:has(> [class*="_logoRow"]) {
+  --dsh-sidebar-row-padding: 14px;
+  --dsh-sidebar-label-gap: 10px;                /* 【取值】 */
+}
+
+/* “新建会话”从带边框的大按钮改成和下面导航一样的行 */
+:root[data-zp-skin="soft"] button[class*="_newSession"]:not([data-sidebar-collapsed] *) {
+  justify-content: flex-start;
+  height: 36px;
+  margin: 0 0 2px;
+  padding: 7px calc(var(--dsh-sidebar-row-padding) - var(--dsh-sidebar-paint-inset));
+  border: 0;
+  border-inline: var(--dsh-sidebar-paint-inset) solid transparent;
+  border-radius: 9999px; /* 【取值】 */
+  corner-shape: round;
+  background: transparent;
+  background-clip: padding-box;
+  font-weight: 400;
+}
+:root[data-zp-skin="soft"] button[class*="_newSession"]:not([data-sidebar-collapsed] *):hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  background-clip: padding-box;
+}
+:root[data-zp-skin="soft"] button[class*="_newSession"]:not([data-sidebar-collapsed] *) [class*="_newSessionContent"] {
+  justify-content: flex-start;
+  gap: var(--dsh-sidebar-label-gap);
+}
+:root[data-zp-skin="soft"] button[class*="_newSession"]:not([data-sidebar-collapsed] *) [class*="_newSessionContent"] > svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 导航行（插件、自动化等）、“下载客户端”行、工作区与会话行：圆角改为胶囊 */
+:root[data-zp-skin="soft"] [class*="_panelRow"]:not([data-sidebar-collapsed] *),
+:root[data-zp-skin="soft"] [class*="_projectRow"]:not([data-sidebar-collapsed] *),
+:root[data-zp-skin="soft"] [data-row-key^="session:"]:not([data-sidebar-collapsed] *) {
+  border-radius: 9999px; /* 【取值】 */
+  corner-shape: round;
+}
+
+/* 选中态：近白胶囊浮在侧栏上（深色为白 10%），悬停不闪回 */
+:root[data-zp-skin="soft"] [class*="_panelRow"][aria-current="page"]:not([data-sidebar-collapsed] *),
+:root[data-zp-skin="soft"] [data-row-key^="session:"][aria-selected="true"]:not([data-sidebar-collapsed] *) {
+  background-color: var(--zp-row-selected);
+  color: var(--zp-row-selected-ink);
+}
+:root[data-zp-skin="soft"] [class*="_panelRow"][aria-current="page"]:not([data-sidebar-collapsed] *) {
+  font-weight: 500;
+}
+
+/* ───────────── 5. 侧栏底部账号卡片 ─────────────
+ * 网页版和桌面版的账号按钮都是 dsh 的“未登录”样式（公司用飞书登录），brand.js 往里放头像和姓名。
+ * 这里把它做成带细边的胶囊卡片。 */
+
+:root[data-zp-skin="soft"] button[data-signed-out]:not([data-collapsed="true"]) {
+  width: calc(100% - 2 * var(--dsh-sidebar-paint-inset));
+  height: 40px;
+  margin: 6px var(--dsh-sidebar-paint-inset) 2px;
+  padding: 0 14px 0 6px;
+  gap: 10px;
+  border: 1px solid var(--zp-card-line);
+  border-radius: 9999px; /* 【取值】 */
+  corner-shape: round;
+  background: var(--zp-card-fill);
+  background-clip: border-box;
+  font-weight: 500;
+  line-height: 20px;
+}
+:root[data-zp-skin="soft"] button[data-signed-out]:not([data-collapsed="true"]):hover {
+  background: var(--zp-card-hover);
+}
+:root[data-zp-skin="soft"] button[data-signed-out]:not([data-collapsed="true"]) .zp-avatar,
+:root[data-zp-skin="soft"] button[data-signed-out]:not([data-collapsed="true"]) > [class*="_avatar"] {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+/* ───────────── 6. 输入框 ─────────────
+ * 圆角收小、去掉柔和阴影只留 1px 细线，聚焦时线加深；发送按钮用反相中性色。 */
+
+:root[data-zp-skin="soft"] [data-composer-card] {
+  --dsw-radius-panel: var(--zp-composer-radius);
+  --dsw-alias-button-info-fill: var(--zp-send);
+  --dsw-alias-button-info-hover: var(--zp-send-hover);
+  box-shadow: 0 0 0 1px var(--zp-line);
+  transition: box-shadow 150ms ease;
+}
+:root[data-zp-skin="soft"] [data-composer-card]:focus-within {
+  box-shadow: 0 0 0 1px var(--zp-composer-focus-line);
+}
+/* 未选工作区时 dsh 画虚线框，不再叠实线 */
+:root[data-zp-skin="soft"] [data-composer-card][class*="_cardWorkspaceTrigger"] {
+  box-shadow: none;
+}
+/* 首页居中的大输入框：编辑区加高 */
+:root[data-zp-skin="soft"] [class*="_hero"] > [data-composer-card] [contenteditable="true"] {
+  min-height: 84px;
+}
+
+/* dsh 的发送箭头写死白色；反相按钮必须同时覆盖前景。 */
+:root[data-zp-skin="soft"] [data-composer-card] button[class*="_primary"] {
+  color: var(--zp-send-ink);
+}
+:root[data-zp-skin="soft"] a[href] {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
