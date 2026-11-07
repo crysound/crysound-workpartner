@@ -96,3 +96,11 @@ python3 crysound/tests/config-container-smoke.py
 ## 网页按问题摘要
 
 网页镜像的公司补丁给 `web_fetch` 增加可选 `prompt`：填明问题后，先由公司配置的小模型提炼证据、保留关键原句和数字，只把带原 URL 的摘要交给主模型。默认开启，使用现有公司网关和 DeepSeek flash；没填问题、辅助模型失败或 2 秒内未完成时，继续返回原来的截断原文。公司联网提示要求遇到 403、登录或反爬时换来源，不写脚本绕过。配置字段、请求日志、测试、镜像与共享配置部署，以及 `fetchSummary: false` 的回退办法见[网页工具说明](web-tools/README.md#按问题摘要)。伙伴助理需在测试账号用 #137 原三题对比上下文峰值、主模型生成时间和总耗时，逐题保证不少于五个答案来源；本地无密钥测试不证明实际提速。
+
+## 数据调用的本次上限与对账
+
+Treg 的 MCP `call` 接受可选顶层 `max_cost_usd`（美元正数）；不传时沿用本人单次上限，传入时取两者较小值作为上游 `X-Treg-Route-Max-Cost`。搜索和网页提取仍保留各自更低的路由上限。REST 的 GET/POST 调用在查询字符串传 `max_cost_usd`，例如 `/_zp/treg/call/<endpoint_id>?max_cost_usd=0.01`；网关消费此参数，不转给数据提供方，也不从业务请求体提取它。非法金额不会发起付费调用：REST 和 MCP 均返回 400。本人日/月限额和身份校验继续生效，调用方不能用自定义身份或路由请求头绕过。
+
+MCP 工具说明按本人显示当前单次上限；MCP `catalog_get` 与 REST 目录详情在顶层返回 `zp_call_max_usd`，公共目录缓存不保存个人限额。MCP 调用结果的 `cost_usd` 旁增加 `call_id`，读取上游 `X-Treg-Call-Id`，未返回时为 null；REST 保留原始业务响应体，通过 `X-Treg-Call-Id` 透出编号，费用仍在 `X-Treg-Cost-Micro`。调用编号不自行生成，未知费用不当作免费。
+
+本项只需重建网关；数据插件配套版本 0.1.2 另行发布。伙伴助理上线后用已获准的测试账号预算核对“单次不超过 0.01 美元，查西门子企业信息”：模型带上限调用，回答给出实扣与调用编号。轻量回归：`node --test crysound/web/gateway/tests/treg.test.mjs`（假上游、真实本地 HTTP，不发生付费调用）。
