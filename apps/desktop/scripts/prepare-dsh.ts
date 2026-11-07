@@ -38,6 +38,7 @@ import { patchDataUseFile } from '../../../crysound/config/patch-data-use.mjs'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
 import { patchOfficialPluginsRuntime } from '../../../crysound/scripts/patch-official-plugins.mjs'
 import { patchCompanyMarketRuntime } from '../../../crysound/scripts/patch-market-ui.mjs'
+import { patchCompanySidebarRuntime } from '../../../crysound/scripts/patch-sidebar.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
@@ -158,6 +159,7 @@ async function main(): Promise<void> {
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:company-market-ui', async () => {
       patchCompanyMarketRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
       patchOfficialPluginsRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
+      patchCompanySidebarRuntime(join(DSH_OUTPUT_ROOT, 'node_modules'))
     })
     // CRYSOUND: native market card opens the data plugin without adding a tab.
     patchDataUseFile(join(DSH_OUTPUT_ROOT, 'node_modules/@deepseek-ai/dsh-client-ui-plugin-market/lib/client.js'))

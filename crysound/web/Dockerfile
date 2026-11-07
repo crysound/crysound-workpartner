@@ -8,6 +8,9 @@ COPY scripts/patch-market-*.mjs /opt/partner/scripts/
 COPY brand/market-locales.mjs /opt/partner/brand/market-locales.mjs
 RUN node /opt/partner/scripts/patch-official-plugins.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 RUN node /opt/partner/scripts/patch-market-ui.mjs --runtime "$(npm root -g)/@deepseek-ai/dsh/node_modules"
+# Sidebar and skin #133 ship together; this patch also runs before Desktop integrity manifests.
+COPY scripts/patch-sidebar.mjs scripts/sidebar-policy.mjs /opt/partner/scripts/
+RUN node /opt/partner/scripts/patch-sidebar.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # Web containers use Auto review for an unset personal default; desktop artifacts are never patched here.
 COPY scripts/patch-web-auto-review.mjs /opt/partner/scripts/
 RUN node /opt/partner/scripts/patch-web-auto-review.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
