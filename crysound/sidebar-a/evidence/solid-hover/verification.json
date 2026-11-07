@@ -1,0 +1,33 @@
+{
+  "fixture": "Isolated CSS reproduction with the upstream MessageItem.module.css, synthetic scrolled content, explicitly active desktop media rules, forced hover, and two different backgrounds under the pinned header. Not a deployed app or Electron.",
+  "rows": [
+    {
+      "theme": "light",
+      "opaque": true,
+      "clip": {
+        "x": 20,
+        "y": 20,
+        "width": 445,
+        "height": 24,
+        "scale": 1
+      },
+      "scrollY": 20,
+      "fill": "rgb(230, 230, 225)",
+      "hover": false
+    },
+    {
+      "theme": "dark",
+      "opaque": true,
+      "clip": {
+        "x": 20,
+        "y": 20,
+        "width": 445,
+        "height": 24,
+        "scale": 1
+      },
+      "scrollY": 20,
+      "fill": "rgb(38, 38, 38)",
+      "hover": false
+    }
+  ]
+}
