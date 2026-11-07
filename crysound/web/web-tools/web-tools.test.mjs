@@ -148,7 +148,7 @@ test("compressed responses decode before text extraction and unsupported encodin
   await assert.rejects(wireCap.fetch({ url: "https://public.example/gzip" }), { code: "WEB_FETCH_TOO_LARGE" });
 });
 
-test("fallback always tries Luna then DeepSeek on HTTP, network, empty-tool and timeout failures", async t => {
+test("fallback always tries DeepSeek Flash then Luna on HTTP, network, empty-tool and timeout failures", async t => {
   const root = await patchedRelease(t);
   for (const failure of ["http", "network", "missing", "timeout"]) {
     const calls = [], logs = [];
@@ -165,13 +165,13 @@ test("fallback always tries Luna then DeepSeek on HTTP, network, empty-tool and 
     try {
       const result = await searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: entry => logs.push(entry) }, { query: "新闻" }, undefined, 20);
       assert.equal(result.sources[0].title, "新闻");
-      assert.deepEqual(calls, ["codex/gpt-6-luna", "deepseek/deepseek-flash"]);
+      assert.deepEqual(calls, ["deepseek/deepseek-flash", "codex/gpt-6-luna"]);
       assert.deepEqual(logs.map(entry => entry.body.model), calls);
     } finally { clearInterval(keepAlive); }
   }
 });
 
-test("default search attempts stop at seven seconds before falling back", async t => {
+test("default search budgets allow twelve seconds for Flash and four for Luna", async t => {
   const root = await patchedRelease(t);
   const budgets = [], calls = [];
   const timeout = AbortSignal.timeout.bind(AbortSignal);
@@ -185,9 +185,37 @@ test("default search attempts stop at seven seconds before falling back", async 
   try {
     const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "新闻" });
     assert.equal(result.sources.length, 1);
-    assert.deepEqual(calls, ["codex/gpt-6-luna", "deepseek/deepseek-flash"]);
-    assert.deepEqual(budgets, [7000, 7000]);
+    assert.deepEqual(calls, ["deepseek/deepseek-flash", "codex/gpt-6-luna"]);
+    assert.deepEqual(budgets, [12000, 4000]);
   } finally { clearInterval(keepAlive); }
+});
+
+test("a ten-second Flash answer succeeds without a fallback request", async t => {
+  const root = await patchedRelease(t);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.mock.method(AbortSignal, "timeout", milliseconds => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException("timed out", "TimeoutError")), milliseconds);
+    return controller.signal;
+  });
+  const calls = [];
+  let dispatched;
+  const started = new Promise(resolve => { dispatched = resolve; });
+  const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => {
+    calls.push(JSON.parse(init.body).model);
+    if (calls.length > 1) return Response.json(searchResult);
+    return new Promise((resolve, reject) => {
+      init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true });
+      setTimeout(() => resolve(Response.json(searchResult)), 10_000);
+      dispatched();
+    });
+  } });
+  const pending = searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "复杂调研" });
+  await started;
+  t.mock.timers.tick(10_000);
+  const result = await pending;
+  assert.equal(result.sources[0].title, "新闻");
+  assert.deepEqual(calls, ["deepseek/deepseek-flash"]);
 });
 
 test("search does not retry caller cancellation, missing credentials or a failed request log", async () => {
@@ -217,8 +245,13 @@ test("released search returns bounded answer text with citations or without sour
       { type: "web_search_tool_result", content: mode === "linked" ? searchResult.content[0].content : [] },
     ];
     blocks.push({ type: "text", text: answer, citations: mode === "linked" ? [{ url: "https://news.example/item", cited_text: excerpt }] : [] });
-    const api = await released("dsh-web-search-deepseek", { root, fetch: async () => Response.json({ content: blocks }) });
+    const calls = [];
+    const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => {
+      calls.push(JSON.parse(init.body).model);
+      return Response.json({ content: blocks });
+    } });
     const result = await searchWithFallback(api.DeepSeekSearchProvider, WebError, options, { query: "杭州天气" });
+    assert.deepEqual(calls, ["deepseek/deepseek-flash"], "usable answer text never triggers fallback, even with zero sources");
     if (mode === "short") assert.equal(result.content, answer);
     else if (mode === "emoji") assert.equal(result.content, "证".repeat(798) + "…");
     else {
@@ -240,6 +273,8 @@ test("released search returns bounded answer text with citations or without sour
     assert.ok(rendered.includes(result.content));
     assert.doesNotMatch(rendered, /Searching now|No results found/);
     assert.equal(tool.output.presentationMeta({}, value).answer, result.content);
+    assert.match(tool.description, /answer directly.*web_fetch/);
+    assert.match(registered.find(tool => tool.name === "web_fetch").description, /original text, details or tables/);
     if (mode === "linked") assert.match(rendered, /https:\/\/news.example\/item/);
   }
 });
@@ -292,7 +327,7 @@ test("released search dispatches after credentials and logging without a timer o
   // No clock advance: an introduced sleep/debounce would prevent dispatch and fail this test.
   t.mock.timers.enable({ apis: ["setTimeout", "setImmediate"] });
   await provider.search({ query: "杭州天气" });
-  assert.deepEqual(events, ["credential", "request-log", "http:codex/gpt-6-luna"]);
+  assert.deepEqual(events, ["credential", "request-log", "http:deepseek/deepseek-flash"]);
 });
 
 test("login URLs and HTML are explicit failures; static articles need no browser", async () => {
@@ -408,13 +443,19 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const tools = await released("dsh-tool-web", { root });
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
-  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "two seven-second attempts fit in the real tool deadline");
+  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "twelve-second primary and four-second fallback fit in the real tool deadline");
   assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 45000);
   const toolFile = join(root, "@deepseek-ai/dsh-tool-web/lib/index.js");
   const currentTool = await readFile(toolFile, "utf8");
   await writeFile(toolFile, currentTool.replace('searchTimeoutMs: z.number().default(18_000)', 'searchTimeoutMs: z.number().default(65_000)'));
   patchWebTools(root);
   assert.equal(await readFile(toolFile, "utf8"), currentTool, "previous company deadline migrates to the current deadline");
+  const oldDescriptions = currentTool
+    .replace('Search the web for current information. Returns an optional summary answer and source URLs. If the answer or source summaries provide sufficient evidence, answer directly with available citations; do not web_fetch the same sources merely to confirm them. Fetch only to fill a specific evidence gap, such as original text, details or tables, or to meet the requested source count.', 'Search the web for current information. Returns an optional summary answer and a list of source URLs.')
+    .replace('Fetch a specific HTTP(S) URL when original text, details or tables are needed, or to fill another specific evidence gap. If a web_search answer or source summaries are sufficient, answer directly without fetching the same sources. Supply prompt', 'Fetch a specific HTTP(S) URL. Supply prompt');
+  await writeFile(toolFile, oldDescriptions);
+  patchWebTools(root);
+  assert.equal(await readFile(toolFile, "utf8"), currentTool, "previous company tool guidance migrates without changing the summary settings");
   const before = await readFile(file, "utf8");
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), before);
@@ -425,7 +466,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   await provider.search({ query: "q" });
   selected = "deepseek/chat";
   await provider.search({ query: "q" });
-  assert.deepEqual(log, ["codex/gpt-6-luna", "codex/gpt-6-luna"]);
+  assert.deepEqual(log, ["deepseek/deepseek-flash", "deepseek/deepseek-flash"]);
   const fetchApi = await released("dsh-web-fetch-http", { root });
   let fetcher;
   const context = { web: { registerFetchProvider: value => { fetcher = value; } } };

@@ -2,15 +2,15 @@
  * @param Provider Released search class. @param WebError Released error class.
  * @param options Resolved options.
  * @param request Search query. @param signal Optional caller cancellation.
- * @param timeoutMs Per-attempt limit, defaulting to seven seconds. @returns First successful search result.
+ * @param timeoutMs Primary attempt limit, defaulting to twelve seconds; fallback uses at most four seconds. @returns First successful search result.
  */
-export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs = 7_000) {
+export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs = 12_000) {
   const gpt = "codex/gpt-6-luna", deepseek = "deepseek/deepseek-flash";
-  const models = [gpt, deepseek];
+  const models = [deepseek, gpt];
   const failures = [];
-  for (const model of models) {
+  for (const [index, model] of models.entries()) {
     signal?.throwIfAborted();
-    const attempt = AbortSignal.timeout(timeoutMs);
+    const attempt = AbortSignal.timeout(index === 0 ? timeoutMs : Math.min(timeoutMs, 4_000));
     let recorded = false;
     const recordRequest = (entry) => { options.recordRequest?.(entry); recorded = true; };
     try {

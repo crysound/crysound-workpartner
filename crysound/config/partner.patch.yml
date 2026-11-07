@@ -43,9 +43,9 @@
 - id: web-search-deepseek
   config:
     baseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL
-    model: codex/gpt-6-luna
+    model: deepseek/deepseek-flash
 
-# 两次各 7 秒的公司搜索尝试留 4 秒收尾；单页抓取输出最多 4 万字符。
+# 网页镜像先给 Flash 12 秒、Luna 备用 4 秒，留 2 秒收尾；单页抓取输出最多 4 万字符。
 - id: tool-web
   config:
     searchTimeoutMs: 18000
