@@ -11,7 +11,8 @@ const patches = [
     extraImport: 'import { summarizeFetch, validateSummaryConfig } from "./crysound-summary.mjs";\nimport { credentialRef } from "@deepseek-ai/dsh-credentials";\nimport { launchEnvironmentOf } from "@deepseek-ai/dsh-launch-environment";\nimport { appendPluginRecord } from "@deepseek-ai/dsh-session";\n',
     edits: [{
       from: 'searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS)',
-      to: 'searchTimeoutMs: z.number().default(65_000)',
+      previous: 'searchTimeoutMs: z.number().default(65_000)',
+      to: 'searchTimeoutMs: z.number().default(18_000)',
     }, {
       from: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS)',
       to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(15_000),\n\tfetchSummaryMaxTokens: z.number().default(1600)',
@@ -42,10 +43,14 @@ const patches = [
   {
     package: "@deepseek-ai/dsh-web-search-deepseek",
     import: 'import { searchWithFallback } from "./crysound-search.mjs";\n',
+    extraImport: 'import { searchAnswer } from "./crysound-search.mjs";\n',
     edits: [{
       from: 'search: (request, signal) => provider.search(request, signal)',
       previous: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
       to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), request, signal)',
+    }, {
+      from: 'return mapAnthropicResponse(await response.json());',
+      to: 'return searchAnswer(await response.json(), mapAnthropicResponse);',
     }],
     files: { "search.mjs": "crysound-search.mjs" },
   },
