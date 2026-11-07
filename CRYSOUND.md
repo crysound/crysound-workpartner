@@ -56,6 +56,9 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 4. 启动时从网关读取公司配置快照，取不到时使用包内配置。默认值首次写入，之后每次只刷新 `providers.magpie`，保留个人其他提供方和已选默认值；详见 `crysound/web/README.md`。
 市场插件和退回联网安装的插件需要网络；每一步都有时限：联网安装单个插件 120 秒、一次启动内全部联网安装共 180 秒，超时就结束该子进程及其子孙进程，剩下的跳过，下次启动重试。准备期间（复制模板或联网安装）显示“正在准备兆华工作伙伴…”小窗口，点 Dock 图标会把它带到前台；结束后若有插件没装好，弹出非阻塞提示并列出名字，应用照常启动，下次启动会重试。Mac / Windows 离线冒烟只核对随包插件，市场包明确记为“登录后联网安装、尚未验收”；签名构建及登录后的实际安装另行验收。
 
+### 工具效率提示
+- 公司配置升级器生成独立的模型提示片段，指导批量读取文本、一次写完并运行小脚本、独立调用同轮并行；不改上游 dsh、工具或权限。通过原有公司配置下载与启动刷新覆盖已有用户，完整系统提示预设保持原生行为。部署与三类同题对比验收见 `crysound/web/README.md`。
+
 ### 打包
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
 - `desktop-package-environment.mjs`：本地未签名构建的默认 appId。

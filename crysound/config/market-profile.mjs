@@ -8,7 +8,7 @@ function updateProfile() {
   let text = fs.existsSync(patch) ? fs.readFileSync(patch, "utf8") : "";
   text = text.replaceAll("https://partner.invalid/_zp/market/index.json", index);
   const lines = text.replace(/^\[\]\s*$/m, "").split("\n");
-  if (lines.some((line) => line.trim() && !/^\s/.test(line) && !line.startsWith("#") && !/^- id: ["']?[^\s"',{}]+["']?\s*(?:#.*)?$/.test(line))) {
+  if (lines.some((line) => line.trim() && !/^\s/.test(line) && !line.startsWith("#") && !/^- (?:id: ["']?[^\s"',{}]+["']?|insert:)\s*(?:#.*)?$/.test(line))) {
     console.warn("警告：市场 profile 使用不支持的 YAML 写法，已跳过；请在设置页手工添加公司索引和市场 bundle");
     return;
   }

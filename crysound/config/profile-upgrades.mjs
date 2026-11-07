@@ -1,7 +1,13 @@
-// Refresh company model, search, Sidebar Browser and work-step display settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// Refresh company model, search, tool guidance, Sidebar Browser and work-step display settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
 // node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]
 import fs from "node:fs";
+import path from "node:path";
 import { createRequire } from "node:module";
+
+const TOOL_EFFICIENCY_GUIDANCE = `Use tools efficiently while preserving correctness and the user's permission boundaries.
+- When inspecting several text files, prefer one bounded shell command or an available batch-read tool over separate read calls for every file. Use rg to find relevant files or lines first; include path headings when combining file contents. Read only the needed ranges and cap total output; if truncated, fetch the missing relevant portions before drawing conclusions. Keep using image or other specialized readers where needed.
+- For a small script whose contents and execution are already authorized, prefer one shell call that writes the script and then runs it only if writing succeeds (for example, a quoted heredoc followed by && python3 script.py). Check the actual output in that call. Quote paths and heredoc delimiters so user data is not expanded as shell code. Keep separate steps when intermediate inspection, approval, or a previous result is required.
+- If you intend to call multiple tools and their inputs do not depend on each other's results, make those independent calls in the same response so they can run in parallel. Do not serialize independent work or combine operations that depend on each other, race on shared state, or require separate approval.`;
 
 export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enableWebBrowser = false) {
   const parse = (text) => {
@@ -82,7 +88,32 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
   const chat = mine.getIn([chatIndex, "config"], true);
   if (chat === undefined) mine.setIn([chatIndex, "config"], mine.createNode({ transcriptView: "standard" }));
   else if (yaml.isMap(chat) && !chat.has("transcriptView")) chat.set("transcriptView", "standard");
+  // Generate a self-contained module from the existing config download: older desktop
+  // clients do not know about extra configuration files. A distinct section survives
+  // standard preset persona replacement; complete-prompt presets keep their own prompt.
+  const guidance = `// Managed by company profile upgrades.
+export const name = "crysound-tool-efficiency";
+export const inject = ["systemPrompt"];
+export function apply(ctx) {
+  ctx.effect(() => ctx.systemPrompt.section({
+    name: "crysound:tool-efficiency",
+    order: ctx.systemPrompt.getSectionOrder("DEPLOYMENT_PERSONA_SUFFIX"),
+    interpolate: false,
+    text: ${JSON.stringify(TOOL_EFFICIENCY_GUIDANCE)},
+  }));
+}
+`;
+  const guidanceFile = path.join(path.dirname(file), "crysound-tool-efficiency.mjs");
+  const inserted = mine.contents.items.some((item) => {
+    const entries = yaml.isMap(item) && item.get("insert", true);
+    return yaml.isSeq(entries) && entries.items.some((entry) => yaml.isMap(entry) && entry.get("id") === "crysound-tool-efficiency");
+  });
+  if (!inserted) mine.add(mine.createNode({ insert: [{ id: "crysound-tool-efficiency", name: "./crysound-tool-efficiency.mjs" }] }));
   const after = String(mine);
+  if (!fs.existsSync(guidanceFile) || fs.readFileSync(guidanceFile, "utf8") !== guidance) {
+    fs.writeFileSync(`${guidanceFile}.tmp`, guidance, { mode: 0o600 });
+    fs.renameSync(`${guidanceFile}.tmp`, guidanceFile);
+  }
   if (before !== after) {
     fs.writeFileSync(`${file}.tmp`, after, { mode: 0o600 });
     fs.renameSync(`${file}.tmp`, file);

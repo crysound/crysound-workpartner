@@ -126,7 +126,7 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   refreshProfile(file, seed, yaml, true);
   let text = await readFile(file, "utf8");
-  assert.deepEqual(load(text).map(row => row.id), load(await readFile(seed, "utf8")).map(row => row.id));
+  assert.deepEqual(load(text).filter(row => !row.insert).map(row => row.id), load(await readFile(seed, "utf8")).map(row => row.id));
   text = text.replace("    reasoningEffort: medium\n", "");
   await writeFile(file, text);
   refreshProfile(file, seed, yaml);
@@ -136,7 +136,35 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "agent-default-model").config.reasoningEffort, "max");
   await writeFile(file, "[]\n");
   refreshProfile(file, seed, yaml);
-  assert.deepEqual(load(await readFile(file, "utf8")).map(row => row.id), ["llm-pi-ai", "web-search-deepseek", "ui-chat"]);
+  assert.deepEqual(load(await readFile(file, "utf8")).filter(row => !row.insert).map(row => row.id), ["llm-pi-ai", "web-search-deepseek", "ui-chat"]);
+});
+
+test("new and existing profiles load one company guidance module, refresh its contents and retain other settings", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  for (const existing of [false, true]) {
+    const directory = join(root, existing ? "existing" : "new");
+    await mkdir(directory);
+    const file = join(directory, "cordis.patch.yml");
+    if (existing) await writeFile(file, "# personal\n- id: system-prompt\n  config: {personaPrefix: 'My persona'}\n");
+    refreshProfile(file, seed, yaml, !existing);
+    const entries = load(await readFile(file, "utf8")).flatMap(row => row.insert || []);
+    assert.deepEqual(entries, [{ id: "crysound-tool-efficiency", name: "./crysound-tool-efficiency.mjs" }]);
+    const module = join(directory, "crysound-tool-efficiency.mjs");
+    const expected = await readFile(module, "utf8");
+    assert.match(expected, /Use tools efficiently/);
+    const before = await readFile(file, "utf8");
+    if (existing) assert.match(before, /My persona/);
+    await writeFile(module, "// stale company module\n");
+    refreshProfile(file, seed, yaml);
+    assert.equal(await readFile(file, "utf8"), before);
+    assert.equal(await readFile(module, "utf8"), expected);
+    const manifest = join(directory, "package.json");
+    await writeFile(manifest, JSON.stringify({ dsh: { profile: { bundles: [] } } }));
+    const result = spawnSync(process.execPath, [join(assets, "config/market-profile.mjs"), file, manifest, "https://market.example.invalid/index.json"], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stderr, "", "company insertion must not prevent market setup");
+    assert.deepEqual(JSON.parse(await readFile(manifest, "utf8")).dsh.profile.bundles, ["@deepseek-ai/dsh-experimental-plugin-market-bundle"]);
+  }
 });
 
 test("invalid personal configuration fails without changing the file", async (t) => {
@@ -208,7 +236,8 @@ test("desktop startup applies the selected plugin version and provider, then fal
   await cp(join(assets, "plugin-artifacts.mjs"), join(packaged, "plugin-artifacts.mjs"));
   await writeFile(join(config, "public-host.json"), JSON.stringify({ PUBLIC_HOST: "partner.example.test", MEEGLE_HOST: "project.example.test" }));
   // Exercise the real preparer and subprocess scripts; the fake installer only records the requested plugin.
-  await symlink(resolve(runtime, "../../../../"), join(root, "node_modules"), "dir");
+  await mkdir(join(root, "node_modules/@deepseek-ai"), { recursive: true });
+  await symlink(resolve(createRequire(runtime).resolve("@deepseek-ai/dsh/package.json"), ".."), join(root, "node_modules/@deepseek-ai/dsh"), "dir");
   await writeFile(join(profile, "package.json"), JSON.stringify({ dependencies: {} }));
   await writeFile(fakeCli, `const fs=require('fs'),p=process.env.TEST_MANIFEST,spec=process.argv.at(-1),m=JSON.parse(fs.readFileSync(p));m.dependencies['fake-plugin']=spec.split('@').at(-1);fs.writeFileSync(p,JSON.stringify(m));`);
   for (const file of CONFIG_FILES) { await mkdir(join(config, file, ".."), { recursive: true }); await writeFile(join(config, file), await readFile(join(assets, "config", file))); }
