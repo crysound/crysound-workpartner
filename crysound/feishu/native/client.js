@@ -60,7 +60,7 @@ window.__ModuleLoader__.load({
 .zp-feishu-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .zp-feishu-feedback{margin-top:16px!important;overflow-wrap:anywhere}
 [data-conversation-header-leading]:has(.zp-feishu-banner){grid-column:1/-1;grid-row:2;min-width:0;padding:8px 0 10px}
-.zp-feishu-banner{display:flex;align-items:center;gap:16px;width:100%;box-sizing:border-box;padding:12px 16px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;border-inline-start:3px solid #5733e6;background:color-mix(in srgb,#5733e6 7%,var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;-webkit-app-region:no-drag}
+.zp-feishu-banner{display:flex;align-items:center;gap:16px;width:100%;box-sizing:border-box;padding:12px 16px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:color-mix(in srgb,#5733e6 7%,var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;-webkit-app-region:no-drag}
 .zp-feishu-banner p{margin:0}.zp-feishu-banner-copy{flex:1;min-width:0}.zp-feishu-banner button{flex:none}
 @media(max-width:540px){.zp-feishu-banner{align-items:flex-start;flex-direction:column;gap:8px;padding:10px 12px}.zp-feishu-banner button{align-self:flex-end}}
 @media(max-width:540px){.zp-feishu-row{align-items:flex-start;flex-direction:column;gap:12px}.zp-feishu-actions{align-self:flex-end}}
