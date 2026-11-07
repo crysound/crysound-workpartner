@@ -27,23 +27,25 @@ function nativeDownloadCsp(value) {
   }).join(",");
 }
 
-/** Inject before editor scripts, retaining bytes and streaming after the head (at most 64 KiB). */
+/** Inject only after an explicit head; otherwise stream the buffered bytes unchanged. */
 export function nativeDownloadHtml() {
-  let prefix = Buffer.alloc(0), injected = false;
+  let prefix = Buffer.alloc(0), streaming = false;
   const emit = (stream, end = false) => {
     const head = /<head\b[^>]*>/i.exec(prefix.toString("latin1"));
     if (!head && !end && prefix.length < 65536) return;
-    const at = head ? head.index + head[0].length : 0;
-    stream.push(prefix.subarray(0, at)); stream.push(SCRIPT); stream.push(prefix.subarray(at));
-    prefix = null; injected = true;
+    if (head) {
+      const at = head.index + head[0].length;
+      stream.push(prefix.subarray(0, at)); stream.push(SCRIPT); stream.push(prefix.subarray(at));
+    } else stream.push(prefix);
+    prefix = null; streaming = true;
   };
   return new Transform({
     transform(chunk, encoding, done) {
-      if (injected) this.push(chunk);
+      if (streaming) this.push(chunk);
       else { prefix = Buffer.concat([prefix, chunk]); emit(this); }
       done();
     },
-    flush(done) { if (!injected) emit(this, true); done(); },
+    flush(done) { if (!streaming) emit(this, true); done(); },
   });
 }
 
