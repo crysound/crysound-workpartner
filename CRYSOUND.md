@@ -11,6 +11,7 @@
 
 ### 工作区本地服务预览
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
+- 公司作品底座的共享启动补丁修复作品页打开：按网页链接设置选择预览侧栏或新标签；原对话不可用时复用当前对话或新建，归档提示提供现有恢复入口。部署和验证见 [预览说明](crysound/web/preview/README.md#客户端与插件补丁)。
 
 ### 品牌
 - 侧栏方案 A：`crysound/scripts/patch-sidebar.mjs` 对固定版共享侧栏和工作区客户端产物做版本检查与幂等修补；网页安装运行时后、桌面生成完整性清单前使用同一份。固定入口按新对话 / 作品 / 自动化 / 市场排列，市场只保留图标和名称，其他插件按名称排序，超过两个全收进更多；单工作区默认平铺、多个默认分组，保留搜索和管理。和皮肤 #133 同批更新镜像，发布及验收见 `crysound/sidebar-a/README.md`。不改上游 `packages/` 源码。

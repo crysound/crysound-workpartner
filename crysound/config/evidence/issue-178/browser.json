@@ -1,0 +1,17 @@
+{
+  "method": "Owned browser tab: patched released client response; intercepted editor-open response and preview fixture. Native app sidebar and real archive list. No restore click, editor write, session creation or setting write.",
+  "notice": "作品所在的对话已归档恢复对话",
+  "restoreLabel": "恢复对话",
+  "pointerEvents": "auto",
+  "buttonReceivesPointer": true,
+  "frames": [
+    {
+      "preview": true,
+      "fixture": true
+    }
+  ],
+  "patchedCount": 1,
+  "fakeOpenCount": 1,
+  "fixtureFrames": 2,
+  "errors": []
+}
