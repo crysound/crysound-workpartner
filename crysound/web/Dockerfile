@@ -47,6 +47,7 @@ ENV HYPERFRAMES_FFMPEG_PATH=/usr/bin/ffmpeg HYPERFRAMES_FFPROBE_PATH=/usr/bin/ff
 # 公司搜索与抓取适配只改固定版本的发布产物；未命中即停止构建。
 COPY web/web-tools/ /opt/partner/web-tools/
 RUN node /opt/partner/web-tools/patch.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
+RUN node /opt/partner/web-tools/timing-patch.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # 公司动效复用同一份浏览器；口播和采样下载不随插件启用。
 ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell OM_SAMPLES=off
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
@@ -72,7 +73,7 @@ COPY web/preview/ /opt/partner/preview/
 RUN chmod -R a+rX /opt/partner/preview
 COPY web/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 755 /usr/local/bin/entrypoint.sh
-ENV NODE_OPTIONS="--import=/opt/partner/host-hook.mjs" CRYSOUND_MARKET_ORIGIN=http://zhaohua-partner-gateway:3090 CRYSOUND_MARKET_TOKEN_FILE=/data/.zp-market-token
+ENV NODE_OPTIONS="--import=/opt/partner/host-hook.mjs --import=/opt/partner/web-tools/timing-hook.mjs" CRYSOUND_MARKET_ORIGIN=http://zhaohua-partner-gateway:3090 CRYSOUND_MARKET_TOKEN_FILE=/data/.zp-market-token
 ENV CRYSOUND_MARKET_REGISTRY=http://zhaohua-partner-gateway:3090/_zp/npm/ CRYSOUND_NPM_USERCONFIG=/data/.npmrc
 ENV DSH_HOME=/data/.dsh DSH_TELEMETRY_DISABLED=1 HOME=/data
 WORKDIR /data
