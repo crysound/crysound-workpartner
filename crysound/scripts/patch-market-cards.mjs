@@ -124,12 +124,16 @@ export function patchInstalledCards(text) {
 
 /** Keep the third-party marketplace's complete original card in an accessible detail dialog. */
 export function patchThirdPartyCards(text) {
-  const marker = '/* CRYSOUND third-party cards v1 */';
+  const marker = '/* CRYSOUND third-party cards v2 */';
   if (text.includes(marker)) return text;
   const replace = (needle, next) => {
     if (text.split(needle).length !== 2) throw new Error('第三方卡片补丁未唯一命中');
     text = text.replace(needle, () => next);
   };
+  if (text.includes('/* CRYSOUND third-party cards v1 */')) {
+    replace('statistic ? copy.zpDownloadCount', 'statistic?.count > 0 ? copy.zpDownloadCount');
+    return text.replace('/* CRYSOUND third-party cards v1 */', marker);
+  }
   replace('function Masonry({ items, render }) {','function Masonry({ items, render, companyCards }) {');
   replace('if (!wide) return /* @__PURE__ */', 'if (companyCards) return (0,react_jsx_runtime.jsx)("div",{className:"zp-card-grid",children:items.map(render)}); if (!wide) return /* @__PURE__ */');
   const render = 'render: (plugin) => pluginCard(plugin)';
@@ -146,7 +150,7 @@ export function patchThirdPartyCards(text) {
     }, [opened]);
     const statistic = downloadStatistic(plugin);
     const meta = [copy.zpThirdParty, plugin.owner || copy.zpUnknownAuthor,
-      statistic ? copy.zpDownloadCount.replace("{count}", new Intl.NumberFormat(language).format(statistic.count)) : null].filter(Boolean).join(" · ");
+      statistic?.count > 0 ? copy.zpDownloadCount.replace("{count}", new Intl.NumberFormat(language).format(statistic.count)) : null].filter(Boolean).join(" · ");
     return (0, react_jsx_runtime.jsxs)("div", { className:"zp-market-card", "data-third-party-entry":plugin.url,
       onClick:event => { if (!event.target.closest("button,a,input,dialog")) setOpened(true); }, children:[
       (0, react_jsx_runtime.jsx)(ZpIcon,{name:plugin.name,title,src:plugin.icon}),

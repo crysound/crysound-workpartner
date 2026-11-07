@@ -116,6 +116,7 @@ async function layout(width,name,selector='[data-market-entry]') {
     const panel=document.querySelector('[data-plugin-panel]');return {width:innerWidth,rects,overflow:panel.scrollWidth>panel.clientWidth+1};
   })()`);
   assert.ok(state.rects.length>0);assert.equal(state.overflow,false);
+  for (const card of state.rects) assert.doesNotMatch(card.meta, /(?:^| · )0 (?:次下载|downloads)(?:$| · )/u);
   for(const card of state.rects) { assert.ok(card.icon>=50);assert.ok(card.title);assert.ok(card.meta);assert.equal(card.clamp,'2');assert.ok(card.action);assert.ok(card.chevron);assert.equal(card.titleSize,'16px');assert.doesNotMatch(card.meta,/暂无安装统计|Install count unavailable|次安装| installs/);assert.ok(card.actionRect.x>=card.descriptionRect.right-1);assert.ok(card.actionRect.y<card.descriptionRect.bottom && card.actionRect.bottom>card.descriptionRect.y); }
   if(width>=1400) {assert.equal(Math.round(state.rects[0].y),Math.round(state.rects[1].y));assert.ok(state.rects[1].x>state.rects[0].x);}
   if(width<900) assert.ok(state.rects.every(r=>Math.abs(r.x-state.rects[0].x)<2));

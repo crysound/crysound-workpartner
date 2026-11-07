@@ -7,12 +7,17 @@ import { marketLocales } from "../brand/market-locales.mjs";
  * @returns {string} Patched module, or unchanged bytes on a repeat run.
  */
 export function patchMarketCatalog(text) {
-  const marker = "/* CRYSOUND market catalog v2 */";
+  const marker = "/* CRYSOUND market catalog v3 */";
   if (text.includes(marker)) return text;
   const replace = (needle, next) => {
     if (text.split(needle).length !== 2) throw new Error("市场卡片补丁未唯一命中");
     text = text.replace(needle, () => next);
   };
+  if (text.includes("/* CRYSOUND market catalog v2 */")) {
+    replace('count === undefined ? null : t("zpDownloadCount", { count: new Intl.NumberFormat(language).format(count) })',
+      'count > 0 ? t("zpDownloadCount", { count: new Intl.NumberFormat(language).format(count) }) : null');
+    return text.replace("/* CRYSOUND market catalog v2 */", marker);
+  }
   replace('ctx.effect(() => ctx.locale.register(NS, {', `Object.assign(zh, ${JSON.stringify(marketLocales.zh)}); Object.assign(en, ${JSON.stringify(marketLocales.en)});
 ctx.effect(() => ctx.locale.register(NS, {`);
   replace('const { status } = entry.installation;', `const { status } = entry.installation;
@@ -27,7 +32,7 @@ ctx.effect(() => ctx.locale.register(NS, {`);
     const title = entryTitle(entry, face);
     const count = entry.metadata.sortKeys["crysound-installs"];
     const meta = [t(entry.metadata.labels.includes("crysound-official") ? "zpOfficial" : "zpThirdParty"),
-      entry.author || t("zpUnknownAuthor"), count === undefined ? null : t("zpDownloadCount", { count: new Intl.NumberFormat(language).format(count) })].filter(Boolean).join(" · ");
+      entry.author || t("zpUnknownAuthor"), count > 0 ? t("zpDownloadCount", { count: new Intl.NumberFormat(language).format(count) }) : null].filter(Boolean).join(" · ");
     return (0, react_jsx_runtime.jsxs)("li", { className: "zp-market-card", "data-market-entry": entry.name,
       onClick: event => { if (!event.target.closest("button,a,input")) onOpen(); }, children: [
       (0, react_jsx_runtime.jsx)(ZpIcon, { name: entry.name, title, src: entry.icon }),

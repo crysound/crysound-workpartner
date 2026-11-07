@@ -77,9 +77,9 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     return platformsPending;
   };
   const platforms = async () => new Set((await readPlatforms()).map((platform) => platform.slug));
-  const endpoint = async (id, ancestors = new Set(), catalogOnly = false) => {
+  const endpoint = async (id, ancestors = new Set()) => {
     if (typeof id !== "string" || !idPattern.test(id) || ancestors.has(id)) throw fail(403, "只允许调用已开放分类的数据接口");
-    // 公共详情缓存不缓存校验结果；调用始终核对全部子接口，目录查询可跳过已下架供应商。
+    // 公共详情缓存不缓存校验结果；目录和调用均核对路由内所有可用子接口。
     let value = endpointCache.get(id);
     if (!value) {
       value = (await fetchJson(`/catalog/endpoints/${encodeURIComponent(id)}`)).endpoint;
@@ -102,9 +102,9 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       if (id === "treg.web.search" && !children.includes("exa.web.search")) throw fail(403, "搜索路由尚未开放 Exa");
       let available = 0;
       for (const child of id === "treg.web.search" ? ["exa.web.search"] : children) {
-        try { await endpoint(child, next, catalogOnly); available++; }
+        try { await endpoint(child, next); available++; }
         catch (error) {
-          if (!catalogOnly || (error.upstreamStatus !== 404 && !error.providerPaused)) throw error;
+          if (error.upstreamStatus !== 404 && !error.providerPaused) throw error;
         }
       }
       if (!available) throw fail(403, "路由暂无可用的数据接口");
@@ -117,7 +117,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (!Array.isArray(value.results)) throw fail(502, "数据搜索结果无效");
     const results = []; let failure;
     for (const row of value.results) {
-      try { results.push(await endpoint(row.id, new Set(), true)); }
+      try { results.push(await endpoint(row.id)); }
       catch (error) { failure = error; }
     }
     if (!results.length && failure) throw failure;
@@ -247,7 +247,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       const { name, arguments: args } = message.params;
       let value;
       if (name === "catalog_search" && keys(args, ["query", "limit"])) value = await search(args.query, args.limit ?? 8);
-      else if (name === "catalog_get" && keys(args, ["endpoint_id"])) value = { endpoint: await endpoint(args.endpoint_id, new Set(), true) };
+      else if (name === "catalog_get" && keys(args, ["endpoint_id"])) value = { endpoint: await endpoint(args.endpoint_id) };
       else if (name === "call" && keys(args, ["endpoint_id", "params", "method", "query", "body", "idempotency_key"])) {
         const ep = await endpoint(args.endpoint_id), method = args.method ?? ep.method;
         if (args.params !== undefined && (args.body !== undefined || args.query !== undefined)) throw fail(400, "params 不能与 body 或 query 同时传入");
@@ -276,7 +276,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       } else if (path === "/catalog/search" && req.method === "GET" && [...url.searchParams.keys()].every((key) => ["q", "limit"].includes(key))) {
         json(res, 200, await search(url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 8)));
       } else if (path.startsWith("/catalog/endpoints/") && req.method === "GET" && !url.search) {
-        json(res, 200, { endpoint: await endpoint(path.slice("/catalog/endpoints/".length), new Set(), true) });
+        json(res, 200, { endpoint: await endpoint(path.slice("/catalog/endpoints/".length)) });
       } else if (path.startsWith("/call/") && ["GET", "POST"].includes(req.method)) {
         const body = req.method === "POST" ? await bodyJson(req) : undefined;
         const query = Object.fromEntries([...new Set(url.searchParams.keys())].map((key) => {
