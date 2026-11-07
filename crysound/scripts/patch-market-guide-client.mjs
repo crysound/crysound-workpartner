@@ -71,8 +71,8 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
     hooks: { companyGuides: catalog, guideLocale: ctx.locale },
     copy: text,
     guideLanguage: language,
-    browse: () => ctx.get("pluginNavigation")?.openList(),
-    choose: name => { void open(name, () => ctx.get("pluginNavigation")?.openBundle(name)).catch(() => {
+    browse: () => ctx.bail(ctx, "company-market/open", null),
+    choose: name => { void open(name, () => ctx.bail(ctx, "company-market/open", name)).catch(() => {
       const scope = ctx.sessions.scope(sessionId); scope?.get("conversation").input.for(scope).notify("error", text("draft"));
     }); },
     cancel: state => {
