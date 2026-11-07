@@ -51,7 +51,7 @@ async function fixture(t, options = {}) {
         ["month", caps?.monthly_cap_micro, rows.filter((r) => utcDay(r.time).slice(0, 7) === utcDay(time).slice(0, 7)).reduce((a, r) => a + r.cost, 0)],
       ]) if (cap !== undefined && used + 1000 > cap) return Response.json({ detail: { error: "tag_spend_cap_reached", period, private: "secret" } }, { status: 429 });
       callStarted();
-      const result = await response();
+      const result = await response(url, init);
       if (result.ok) spendRows.push({ slug, time, cost: Number(result.headers.get("x-treg-cost-micro") ?? 1000) });
       return result;
     }
@@ -251,6 +251,50 @@ test("无市场目录缓存：真实调用按当前公共平台白名单校验�
     assert.deepEqual(call.headers, { accept: "application/json" });
     assert.equal(call.redirect, "error");
   }
+});
+
+test("网页提取只开放一个固定路由，锁定 Crawl4AI 并计入本人预算", async t => {
+  const f = await fixture(t, { catalog: async () => [] });
+  f.lookup(id => ep(id, { kind: "routed", routed_children: ["crawl4ai.web.scrape", "blocked.ai.generate"] }));
+  f.setResponse(() => Response.json({ output: { pages: [{ ok: true, markdown: "公开正文" }] } }, { headers: { "x-treg-cost-micro": "150" } }));
+  const route = "/call/treg.web.extract", init = { method: "POST", headers: { ...headers, "x-treg-route-prefer": "serper", "x-treg-route-waterfall": "1", "x-treg-route-max-cost": "999", "x-treg-meta": "user=bob" }, body: JSON.stringify({ url: "https://example.com/report.pdf" }) };
+  const result = await f.request(route, init); assert.equal(result.status, 200); assert.match(result.text, /公开正文/);
+  const call = f.calls.find(row => row.url.includes("/call/"));
+  assert.equal(call.url, "https://treg.to/call/treg.web.extract"); assert.equal(call.headers["x-treg-meta"], "user=alice");
+  assert.equal(call.headers["x-treg-route-prefer"], "crawl4ai"); assert.equal(call.headers["x-treg-route-waterfall"], "0");
+  assert.equal(call.headers["x-treg-route-max-cost"], "0.005"); assert.equal(call.headers.authorization, undefined);
+  assert.deepEqual(JSON.parse(call.body), { url: "https://example.com/report.pdf" });
+  assert.equal((await f.request("/usage")).body.daily.usedUsd, .00015);
+  assert.equal((await f.request("/call/treg.web.other", init)).status, 403);
+  for (const body of [{ url: "https://example.com", provider: "serper" }, { url: "file:///etc/passwd" }, { url: "https://key:secret@example.com" }, {}]) assert.equal((await f.request(route, { ...init, body: JSON.stringify(body) })).status, 400);
+  assert.equal((await f.request(route + "?token=x", init)).status, 400);
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 1);
+});
+
+test("网页提取遵守低单次额度、本人日/月额度；用完不再调用", async t => {
+  const f = await fixture(t, { env: { TREG_DAILY_USD: "0.001", TREG_MONTHLY_USD: "0.001", TREG_CALL_MAX_USD: "0.0002" } });
+  f.lookup(id => ep(id, { kind: "routed", routed_children: ["crawl4ai.web.scrape"] }));
+  const request = () => f.request("/call/treg.web.extract", { method: "POST", body: JSON.stringify({ url: "https://example.com" }) });
+  assert.equal((await request()).status, 200); assert.equal((await request()).status, 429);
+  assert.equal(f.calls.find(row => row.url.includes("/call/")).headers["x-treg-route-max-cost"], "0.0002");
+  const zero = await fixture(t, { env: { TREG_MONTHLY_USD: "0" } });
+  zero.lookup(id => ep(id, { kind: "routed", routed_children: ["crawl4ai.web.scrape"] }));
+  assert.equal((await zero.request("/call/treg.web.extract", { method: "POST", body: '{"url":"https://example.com"}' })).status, 429);
+  assert.equal(zero.calls.filter(row => row.url.includes("/call/")).length, 0);
+});
+
+test("网页提取客户端断连会取消上游，已计费用不自动重试", async t => {
+  const f = await fixture(t); let ready, closed, outgoing;
+  const entered = new Promise(resolve => { ready = resolve; }), disconnected = new Promise(resolve => { closed = resolve; });
+  const upstream = http.createServer((req, res) => { req.resume(); res.on("close", closed); ready(); });
+  t.after(async () => { upstream.closeAllConnections(); await new Promise(resolve => upstream.close(resolve)); });
+  upstream.listen(0, "127.0.0.1"); await once(upstream, "listening");
+  f.lookup(id => ep(id, { kind: "routed", routed_children: ["crawl4ai.web.scrape"] }));
+  f.setResponse((_url, init) => { outgoing = init.signal; return fetch(`http://127.0.0.1:${upstream.address().port}/fake-extract`, init); });
+  const stop = new AbortController(), pending = f.request("/call/treg.web.extract", { method: "POST", body: '{"url":"https://example.com"}', signal: stop.signal });
+  const rejected = assert.rejects(pending, { name: "AbortError" });
+  await entered; stop.abort(); await rejected; await disconnected; assert.equal(outgoing.aborted, true);
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 1);
 });
 
 test("web.search 固定 Exa 且关闭瀑布，上限不超过个人设置和一美分，仍按本人预算收费", async t => {

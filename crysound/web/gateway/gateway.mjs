@@ -11,6 +11,7 @@ import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmi
 
 import { issueToken, tokenUser, writeContainerToken } from "./market-auth.mjs";
 import { createMarket } from "./market.mjs";
+import { createDsTools } from "./ds-tools.mjs";
 import { createTreg } from "./treg.mjs";
 import { createFeishu } from "./feishu.mjs";
 import { createSettingsHandler } from "../../feishu/settings.mjs";
@@ -167,8 +168,11 @@ const checkDaily = async () => {
 const dailyTimer = setInterval(checkDaily, 60000); dailyTimer.unref();
 void checkDaily();
 // 此端口不映射到宿主机，也不经公网网关路由，容器仍须通过 tokenUser 鉴权。
+const dsTools = createDsTools({ stateFile: "/state/ds-tools.json", authenticate: desktopUser });
 const feishuInternal = http.createServer(async (req, res) => {
   if (req.url === "/token") return feishu.token(req, res);
+  if (await dsTools(req, res, new URL(req.url, "http://gateway.internal"))) return;
+  if (await treg(req, res, new URL(req.url, "http://gateway.internal"))) return;
   if (await dailyInternal(req, res, new URL(req.url, "http://gateway.internal"))) return;
   res.writeHead(404); res.end();
 });
@@ -422,6 +426,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith("/_zp/feishu/") && !userFor(req).user) return redirect(res, "/_zp/login?next=%2F_zp%2Ffeishu%2F");
     if (await feishuSettings(req, res, url)) return;
     if (await dailyPublic(req, res, url)) return;
+    if (url.pathname.startsWith("/_zp/ds-tools/")) { res.writeHead(404); return res.end(); } // Internal port only.
     if (await treg(req, res, url)) return;
     if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);

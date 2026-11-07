@@ -8,7 +8,7 @@ const patches = [
   {
     package: "@deepseek-ai/dsh-tool-web",
     import: '// crysound: allow both bounded search attempts before the tool deadline.\n',
-    extraImport: 'import { summarizeFetch, validateSummaryConfig } from "./crysound-summary.mjs";\nimport { credentialRef } from "@deepseek-ai/dsh-credentials";\nimport { launchEnvironmentOf } from "@deepseek-ai/dsh-launch-environment";\nimport { appendPluginRecord } from "@deepseek-ai/dsh-session";\n',
+    extraImport: 'import { fetchPage } from "./crysound-fetch-pipeline.mjs";\nimport { validateSummaryConfig } from "./crysound-summary.mjs";\nimport { credentialRef } from "@deepseek-ai/dsh-credentials";\nimport { launchEnvironmentOf } from "@deepseek-ai/dsh-launch-environment";\nimport { appendPluginRecord } from "@deepseek-ai/dsh-session";\n',
     edits: [{
       from: 'description: "Search the web for current information. Returns an optional summary answer and a list of source URLs.",',
       to: 'description: "Search the web for current information. Returns an optional summary answer and source URLs. If the answer or source summaries provide sufficient evidence, answer directly with available citations; do not web_fetch the same sources merely to confirm them. Fetch only to fill a specific evidence gap, such as original text, details or tables, or to meet the requested source count.",',
@@ -18,7 +18,7 @@ const patches = [
       to: 'searchTimeoutMs: z.number().default(18_000)',
     }, {
       from: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS)',
-      to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(15_000),\n\tfetchSummaryMaxTokens: z.number().default(1600)',
+      to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(2_000),\n\tfetchSummaryMaxTokens: z.number().default(1600),\n\tfetchSummaryMinChars: z.number().default(12000),\n\tfetchTreg: z.boolean().default(true),\n\tfetchDirectTimeoutMs: z.number().default(1500),\n\tfetchTregTimeoutMs: z.number().default(8000),\n\tfetchTotalTimeoutMs: z.number().default(9500),\n\tfetchDeepSeek: z.boolean().default(true),\n\tfetchDeepSeekTimeoutMs: z.number().default(8000),\n\tfetchDeepSeekMinChars: z.number().default(80)',
     }, {
       from: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars) {',
       to: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars, summaryConfig = { fetchSummary: false }) {',
@@ -37,12 +37,12 @@ const patches = [
       to: 'function parseFetchArgs(args) {\n\tif (args.prompt !== void 0 && typeof args.prompt !== "string") throw new Error("prompt must be a string");',
     }, {
       from: 'const result = await ctx.web.fetch({ url: input.url }, exec.signal);',
-      to: 'let result = await ctx.web.fetch({ url: input.url }, exec.signal);\n\t\t\tresult = await summarizeFetch(ctx, summaryConfig, args.prompt, args.url, result, value => renderFetchOutput(value, maxOutputChars), exec.signal, { credentialRef, launchEnvironmentOf, appendPluginRecord, request: fetch });',
+      to: 'const result = await fetchPage(ctx, summaryConfig, { url: input.url }, args.prompt, value => renderFetchOutput(value, maxOutputChars), exec.signal, { credentialRef, launchEnvironmentOf, appendPluginRecord, request: fetch });',
     }, {
       from: 'timeoutMs,\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
-      to: 'timeoutMs: timeoutMs + (summaryConfig.fetchSummary ? summaryConfig.fetchSummaryTimeoutMs : 0),\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
+      to: 'timeoutMs: (summaryConfig.fetchTreg || summaryConfig.fetchDeepSeek) ? summaryConfig.fetchTotalTimeoutMs + 500 : timeoutMs + (summaryConfig.fetchSummary ? summaryConfig.fetchSummaryTimeoutMs : 0),\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
     }],
-    files: { "summary.mjs": "crysound-summary.mjs" },
+    files: { "summary.mjs": "crysound-summary.mjs", "fetch-pipeline.mjs": "crysound-fetch-pipeline.mjs", "gateway-fetch.mjs": "crysound-gateway-fetch.mjs", "network.mjs": "network.mjs" },
   },
   {
     package: "@deepseek-ai/dsh-web-search-deepseek",
@@ -63,7 +63,7 @@ const patches = [
     import: 'import { companyFetcher, renderOptions } from "./crysound-fetch.mjs";\n',
     edits: [{
       from: 'userAgent: z.string().default(DEFAULT_USER_AGENT)\n',
-      to: 'userAgent: z.string().default(DEFAULT_USER_AGENT),\n\trenderConcurrency: z.number().default(1),\n\trenderTimeoutMs: z.number().default(15_000)\n',
+      to: 'userAgent: z.string().default(DEFAULT_USER_AGENT),\n\trenderConcurrency: z.number().default(1),\n\trenderTimeoutMs: z.number().default(2_000)\n',
     }, {
       from: 'ctx.web.registerFetchProvider(new HttpFetchProvider(limits));',
       to: 'ctx.web.registerFetchProvider(companyFetcher(HttpFetchProvider, WebError, limits, renderOptions(resolved)));',
@@ -95,7 +95,9 @@ export function patchWebTools(root) {
     if (patch.extraImport && !after.includes(patch.extraImport)) after = patch.import + patch.extraImport + after.slice(patch.import.length);
     for (const [source, destination] of Object.entries(patch.files)) {
       const target = path.join(directory, "lib", destination);
-      const content = fs.readFileSync(path.join(here, source), "utf8");
+      let content = fs.readFileSync(path.join(here, source), "utf8");
+      for (const [local, copied] of Object.entries(patch.files)) content = content.replaceAll(`"./${local}"`, `"./${copied}"`);
+      content = content.replaceAll('"./timing.mjs"', JSON.stringify(new URL("./timing.mjs", import.meta.url).href));
       // Avoid modifying any shared pnpm hardlink.
       if (fs.existsSync(target)) fs.unlinkSync(target);
       fs.writeFileSync(target, content, { mode: 0o644 });

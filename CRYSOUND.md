@@ -215,3 +215,7 @@ done
 ## 作品与创作插件预装
 
 作品入口使用 `crysound-artifacts.artifacts`，固定在搜索之后、自动化之前；隐藏上游重复入口与五个创作插件的单独入口，仅改变导航投影。作品页中文名通过共享启动修补统一成“作品”，市场仍叫“兆华作品”。版本、验证范围、启动耗时限制与回退见 [交付记录](crysound/sidebar-a/evidence/creation-preinstall/README.md)。
+
+## 网页抓取的付费兜底
+
+公司 web-tools 在直抓失败后并发尝试 DeepSeek Fetch 与 Treg Crawl4AI，首份可读正文胜出并取消另一路，共享 9.5 秒工作预算；短正文跳过摘要，分段计时可汇总各路兜底次数与胜出结果。网关内部端口复用容器身份转发 fetch/search，付费钥匙仅网关只读持有，按人限流，全公司每月最多 10 美元并持久预留防止并发和重启超额，按日、按人分别记录 fetch/search 派发与成功次数；独立开关停用时不作废共用钥匙。搜索转发尚未接入搜索流程；不改上游 dsh。部署、预算边界、本地检查与线上未验收项见 [#182 交付说明](crysound/config/evidence/issue-182/README.md)。

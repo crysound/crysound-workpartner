@@ -48,6 +48,32 @@ node crysound/web/web-tools/timing-report.mjs /path/to/tool-timing.jsonl
 {"version":1,"pid":100,"processStartTime":1794042000000,"session":"sample","turn":1,"step":1,"attempt":"sample:1","callId":"search-1","name":"web_search","stage":"search-request-dispatch","monotonicMs":3220,"time":1794042003220,"searchAttempt":1}
 ```
 
+## 抓取分段
+
+`web_fetch` 在同一个 `CRYSOUND_TOOL_TIMING_LOG` 开关下增加以下阶段。公司补丁复制到发布产物时引用同一个计时模块，沿用工具调用的异步身份；默认关闭、不写日志。阶段及结果均为固定字符串，不包含地址、问题、正文、请求体或错误文本。
+
+| 阶段前缀（均带 `fetch-`） | 起止位置 |
+| --- | --- |
+| `direct-start/end` | 公司直抓开始至返回或超时，包含下载、提取和可能的浏览器 |
+| `download-start/end` | HTTP 请求/跳转开始至原提供方读完有界正文并解码，失败同样结束 |
+| `extract-start/end` | 登录/空壳识别及 HTML 精简；摘要前的有界 Markdown 转换另记一段 |
+| `render-start/end` | Chromium 加载、渲染到清理完毕 |
+| `summary-request-start/end` | 摘要 HTTP 派发至响应解析完成；派发前失败只有 end，耗时为 null |
+| `deepseek-start/end` | DeepSeek 阶段，包含地址检查、身份文件读取和网关往返 |
+| `deepseek-request-start/end` | 发往内部网关的付费抓取请求及解析；未实际派发时不计调用 |
+| `treg-start/end` | Treg Crawl4AI 整个阶段，包括公开地址检查、身份文件读取和网关往返 |
+| `treg-request-start/end` | 发往内部网关的网页提取请求及 Markdown 解析 |
+
+`outcome` 标明 success、winner、http-error、timeout、error、cancelled；`fetch-render-skip`、`fetch-summary-skip`、`fetch-treg-skip`、`fetch-deepseek-skip` 标明静态页、短正文、不满足摘要条件、直抓成功、被拦截或已关闭的分支。直抓/下载/提取有包含关系，两路兜底并发，不能把所有段相加当作端到端时间。取消后的浏览器清理可能晚于直抓截止时刻，记录保留实际完成时间；同一调用异步尝试结束后才 flush。
+
+原命令逐调用输出 `fetchStages`（每段可多次）、`fetchRequests`（实际 DeepSeek/Treg 派发次数）与 `fetchBranches`。没有运行的段是空数组，只有开始/结束一端的段是 null，不补成零。跨调用汇总：
+
+```sh
+node crysound/web/web-tools/timing-report.mjs /path/to/tool-timing.jsonl --fetch-summary
+```
+
+汇总的 `fallbackCalls.deepseek`、`fallbackCalls.treg` 按 request-start 统计，包含未完成请求，缺钥匙、未派发不计；计数是兜底尝试次数，不是付费成功数（成功与预留以网关持久账本为准）。`stages.deepseek.outcomes.winner` 和 `stages.treg.outcomes.winner` 标明胜出数量；取消不保证提供方免计费。汇总还含调用数、各段完整样本数、缺失数、中位数、90 分位、结果及跳过分支计数。分位取有序完整样本的 nearest rank；错误/超时也保留在相应分布并单列结果数量。未包含的凭据等待可对照整个 treg 阶段与 treg-request 的差值。进程被强杀或诊断写入失败仍不构成完整样本。
+
 ## 检查和上线验收
 
 本机仅下载三个 npm 固定发布包的归档到临时目录供检查，不安装依赖，不运行整套测试或镜像构建。准备好目录后用 Node 24 执行：

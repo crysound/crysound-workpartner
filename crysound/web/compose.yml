@@ -18,6 +18,10 @@ services:
       PREVIEW_HOST: ${PREVIEW_HOST:-}
       OLD_HOSTS: ${OLD_HOSTS:-}
       FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
+      DEEPSEEK_TOOLS_ENABLED: ${DEEPSEEK_TOOLS_ENABLED:-1}
+      DEEPSEEK_TOOLS_KEY_FILE: ${DEEPSEEK_TOOLS_KEY_FILE:-/run/deepseek-tools/deepseek-tools.key}
+      DEEPSEEK_TOOLS_MONTHLY_USD: ${DEEPSEEK_TOOLS_MONTHLY_USD:-10}
+      DEEPSEEK_TOOLS_USER_RPM: ${DEEPSEEK_TOOLS_USER_RPM:-20}
       TREG_ENABLED: ${TREG_ENABLED:-0}
       TREG_ORG_ID: ${TREG_ORG_ID:-}
       TREG_ORG_SLUG: ${TREG_ORG_SLUG:-}
@@ -56,6 +60,7 @@ services:
           create_host_path: false
       - ./gateway/market.mjs:/app/market.mjs:ro
       - ./gateway/treg-catalog.mjs:/app/treg-catalog.mjs:ro
+      - ./gateway/ds-tools.mjs:/app/ds-tools.mjs:ro
       - ./gateway/treg.mjs:/app/treg.mjs:ro
       - ./gateway/treg-state.mjs:/app/treg-state.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
@@ -65,6 +70,13 @@ services:
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure
+      # Read-only view of the existing secure directory: an absent tools key disables only this feature.
+      - type: bind
+        source: ${PARTNER_SECURE}
+        target: /run/deepseek-tools
+        read_only: true
+        bind:
+          create_host_path: false
       - ${PARTNER_DATA}/gateway/state:/state
       - ${PARTNER_DATA}/downloads:/downloads:ro
       - /var/run/docker.sock:/var/run/docker.sock

@@ -68,6 +68,12 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       if (!object(value) || value.id !== id) throw fail(502, "数据接口目录无效");
       endpointCache.set(id, value);
     }
+    // Web fetch is one explicit exception; its provider is pinned at dispatch, never a catalog-wide opening.
+    if (id === "treg.web.extract") {
+      if (value.platform !== "web" || value.kind !== "routed" || value.method !== "POST" || value.platform_eligible !== true
+        || !Array.isArray(value.routed_children) || !value.routed_children.includes("crawl4ai.web.scrape")) throw fail(403, "网页提取接口尚未开放");
+      return value;
+    }
     if (!(await platforms()).has(value.platform) || !["data", "routed"].includes(value.kind)
       || !["GET", "POST"].includes(value.method) || value.platform_eligible !== true) throw fail(403, "此数据接口尚未开放或属于受限分类");
     const children = value.routed_children;
@@ -142,19 +148,28 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (!claimNotice()) return;
     try { await notify(); } catch (error) { console.warn("数据额度管理员通知未送达，请检查数据服务"); }
   };
-  const call = async (user, id, method, query, body, idempotencyKey) => {
+  const call = async (user, id, method, query, body, idempotencyKey, signal) => {
     if (!attributionVerified || !/^[1-9]\d*$/.test(String(orgId)) || !/^[a-z0-9-]+$/.test(orgSlug || "")) throw fail(503, "数据服务尚待管理员完成验证");
     const ep = await endpoint(id);
     if (method !== ep.method) throw fail(403, "请求方法必须与数据目录一致");
     if (idempotencyKey !== undefined && (typeof idempotencyKey !== "string" || !/^[\x21-\x7e]{1,150}$/.test(idempotencyKey))) throw fail(400, "重复请求标识无效");
     if (body !== undefined && !object(body) && !Array.isArray(body)) throw fail(400, "调用内容必须是 JSON 对象或数组");
+    const extraction = id === "treg.web.extract";
+    if (extraction) {
+      if (Object.keys(query).length || !keys(body, ["url"]) || typeof body.url !== "string" || body.url.length > 8192) throw fail(400, "网页提取参数无效");
+      let target;
+      try { target = new URL(body.url); } catch (error) { throw fail(400, "网页地址无效"); }
+      if (!["http:", "https:"].includes(target.protocol) || target.username || target.password) throw fail(400, "网页地址无效");
+    }
     const qs = queryString(query);
     const limits = limitsFor(user.slug);
     if (limits.monthly === 0) throw fail(429, monthlyMessage);
     if (limits.daily === 0) throw fail(429, dailyMessage);
     if (limits.call === 0) throw fail(429, "单次数据额度为零，请联系管理员");
     await budget(user);
-    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String(limits.call / 1e6), "content-type": "application/json" };
+    signal?.throwIfAborted();
+    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String((extraction ? Math.min(limits.call, 5000) : limits.call) / 1e6), "content-type": "application/json" };
+    if (extraction) Object.assign(headers, { "x-treg-route-prefer": "crawl4ai", "x-treg-route-waterfall": "0" });
     // Only this existing search route uses Exa; never trust caller routing/identity headers.
     if (id === "treg.web.search") Object.assign(headers, {
       "x-treg-route-prefer": "exa", "x-treg-route-waterfall": "0",
@@ -166,7 +181,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     try {
       response = await fetcher(`${origin}/call/${encodeURIComponent(id)}${qs ? `?${qs}` : ""}`, {
         method, headers, ...(method === "POST" ? { body: JSON.stringify(body ?? {}) } : {}),
-        redirect: "error", signal: AbortSignal.timeout(60000),
+        redirect: "error", signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60000)]) : AbortSignal.timeout(60000),
       });
       bytes = await readBytes(response.body ?? [], 16 * 1024 * 1024);
     } catch (error) { throw fail(502, "数据调用结果未知，请查询本人用量确认费用，请勿自动重试"); }
@@ -219,6 +234,8 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
   };
   return async (req, res, url) => {
     if (url.pathname !== prefix && !url.pathname.startsWith(prefix + "/")) return false;
+    const stop = new AbortController(), closed = () => stop.abort();
+    req.on("aborted", closed); res.on("close", closed);
     try {
       const user = authenticate(req);
       if (!user) throw fail(401, "请先登录工作伙伴并使用本人的通行证");
@@ -237,12 +254,13 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
         const query = Object.fromEntries([...new Set(url.searchParams.keys())].map((key) => {
           const values = url.searchParams.getAll(key); return [key, values.length === 1 ? values[0] : values];
         }));
-        const result = await call(user, path.slice(6), req.method, query, body, req.headers["idempotency-key"]);
+        const result = await call(user, path.slice(6), req.method, query, body, req.headers["idempotency-key"], stop.signal);
         if (result.costEstimated) res.setHeader("x-zp-cost-estimated", "1");
         else res.setHeader("x-treg-cost-micro", String(Math.round(result.cost_usd * 1e6)));
         json(res, 200, result.body);
       } else throw fail(403, "此路径或请求方法尚未开放，只能查询和调用数据目录");
     } catch (error) { json(res, error.status ?? 503, { error: error.status ? error.message : "数据服务暂时无法处理，请联系管理员" }); }
+    finally { stop.abort(); req.off("aborted", closed); res.off("close", closed); }
     return true;
   };
 }
