@@ -200,3 +200,33 @@ test('the disabled scheduler still erases thirty-day auxiliary originals without
   assert.equal(f.reads(), 0);
   assert.equal(f.store.db.prepare('SELECT count(*) n FROM learning_requests').get().n, 0);
 });
+
+test('switching off while a session read is pending prevents dispatch of any new model request', async t => {
+  const f = fixture(t);
+  let started, release, reads = 0;
+  const reading = new Promise(resolve => { started = resolve; });
+  f.ctx.sessionQuery.readSession = async () => {
+    if (reads++ === 0) { started(); await new Promise(resolve => { release = resolve; }); }
+    return f.data;
+  };
+  const pending = f.learner.tick(Date.now() + 2000000);
+  await reading;
+  f.store.setAutoLearning({ revision: 0, autoLearning: false });
+  release();
+  await assert.rejects(pending, /已变化/u);
+  assert.equal(f.calls(), 0);
+  assert.equal(f.store.learningState('synthetic').throughSeq, undefined);
+});
+
+test('switching off during route preparation prevents streaming or logging an auxiliary request', async t => {
+  const f = fixture(t);
+  let streamed = false;
+  const current = f.store.snapshot();
+  const ctx = { llm: { async prepareCall(route) {
+    f.store.setAutoLearning({ revision: current.revision, autoLearning: false });
+    return { config: route, async *stream() { streamed = true; yield { type: 'finish', reason: { kind: 'stop' } }; } };
+  } } };
+  await assert.rejects(requestLearning(ctx, f.store, config, collectLearning(f.data), current, new AbortController().signal), /已变化/u);
+  assert.equal(streamed, false);
+  assert.equal(f.store.db.prepare('SELECT count(*) n FROM learning_requests').get().n, 0);
+});

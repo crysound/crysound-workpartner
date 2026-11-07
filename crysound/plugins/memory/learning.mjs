@@ -82,6 +82,7 @@ export async function requestLearning(ctx, store, config, batch, current, signal
   store.reserveLearningCall(dateParts(Date.now(), config.learningTimeZone).day, config.learningDailyCalls);
   const call = await ctx.llm.prepareCall(route, signal);
   signal.throwIfAborted();
+  if (store.snapshot().revision !== current.revision) throw new Error('记忆已变化；辅助请求作废。');
   store.logLearningRequest(randomBytes(12).toString('hex'), { system, messages, route, purpose: 'crysound-memory-learning' });
   let text = '', finished = false;
   for await (const chunk of call.stream({ ...call.config, messages, system, purpose: 'crysound-memory-learning', signal })) {
@@ -134,6 +135,7 @@ export class MemoryLearner {
           if (!current.enabled || !current.autoLearning) break;
           const state = this.store.learningState(id);
           const snapshot = await this.ctx.sessionQuery.readSession(id);
+          if (this.store.snapshot().revision !== current.revision) throw new Error('记忆已变化；不再读取或提交本批学习。');
           const batch = collectLearning(snapshot, state);
           if (!batch) continue;
           const elapsed = now - batch.lastActivity;
