@@ -82,8 +82,8 @@ try {
   await page.goto(origin + '/?zp-settings=feishu', { waitUntil: 'domcontentloaded' });
   if (english) {
     await panel.getByRole('heading', { name: 'Feishu authorization', exact: true }).waitFor();
-    await panel.locator('nav button').filter({ hasText: /^Daily check$/ }).click();
-    const toggle = panel.getByRole('switch', { name: 'Daily check' });
+    await panel.locator('nav button').filter({ hasText: /^Proactive reminders$/ }).click();
+    const toggle = panel.getByRole('switch', { name: 'Proactive reminders' });
     await panel.getByText('Off by default', { exact: true }).waitFor();
     await panel.getByText(/Summaries use your model credits/).waitFor();
     assert.equal(await toggle.isChecked(), false);
@@ -98,8 +98,8 @@ try {
     console.log('PASS: native English daily-check navigation, disclosure, controls, quiet outcome and duplicate-run error. Tab-local dictionary preview; saved language unchanged.');
   } else {
   await panel.getByRole('heading', { name: '飞书授权', exact: true }).waitFor();
-  await panel.locator('nav button').filter({ hasText: /^每天帮我查一次$/ }).click();
-  const toggle = panel.getByRole('switch', { name: '每天帮我查一次' });
+  await panel.locator('nav button').filter({ hasText: /^主动提醒$/ }).click();
+  const toggle = panel.getByRole('switch', { name: '主动提醒' });
   await panel.getByText('默认关闭', { exact: true }).waitFor(); assert.equal(await toggle.isChecked(), false);
   await panel.getByText(/生成摘要会使用模型额度/).waitFor();
   await panel.screenshot({ path: output + '/settings-light-off.png', animations: 'disabled' });
