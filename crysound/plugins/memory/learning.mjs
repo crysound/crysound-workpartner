@@ -23,7 +23,9 @@ export function collectLearning(snapshot, { throughSeq = -1, startedAt = 0 } = {
       if (event.data.content.some(block => block.type !== 'text')) return [];
       const text = event.data.content.map(block => block.text).join('\n').trim();
       if (text.length < 8 || text.length > 4000 || attributed.test(text) || refused.test(text) || temporary.test(text) || !stable.test(text)) return [];
-      try { factInput({ kind: 'preference', title: '原话', content: text.slice(0, 240) }); }
+      // Source messages may contain paragraphs; only the saved excerpt must be one line.
+      // Keep the original message unchanged so proposal quotes still need exact attribution.
+      try { factInput({ kind: 'preference', title: '原话', content: text.replace(/\s+/gu, ' ').slice(0, 240) }); }
       catch (error) { return []; }
       return [{ seq: event.seq, text }];
     });
