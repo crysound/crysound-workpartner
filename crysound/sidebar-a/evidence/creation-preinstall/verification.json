@@ -27,8 +27,8 @@
     }
   ],
   "patched": [
-    "skin.css",
     "brand.css",
+    "skin.css",
     "skin.js",
     "artifacts",
     "ui-sidebar",
