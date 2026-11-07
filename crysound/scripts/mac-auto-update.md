@@ -10,7 +10,7 @@
 
 ## 手动构建
 
-`.github/workflows/desktop-mac.yml` 只由 `workflow_dispatch` 触发，不增加推送、标签或定时触发，不自动上传下载站，不增加凭据或权限。
+`.github/workflows/desktop-mac.yml` 的正式更新包仍只在 `workflow_dispatch` 手动分支生成，不自动上传下载站。推送与 PR 的自动预览构建不生成更新清单，也不注入更新源；触发范围、预览版本与签名要求见 [桌面打包说明](../../CRYSOUND.md#打包)。
 
 伙伴助理手动触发候选构建时填写：
 
