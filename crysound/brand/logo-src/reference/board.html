@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>兆华工作伙伴 logo v2 对比板</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:2000px;background:#ECEAF2;font:15px/1.4 "PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;color:#1d1a2e;padding:28px 32px 36px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.sub{color:#6b6880;margin-bottom:20px}
+.row{display:grid;grid-template-columns:150px 536px 1fr;gap:20px;background:#fff;border-radius:18px;padding:20px;margin-bottom:18px;align-items:start}
+.name b{display:block;font-size:40px;line-height:1;color:#170057}
+.name span{display:block;font-size:17px;font-weight:600;margin-top:8px}
+.name em{display:block;font-style:normal;color:#6b6880;font-size:13px;margin-top:6px}
+.big{width:536px;height:536px;border-radius:12px;background:#F6F5FA;display:grid;place-items:center}
+.big img{width:512px;height:512px}
+.right{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{border-radius:12px;padding:14px 16px;height:180px;position:relative}.panel.tall{height:342px}
+.panel h3{font-size:12px;font-weight:600;letter-spacing:.04em;margin-bottom:10px;opacity:.6}
+.light{background:#F6F5FA}.dark{background:#1B1B1F;color:#e8e6f0}
+.sizes{display:flex;align-items:flex-end;gap:26px}
+.sizes figure{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sizes figcaption{font-size:11px;opacity:.55}
+canvas.zoom{width:96px;height:96px;image-rendering:pixelated;border-radius:2px}
+.fs{display:flex;gap:16px;height:100%}
+.side{width:216px;border-radius:10px;padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.side.l{background:#fff;border:1px solid #e3e1ea}.side.d{background:#232326;border:1px solid #333}
+.item{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px;font-size:13px}
+.item i{width:24px;height:24px;border-radius:7px;flex:none}
+.side.l .item i{background:#d9dce3}.side.d .item i{background:#46464c}
+.side.l .item.on{background:#E8EAFD}.side.d .item.on{background:#33343c}
+.item img{width:24px;height:24px;flex:none}
+.side.l{color:#1f2329}.side.d{color:#e6e6ea}
+.mono{display:flex;gap:16px;align-items:center}
+.mono div{display:flex;gap:14px;align-items:flex-end;padding:12px;border-radius:10px}
+.note{font-size:12px;opacity:.6;margin-top:10px;max-width:420px}
+</style>
+<body>
+<h1>兆华工作伙伴 logo v2：四个方向对比</h1>
+<div class="sub">造型“张望”不变，只改填充。每行：512 px 大图｜浅色底与深色底上的 64 / 32 / 16 px（16 px 另放大 6 倍看像素）｜模拟飞书侧栏 24 px（白底、深色底）｜单色版。32 与 16 px 用各方向的 16 px 简化版（头更大、眼更粗）。</div>
+<div id="rows"></div>
+<script>
+const R=[
+ ['现状','纯色','current','src/current.svg','src/current-16.svg','src/current-16.svg','src/current-16.svg'],
+ ['A','暮紫','左上紫罗兰到右下品牌深紫，一层线性渐变','A.svg','A-16.svg','A-mono.svg','A-mono-white.svg'],
+ ['B','玻璃','底色渐变 + 顶部柔光与亮边；头部白到淡紫，眼睛加高光点','B.svg','B-16.svg','B-mono.svg','B-mono-white.svg'],
+ ['C','极光','右上青、蓝过渡到深紫，左上一抹粉','C.svg','C-16.svg','C-mono.svg','C-mono-white.svg'],
+ ['D','暖面','上亮下深的品牌紫，纯白头，两颊加粉色腮红','D.svg','D-16.svg','D-mono.svg','D-mono-white.svg'],
+];
+const side=(cls,src)=>`<div class="side ${cls}">${['消息','日历','云文档','工作台'].map(t=>`<div class="item"><i></i>${t}</div>`).join('')}<div class="item on"><img src="${src}">兆华工作伙伴</div>${['审批'].map(t=>`<div class="item"><i></i>${t}</div>`).join('')}</div>`;
+const sizes=(big,small,k)=>`<div class="sizes"><figure><img src="${big}" width="64" height="64"><figcaption>64</figcaption></figure><figure><img src="${small}" width="32" height="32"><figcaption>32</figcaption></figure><figure><img src="${small}" width="16" height="16"><figcaption>16</figcaption></figure><figure><canvas class="zoom" data-src="${small}" width="16" height="16"></canvas><figcaption>16 ×6</figcaption></figure></div>`;
+document.getElementById('rows').innerHTML=R.map(([k,n,d,big,small,mono,monoW])=>`<div class="row">
+ <div class="name"><b>${k}</b><span>${n}</span><em>${k==='现状'?'现在线上的 zp-mark':d}</em></div>
+ <div class="big"><img src="${big}"></div>
+ <div class="right">
+  <div class="panel light"><h3>浅色底</h3>${sizes(big,small)}</div>
+  <div class="panel dark"><h3>深色底</h3>${sizes(big,small)}</div>
+  <div class="panel light tall"><h3>飞书侧栏 24 px（白 / 深色）</h3><div class="fs">${side('l',big)}${side('d',big)}</div></div>
+  <div class="panel light tall"><h3>单色版（不支持渐变的场合）</h3>${k==='现状'?'<div class="note">现状没有单色版。</div>':`<div class="mono"><div style="background:#fff"><img src="${mono}" width="64"><img src="${mono}" width="32"><img src="${mono}" width="16"></div><div style="background:#1B1B1F"><img src="${monoW}" width="64"><img src="${monoW}" width="32"><img src="${monoW}" width="16"></div></div><div class="note">一种颜色，头部镂空露出底色，四个方向共用。</div>`}</div>
+ </div></div>`).join('');
+window.ready=Promise.all([...document.querySelectorAll('canvas.zoom')].map(c=>new Promise(r=>{const i=new Image();i.onload=()=>{c.getContext('2d').drawImage(i,0,0,16,16);r()};i.src=c.dataset.src;})));
+</script>

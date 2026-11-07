@@ -42,7 +42,7 @@ ENV OM_CHROME=/opt/slidestudio-runtime/browsers/chromium_headless_shell-1228/chr
 # 品牌层：换网页图标、标签页标题和安装名，注入 brand.css / brand.js，以及新开通时自动启动飞书接入的 welcome.js。
 # 图标地址带品牌文件的版本号：换图后飞书内置浏览器不会继续用缓存里的旧图。
 COPY brand/ /tmp/brand/
-RUN set -e; v=$(cat /tmp/brand/* | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
+RUN set -e; v=$(find /tmp/brand -maxdepth 1 -type f -print0 | sort -z | xargs -0 cat | md5sum | cut -c1-8); d=$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-web-frontend/dist; \
  cp /tmp/brand/zp-mark.svg /tmp/brand/zp-mark-32.svg /tmp/brand/favicon.svg /tmp/brand/favicon-dark.svg /tmp/brand/*.png $d/; \
  cp /tmp/brand/brand.css /tmp/brand/brand.js /tmp/brand/timezone.js /tmp/brand/pet.js /tmp/brand/welcome.js $d/; chmod 644 $d/zp-mark*.svg $d/favicon*.svg $d/brand.* $d/timezone.js $d/pet.js $d/welcome.js; \
  sed -i -e 's#<title>DeepSeek Harness</title>#<title>兆华工作伙伴</title>#' \

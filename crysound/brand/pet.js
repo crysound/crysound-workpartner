@@ -1,7 +1,10 @@
 // Animated logo from the approved design; no demo UI or network access.
 (() => {
 const SQ='M15 0H49A15 15 0 0 1 64 15V49A15 15 0 0 1 49 64H15A15 15 0 0 1 0 49V15A15 15 0 0 1 15 0Z';
-const HEAD='M7.56 52.74A25 25 0 0 1 56.44 52.74A6 6 0 0 1 50.57 60H13.43A6 6 0 0 1 7.56 52.74Z';
+// BEGIN GENERATED LOGO ART (logo-src/src/gen.mjs)
+const LOGO_ART=[{"defs":"<linearGradient id=\"t\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"0\" x2=\"50\" y2=\"64\"><stop offset=\"0\" stop-color=\"#5733E6\"/><stop offset=\"0.55\" stop-color=\"#260A88\"/><stop offset=\"1\" stop-color=\"#170057\"/></linearGradient><radialGradient id=\"g\" gradientUnits=\"userSpaceOnUse\" cx=\"20\" cy=\"2\" r=\"34\"><stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\"0.26\"/><stop offset=\"0.6\" stop-color=\"#fff\" stop-opacity=\"0.06\"/><stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"r\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"18\"><stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\"0.4\"/><stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/></linearGradient><linearGradient id=\"h\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"33\" x2=\"0\" y2=\"60\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\"0.5\" stop-color=\"#F6F3FF\"/><stop offset=\"1\" stop-color=\"#D7CCFF\"/></linearGradient><linearGradient id=\"e\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"37.5\" x2=\"0\" y2=\"49.5\"><stop offset=\"0\" stop-color=\"#3A16B4\"/><stop offset=\"1\" stop-color=\"#170057\"/></linearGradient>","tile":"<path d=\"M15 0H49A15 15 0 0 1 64 15V49A15 15 0 0 1 49 64H15A15 15 0 0 1 0 49V15A15 15 0 0 1 15 0Z\" fill=\"url(#t)\"/><path d=\"M15 0H49A15 15 0 0 1 64 15V49A15 15 0 0 1 49 64H15A15 15 0 0 1 0 49V15A15 15 0 0 1 15 0Z\" fill=\"url(#g)\"/><path d=\"M15 .5H49A14.5 14.5 0 0 1 63.5 15V49A14.5 14.5 0 0 1 49 63.5H15A14.5 14.5 0 0 1 .5 49V15A14.5 14.5 0 0 1 15 .5Z\" fill=\"none\" stroke=\"url(#r)\"/>","head":"<path d=\"M7.56 52.74A25 25 0 0 1 56.44 52.74A6 6 0 0 1 50.57 60H13.43A6 6 0 0 1 7.56 52.74Z\" fill=\"url(#h)\"/>","eyes":"<path class=\"eye\" d=\"M27 37.5A3.5 3.5 0 0 1 30.5 41V46A3.5 3.5 0 0 1 27 49.5A3.5 3.5 0 0 1 23.5 46V41A3.5 3.5 0 0 1 27 37.5ZM42 37.5A3.5 3.5 0 0 1 45.5 41V46A3.5 3.5 0 0 1 42 49.5A3.5 3.5 0 0 1 38.5 46V41A3.5 3.5 0 0 1 42 37.5Z\" fill=\"url(#e)\"/><circle class=\"glint\" cx=\"28.3\" cy=\"40.6\" r=\"1.35\" fill=\"#fff\"/><circle class=\"glint\" cx=\"43.3\" cy=\"40.6\" r=\"1.35\" fill=\"#fff\"/>"},{"defs":"<linearGradient id=\"t\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"0\" x2=\"50\" y2=\"64\"><stop offset=\"0\" stop-color=\"#5733E6\"/><stop offset=\"0.6\" stop-color=\"#260A88\"/><stop offset=\"1\" stop-color=\"#170057\"/></linearGradient><linearGradient id=\"h\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"33\" x2=\"0\" y2=\"60\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\"0.6\" stop-color=\"#FAF8FF\"/><stop offset=\"1\" stop-color=\"#E3DAFF\"/></linearGradient>","tile":"<path d=\"M15 0H49A15 15 0 0 1 64 15V49A15 15 0 0 1 49 64H15A15 15 0 0 1 0 49V15A15 15 0 0 1 15 0Z\" fill=\"url(#t)\"/>","head":"<path d=\"M6.53 52.8A26 26 0 0 1 57.47 52.8A6 6 0 0 1 51.6 60H12.4A6 6 0 0 1 6.53 52.8Z\" fill=\"url(#h)\"/>","eyes":"<path class=\"eye\" d=\"M26.5 40H29.5A2.5 2.5 0 0 1 32 42.5V49.5A2.5 2.5 0 0 1 29.5 52H26.5A2.5 2.5 0 0 1 24 49.5V42.5A2.5 2.5 0 0 1 26.5 40ZM42.5 40H45.5A2.5 2.5 0 0 1 48 42.5V49.5A2.5 2.5 0 0 1 45.5 52H42.5A2.5 2.5 0 0 1 40 49.5V42.5A2.5 2.5 0 0 1 42.5 40Z\" fill=\"#170057\"/>"}];
+function logoArt(id,small){return Object.fromEntries(Object.entries(LOGO_ART[small?1:0]).map(([key,value])=>[key,value.replaceAll('id="','id="'+id).replaceAll('url(#','url(#'+id)]))}
+// END GENERATED LOGO ART
 const LOOK={idle:[0,0],thinking:[-3.5,-1],working:[-3,1.5],waiting:[-2.5,1],done:[-2.5,0],error:[-2.5,0],sleep:[-2.5,0],listening:[-1.5,3]};
 const FACE={done:'happy',error:'x',sleep:'sleep'};
 const POKE_WORDS=['嗨！','在呢','有事吗？','痒～','我在听','嘿嘿'];
@@ -14,24 +17,25 @@ let uid=0;
 class ZpPet{
   constructor(host,{size=64,fx=true,follow=false,poke=true}={}){
     const id='zp'+(++uid);
+    const art=logoArt(id,size<=32);
     this.host=host;this.timers=new Set();this.tasks=new Set();this.lastFollow=0;this.pokes=[];this.effects=fx;
     host.classList.add('zp-pet');host.style.setProperty('--size',size+'px');
     host.dataset.state='idle';host.dataset.face='open';if(!fx)host.dataset.fx='off';
     host.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true">
-      <defs><clipPath id="${id}c"><path d="${SQ}"/></clipPath>
-        <linearGradient id="${id}g" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
-      <g class="tile"><path d="${SQ}" fill="#170057"/>
+      <defs>${art.defs}<clipPath id="${id}c"><path d="${SQ}"/></clipPath>
+        <linearGradient id="${id}shine" gradientUnits="userSpaceOnUse" x1="-34" y1="0" x2="-16" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+      <g class="tile">${art.tile}
         <g clip-path="url(#${id}c)">
-          <g class="body"><path d="${HEAD}" fill="#fff"/>
+          <g class="body">${art.head}
             <g class="face">
               <g class="blush"><ellipse cx="19" cy="50.5" rx="3.6" ry="2.2"/><ellipse cx="50" cy="50.5" rx="3.6" ry="2.2"/></g>
-              <g class="f-open"><rect class="eye" x="23.5" y="37.5" width="7" height="12" rx="3.5"/><rect class="eye" x="38.5" y="37.5" width="7" height="12" rx="3.5"/></g>
+              <g class="f-open">${art.eyes}</g>
               <g class="f-happy"><path d="M23 46Q27 39.5 31 46"/><path d="M38 46Q42 39.5 46 46"/></g>
               <g class="f-x"><path d="M24.3 40.5l5.4 6.2M29.7 40.5l-5.4 6.2"/><path d="M39.3 40.5l5.4 6.2M44.7 40.5l-5.4 6.2"/></g>
               <g class="f-sleep"><path d="M23.5 43.5Q27 47.2 30.5 43.5"/><path d="M38.5 43.5Q42 47.2 45.5 43.5"/></g>
             </g>
           </g>
-          <g class="shine"><rect x="-34" y="-6" width="18" height="76" fill="url(#${id}g)" transform="skewX(-16)"/></g>
+          <g class="shine"><rect x="-34" y="-6" width="18" height="76" fill="url(#${id}shine)" transform="skewX(-16)"/></g>
         </g></g></svg>
       <div class="fx" aria-hidden="true"><div class="bubble"></div><div class="zzz"><i>z</i><i>z</i><i>Z</i></div><div class="drop"></div></div>`;
     this.body=host.querySelector('.body');this.bubble=host.querySelector('.bubble');this.fx=host.querySelector('.fx');

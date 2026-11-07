@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>B 玻璃 · 图标核对</title>
+<link rel="icon" href="../favicon.svg"><link rel="stylesheet" href="../brand.css">
+<style>
+*{box-sizing:border-box}body{margin:0;padding:32px;font:16px system-ui;background:#f6f5fa;color:#211b35}
+body.dark{background:#181620;color:#f4f1ff}h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:24px 0 16px}
+.row{display:flex;align-items:end;gap:28px;flex-wrap:wrap}.card{text-align:center;min-width:100px;padding:30px 16px 16px;border:1px solid #8884;border-radius:18px}
+.label{font-size:13px;margin-top:18px}.states{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.states .card{padding-top:52px}
+.desktop{padding:18px 36px;border-radius:24px;background:#ccc4;display:flex;align-items:end;gap:24px}.desktop img{width:96px;height:96px}.taskbar{width:240px;display:flex;align-items:center;gap:22px;padding:18px;background:#8882;border-radius:8px}
+.sizes img{display:block;margin:auto}.tab{display:flex;align-items:center;gap:10px;border:1px solid #8885;padding:10px 18px;border-radius:12px 12px 0 0}
+</style>
+<h1>B 玻璃 · 图标与会动组件核对</h1><div>与产品共用 SVG、PNG、pet.js 和 brand.css；桌面栏为预览。</div>
+<h2>会动 logo · 9 种状态（64 px）</h2><div class="states" id="states"></div>
+<h2>显示尺寸 · ≤32 px 使用简化版</h2><div class="row sizes" id="sizes"></div>
+<h2>浏览器标签 / 单色</h2><div class="row"><div class="tab"><img src="../favicon.svg" width="16" height="16">兆华工作伙伴</div><img id="mono" src="B-mono.svg" width="40" height="40"></div>
+<h2>桌面 Dock / 任务栏预览</h2><div class="row"><div class="desktop"><img src="../../../apps/desktop/resources/icon-macos.png"><span>macOS · 824/1024 留边</span></div><div class="taskbar" id="taskbar"></div></div>
+<script type="module">
+const dark=new URL(location.href).searchParams.has('dark');document.body.classList.toggle('dark',dark);
+document.querySelector('#mono').src=dark?'B-mono-white.svg':'B-mono.svg';
+// Preview only: expose the unmodified production class without the conversation adapter.
+const source=await (await fetch('../pet.js')).text();
+eval(source.slice(0,source.indexOf('/* Current-conversation DOM adapter.'))+'window.PreviewPet=ZpPet;})();');
+window.previewPets=[];
+for(const [state,label] of Object.entries({idle:'待机',thinking:'思考',working:'工作',waiting:'等你',done:'完成',error:'出错',sleep:'睡眠',listening:'聆听',poke:'戳一下'})){
+ const card=document.createElement('div');card.className='card';card.innerHTML='<div></div><div class="label">'+label+'</div>';document.querySelector('#states').append(card);
+ const pet=new window.PreviewPet(card.firstChild,{size:64});pet.set(state==='poke'?'idle':state);
+ if(state==='poke')pet.poke();window.previewPets.push(pet);
+}
+for(const size of [16,24,32,64,512]){
+ const card=document.createElement('div');card.innerHTML=`<img src="${size<=32?'B-16.svg':'B.svg'}" width="${size}" height="${size}"><div class="label">${size} px</div>`;document.querySelector('#sizes').append(card);
+}
+// Show the actual packed Windows ICO frames, rather than a downscaled PNG.
+const ico=new DataView(await (await fetch('../../../apps/desktop/resources/icon-windows.ico')).arrayBuffer());
+for(let i=0;i<3;i++){
+ const at=6+16*i,size=ico.getUint8(at),length=ico.getUint32(at+8,true),offset=ico.getUint32(at+12,true);
+ const image=new Image();image.width=image.height=size;image.src=URL.createObjectURL(new Blob([ico.buffer.slice(offset,offset+length)],{type:'image/png'}));document.querySelector('#taskbar').append(image);
+}
+await Promise.all([...document.images].map(i=>i.decode()));
+document.body.dataset.ready='true';
+</script></html>
