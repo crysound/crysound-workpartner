@@ -1,5 +1,5 @@
 // Run seed in the old image, then upgrade in the candidate image, sharing only a throwaway /test.
-// Both images mount this checkout at /src. Seed requires the crysound.6 archive at /opt/company-plugins.
+// Both images mount this checkout at /src. Seed requires the crysound.7 archive at /opt/company-plugins.
 // node /src/crysound/tests/plugin-install-smoke.mjs seed|upgrade
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
@@ -15,7 +15,7 @@ for (const name of ['@deepseek-ai/dsh/package.json', '@deepseek-ai/dsh-base/pack
 const yaml = require('yaml');
 const root = process.env.PARTNER_TEST_ROOT;
 assert.ok(root, 'set PARTNER_TEST_ROOT to an isolated, disposable directory shared by both images');
-const oldFile = 'aiwayds-dsh-feishu-0.17.0-crysound.6.tgz';
+const oldFile = 'aiwayds-dsh-feishu-0.17.0-crysound.7.tgz';
 const oldWeb = `file:/opt/company-plugins/${oldFile}`;
 const oldDesktop = `file:company-plugins/${oldFile}`;
 const oldRemote = `https://partner-dl.corp.crysound.com/plugins/GdIDOj8kNqAK1mrp/${oldFile}`;
@@ -89,7 +89,7 @@ for (const name of cases) {
     dsh('plugin', '--profile', profileName, 'add', desktop ? oldDesktop : oldWeb);
     // Keep a real unrelated dependency and the plugin's saved selection throughout migration.
     dsh('plugin', '--profile', profileName, 'add', 'is-number@7.0.0');
-    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.6');
+    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.7');
     const manifest = JSON.parse(readFileSync(join(profile, 'package.json')));
     writeFileSync(join(home, 'selection.json'), JSON.stringify(manifest.dsh));
     if (name.includes('remote')) {
@@ -105,11 +105,11 @@ for (const name of cases) {
         } else writeFileSync(path, text);
       }
     }
-    console.log(`PASS seed: ${name} really installed crysound.6`);
+    console.log(`PASS seed: ${name} really installed crysound.7`);
     continue;
   }
   assert.equal(process.argv[2], 'upgrade');
-  assert.ok(!existsSync(oldWeb.slice(5)), 'candidate image must not contain crysound.6');
+  assert.ok(!existsSync(oldWeb.slice(5)), 'candidate image must not contain crysound.7');
   const want = desktop ? DESKTOP_WANT : WEB_SPEC;
   verifyArchive(readFileSync(WEB_SPEC.slice(5)));
   if (desktop) {
@@ -133,7 +133,7 @@ for (const name of cases) {
     assert.equal(manifest.dependencies[FEISHU.name], want);
     assert.equal(manifest.dependencies['is-number'], '7.0.0');
     assert.deepEqual(manifest.dsh, JSON.parse(readFileSync(join(home, 'selection.json'))));
-    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.7');
+    assert.equal(JSON.parse(readFileSync(join(profile, 'node_modules', FEISHU.name, 'package.json'))).version, '0.17.0-crysound.8');
     for (const file of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) {
       const text = readFileSync(join(profile, file), 'utf8');
       assert.ok(!text.includes(oldFile));
@@ -148,5 +148,5 @@ for (const name of cases) {
   await boot(profileName, env, home);
   dsh('plugin', '--profile', profileName, 'add', 'is-odd@3.0.1');
   dsh('plugin', '--profile', profileName, 'remove', 'is-odd');
-  console.log(`PASS upgrade: ${name} → crysound.7, locks/config/other plugin retained, composition twice, real plugin apply + HTTP ready, subsequent add/remove`);
+  console.log(`PASS upgrade: ${name} → crysound.8, locks/config/other plugin retained, composition twice, real plugin apply + HTTP ready, subsequent add/remove`);
 }
