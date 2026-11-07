@@ -1037,7 +1037,7 @@
       },
       "interruption": {
         "reason": "test container restarted between completed main turn and first database read",
-        "originalError": "Command failed: /srv/xiaoman/autoloop/work-partner/memtest-67/issue-100-entry.sh db select * from facts order by id\n",
+        "originalError": "Test container restarted after the completed main turn and before the first database read.",
         "noMainTurnRepeated": true
       }
     },
