@@ -57,8 +57,8 @@ async function fixture(t) {
   t.after(async () => { server.closeAllConnections(); await new Promise((r) => server.close(r)); fs.rmSync(dir, { recursive: true, force: true }); });
   const base = `http://127.0.0.1:${server.address().port}`;
   const request = async (route, init = {}) => { const r = await fetch(base + route, { redirect: "manual", ...init }); return { status: r.status, headers: r.headers, text: await r.text() }; };
-  const connect = async () => {
-    const r = await request("/_zp/feishu/connect", { headers: { cookie: "session=alice" } });
+  const connect = async (query = "") => {
+    const r = await request("/_zp/feishu/connect" + query, { headers: { cookie: "session=alice" } });
     assert.equal(r.status, 302, r.text);
     const q = new URL(r.headers.get("location")).searchParams;
     const state = q.get("state");
@@ -165,4 +165,33 @@ test("飞书项目登录按本人隔离，非阻塞检查，断开取消未完�
   await p.connect(user); await p.disconnect({ ...user }); assert.equal((await p.poll(user)).state, "expired");
   assert.equal(calls.filter((c) => c.args.includes("poll")).length, 1);
   assert.deepEqual(await p.status(user), { connected: false });
+});
+
+
+test("原生设置回跳绑定 OAuth state，小窗回调不传授权码或令牌，普通旧链接仍回旧页", async (t) => {
+  const f = await fixture(t);
+  const popup = await f.connect('?return=settings&display=popup');
+  const callback = await f.callback(popup);
+  assert.equal(callback.headers.get('location'), publicOrigin + '/_zp/feishu/done?display=popup');
+  const done = await f.request('/_zp/feishu/done?display=popup', { headers: { cookie: 'session=alice' } });
+  assert.equal(done.status, 200); assert.match(done.text, /postMessage/); assert.match(done.text, /window.close/);
+  for (const secret of ['fake-code', 'fake-initial-access', 'fake-initial-refresh']) assert.ok(!done.text.includes(secret));
+  const mobile = await f.connect('?return=settings&display=redirect&next=https://evil.test');
+  assert.equal((await f.callback(mobile)).headers.get('location'), publicOrigin + '/_zp/feishu/done?display=redirect');
+  const page = await f.request('/_zp/feishu/done?display=redirect', { headers: { cookie: 'session=alice' } });
+  assert.match(page.text, /sessionStorage.setItem\('zp-feishu-return', '1'\)/);
+  assert.match(page.text, /location.replace\('\/\?zp-settings=feishu'\)/); assert.ok(!page.text.includes('evil.test'));
+  const legacy = await f.connect();
+  assert.equal((await f.callback(legacy)).headers.get('location'), publicOrigin + '/_zp/feishu/');
+});
+
+test("授权时间在刷新后保持，旧记录不推测首次授权时间", async (t) => {
+  const f = await fixture(t), c = await f.connect(); await f.callback(c);
+  const before = f.service().status(user.unionId).authorizedAt;
+  assert.equal(typeof before, 'number'); f.advance(7200000); await f.token();
+  assert.equal(f.service().status(user.unionId).authorizedAt, before);
+  const file = path.join(f.dir, fs.readdirSync(f.dir)[0]);
+  const record = JSON.parse(fs.readFileSync(file, 'utf8')); delete record.authorizedAt; fs.writeFileSync(file, JSON.stringify(record));
+  assert.equal(f.service().status(user.unionId).authorizedAt, undefined);
+  f.advance(7200000); await f.token(); assert.equal(f.service().status(user.unionId).authorizedAt, undefined);
 });

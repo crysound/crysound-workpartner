@@ -70,6 +70,22 @@ test("缺 CLI 给固定版本安装方法；飞书项目未登录不执行操作
   fs.rmSync(path.join(f.realBin, "lark-cli")); const missing = await f.run("lark-cli", ["auth", "status"]); assert.match(missing.stderr, /npm install -g @larksuite\/cli@1.0.99/);
 });
 
+test("项目状态只公开连接和 CLI 剩余有效期，不创建授权时间", async () => {
+  let result = { authenticated: true, expires_in_minutes: 4350, token: 'never-expose' };
+  const project = createProject({ run: async () => result });
+  assert.deepEqual(await project.status('me'), { connected: true, expiresInMinutes: 4350 });
+  for (const minutes of [1439, 1440, 0]) {
+    result = { authenticated: true, expires_in_minutes: minutes };
+    assert.deepEqual(await project.status('me'), { connected: true, expiresInMinutes: minutes });
+  }
+  for (const minutes of [null, undefined, '1440', -1]) {
+    result = { authenticated: true, expires_in_minutes: minutes };
+    assert.deepEqual(await project.status('me'), { connected: true });
+  }
+  result = { authenticated: false, reason: 'no local token', expires_in_minutes: 1440 };
+  assert.deepEqual(await project.status('me'), { connected: false });
+});
+
 test("本机设置拒绝跨站 POST、未知身份和其他路径，页面不含本人凭据", async (t) => {
   const calls = [], project = createProject({ run: async () => ({ authenticated: false, reason: "no local token" }) });
   let handler;

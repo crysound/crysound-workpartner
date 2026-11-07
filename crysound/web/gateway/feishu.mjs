@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { completionPage } from "../../feishu/return.mjs";
 
 const failure = (status, message) => Object.assign(new Error(message), { status });
 const json = (res, status, value) => { res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer" }); res.end(JSON.stringify(value)); };
@@ -57,7 +58,7 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
   const exchange = (body) => post("https://open.feishu.cn/open-apis/authen/v2/oauth/token", { client_id: appId, client_secret: secret(), ...body });
   function tokenRecord(data, previous) {
     if (typeof data.access_token !== "string" || !data.access_token || !Number.isFinite(data.expires_in) || data.expires_in <= 0 || !(data.refresh_token || previous?.refreshToken)) throw failure(502, "飞书没有返回长期授权，请重新连接并允许离线访问");
-    return { version: 1, state: "connected", accessToken: data.access_token, refreshToken: data.refresh_token || previous.refreshToken,
+    return { version: 1, state: "connected", authorizedAt: previous ? previous.authorizedAt : now(), accessToken: data.access_token, refreshToken: data.refresh_token || previous.refreshToken,
       expiresAt: now() + data.expires_in * 1000, refreshExpiresAt: data.refresh_token_expires_in ? now() + data.refresh_token_expires_in * 1000 : previous?.refreshExpiresAt ?? null };
   }
   async function refresh(id, value) {
@@ -97,7 +98,7 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
   }
   const status = (id) => {
     const value = load(id);
-    return { enabled: enabled(), connected: Boolean(enabled() && value?.state === "connected" && (value.refreshExpiresAt === null || value.refreshExpiresAt > now())), revoking: value?.state === "revoking" };
+    return { enabled: enabled(), connected: Boolean(enabled() && value?.state === "connected" && (value.refreshExpiresAt === null || value.refreshExpiresAt > now())), revoking: value?.state === "revoking", name: readUsers().find(user => user.unionId === id)?.name, authorizedAt: value?.authorizedAt };
   };
   const disconnect = (id) => serial(id, async () => {
     for (const [state, entry] of pending) if (entry.user === id) pending.delete(state);
@@ -137,7 +138,10 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
       const user = sessionUser(req);
       if (!user) { redirect(res, `/_zp/login?next=${encodeURIComponent("/_zp/feishu/")}`); return true; }
       const suffix = url.pathname.slice("/_zp/feishu/".length);
-      if (callback) {
+      if (suffix === "done" && req.method === "GET") {
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" });
+        res.end(completionPage(url.searchParams.get("display") === "popup"));
+      } else if (callback) {
         const state = url.searchParams.get("state");
         const entry = pending.get(state);
         pending.delete(state);
@@ -158,13 +162,14 @@ export function createFeishu({ stateDir, appId, secret, publicOrigin, enabled, a
           ensureEnabled();
           save(user.unionId, tokenRecord(tok));
         });
-        redirect(res, `${publicOrigin}/_zp/feishu/`, expiredCookie);
+        redirect(res, entry.display ? `${publicOrigin}/_zp/feishu/done?display=${entry.display}` : `${publicOrigin}/_zp/feishu/`, expiredCookie);
       } else if (suffix === "connect" && req.method === "GET") {
         ensureEnabled();
         const scope = await scopes();
         for (const [id, entry] of pending) if (entry.until <= now() || entry.user === user.unionId) pending.delete(id);
         const state = `feishu-${crypto.randomBytes(24).toString("hex")}`;
-        pending.set(state, { user: user.unionId, until: now() + 600000 });
+        pending.set(state, { user: user.unionId, until: now() + 600000,
+          display: url.searchParams.get("return") === "settings" ? (url.searchParams.get("display") === "popup" ? "popup" : "redirect") : null });
         const query = new URLSearchParams({ client_id: appId, response_type: "code", redirect_uri: `${publicOrigin}/_zp/callback`, state, scope });
         redirect(res, `https://accounts.feishu.cn/open-apis/authen/v1/authorize?${query}`, `zp_feishu=${state}; Path=/_zp; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
       } else return false;
