@@ -1,0 +1,53 @@
+{
+  "checkedAt": "2026-11-07T05:04:09.366917+00:00",
+  "method": "Native isolated runtime with corrected branch patch; real company market handler and an additional empty synthetic community index; no browser response replacement or remote/session mocks",
+  "configuredSourcePathsInOrder": [
+    "/community/index.json",
+    "/_zp/market/index.json"
+  ],
+  "nativeSourceMenuObservedOrder": [
+    "other configured index",
+    "兆华市场"
+  ],
+  "coldStartupAndNavigation": {
+    "mode": "uninstalled",
+    "checks": [
+      {
+        "kind": "full-native-startup",
+        "failedToLoadPlugins": false
+      },
+      {
+        "kind": "uninstalled-detail",
+        "tab": "兆华市场",
+        "package": "@crysound/design",
+        "version": "1.0.0",
+        "installButton": true
+      },
+      {
+        "kind": "native-install-confirmation",
+        "package": "@crysound/design",
+        "confirmed": false
+      },
+      {
+        "kind": "previous-search-cleared",
+        "detail": "@crysound/design"
+      },
+      {
+        "kind": "browse-company-list",
+        "tab": "兆华市场"
+      }
+    ],
+    "consoleErrors": []
+  },
+  "afterExplicitlySelectingOtherIndexAndReturningThroughHome": {
+    "detail": "@crysound/design",
+    "source": "兆华市场",
+    "tab": "兆华市场"
+  },
+  "regression": "Before correction, the focused source-order test selected/searched the first unrelated source; after correction all 12 tests pass, including cold startup, existing filters, missing company source, disposal and v2-to-v3 patch upgrade",
+  "limits": [
+    "Synthetic approval and other-source fixture; no production user state changed",
+    "No new model submission or actual install confirmation",
+    "Post-deployment acceptance and packaged Electron remain with partner assistant"
+  ]
+}
