@@ -257,3 +257,36 @@ export function repairMojibake(text: string): string {
     return repaired.includes('\uFFFD') ? run : repaired
   })
 }
+
+/** Transform only card Markdown; fenced content keeps its original headings/tables. */
+export function preprocessCardMarkdown(input: string): string {
+  let text = input.replace(/([^\n])```/g, '$1\n```')
+    .replace(/!\[[^\]]*\]\((?!img_)[^)]*\)/g, '')
+    .replace(/(?<!!)\[([^\]]*)\]\(([^)]*)\)/g, (all, label: string, url: string) =>
+      /^https?:\/\//i.test(url) ? all : `${label} (${url})`)
+  const lines = text.split('\n')
+  let fenced = false
+  const outside = lines.map(line => { if (/^\s*```/.test(line)) { fenced = !fenced; return false } return !fenced })
+  const headings = lines.some((line, i) => outside[i] && /^#{1,3} /.test(line))
+  let tables = 0
+  const result: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    if (outside[i] && /^\s*\|.*\|/.test(line) && /^\s*\|\s*:?-{3}/.test(lines[i + 1] ?? '')) {
+      tables++
+      const table = [line]
+      while (i + 1 < lines.length && /^\s*\|/.test(lines[i + 1]!)) table.push(lines[++i]!)
+      result.push(tables >= 4 ? `\x60\x60\x60\n${table.join('\n')}\n\x60\x60\x60` : table.join('\n'))
+    } else result.push(headings && outside[i] ? line.replace(/^(#{1,6}) /, (_, hashes: string) => hashes.length === 1 ? '#### ' : '##### ') : line)
+  }
+  return result.join('\n').replace(/\n{3,}/g, '\n\n')
+}
+export function markdownTableCount(text: string): number {
+  let fenced = false
+  let count = 0
+  for (const line of text.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced
+    else if (!fenced && /^\s*\|\s*:?-{3}/.test(line)) count++
+  }
+  return count
+}

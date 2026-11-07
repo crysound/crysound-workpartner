@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseReceiveEvent } from '../lib/inbound.js'
+import { parseReceiveEvent, mentionText } from '../lib/inbound.js'
 
 function payload(overrides = {}) {
   return {
@@ -47,7 +47,7 @@ test('image messages without a usable key degrade to undefined', () => {
   assert.equal(parseReceiveEvent(payload({ message_type: 'image', content: 'not-json' })).imageKey, undefined)
 })
 
-test('group text strips mention placeholders and collects mention ids', () => {
+test('group text preserves mention placeholders until the bot id is known', () => {
   const message = parseReceiveEvent(payload({
     chat_type: 'group',
     content: JSON.stringify({ text: '@_user_1 帮我跑一下测试' }),
@@ -56,7 +56,7 @@ test('group text strips mention placeholders and collects mention ids', () => {
       { key: '@_user_2', id: { open_id: 'ou_peer' }, name: 'peer' },
     ],
   }))
-  assert.equal(message.text, '帮我跑一下测试')
+  assert.equal(mentionText(message.text, message.mentions, 'ou_bot'), '帮我跑一下测试')
   assert.deepEqual(message.mentions.map(m => m.openId), ['ou_bot', 'ou_peer'])
 })
 
@@ -67,7 +67,7 @@ test('group mention ids arrive as bare strings too (older payloads)', () => {
     mentions: [{ key: '@_user_1', id: 'ou_bot' }],
   }))
   assert.deepEqual(message.mentions.map(m => m.openId), ['ou_bot'])
-  assert.equal(message.text, 'hi')
+  assert.equal(mentionText(message.text, message.mentions, 'ou_bot'), 'hi')
 })
 
 test('p2p messages carry no mentions', () => {

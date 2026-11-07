@@ -40,7 +40,7 @@ export interface Config {
    * (default 180000 = 3 min; clamped to [30000, 3600000]). Output produced
    * inside the window merges into the next push.
    */
-  /** Long assistant bodies are segmented for Feishu at this size (default 3500). */
+  /** Long assistant bodies are segmented for Feishu at this size (default 4000). */
   bodySegmentChars?: number
   /**
    * `/resume` list rendering style (default `auto`): `auto` sends the native
@@ -89,7 +89,7 @@ export const Config = z.object({
   appIdRef: z.string().default('DSH_FEISHU_APP_ID'),
   appSecretRef: z.string().default('DSH_FEISHU_APP_SECRET'),
   statusIntervalMs: z.number().min(5000).max(600000).step(1).default(5000),
-  bodySegmentChars: z.number().min(500).max(30000).step(1).default(3500),
+  bodySegmentChars: z.number().min(500).max(30000).step(1).default(4000),
   resumeListStyle: z.union([z.const('auto'), z.const('table'), z.const('list')]).default('auto'),
   btwContextMessages: z.number().min(0).max(50).step(1).default(6),
   backgroundPush: z.union([z.const('off'), z.const('cron'), z.const('all')]).default('off'),
@@ -143,7 +143,7 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
   if (!Number.isSafeInteger(statusIntervalMs) || statusIntervalMs < 5000 || statusIntervalMs > 600000) {
     throw new Error('dsh-feishu: statusIntervalMs must be an integer in [5000, 600000]')
   }
-  const bodySegmentChars = config?.bodySegmentChars ?? 3500
+  const bodySegmentChars = config?.bodySegmentChars ?? 4000
   if (!Number.isSafeInteger(bodySegmentChars) || bodySegmentChars < 500 || bodySegmentChars > 30000) {
     throw new Error('dsh-feishu: bodySegmentChars must be an integer in [500, 30000]')
   }

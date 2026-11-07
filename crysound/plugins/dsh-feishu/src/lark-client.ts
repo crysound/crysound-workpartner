@@ -19,6 +19,21 @@
 import * as lark from '@larksuiteoapi/node-sdk'
 import type { AnyCard } from './card.ts'
 
+export interface MessageTarget {
+  readonly chatId: string
+  readonly messageId?: string
+  readonly threadId?: string
+}
+export interface FetchedMessage {
+  message_id: string
+  msg_type: string
+  body?: { content?: string }
+  parent_id?: string
+  upper_message_id?: string
+  create_time?: string
+  sender?: { sender_type?: string }
+}
+
 /** Minimal outbound surface the bot depends on (mockable in tests). */
 export interface LarkGateway {
   /** Open the event stream; `onMessage` is the sync enqueue-only callback. */
@@ -27,7 +42,13 @@ export interface LarkGateway {
   sendText(chatId: string, text: string): Promise<string | undefined>
   sendCard(chatId: string, card: AnyCard): Promise<string | undefined>
   patchCard(messageId: string, card: AnyCard): Promise<boolean>
-  react(messageId: string, emojiType: string): Promise<void>
+  react(messageId: string, emojiType: string): Promise<string | undefined>
+  deleteReaction(messageId: string, reactionId: string): Promise<void>
+  deleteMessage(messageId: string): Promise<boolean>
+  sendMessage(target: MessageTarget, type: 'interactive' | 'post' | 'text', content: unknown): Promise<string | undefined>
+  updatePreview(messageId: string, card: AnyCard): Promise<'ok' | 'limited' | 'failed'>
+  getMessages(messageId: string): Promise<FetchedMessage[] | undefined>
+  downloadFile(messageId: string, fileKey: string): Promise<Uint8Array | undefined>
   /** Download one image resource; undefined on failure (best-effort). */
   downloadImage(messageId: string, imageKey: string): Promise<Uint8Array | undefined>
   /** The bot's own open_id (mention routing); undefined when unresolvable. */
@@ -371,25 +392,80 @@ export class LarkClient implements LarkGateway {
     }
   }
 
-  async react(messageId: string, emojiType: string): Promise<void> {
+  private readonly warned = new Set<string>()
+  private warnOnce(what: string, error: unknown): void {
+    if (this.warned.has(what)) return
+    this.warned.add(what)
+    this.onError(what, error)
+  }
+
+  async sendMessage(target: MessageTarget, type: 'interactive' | 'post' | 'text', content: unknown): Promise<string | undefined> {
     try {
-      await requestFeishu(
-        () => this.client.im.messageReaction.create({
-          path: { message_id: messageId },
-          data: { reaction_type: { emoji_type: emojiType } },
-        }),
-        { sleep: this.sleep },
-      )
-    } catch {
-      // Reactions are a low-noise extra channel; never report their failure.
+      const data = { msg_type: type, content: JSON.stringify(content) }
+      const response = await requestFeishu(() => target.threadId && target.messageId
+        ? this.client.im.message.reply({ path: { message_id: target.messageId }, data: { ...data, reply_in_thread: true } })
+        : this.client.im.message.create({ params: { receive_id_type: 'chat_id' }, data: { ...data, receive_id: target.chatId } }),
+      { sleep: this.sleep })
+      return response?.data?.message_id
+    } catch (error) { this.warnOnce('send-message', error); return undefined }
+  }
+
+  async react(messageId: string, emojiType: string): Promise<string | undefined> {
+    try {
+      const response = await requestFeishu(() => this.client.im.messageReaction.create({
+        path: { message_id: messageId }, data: { reaction_type: { emoji_type: emojiType } },
+      }), { sleep: this.sleep })
+      return response?.data?.reaction_id
+    } catch (error) { this.options.onLog?.('debug', `reaction failed: ${String(error)}`); return undefined }
+  }
+
+  async deleteReaction(messageId: string, reactionId: string): Promise<void> {
+    try {
+      await requestFeishu(() => this.client.im.messageReaction.delete({ path: { message_id: messageId, reaction_id: reactionId } }), { sleep: this.sleep })
+    } catch (error) { this.warnOnce('delete-reaction', error) }
+  }
+
+  async deleteMessage(messageId: string): Promise<boolean> {
+    try {
+      await requestFeishu(() => this.client.im.message.delete({ path: { message_id: messageId } }), { sleep: this.sleep })
+      return true
+    } catch (error) { this.warnOnce('delete-message', error); return false }
+  }
+
+  async updatePreview(messageId: string, card: AnyCard): Promise<'ok' | 'limited' | 'failed'> {
+    try {
+      await requestFeishu(() => this.client.im.message.patch({ path: { message_id: messageId }, data: { content: JSON.stringify(card) } }), { maxRetries: 0 })
+      return 'ok'
+    } catch (error) {
+      if (isRateLimited(error)) return 'limited'
+      this.warnOnce('preview-patch', error)
+      return 'failed'
     }
   }
 
+  async getMessages(messageId: string): Promise<FetchedMessage[] | undefined> {
+    try {
+      const response = await requestFeishu(() => this.client.request<{ data?: { items?: FetchedMessage[] } }>({
+        url: `/open-apis/im/v1/messages/${encodeURIComponent(messageId)}`,
+        method: 'GET', params: { card_msg_content_type: 'raw_card_content' },
+      }), { sleep: this.sleep })
+      return response?.data?.items
+    } catch (error) { this.warnOnce('get-message', error); return undefined }
+  }
+
+  async downloadFile(messageId: string, fileKey: string): Promise<Uint8Array | undefined> {
+    return this.downloadResource(messageId, fileKey, 'file')
+  }
+
   async downloadImage(messageId: string, imageKey: string): Promise<Uint8Array | undefined> {
+    return this.downloadResource(messageId, imageKey, 'image')
+  }
+
+  private async downloadResource(messageId: string, imageKey: string, type: 'image' | 'file'): Promise<Uint8Array | undefined> {
     try {
       const response = await requestFeishu(
         () => this.client.im.messageResource.get({
-          params: { type: 'image' },
+          params: { type },
           path: { message_id: messageId, file_key: imageKey },
         }),
         { sleep: this.sleep },
@@ -402,7 +478,7 @@ export class LarkClient implements LarkGateway {
       }
       return new Uint8Array(Buffer.concat(chunks))
     } catch (error) {
-      this.onError('download-image', error)
+      this.warnOnce(`download-${type}`, error)
       return undefined
     }
   }
@@ -425,6 +501,6 @@ export class LarkClient implements LarkGateway {
   }
 }
 
-/** Emoji keys used by the bot (Feishu reaction API emoji_type values). */
-export const EMOJI_SEEN = 'EYES'
-export const EMOJI_DONE = 'THUMBSUP'
+/** Supported Feishu reaction names. */
+export const EMOJI_PROCESSING = 'OnIt'
+export const EMOJI_DONE = 'DONE'

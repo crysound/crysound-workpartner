@@ -18,7 +18,7 @@
 - **一条命令完成接入**：桌面端 `/feishu-onboard` —— 扫码创建应用、自动写入凭证与管理员、热激活免重启
 - **自助配对**：白名单为空时，第一个私聊者点一下确认卡即成为管理员
 - **自动新建会话**：未选会话时，普通文本消息按默认工作目录和模型新建会话并派活；创建失败记 warn 日志，并提示 `/new` / `/resume`。
-- **逐轮回复正文**：每轮非空回答作为独立正文分段发送；关闭进度卡和轮次状态卡，仅出错或停止时发回合结束状态卡。
+- **整轮回复（公司版 .2）**：收到提示先加 OnIt，再处理会话和附件。第一段可见输出才发临时进度卡，每 700 毫秒最多更新一次，显示中文工具进度与正文，不显示推理或工具结果。完成后撤回卡片、新发最终正文、删除 OnIt；本轮读到的插话改为 DONE。
 - **权限审批卡**：宿主审批瀑布（沙箱提权等）发问时，手机弹 **✅ 允许一次 / ❌ 拒绝** 卡——
   人不在电脑前，长任务不再卡死在权限提示上（会话审批策略须为 `ask`；过期即拒绝，绝不默认放行）
 - **交互式问询**：agent 调 ask_user_question 时，手机弹**交互卡**（下拉/多选/文本输入 + 提交），
@@ -228,11 +228,11 @@ dsh plugin --profile <name> remove @aiwayds/dsh-feishu
 | `operators` | `[]` | open_id 白名单——生效名单为三者并集：本项 ∪ `dsh-feishu-state.json` 的 `pairedOperators` ∪ 环境变量 `DSH_FEISHU_OPERATORS`（逗号分隔 open_id）；为空时 bot 以配对模式启动 |
 | `mode` | `"on"` | `"off"` 完全停用 |
 | `domain` | `"feishu"` | `"feishu"`（国内）或 `"lark"`（国际版） |
-| `statusIntervalMs` | `5000` | 状态刷新节拍（本版本关闭自动进度卡），范围 [5000, 600000] |
-| `bodySegmentChars` | `3500` | 独立轮次回复的长正文分段阈值；超出 [500, 30000] 报错停用 |
+| `statusIntervalMs` | `5000` | 原有 btw 刷新节拍，范围 [5000, 600000]；整轮进度卡固定每 700 毫秒最多更新一次。 |
+| `bodySegmentChars` | `4000` | 最终正文的长回复分段阈值；超出 [500, 30000] 报错停用 |
 | `resumeListStyle` | `"auto"` | `/resume` 列表：`auto`/`table`/`list` |
 | `backgroundPush` | `"off"` | 手机未绑定会话的完成推送（发到最后活跃的聊天）：`off` / `cron`（带 cron 投递或子代理结算通知的回合）/ `all`（所有回合结束）。环境变量覆盖：`DSH_FEISHU_BACKGROUND_PUSH` |
-| `roundButtons` | `"off"` | round 卡底部的快捷按钮：`on` 在出错或停止的结束卡渲染 ▶️ 继续，自动进度卡关闭；`off` 两个都不渲染——停止走 `/stop` 命令（自带确认卡）。环境变量覆盖：`DSH_FEISHU_ROUND_BUTTONS` |
+| `roundButtons` | `"off"` | 保留已有配置的读取；当前进度卡和最终正文不显示按钮，`/stop` 立即停止。 |
 | `appIdRef` / `appSecretRef` | `DSH_FEISHU_APP_ID/SECRET` | credentials ref 名 |
 
 凭证解析优先级：patch 明文 > 环境变量 `DSH_FEISHU_APP_ID/SECRET` > credentials 服务。
@@ -280,3 +280,17 @@ npm test         # 构建 + node --test（230+ 个纯逻辑单测）
 ---
 
 *License: Apache-2.0. 作者 fan56.*
+
+## 公司版 .2 的验收与发布
+
+支持富文本及插图、文件、合并转发、最多五层引用和 800 毫秒内连发图片合并。话题中的进度与正文留在同一话题。`/stop` 立即停止，不再发确认卡；错误和停止均发正文提示。网页发起的轮次只在结束时同步最终回复。
+
+保持原有六项接入权限和事件订阅。获取引用被拒时只传用户自己的正文；合并转发读取失败时请用户直接粘贴内容。进度卡撤回被拒时原地更新最终正文第一段，该段可能没有新消息通知。本次不修改线上权限，不改变会话绑定模型。
+
+发布环境在插件目录执行：
+
+```sh
+npm ci && npm test && npm run check && npm run build && npm pack
+```
+
+源码行为检查见 `test/turn-delivery.test.mjs` 及本次修改涉及的原有测试。干净安装、完整包检查和[需求单列出的十三步真人验收](https://github.com/crysound/crysound-workpartner/issues/112)仍是发布前的待验证项。打包上传、更新插件地址与重建镜像由发布负责人在审查后完成。

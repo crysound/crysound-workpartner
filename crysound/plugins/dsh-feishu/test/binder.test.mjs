@@ -375,8 +375,13 @@ test('a won promote invokes the hook; the queue drains into the fresh agent', as
     assert.equal(binder.isReadOnlyView(), false)
     assert.equal(binder.getSessionId(), 'sess-view')
     assert.equal(binder.outboxSize(), 2, 'draining is the hook\'s job (bot side), the binder only hands over')
-    binder.drainOutboxIntoAgent()
+    const registered = []
+    binder.drainOutboxIntoAgent(id => {
+      assert.equal(binder.getAgent().followups.length, registered.length, 'origin is registered before dispatch')
+      registered.push(id)
+    })
     const agent = binder.getAgent()
+    assert.deepEqual(registered, agent.followups.map(message => message.id))
     assert.equal(agent.followups.length, 2, 'both queued follow-ups reached the fresh agent')
     assert.equal(binder.outboxSize(), 0)
   } finally {

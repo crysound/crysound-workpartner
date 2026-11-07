@@ -1,4 +1,4 @@
-// Modified by 兆华声学（CRYSOUND）: automatic sessions and body-only replies.
+// Modified by 兆华声学（CRYSOUND）: turn-scoped previews, acknowledgements and final replies.
 /**
  * The bot orchestrator: inbound queue → command routing → session binding →
  * status-card lifecycle.
@@ -14,17 +14,16 @@
  * - prompts inject via `agent.steer` while a turn runs (join the CURRENT
  *   turn's next round — the operator's mid-course corrections land
  *   immediately) and `agent.followup` when idle (open the next turn);
- * - each settled round sends non-empty reply text as segmented body cards;
- * - no progress or settled-round status cards; turn/end sends a status card
- *   only for an unsuccessful turn;
- * - card operations serialize so round bodies and turn/end stay ordered;
+ * - OnIt precedes session work; one temporary preview spans the whole turn;
+ * - turn/end drains/retracts the preview, sends a new final reply, then clears OnIt;
+ * - card operations serialize final replies in turn order;
  * - no replay of session history on bind (live events from bind time on).
  */
 
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import { createUserMessage, type ContentBlock, type ImageBlock, type LlmRuntime, type ReasoningEffortId } from '@deepseek-ai/dsh-llm'
-import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
+import { createUserMessage, type ContentBlock, type LlmRuntime, type ReasoningEffortId } from '@deepseek-ai/dsh-llm'
+import type { FileAttachmentRef, ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import type { ModelSelection } from '@deepseek-ai/dsh-agent'
 import { SessionId, type Session, type SessionEvent } from '@deepseek-ai/dsh-session'
 import { randomUUID } from 'node:crypto'
@@ -63,15 +62,15 @@ import {
   type ModelSelectionUpdate,
 } from './interactive.ts'
 import { buildResumePickerCard, buildResumePickedCard, parseResumeAction, type ParsedResumeAction } from './card.ts'
-import { buildBodyCard, buildPushCard, buildSessionListAsMarkdown, buildSessionListCard, buildStatusCard, parseRoundCardAction, type RoundActionOp, type Schema2Card } from './card.ts'
+import { buildBodyCard, buildPushCard, buildSessionListAsMarkdown, buildSessionListCard, parseRoundCardAction, type RoundActionOp, type Schema2Card } from './card.ts'
 import { classifyInbound, helpText, refusedReply } from './commands.ts'
 import { buildNewSessionCard, buildNewSessionCreatedCard, buildNewSessionFailedCard, parseNewSessionAction, type NewCardChoice, type NewSessionCardSpec, type NewSummaryRow } from './new-card.ts'
 import { NewSessionFlowManager, type NewSessionOutcome } from './new-flow.ts'
 import { buildBtwSnapshot, type BtwStreamChunk } from './btw.ts'
 import { BtwManager } from './btw-bot.ts'
 import type { ResolvedConfig } from './config.ts'
-import { parseReceiveEvent, type InboundMessage } from './inbound.ts'
-import { EMOJI_DONE, EMOJI_SEEN, type LarkGateway } from './lark-client.ts'
+import { mentionText, parseReceiveEvent, type InboundMessage } from './inbound.ts'
+import { EMOJI_DONE, EMOJI_PROCESSING, type LarkGateway, type MessageTarget } from './lark-client.ts'
 import {
   buildPairingOfferCard,
   buildPairingRejectedCard,
@@ -88,7 +87,6 @@ import {
   applyRouteBackfill,
   backfillFromChildLog,
   backfillRouteFromLog,
-  beginRound,
   foldBoundEvent,
   foldBoundStreamChunk,
   foldChildEvent,
@@ -122,13 +120,17 @@ interface LlmModelSurface {
 }
 import type { BindResult, SessionBinder } from './binder.ts'
 import type { StateStore } from './state-store.ts'
-import { clipLine, segmentText } from './text.ts'
+import { clipLine, segmentText, textOfContent, markdownTableCount } from './text.ts'
+import { Preview, TurnOutput } from './preview.ts'
+import { toolProgress } from './progress.ts'
+import { replyChain, forwardedContent, type ResourceImage } from './resources.ts'
 import { imageExtensionOf, sniffImageMediaType } from './image.ts'
 import { foldPushEvent, initialPushTrack, pushCauseLabel, shouldPush, type PushTrack } from './push.ts'
 
 /** Structural view of the host's attachment service (dsh-attachment ctx service). */
 interface AttachmentsLike {
   readonly imageLimits?: { readonly maxImageBytes: number; readonly mediaTypes: readonly string[] }
+  saveFile(input: { data: Uint8Array; name?: string }): Promise<FileAttachmentRef>
   saveImage(input: { data: Uint8Array; mediaType: string; name?: string }): Promise<unknown>
 }
 
@@ -219,8 +221,6 @@ export class FeishuBot {
   /** Serializes card operations (open/patch/settle/finalize) in event order. */
   private cardChain: Promise<unknown> = Promise.resolve()
   private pendingPicker: PendingPicker | undefined
-  private cardMessageId: string | undefined
-  private cardHash: string | undefined
   /** Session id whose route facts were already backfilled from its log. */
   private routeBackfilledFor: string | undefined
   /** Live ask-user questions keyed by the card's question id. */
@@ -247,12 +247,15 @@ export class FeishuBot {
   private readonly newFlow: NewSessionFlowManager
   /** Session ids with a corrupt-repair confirmation card currently out. */
   private readonly repairFlows = new Set<string>()
-  /** A /stop confirmation card is currently out (single slot). */
-  private stopConfirmInFlight = false
   /** Bot-side surfaces the interactive adapters drive (selector-FW commands). */
   private readonly host: InteractiveHost
-  /** Inbound message that triggered the current turn (for the done reaction). */
-  private turnOriginMessageId: string | undefined
+  private turnOutput: TurnOutput | undefined
+  private turnMessages: InboundMessage[] = []
+  private turnHasUser = false
+  private queuedMessages: InboundMessage[] = []
+  private readonly acknowledgements = new Map<string, Promise<string | undefined>>()
+  private readonly pendingPrompts = new Map<string, { messages: InboundMessage[]; sessionId: string }>()
+  private readonly imageBatches = new Map<string, { messages: InboundMessage[]; timer: ReturnType<typeof setTimeout> }>()
   /** The bot's own open_id — group mention routing (resolved at start; optional). */
   private botOpenId: string | undefined
   /**
@@ -264,11 +267,10 @@ export class FeishuBot {
   private readonly pairingCards = new Map<string, string>()
   /** Per-session background-push scratch (firehose fold; bounded). */
   private readonly pushTracks = new Map<string, PushTrack>()
-  private ticker: ReturnType<typeof setInterval> | undefined
   private disposed = false
 
   /** Inbound queue — the WS handler only pushes; a serial drain processes. */
-  private readonly queue: InboundMessage[] = []
+  private readonly queue: (InboundMessage | InboundMessage[])[] = []
   private draining = false
 
   constructor(deps: BotDeps) {
@@ -366,7 +368,7 @@ export class FeishuBot {
     })
   }
 
-  /** Wire subscriptions, start the beat, open the Lark connection. */
+  /** Wire subscriptions and open the Lark connection. */
   async start(): Promise<void> {
     await this.store.ready()
     const offFirehose = this.ctx.on('session/event', (session: Session, event: SessionEvent) => {
@@ -405,7 +407,6 @@ export class FeishuBot {
         const boundId = this.binder.getSessionId()
         if (boundId !== undefined && String(payload.agent.id) === boundId) {
           foldTurnStopping(this.runState)
-          this.patchCurrentCard()
         }
       } catch (error) {
         this.ctx.logger.warn('dsh-feishu: turn-stopping fold failed: %o', error)
@@ -421,23 +422,13 @@ export class FeishuBot {
         if (boundId !== undefined && String(payload.agent.id) === boundId) {
           const message = typeof payload.failure?.message === 'string' ? payload.failure.message : undefined
           foldRequestError(this.runState, message)
-          this.patchCurrentCard()
         }
       } catch (error) {
         this.ctx.logger.warn('dsh-feishu: request-error fold failed: %o', error)
       }
       return undefined // observe-only: never owns the request recovery
     })
-    const interval = setInterval(() => {
-      try {
-        this.beat()
-      } catch {
-        // A throwing beat must never take the process down.
-      }
-    }, this.config.statusIntervalMs)
-    interval.unref?.()
-    this.ticker = interval
-    this.cleanupFns.push(offFirehose, offStream, offStopping, offRequestError, () => clearInterval(interval))
+    this.cleanupFns.push(offFirehose, offStream, offStopping, offRequestError)
     this.registerAskSurface()
     this.registerApprovalSurface()
     await this.lark.start(data => this.enqueue(data))
@@ -507,8 +498,8 @@ export class FeishuBot {
     for (const fn of this.cleanupFns.splice(0)) {
       try { fn() } catch { /* contained */ }
     }
-    if (this.ticker !== undefined) clearInterval(this.ticker)
     this.btw.dispose()
+    await this.closeCardAsDetached()
     // Settle every phone-side interactive flow before the WS dies: the
     // host-side callers fail fast (rejected, never left hanging) and the
     // cards on the phone get a terminal patch instead of surviving as
@@ -531,8 +522,20 @@ export class FeishuBot {
   private enqueue(data: unknown): void {
     const message = parseReceiveEvent(data)
     if (message === undefined) return
+    if (this.admitted(message) && this.isPromptMessage(message)) {
+      void this.acknowledge(message)
+      // Debounce by arrival time, even when an earlier download blocks drain.
+      if (message.messageType === 'image') { this.bufferImage(message); return }
+      if (message.messageType === 'text' || message.messageType === 'post') {
+        const images = this.takeImageBatch(message)
+        if (images.length) {
+          this.queue.push([...images, { ...message, text: mentionText(message.text ?? '', message.mentions, this.botOpenId) }])
+          void this.drain()
+          return
+        }
+      }
+    }
     this.queue.push(message)
-    if (this.queue.length > 50) this.queue.splice(0, this.queue.length - 50)
     void this.drain()
   }
 
@@ -550,8 +553,10 @@ export class FeishuBot {
       while (this.queue.length > 0 && !this.disposed) {
         const message = this.queue.shift()!
         try {
-          await this.process(message)
+          if (Array.isArray(message)) await this.handleMedia(message.at(-1)!, message.slice(0, -1))
+          else await this.process(message)
         } catch (error) {
+          await this.clearAcknowledgements(Array.isArray(message) ? message : [message])
           this.ctx.logger.warn('dsh-feishu: inbound processing failed: %o', error)
         }
       }
@@ -615,19 +620,22 @@ export class FeishuBot {
       return
     }
     if (message.chatType === 'group' && !this.groupGate(message)) return
+    if (message.text !== undefined) message = { ...message, text: mentionText(message.text, message.mentions, this.botOpenId) }
+    if (this.isPromptMessage(message)) await this.acknowledge(message)
     if (this.store.get().lastChatId !== message.chatId) {
       await this.store.update({ lastChatId: message.chatId })
     }
     if (message.messageType === 'image') {
-      await this.handleImage(message)
+      this.bufferImage(message)
       return
     }
-    if (message.messageType !== 'text' || message.text === undefined || message.text === '') {
-      // Silence policy: a bare @ in a group (the common empty mention) and a
-      // whitespace-only p2p text (parsed to '') were always no-ops — keep it
-      // that way; only a genuinely unsupported p2p TYPE earns the pointer.
+    if (['post', 'file', 'merge_forward'].includes(message.messageType)) {
+      await this.handleMedia(message, this.takeImageBatch(message))
+      return
+    }
+    if (message.messageType !== 'text' || !message.text) {
       if (message.chatType === 'group' || message.messageType === 'text') return
-      await this.reply('目前仅支持文本和图片消息。')
+      await this.reply('目前支持文字、富文本、图片、文件和合并转发消息。')
       return
     }
     const intent = classifyInbound(message.text)
@@ -658,7 +666,12 @@ export class FeishuBot {
         await this.reply(refusedReply(intent.name))
         break
       case 'passthrough': await this.handlePassthrough(intent.name, intent.line); break
-      case 'prompt': await this.handlePrompt(message, intent.text); break
+      case 'prompt': {
+        const images = this.takeImageBatch(message)
+        if (images.length || message.parentId) await this.handleMedia(message, images)
+        else await this.handlePrompt(message, intent.text)
+        break
+      }
     }
   }
 
@@ -883,7 +896,7 @@ export class FeishuBot {
         await this.store.update({ boundSessionId: row.sessionId })
         this.resetRunView()
         this.backfillRoute()
-        this.binder.drainOutboxIntoAgent()
+        this.drainQueuedPrompts()
         await this.reply('已自动接管该会话，排队消息已发送；本轮起由此端驱动。')
       })
       await this.store.update({ boundSessionId: row.sessionId })
@@ -911,6 +924,7 @@ export class FeishuBot {
     // Switching sessions strands the btw context snapshot — cancel first.
     this.btw.cancelAll()
     const bound = await this.binder.bind(row.sessionId, await this.resolveResumeRoute(row.sessionId))
+    if (!bound.tookOverWatch) await this.closeCardAsDetached()
     void this.learnPreset(row.sessionId)
     // An explicit resume can itself be the takeover the promote poll waits
     // for (0.16.1 made bind clear the view) — drain what the operator queued
@@ -918,7 +932,7 @@ export class FeishuBot {
     let queueNote = ''
     if (bound.tookOverWatch === true) {
       const queued = this.binder.outboxSize()
-      this.binder.drainOutboxIntoAgent()
+      this.drainQueuedPrompts()
       if (queued > 0) queueNote = `\n（排队 ${queued} 条已随接管发送）`
     } else if (typeof bound.droppedQueued === 'number' && bound.droppedQueued > 0) {
       queueNote = `\n（已丢弃 ${bound.droppedQueued} 条排队消息——它们属于之前被旁观的会话）`
@@ -1346,58 +1360,10 @@ export class FeishuBot {
   }
 
   private async handleStop(): Promise<void> {
-    const agent = this.binder.getAgent()
-    if (agent === undefined) {
-      await this.reply('当前未绑定会话。')
+    if (this.binder.getAgent()?.status !== 'running') {
+      await this.reply('没有正在执行的任务。')
       return
     }
-    if (agent.status !== 'running') {
-      await this.reply('当前没有正在运行的 turn。')
-      return
-    }
-    // Second-tap guard: one pending confirmation at a time. The flow runs
-    // DETACHED — handleStop fires from the inbound drain (fine to await) but
-    // also from card-action taps, and presentSelection dead-locks when
-    // awaited from inside the card chain.
-    if (this.stopConfirmInFlight) {
-      await this.reply('停止确认卡已在上面，请在原卡片上操作。')
-      return
-    }
-    const chatId = this.store.get().lastChatId
-    if (chatId === undefined) return
-    this.stopConfirmInFlight = true
-    void this.stopConfirmFlow(chatId)
-      .catch(async error => {
-        this.ctx.logger.warn('dsh-feishu: stop confirm flow failed: %o', error)
-        await this.reply('停止确认流程异常中断。').catch(() => undefined)
-      })
-      .finally(() => {
-        this.stopConfirmInFlight = false
-      })
-  }
-
-  /** Confirmation card → the actual everything-stop on 确认停止 only. */
-  private async stopConfirmFlow(chatId: string): Promise<void> {
-    // 60s lifetime via the spec signal: an abort settles the flow cancelled,
-    // exactly like the framework's own TTL expiry (silent, card greyed).
-    let outcome: SelectorOutcome
-    try {
-      outcome = await this.presentSelection(chatId, {
-        title: '⛔ 确认停止当前 turn？',
-        description: '停止会打断正在运行的 agent（排队中的消息保留）。60 秒内未操作自动取消。',
-        options: [
-          { value: 'stop', label: '⛔ 确认停止' },
-          { value: 'back', label: '返回' },
-        ],
-        mode: 'buttons',
-        signal: AbortSignal.timeout(60_000),
-      })
-    } catch (error) {
-      this.ctx.logger.warn('dsh-feishu: stop confirm card failed: %o', error)
-      await this.reply('停止确认卡发送失败。')
-      return
-    }
-    if (outcome.status !== 'picked' || outcome.value !== 'stop') return
     await this.stopNow()
   }
 
@@ -1413,20 +1379,15 @@ export class FeishuBot {
       // run state tracks, the same everything-stop leg the TUI's bridge
       // provides (dsh-tui-pi 2.10.0). keepInbox preserves a continuable
       // child's queued work; this stops the running turn, not the child.
-      let stoppedChildren = 0
       const agents = (this.ctx as Context & { agents?: { get(id: string): { cancel(cause: unknown, options?: { keepInbox?: boolean }): void } | undefined } | undefined }).agents
       for (const row of subagentRows(this.runState)) {
         if (row.outcome !== undefined) continue
         try {
           agents?.get(row.childId)?.cancel({ kind: 'user' }, { keepInbox: true })
-          stoppedChildren += 1
         } catch {
           // Child not live in this process — nothing to stop.
         }
       }
-      await this.reply(stoppedChildren > 0
-        ? `已发送停止指令（含 ${stoppedChildren} 个子代理；排队中的消息保留）。`
-        : '已发送停止指令（排队中的消息保留）。')
     } catch (error) {
       this.ctx.logger.warn('dsh-feishu: stop failed: %o', error)
       await this.reply('停止指令发送失败。')
@@ -1524,7 +1485,7 @@ export class FeishuBot {
    * the read-only view and the missing binding — callers word their replies.
    * Content is a block array: text for prompts, text+image for pictures.
    */
-  private async injectContent(content: readonly ContentBlock[]): Promise<'steered' | 'opened' | 'refused'> {
+  private async injectContent(content: readonly ContentBlock[], messages: InboundMessage[] = []): Promise<'steered' | 'opened' | 'refused'> {
     if (content.length === 0) return 'refused'
     if (this.binder.isReadOnlyView()) return 'refused'
     const agent = await this.ensureBoundAgent()
@@ -1533,15 +1494,18 @@ export class FeishuBot {
       content: [...content],
       source: { kind: 'user' },
     })
-    if (agent.status === 'running') {
-      // Default steer: mid-turn messages join the CURRENT turn's next round
-      // (dsh inbox target next-step) so course corrections land immediately,
-      // instead of waiting out the turn as a queued followup.
-      agent.steer(userMessage)
-      return 'steered'
+    if (messages.length) this.pendingPrompts.set(userMessage.id, { messages, sessionId: String(agent.id ?? this.binder.getSessionId()) })
+    try {
+      if (agent.status === 'running') {
+        agent.steer(userMessage)
+        return 'steered'
+      }
+      agent.followup(userMessage)
+      return 'opened'
+    } catch (error) {
+      this.pendingPrompts.delete(userMessage.id)
+      throw error
     }
-    agent.followup(userMessage)
-    return 'opened'
   }
 
   private async injectPrompt(text: string): Promise<'steered' | 'opened' | 'refused'> {
@@ -1549,111 +1513,169 @@ export class FeishuBot {
     return this.injectContent([{ type: 'text', text }])
   }
 
-  private async handlePrompt(message: InboundMessage, text: string): Promise<void> {
-    if (text === '') return
-    if (this.binder.isReadOnlyView()) {
-      // Lockless viewer: never bounce — QUEUE. The promote poll re-binds the
-      // moment the other driver releases the lease and fires the registered
-      // takeover hook (drain + announce), completing the queue-and-take-over
-      // contract the degrade announce promises.
-      this.binder.queueRemoteFollowup(text)
-      await this.lark.react(message.messageId, EMOJI_SEEN)
-      await this.reply(
-        `已排队（第 ${this.binder.outboxSize()} 条）：该会话正由另一进程驱动，`
-        + '对面释放后自动接管并发出；/resume 或 /new 可切换。',
-      )
-      return
-    }
-    let outcome = await this.injectPrompt(text)
-    if (outcome === 'refused' && this.binder.getSessionId() === undefined) {
-      try {
-        const created = await this.binder.createNew(
-          this.newSessionCwd(undefined),
-          this.newSessionDefaultSelection(undefined),
-          undefined,
-        )
-        if (created.model !== undefined) {
-          this.selectionRefs.set(created.sessionId, created.model)
-        }
-        await this.store.update({ boundSessionId: created.sessionId, picker: undefined })
-        outcome = await this.injectPrompt(text)
-      } catch (error) {
-        this.ctx.logger.warn('dsh-feishu: auto-new failed: %o', error)
-      }
-    }
-    if (outcome === 'refused') {
-      // Watching can no longer reach here (queued above); refusal means no
-      // live binding.
-      await this.reply('还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
-      return
-    }
-    if (outcome === 'opened') {
-      // Tie the done-reaction to this message only when OUR prompt opens the
-      // next turn; a steered message belongs to a turn we do not own.
-      this.turnOriginMessageId = message.messageId
-    }
-    await this.lark.react(message.messageId, EMOJI_SEEN)
+  private drainQueuedPrompts(): void {
+    this.binder.drainOutboxIntoAgent(id => {
+      const message = this.queuedMessages.shift()
+      if (message) this.pendingPrompts.set(id, { messages: [message], sessionId: this.binder.getSessionId()! })
+    })
   }
 
-  /**
-   * An image message from an operator: download the resource bytes, sniff the
-   * media type (Feishu declares none), commit a durable attachment ref, and
-   * inject an image-block user message through the shared steer/followup
-   * channel. The model route must accept image input (inputModalities) —
-   * a route that does not fails the turn visibly, same as the desktop.
-   */
-  private async handleImage(message: InboundMessage): Promise<void> {
-    if (this.binder.isReadOnlyView()) {
-      await this.reply('当前为只读旁观（该会话正由另一进程驱动），图片无法注入；发 /resume 切换会话。')
-      return
+  private admitted(message: InboundMessage): boolean {
+    return decidePairing({ chatType: message.chatType, senderOpenId: message.openId,
+      configOperators: [...this.allowlist], pairedOperators: this.store.get().pairedOperators ?? [] }).kind === 'allow'
+      && (message.chatType !== 'group' || this.groupGate(message))
+  }
+
+  private isPromptMessage(message: InboundMessage): boolean {
+    if (['image', 'post', 'file', 'merge_forward'].includes(message.messageType)) return true
+    const text = mentionText(message.text ?? '', message.mentions, this.botOpenId)
+    return !!text && classifyInbound(text).kind === 'prompt'
+  }
+
+  private acknowledge(message: InboundMessage): Promise<string | undefined> {
+    let pending = this.acknowledgements.get(message.messageId)
+    if (!pending) {
+      pending = this.lark.react(message.messageId, EMOJI_PROCESSING).catch(error => {
+        this.ctx.logger.debug?.('dsh-feishu: acknowledgement failed: %o', error)
+        return undefined
+      })
+      this.acknowledgements.set(message.messageId, pending)
     }
-    if (message.imageKey === undefined) {
-      await this.reply('图片消息缺少可下载的资源，无法注入。')
-      return
+    return pending
+  }
+
+  private async clearAcknowledgements(messages: readonly InboundMessage[], done = false): Promise<void> {
+    for (const message of messages) {
+      const pending = this.acknowledgements.get(message.messageId)
+      this.acknowledgements.delete(message.messageId)
+      const id = await pending
+      if (id) await this.lark.deleteReaction(message.messageId, id)
+      if (done) await this.lark.react(message.messageId, EMOJI_DONE)
     }
-    const attachments = this.ctx.get('attachments') as AttachmentsLike | undefined
-    if (attachments === undefined || typeof attachments.saveImage !== 'function') {
-      await this.reply('当前 profile 没有附件服务，图片无法进会话。')
-      return
-    }
-    const bytes = await this.lark.downloadImage(message.messageId, message.imageKey)
-    if (bytes === undefined || bytes.length === 0) {
-      await this.reply('图片下载失败，请重发一次。')
-      return
-    }
-    const mediaType = sniffImageMediaType(bytes)
-    if (mediaType === undefined) {
-      await this.reply('不支持的图片格式（仅 png / jpeg / webp / gif 可进会话）。')
-      return
-    }
-    const limits = attachments.imageLimits
-    if (limits !== undefined && typeof limits.maxImageBytes === 'number' && bytes.length > limits.maxImageBytes) {
-      await this.reply(`图片超过大小上限（约 ${Math.max(1, Math.round(limits.maxImageBytes / 1024 / 1024))}MB），无法注入。`)
-      return
-    }
-    let ref: ImageAttachmentRef
+  }
+
+  private target(message: InboundMessage): MessageTarget {
+    return { chatId: message.chatId, messageId: message.messageId, threadId: message.threadId }
+  }
+
+  private async submitContent(messages: InboundMessage[], content: readonly ContentBlock[]): Promise<void> {
+    const trigger = messages.at(-1)!
     try {
-      ref = await attachments.saveImage({
-        data: bytes,
-        mediaType,
-        name: `feishu-image.${imageExtensionOf(mediaType)}`,
-      }) as ImageAttachmentRef
+      let outcome = await this.injectContent(content, messages)
+      if (outcome === 'refused' && this.binder.getSessionId() === undefined && !this.binder.isReadOnlyView()) {
+        try {
+          const created = await this.binder.createNew(this.newSessionCwd(undefined), this.newSessionDefaultSelection(undefined), undefined)
+          if (created.model !== undefined) this.selectionRefs.set(created.sessionId, created.model)
+          await this.store.update({ boundSessionId: created.sessionId, picker: undefined })
+          outcome = await this.injectContent(content, messages)
+        } catch (error) { this.ctx.logger.warn('dsh-feishu: auto-new failed: %o', error) }
+      }
+      if (outcome === 'refused') {
+        await this.clearAcknowledgements(messages)
+        await this.sendFinal(this.target(trigger), '还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
+      }
     } catch (error) {
-      const reason = clipLine(String(error instanceof Error ? error.message : error), 200)
-      await this.reply(`图片入库失败：${reason === '' ? '未知错误' : reason}`)
+      for (const [id, pending] of this.pendingPrompts) if (pending.messages === messages) this.pendingPrompts.delete(id)
+      await this.clearAcknowledgements(messages)
+      await this.sendFinal(this.target(trigger), '消息未能进入会话，请重发一次。')
+      this.ctx.logger.warn('dsh-feishu: injection failed: %o', error)
+    }
+  }
+
+  private async handlePrompt(message: InboundMessage, text: string): Promise<void> {
+    if (!text) return
+    await this.acknowledge(message)
+    if (this.binder.isReadOnlyView()) {
+      this.queuedMessages.push(message)
+      this.binder.queueRemoteFollowup(text)
+      await this.reply(`已排队（第 ${this.binder.outboxSize()} 条）：该会话正由另一进程驱动，对面释放后自动接管并发出；/resume 或 /new 可切换。`)
       return
     }
-    const block: ImageBlock = { type: 'image', attachment: ref }
-    const outcome = await this.injectContent([block])
-    if (outcome === 'refused') {
-      await this.reply('还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
-      return
+    await this.submitContent([message], [{ type: 'text', text }])
+  }
+
+  private batchKey(message: InboundMessage): string {
+    return JSON.stringify([message.chatId, message.threadId ?? '', message.openId])
+  }
+  private takeImageBatch(message: InboundMessage): InboundMessage[] {
+    const key = this.batchKey(message)
+    const batch = this.imageBatches.get(key)
+    if (!batch) return []
+    clearTimeout(batch.timer)
+    this.imageBatches.delete(key)
+    return batch.messages
+  }
+  private bufferImage(message: InboundMessage): void {
+    const messages = [...this.takeImageBatch(message), message]
+    const timer = setTimeout(() => {
+      this.imageBatches.delete(this.batchKey(message))
+      // Media preparation stays in the inbound serial drain. ACKs already started.
+      this.queue.push(messages)
+      void this.drain()
+    }, 800)
+    timer.unref?.()
+    this.imageBatches.set(this.batchKey(message), { messages, timer })
+  }
+  private async imageBlock(image: ResourceImage): Promise<ContentBlock> {
+    const attachments = this.ctx.get('attachments') as AttachmentsLike | undefined
+    if (!attachments) throw new Error('当前 profile 没有附件服务，图片无法进会话。')
+    const bytes = await this.lark.downloadImage(image.messageId, image.key)
+    if (!bytes?.length) throw new Error('图片下载失败，请重发一次。')
+    const mediaType = sniffImageMediaType(bytes)
+    if (!mediaType) throw new Error('不支持的图片格式（仅 png / jpeg / webp / gif 可进会话）。')
+    if (attachments.imageLimits && bytes.length > attachments.imageLimits.maxImageBytes) throw new Error('图片超过大小上限，无法发给伙伴。')
+    const ref = await attachments.saveImage({ data: bytes, mediaType, name: `feishu-image.${imageExtensionOf(mediaType)}` }) as ImageAttachmentRef
+    return { type: 'image', attachment: ref }
+  }
+
+  private async handleMedia(message: InboundMessage, buffered: InboundMessage[]): Promise<void> {
+    const messages = [...buffered, message]
+    for (const item of messages) await this.acknowledge(item)
+    try {
+      if (this.store.get().lastChatId !== message.chatId) await this.store.update({ lastChatId: message.chatId })
+      if (this.binder.isReadOnlyView()) throw new Error('当前为只读旁观（该会话正由另一进程驱动），附件无法注入；发 /resume 切换会话。')
+      let text = message.text ?? ''
+      const images: ResourceImage[] = []
+      for (const item of messages) {
+        if (item.messageType === 'image' && !item.imageKey) throw new Error('图片消息缺少可下载的资源，无法注入。')
+        if (item.imageKey) images.push({ messageId: item.messageId, key: item.imageKey })
+        for (const key of item.imageKeys ?? []) images.push({ messageId: item.messageId, key })
+      }
+      const quote = message.parentId ? await replyChain(this.lark, message.parentId) : undefined
+      if (message.messageType === 'merge_forward') {
+        const forward = await forwardedContent(this.lark, message.messageId)
+        if (!forward) throw new Error('合并转发的内容读取失败，请把内容直接发过来。')
+        text = [text, forward.text].filter(Boolean).join('\n')
+        images.push(...forward.images)
+      }
+      const content: ContentBlock[] = []
+      for (const image of images) content.push(await this.imageBlock(image))
+      if (quote) {
+        try {
+          const quotedImages: ContentBlock[] = []
+          for (const image of quote.images) quotedImages.push(await this.imageBlock(image))
+          content.push(...quotedImages)
+          text = quote.text + text
+        } catch { /* resource permission denial: inject only the user's own content */ }
+      }
+      if (message.messageType === 'file') {
+        const attachments = this.ctx.get('attachments') as AttachmentsLike | undefined
+        if (!message.fileKey || !attachments?.saveFile) throw new Error('文件下载失败，请重发一次。')
+        const bytes = await this.lark.downloadFile(message.messageId, message.fileKey)
+        if (!bytes) throw new Error('文件下载失败，请重发一次。')
+        try { content.push({ type: 'file', attachment: await attachments.saveFile({ data: bytes, name: message.fileName }) }) }
+        catch (error) {
+          if (/size|limit|large|大小|上限/i.test(String(error))) throw new Error('文件超过大小上限，无法发给伙伴。')
+          throw new Error('文件下载失败，请重发一次。')
+        }
+      }
+      if (text) content.push({ type: 'text', text })
+      if (!content.length) throw new Error('消息没有可读取的内容，请重发一次。')
+      await this.submitContent(messages, content)
+    } catch (error) {
+      await this.clearAcknowledgements(messages)
+      await this.sendFinal(this.target(message), error instanceof Error ? error.message : '附件读取失败，请重发一次。')
     }
-    if (outcome === 'opened') {
-      // Same reaction tie-in as a text prompt: the picture opened the turn.
-      this.turnOriginMessageId = message.messageId
-    }
-    await this.lark.react(message.messageId, EMOJI_SEEN)
   }
 
   /**
@@ -1713,6 +1735,7 @@ export class FeishuBot {
     if (boundId === undefined) return
     if (sessionId === boundId) {
       foldBoundStreamChunk(this.runState, frame.chunk, frame.time ?? 0)
+      if (frame.chunk?.type === 'text-delta' && frame.chunk.text) this.turnOutput?.preview?.delta(frame.chunk.text)
       return
     }
     // Children: frames only refine tails of rows the firehose already
@@ -1737,11 +1760,50 @@ export class FeishuBot {
     if (boundId !== undefined && sessionId === boundId) {
       foldBoundEvent(this.runState, event)
       if (event.type === 'turn/start') {
-        void this.chain(() => this.openCard())
+        // Request preparation can fail before user/message is committed. Keep
+        // a provisional origin so that failure still clears the prompt's OnIt.
+        const waiting = [...this.pendingPrompts.values()].find(pending => pending.sessionId === sessionId)
+        this.turnMessages = waiting?.messages ?? []
+        const target = waiting ? this.target(waiting.messages.at(-1)!) : undefined
+        this.turnOutput = new TurnOutput(target ? new Preview(this.lark, target, this.now) : undefined, target)
+        this.turnHasUser = false
+      } else if (event.type === 'user/message') {
+        const pending = this.pendingPrompts.get(event.data.id)
+        if (!['user', 'dsh-feishu'].includes(String(event.data.source.kind))) return
+        if (!this.turnHasUser && !pending) {
+          this.turnOutput = new TurnOutput()
+          this.turnMessages = []
+        }
+        if (pending && pending.sessionId === sessionId) {
+          this.pendingPrompts.delete(event.data.id)
+          if (!this.turnHasUser) {
+            this.turnMessages = pending.messages
+            const target = this.target(pending.messages.at(-1)!)
+            this.turnOutput = new TurnOutput(new Preview(this.lark, target, this.now), target)
+          } else void this.clearAcknowledgements(pending.messages, true)
+        }
+        this.turnHasUser = true
       } else if (event.type === 'assistant/message') {
-        void this.chain(() => this.settleRound())
+        this.turnOutput ??= new TurnOutput()
+        this.turnOutput.assistant(textOfContent(event.data.message.content),
+          event.data.message.content.some(block => block.type === 'tool-call'))
+      } else if (event.type === 'tool/call') {
+        this.turnOutput?.tool(event.data.callId, toolProgress(event.data.name, event.data.arguments))
       } else if (event.type === 'turn/end') {
-        void this.chain(() => this.finalizeTurn())
+        const output = this.turnOutput ?? new TurnOutput()
+        const messages = this.turnMessages
+        const reason = this.runState.turnEndReason
+        const error = this.runState.lastError
+        const endReason = event.data.reason
+        const endError = endReason.kind === 'error' ? endReason.error.message : error
+        for (const [id, pending] of this.pendingPrompts) {
+          if (pending.messages === messages) this.pendingPrompts.delete(id)
+        }
+        this.turnOutput = undefined
+        this.turnMessages = []
+        const lastChatId = this.store.get().lastChatId
+        void this.chain(() => this.finishOutput(output, messages, reason, endError,
+          lastChatId ? { chatId: lastChatId } : undefined))
       }
       return
     }
@@ -1856,21 +1918,6 @@ export class FeishuBot {
 
   // ---------------------------------------------------------- status card --
 
-  private sessionLabel(): string {
-    const id = this.binder.getSessionId()
-    return id === undefined ? '—' : id.slice(0, 8)
-  }
-
-  /**
-   * Preset id of the bound session for the stats footer — sync lookup of the
-   * cache populated at bind/create time. undefined = never learned (sessions
-   * predating preset tracking, query-less profiles); the footer omits it.
-   */
-  private sessionPreset(): string | undefined {
-    const id = this.binder.getSessionId()
-    return id === undefined ? undefined : this.presetBySession.get(id)
-  }
-
   /**
    * Learn a session's preset: the operator's explicit /new pick when given,
    * else the host's sessionQuery projection of `agent-preset/selected` (the
@@ -1895,123 +1942,62 @@ export class FeishuBot {
     }
   }
 
-  /**
-   * Round-card quick actions, config-gated: `roundButtons: 'off'` (default)
-   * keeps the card inert — no ⛔ 停止 / ▶️ 继续 at all; `/stop` is the stop
-   * path either way. Read-only views never get buttons even when enabled.
-   */
-  private roundActions(op: RoundActionOp): { readonly stop?: boolean; readonly continue?: boolean } | undefined {
-    if (this.config.roundButtons !== 'on') return undefined
-    if (this.binder.isReadOnlyView()) return undefined
-    return op === 'stop' ? { stop: true } : { continue: true }
-  }
-
-  /** Progress cards are disabled in the CRYSOUND version. */
-  private async openCard(): Promise<void> {}
-
-  /** A bind landed while the agent is already running — open the card late. */
   private maybeOpenCardForRunningAgent(): void {
-    if (this.cardMessageId !== undefined) return
-    const agent = this.binder.getAgent()
-    if (agent === undefined || agent.status !== 'running') return
-    // Mid-turn attach: no turn/start was observed. Synthesize the running
-    // baseline so the card opens and the beat patches it; per-turn counters
-    // count from the attach moment (no history replay by design).
-    if (!this.runState.running) {
+    if (this.binder.getAgent()?.status === 'running' && !this.runState.running) {
       this.runState.running = true
       this.runState.turnStartedAt = this.now()
-      this.runState.roundStartedAt = this.now()
-    }
-    void this.chain(() => this.openCard())
-  }
-
-  /** Status beat: patch the open card only when rendered content changed. */
-  private beat(): void {
-    if (this.cardMessageId === undefined || !this.runState.running) return
-    const { card, hash } = buildStatusCard(this.runState, {
-      sessionLabel: this.sessionLabel(),
-      displayThink: this.store.get().displayThink,
-      now: this.now(),
-      actions: this.roundActions('stop'),
-      preset: this.sessionPreset(),
-    })
-    if (hash === this.cardHash) return
-    this.cardHash = hash
-    void this.chain(() => this.lark.patchCard(this.cardMessageId!, card))
-  }
-
-  /**
-   * Immediate (off-beat) patch of the live round card — the turn-stopping /
-   * request-error handlers call this so the phone reflects the lifecycle
-   * change without waiting for the 30s beat. Hash-gated like the beat; a
-   * change lands only when the rendered content actually differs.
-   */
-  private patchCurrentCard(): void {
-    if (this.cardMessageId === undefined) return
-    const { card, hash } = buildStatusCard(this.runState, {
-      sessionLabel: this.sessionLabel(),
-      displayThink: this.store.get().displayThink,
-      now: this.now(),
-      actions: this.roundActions('stop'),
-      preset: this.sessionPreset(),
-    })
-    if (hash === this.cardHash) return
-    this.cardHash = hash
-    void this.chain(() => this.lark.patchCard(this.cardMessageId!, card))
-  }
-
-  /** Send the settled round's non-empty body, serialized on the card chain. */
-  private async settleRound(): Promise<void> {
-    if (this.disposed) return
-    const roundText = this.runState.lastRoundText
-    if (roundText !== '') await this.replyLong(roundText)
-    this.cardMessageId = undefined
-    this.cardHash = undefined
-    beginRound(this.runState)
-  }
-
-  /** turn/end: report unsuccessful turns and acknowledge the originating message. */
-  private async finalizeTurn(): Promise<void> {
-    const chatId = this.store.get().lastChatId
-    if (chatId === undefined) {
-      this.cardMessageId = undefined
-      return
-    }
-    if (this.runState.turnEndReason !== 'completed') {
-      const { card } = buildStatusCard(this.runState, {
-        sessionLabel: this.sessionLabel(),
-        displayThink: this.store.get().displayThink,
-        now: this.now(),
-        actions: this.roundActions('continue'),
-        preset: this.sessionPreset(),
-      })
-      await this.lark.sendCard(chatId, card)
-    }
-    this.cardMessageId = undefined
-    this.cardHash = undefined
-    if (this.turnOriginMessageId !== undefined) {
-      const origin = this.turnOriginMessageId
-      this.turnOriginMessageId = undefined
-      await this.lark.react(origin, this.runState.turnEndReason === 'error' ? 'THUMBSDOWN' : EMOJI_DONE)
+      this.turnOutput ??= new TurnOutput()
     }
   }
 
-  /** Patch the open card into a detached state and forget it (/new). */
+  private async sendFinal(target: MessageTarget, text: string, retainedCard?: string): Promise<void> {
+    const post = markdownTableCount(text) > 5
+    const segments = segmentText(text, this.config.bodySegmentChars ?? 4000)
+    let plain = false
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i]!
+      if (i === 0 && retainedCard && await this.lark.patchCard(retainedCard, buildBodyCard(segment))) continue
+      const type = plain ? 'text' : post ? 'post' : 'interactive'
+      const content = type === 'text' ? { text: segment } : post
+        ? { zh_cn: { content: [[{ tag: 'md', text: segment }]] } } : buildBodyCard(segment)
+      let sent = await this.lark.sendMessage(target, type, content)
+      if (!sent) sent = await this.lark.sendMessage(target, type, content)
+      if (!sent && !plain) {
+        plain = true
+        await this.lark.sendMessage(target, 'text', { text: segment })
+      }
+    }
+  }
+
+  private async finishOutput(output: TurnOutput, messages: InboundMessage[], reason?: string, error?: string, fallbackTarget?: MessageTarget): Promise<void> {
+    let override: string | undefined
+    if (reason === 'error') {
+      override = /Session not found/i.test(error ?? '') ? '⚠️ 会话已过期，请发送 /new 开始新会话' : `❌ 错误: ${error || '本轮执行失败'}`
+    } else if (reason === 'aborted' || reason === 'stopped') override = '⏹ 执行已停止。'
+    let body = output.body(override)
+    if (reason === 'max-tokens') body += '\n⚠️ 达到长度上限'
+    if (reason === 'blocked') body += '\n🚫 被拦截'
+    const retained = await output.preview?.finish()
+    const target = output.target ?? fallbackTarget
+    if (target) await this.sendFinal(target, body, retained)
+    await this.clearAcknowledgements(messages)
+  }
+
   private async closeCardAsDetached(): Promise<void> {
-    const messageId = this.cardMessageId
-    this.cardMessageId = undefined
-    this.cardHash = undefined
-    if (messageId === undefined) return
-    const card: Schema2Card = {
-      schema: '2.0',
-      config: { width_mode: 'fill' },
-      header: {
-        title: { tag: 'plain_text', content: `dsh · ${this.sessionLabel()} · 已解绑` },
-        template: 'grey',
-      },
-      body: { elements: [{ tag: 'markdown', content: '⏏️ 会话已解绑（/resume 可重新进入）' }] },
+    const retained = await this.turnOutput?.preview?.finish()
+    if (retained) await this.lark.patchCard(retained, buildBodyCard('⏏️ 会话已解绑（/resume 可重新进入）'))
+    await this.clearAcknowledgements(this.turnMessages)
+    await this.clearAcknowledgements(this.queuedMessages)
+    this.queuedMessages = []
+    for (const pending of this.pendingPrompts.values()) await this.clearAcknowledgements(pending.messages)
+    this.pendingPrompts.clear()
+    for (const batch of this.imageBatches.values()) {
+      clearTimeout(batch.timer)
+      await this.clearAcknowledgements(batch.messages)
     }
-    await this.lark.patchCard(messageId, card)
+    this.imageBatches.clear()
+    this.turnOutput = undefined
+    this.turnMessages = []
   }
 
   /** Clear the run view (new binding / detach) — no history replay. */
@@ -2020,11 +2006,8 @@ export class FeishuBot {
     Object.assign(this.runState, fresh)
     this.runState.subagents = fresh.subagents
     this.runState.runSeqToChild = fresh.runSeqToChild
-    this.cardMessageId = undefined
-    this.cardHash = undefined
     this.resumeCardMessageId = undefined
     this.modelFlow = undefined
-    this.turnOriginMessageId = undefined
     this.routeBackfilledFor = undefined
     // Pending selection cards die with the old view — the new binding must
     // not inherit submits meant for it.

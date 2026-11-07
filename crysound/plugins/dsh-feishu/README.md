@@ -16,11 +16,11 @@ Drive an existing [dsh](https://github.com/deepseek-ai/deepseek-harness) (DeepSe
 - **One-command onboarding**: `/feishu-onboard` on the desktop — scan-to-create the Feishu app, auto-writes credentials + operators, hot-activates without a restart
 - **Self-serve pairing**: empty allowlist → the first DM claims admin via a one-tap card
 - **Automatic sessions**: ordinary text without a selected session creates one with the default working directory and model; creation failures log a warning and show the `/new` / `/resume` hint.
-- **Round replies**: each non-empty round answer ships as segmented body messages. Progress and settled-round status cards are disabled; only errors and stopped turns send an end-status card.
+- **Turn replies (CRYSOUND .2)**: `OnIt` appears before session work. Visible output creates one temporary streaming preview (700 ms updates, safe Chinese tool summaries, no reasoning). On completion the preview is retracted, the final answer arrives as new messages, and `OnIt` is removed. Consumed steer messages become `DONE`.
 - **Approval cards**: when the host's approval waterfall asks for a sandbox escalation, the phone gets a **✅ 允许一次 / ❌ 拒绝** card — an unattended run no longer stalls at the desk (the session's approval policy must be `ask`; expiry fails closed)
 - **Interactive ask-user cards**: when the agent calls `ask_user_question`, your phone gets an **interactive card** (dropdown / multi-select / text input + submit); the answer flows straight back. Pair it with [ask-router](https://www.npmjs.com/package/@aiwayds/dsh-ask-router) for **both desktop and phone prompting — first answer wins**
 - **Group chats**: pull the bot into a Feishu group — @-mention it to dispatch work or run commands (allowlisted members only, silent to everyone else); in the group the bot is actively driving, images flow **without** a mention
-- **Image dispatch**: send a picture in DM — it is downloaded, media-type sniffed, committed as a durable attachment and injected into the session as an image block (the session's model route must accept image input)
+- **Attachments and quotes**: text, rich posts, images, files and merged forwards are supported. Images within 800 ms join the next text/post prompt. Replies resolve up to five ancestors; topic responses stay in their topic. Resource access denied by the app permissions degrades without a new scope. Image input requires a capable model.
 - **Background push** (`backgroundPush`): completion cards for sessions the phone is *not* bound to — cron deliveries and subagent settlements (mode `cron`), or every finished turn (mode `all`); off by default, the bot never messages unprompted unless told to
 - **Interactive /model**: pick a model on the phone, grouped by provider —
   bot-created sessions switch live
@@ -273,12 +273,12 @@ Session running on your desktop → open Feishu on the train → /resume and pic
 | `operators` | `[]` | open_id allowlist — the effective list is the union of this, `pairedOperators` (the dsh-feishu-state.json state file) and `DSH_FEISHU_OPERATORS` (comma-separated open_ids); an empty list boots the bot into pairing mode |
 | `mode` | `"on"` | `"off"` disables the plugin entirely |
 | `domain` | `"feishu"` | `"feishu"` (CN) or `"lark"` (international) |
-| `statusIntervalMs` | `5000` | status refresh beat (automatic progress cards are disabled in this version), range [5000, 600000] |
-| `bodySegmentChars` | `3500` | long-body segmentation threshold for standalone round replies; values outside [500, 30000] error the plugin off |
+| `statusIntervalMs` | `5000` | Existing btw refresh cadence, range [5000, 600000]; turn previews use a fixed 700 ms interval. |
+| `bodySegmentChars` | `4000` | final-answer segmentation threshold; values outside [500, 30000] error the plugin off |
 | `resumeListStyle` | `"auto"` | `/resume` list: `auto`/`table`/`list` |
 | `backgroundPush` | `"off"` | Completion push for sessions the phone is not bound to, into the last active chat: `off` / `cron` (turns carrying a cron delivery or a subagent-settled notice) / `all` (every finished turn). Env override: `DSH_FEISHU_BACKGROUND_PUSH` |
-| `roundButtons` | `"off"` | Quick-action buttons on round cards: `on` renders ▶️ 继续 under error or stopped-turn status cards; automatic live cards are disabled; `off` keeps both out — the `/stop` command (with its own confirmation) is the stop path either way. Env override: `DSH_FEISHU_ROUND_BUTTONS` |
-| `toolDetail` | `"off"` | Tool-argument digest under each activity bullet on the round card: `off` keeps the name-only rows byte-for-byte; `brief` folds the raw arguments JSON to one clipped line (80 chars); `full` keeps the multi-line shape, clipped at 600 chars. Env override: `DSH_FEISHU_TOOL_DETAIL` |
+| `roundButtons` | `"off"` | Retained for existing configurations; current turn previews and final replies have no buttons. `/stop` cancels immediately. |
+| `toolDetail` | `"off"` | Retained for existing configurations; current previews always use safe summaries and never show arguments. |
 | `appIdRef` / `appSecretRef` | `DSH_FEISHU_APP_ID/SECRET` | credentials ref names |
 
 Credential resolution order: plaintext in patch > `DSH_FEISHU_APP_ID/SECRET` env
@@ -344,3 +344,17 @@ npm test         # build + node --test (230+ pure-logic unit tests)
 ---
 
 *License: Apache-2.0. Author fan56.*
+
+## CRYSOUND .2 delivery and verification
+
+This fork keeps the existing six onboarding scopes and event subscriptions. Message-fetch failures omit quote context; merged forwards ask the sender to paste the content instead. A denied preview retraction updates the same card with the final answer, so that first segment may not produce a new notification. No production permissions are changed.
+
+`/stop` cancels immediately without a confirmation card. Normal, error and stop endings all use body messages. Bound sessions started from the web send only a final answer, with no preview or reaction. No conversation or thread-to-session remapping is introduced.
+
+From this plugin directory, the release environment must run:
+
+```sh
+npm ci && npm test && npm run check && npm run build && npm pack
+```
+
+Focused source regression tests are in `test/turn-delivery.test.mjs` and the affected existing test files. Clean installation, packaging and the [thirteen real-account acceptance steps](https://github.com/crysound/crysound-workpartner/issues/112) remain release gates. Publish the resulting tarball and update download/config/image references only after review; those deployment files are outside this change.
