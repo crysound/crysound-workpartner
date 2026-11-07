@@ -68,7 +68,7 @@ test('设置入口注册原生页和图标，授权回跳打开同一原生设�
     entries:()=>[{store:{create:()=>({actions:{openSection:id=>actions.push(id)}})}}], subscribe:()=>()=>{},
   }});
   assert.deepEqual(entries.filter(entry=>['crysound-feishu','crysound-feishu-reminder'].includes(entry.options.id)).map(entry=>entry.options.name),['settings.section','conversation.header.leading','settings.section.icon']);
-  assert.equal(entries[0].options.id,entries[2].options.id);
+  assert.equal(entries.find(entry=>entry.options.name==='settings.section').options.id,entries.find(entry=>entry.options.name==='settings.section.icon').options.id);
   assert.deepEqual(actions,['crysound-feishu']); assert.equal(location.search,'');
   // Same-page authorization from the home reminder returns home, without opening settings.
   location.search = '?zp-settings=feishu';
@@ -141,8 +141,8 @@ test('设置文案、导航和日期跟随语言切换，中文和英文字典�
   assert.match(english,/Connected · Test · Authorized/);
   assert.ok(english.includes(new Date('2026-11-07T00:00:00Z').toLocaleString('en')));
   assert.ok(!/[\u4e00-\u9fff]/u.test(english));
-  assert.equal(f.registrations[0].label(),'Feishu authorization');
-  assert.equal(f.registrations[0].locale,'crysound.feishu');
+  assert.equal(f.registrations.find(entry=>entry.name==='settings.section' && entry.id==='crysound-feishu').label(),'Feishu authorization');
+  assert.equal(f.registrations.find(entry=>entry.name==='settings.section' && entry.id==='crysound-feishu').locale,'crysound.feishu');
   assert.deepEqual(Object.keys(f.dictionaries.get('zh')).sort(),Object.keys(f.dictionaries.get('en')).sort());
   f.locale('zh');assert.match(f.text(f.render()),/飞书授权/);
 });

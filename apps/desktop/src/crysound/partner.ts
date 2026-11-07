@@ -19,7 +19,7 @@ const DONE_URL = `${PARTNER_ORIGIN}/_zp/desktop-done`
 const LOGIN_PARTITION = 'persist:crysound-login'
 
 /** Brand files the web document may request from the application origin. */
-export const BRAND_FILES: ReadonlySet<string> = new Set(['/timezone.js', '/brand.css', '/brand.js', '/pet.js', '/welcome.js', '/zp-mark.svg', '/zp-mark-32.svg', '/favicon.svg', '/favicon-dark.svg'])
+export const BRAND_FILES: ReadonlySet<string> = new Set(['/timezone.js', '/skin.js', '/skin.css', '/brand.css', '/brand.js', '/pet.js', '/welcome.js', '/zp-mark.svg', '/zp-mark-32.svg', '/favicon.svg', '/favicon-dark.svg'])
 
 /** A signed-in company user. */
 export interface PartnerSession {

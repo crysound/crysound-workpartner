@@ -1,0 +1,40 @@
+{
+  "screenshots": [
+    "settings-light-default",
+    "settings-light-soft",
+    "settings-dark-default",
+    "settings-dark-soft",
+    "conversation-light-default",
+    "conversation-light-soft",
+    "conversation-dark-default",
+    "conversation-dark-soft",
+    "home-light-default",
+    "home-light-soft",
+    "home-dark-default",
+    "home-dark-soft",
+    "home-collapsed-soft",
+    "market-light-default",
+    "market-light-soft",
+    "market-dark-default",
+    "market-dark-soft",
+    "artifacts-light-default",
+    "artifacts-light-soft",
+    "artifacts-dark-default",
+    "artifacts-dark-soft",
+    "home-mobile-soft"
+  ],
+  "checks": [
+    "new device resolves default in the head before application modules execute",
+    "native setting is after Appearance; click applies immediately; reload resolves soft in head",
+    "return to default persists across reload",
+    "send colors light: {\"fill\":\"rgb(60, 63, 67)\",\"ink\":\"rgb(252, 252, 252)\"}",
+    "send colors dark: {\"fill\":\"rgb(238, 238, 238)\",\"ink\":\"rgb(21, 21, 21)\"}",
+    "disabled skin matches the original page background with its stylesheet disabled",
+    "390px mobile viewport has no horizontal document overflow",
+    "darwin sidebar CSS fill: rgba(238, 238, 233, 0.85)",
+    "win32 sidebar CSS fill: rgb(238, 238, 233)",
+    "web sidebar CSS fill: rgb(238, 238, 233)"
+  ],
+  "errors": [],
+  "completed": true
+}
