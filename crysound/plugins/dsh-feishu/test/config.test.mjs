@@ -152,3 +152,10 @@ test('completion reminder defaults to 60 seconds, accepts zero, and validates th
   for (const value of [0, 1, 60, 86400]) assert.equal(resolveConfig({ completionReminderSeconds: value }, {}).completionReminderSeconds, value)
   for (const value of [-1, 1.5, 86401, NaN]) assert.throws(() => resolveConfig({ completionReminderSeconds: value }, {}), /completionReminderSeconds/)
 })
+
+
+test('progress cadence leaves room for 20 shared-app cards and may be slowed', () => {
+  assert.equal(resolveConfig({}, {}).progressAnimationIntervalMs, 1500)
+  for (const value of [1500, 2000, 10000]) assert.equal(resolveConfig({ progressAnimationIntervalMs: value }, {}).progressAnimationIntervalMs, value)
+  for (const value of [0, 250, 1000, 1499, 1500.5, 10001, NaN]) assert.throws(() => resolveConfig({ progressAnimationIntervalMs: value }, {}), /progressAnimationIntervalMs/)
+})
