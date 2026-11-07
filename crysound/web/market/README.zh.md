@@ -58,7 +58,7 @@ docker compose -f crysound/web/compose.yml up -d --force-recreate verdaccio gate
 
 索引为 format 1，结合 Verdaccio 包数据与审批记录。`package.json` 可写 1 到 80 字的 `displayName`（优先）或 `title`，索引使用原生 `title` 字段；安装仍使用 npm 包名，未填写显示名时仍显示包名。`plugins.json` 的 `officialPlugins` 按包名配置 `{displayName, maintainers}`，显示名以“兆华”开头，维护人使用部署名单代号。网关据此指定官方身份、中文名和作者“兆华工作伙伴”；普通包不能用包名、`displayName` 或 `title` 冒用“兆华”前缀。官方包首次发布仅允许公司发布账号或维护人，现有包的所有者及指定维护人可以续发，但每版仍需审批。`MARKET_OFFICIAL_PUBLISHERS` 指定公司发布账号；旧 `MARKET_OFFICIAL_PACKAGES` 与发布账号同时命中的显示规则继续兼容。其余作者使用 `users.json` 中发布者的姓名，没有姓名时使用 slug；无论包内自行声明什么，都不带官方标识。按 SemVer 降序列出仍存在的全部 approved 版本及 `engines.dsh`，不写 registry，依靠 `@crysound:registry` 映射。注册表无法核对时返回错误，不能伪装成空索引。dsh 会缓存索引十分钟，可在兆华市场刷新。第一期不提供私有包 README 的公共 CDN 镜像；详细介绍可能不可用。
 
-插件页三个标签为“兆华市场 / CRYSOUND market → 第三方 / Third-party → 已安装”，公司市场默认打开。共用构建期脚本 `crysound/scripts/patch-market-ui.mjs --runtime <node_modules>` 一次检查五个固定版本浏览器模块，再应用补丁；版本变化时明确失败。侧栏依次显示新对话、市场、自动化任务，再显示已安装插件的页面，没有市场灰字。移除 `entry-customization` 的侧栏菜单注册后，空“更多”自然消失；市场右上角“做一个插件 / Create plugin”复用同一 `agentPreset: cordis`、侧栏提示和 `whenDraftExists: append` 动作。第三方正文和已安装列表保持原生实现。公司卡片分官方大卡片与全部插件列表，使用原生搜索、分类筛选、安装确认与分页；索引默认顺序为官方在前，其余按最近批准版本的发布时间降序。已安装按钮显示“使用”，已启用且版本与获批引导一致的官方包打开引导对话，其他包保留原生设置。网页镜像和下个桌面包发布这些界面变化；桌面准备阶段在生成校验记录、签名和冒烟验证之前应用补丁。市场“使用”入口使用同一份包内引导。
+插件页三个标签为“兆华市场 / CRYSOUND market → 第三方 / Third-party → 已安装”，公司市场默认打开。共用构建期脚本 `crysound/scripts/patch-market-ui.mjs --runtime <node_modules>` 一次检查五个固定版本浏览器模块，再应用补丁；版本变化时明确失败。侧栏依次显示新对话、市场、自动化任务，再显示已安装插件的页面，没有市场灰字。移除 `entry-customization` 的侧栏菜单注册后，空“更多”自然消失；市场右上角“做一个插件 / Create plugin”复用同一 `agentPreset: cordis`、侧栏提示和 `whenDraftExists: append` 动作。第三方与已安装保留原生操作，共用推荐卡片布局；第三方完整原卡片移入详情弹窗。公司列表支持全部/官方分段筛选，使用原生搜索、分类筛选、安装确认与分页；索引默认顺序为官方在前，其余按最近批准版本的发布时间降序。已安装按钮显示“使用”，已启用且版本与获批引导一致的官方包打开引导对话，其他包保留原生设置。网页镜像和下个桌面包发布这些界面变化；桌面准备阶段在生成校验记录、签名和冒烟验证之前应用补丁。市场“使用”入口使用同一份包内引导。
 
 `MARKET_OFFICIAL_MAINTAINERS` 是 JSON 对象，可按包覆盖 `officialPlugins` 的维护人列表，例如 `{"@crysound/design":["maintainer-slug"]}`；这同时授予该官方包的续发权限，请管理员核对后配置。姓名从 `users.json` 读取，无指定维护人时尝试包所有者姓名，缺姓名时不显示代号。`@crysound/data` 使用“兆华数据”及 `data` 分类，不增加标签页；维护信息由原生标签传递，显示为“维护：姓名 / Maintained by name”。
 
@@ -106,3 +106,21 @@ MARKET_TEST_TOOLS=<隔离依赖目录> node crysound/web/tests/registry-smoke.mj
 冒烟自动在 loopback 随机端口启动真实 Verdaccio，用 npm 连续发布两个版本，经生产网关处理器审批，再用 pnpm 11 从 profile `.npmrc` 查询、下载和安装；退出时等待进程结束并清理临时数据。
 
 真实环境还需验证：镜像构建和现有用户重建、新用户自助开通、桌面登录/退出/过期重登、Jason 收到卡片并完成审批、品牌层下“兆华市场”标签及点击安装、公司网络与代理下的 scope 和 tarball 鉴权、容器内网 DNS 与磁盘权限。不要在验收中输出凭据。
+
+## 推荐卡片与下载统计
+
+`patch-market-cards.mjs` 与构建期市场补丁提供两列卡片，窗口小于 900px 或内容区小于 650px 时一列；图标、元信息、两行说明、胶囊操作及详情箭头共用样式；说明与按钮始终并排，名称 16px，列表头收紧间距。内置配置也沿用大卡片；启停开关、异常、更新提示及第三方的完整操作仍保留。公司市场分段数量表示当前已加载的搜索结果，继续加载后增长；分类、搜索、排序、刷新继续走原生数据流。第三方标题显示当前匹配总数。桌面通过原生 `data-platform` 标记显示“当前电脑”，网页显示“我的工作伙伴”。
+
+九个官方图标采用可区分色相的同向渐变、饱满白色图形；默认首字图标也使用不含蓝色的固定调色板。官方 SVG 源图在 `crysound/brand/market-icons/`。执行 `node crysound/scripts/sync-market-card-patch.mjs` 将图标编码到 `plugins.json` 的官方项，并生成独立下载的 `plugin-patches.mjs` 内对应补丁；`--check` 拒绝漂移。这样旧桌面仍能下载单个自包含配置文件。公司与第三方补丁只改发布产物，不改上游源码。网页版镜像构建在修补前复制图标配置。
+
+网关把每次完整的、已授权的包 GET 下载累计到 `market.json.installs`，只存包名与总数；HEAD、元数据读取、被拒绝或传输失败不计数。发布和计数共用现有串行写入，临时文件原子替换；损坏统计不会清零。此数字从部署后开始，含升级及重下，不等同于安装成功数或独立用户数，也不补历史。索引通过原生 `metadata.sortKeys.crysound-installs` 传递，以“N 次下载”展示并可排序。应把该统计文件与原市场状态和注册表一起备份；恢复只由运维处理。保存统计失败只记日志，不把已下载的包改成失败。
+
+第三方沿用其 npm 或发布附件下载统计，标成下载次数；未提供下载数时省略计数整段，作者缺失显示“未提供作者”，不猜测。版本、分类、日期保留在公司市场原生详情页；第三方详情保留原版本、分类、下载来源与完整操作，未提供的日期不补造。
+
+浏览器检查：准备原始 0.2.2-rc.1 五个浏览器模块的可写副本和 dshmarket 1.73.12 的 `client/client.js`，在已登录的独立 CDP 标签运行：
+
+```sh
+CDP_TAB=<tab> MARKET_RUNTIME_MODULES=<modules> THIRD_PARTY_CLIENT=<client.js> node crysound/web/market/verify-cards.mjs <output>
+```
+
+它替换本标签的浏览器响应，使用真实远端列表，不改服务器、账户配置或安装记录；英文加 `--english`，只替换本标签语言初始化并断开语言偏好持久化。检查三标签、宽窄布局、说明截断、元信息、操作、详情、搜索与清空，并核对按钮与说明同行、无缺失统计占位，保存裁掉侧栏账号的截图及九个图标的 64px/40px 对照图。真实安装完成、使用工作流、打包桌面及上线仍由伙伴助理验收；本机不构建镜像或桌面。

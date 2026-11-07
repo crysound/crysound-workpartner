@@ -1,0 +1,128 @@
+[
+  {
+    "platform": "web",
+    "collapsed": false,
+    "mode": "rest",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "web",
+    "collapsed": false,
+    "mode": "compact",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "web",
+    "collapsed": false,
+    "mode": "natural",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "web",
+    "collapsed": true,
+    "mode": "rest",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "web",
+    "collapsed": true,
+    "mode": "compact",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "web",
+    "collapsed": true,
+    "mode": "natural",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "darwin",
+    "collapsed": false,
+    "mode": "rest",
+    "paddingTop": 48,
+    "expected": 48
+  },
+  {
+    "platform": "darwin",
+    "collapsed": false,
+    "mode": "compact",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "darwin",
+    "collapsed": false,
+    "mode": "natural",
+    "paddingTop": 48,
+    "expected": 48
+  },
+  {
+    "platform": "darwin",
+    "collapsed": true,
+    "mode": "rest",
+    "paddingTop": 48,
+    "expected": 48
+  },
+  {
+    "platform": "darwin",
+    "collapsed": true,
+    "mode": "compact",
+    "paddingTop": 40,
+    "expected": 40
+  },
+  {
+    "platform": "darwin",
+    "collapsed": true,
+    "mode": "natural",
+    "paddingTop": 48,
+    "expected": 48
+  },
+  {
+    "platform": "win32",
+    "collapsed": false,
+    "mode": "rest",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "win32",
+    "collapsed": false,
+    "mode": "compact",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "win32",
+    "collapsed": false,
+    "mode": "natural",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "win32",
+    "collapsed": true,
+    "mode": "rest",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "win32",
+    "collapsed": true,
+    "mode": "compact",
+    "paddingTop": 16,
+    "expected": 16
+  },
+  {
+    "platform": "win32",
+    "collapsed": true,
+    "mode": "natural",
+    "paddingTop": 16,
+    "expected": 16
+  }
+]
