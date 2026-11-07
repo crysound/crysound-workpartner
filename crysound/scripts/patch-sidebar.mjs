@@ -139,7 +139,7 @@ function patchWorkspaceV2(text) {
 }
 
 /** Put the search destination after New conversation, retaining the rail command. */
-export function patchSidebarModule(text) {
+function patchSidebarSearchV2(text) {
   const edit = editor(patchSidebarNavigationV1(text), 'navigation', 2);
   if (edit.done) return text;
   const { replace } = edit;
@@ -160,6 +160,21 @@ export function patchSidebarModule(text) {
     }), panels.length > 0 && (0, react_jsx_runtime.jsxs)("nav", {`);
   replace('renderSlot("sidebar.workspaces", {', 'renderSlot("sidebar.workspaces", { searchHost,');
   replace('"zp.search": "搜索对话"', '"zp.search": "搜索"');
+  return edit.finish();
+}
+
+/** Remove the market subtitle from fresh artifacts and exact deployed navigation predecessors. */
+export function patchSidebarModule(text) {
+  const edit = editor(patchSidebarSearchV2(text), 'navigation', 3);
+  if (edit.done) return text;
+  const { replace } = edit;
+  // Legacy literals remain here only to recognize and upgrade the deployed v1/v2 artifacts.
+  replace('"aria-label": id === "plugins" ? label + " · " + t("zp.marketHint") : label', '"aria-label": label');
+  replace('id === "plugins" ? (0, react_jsx_runtime.jsxs)("span", { className: "zp-sidebar-market-title", children: [label, (0, react_jsx_runtime.jsx)("small", { children: t("zp.marketHint") })] }) : label', 'label');
+  replace('function PanelRow({ id, label, wide, usePanelInfo, selectPanel, trackEntryClick, renderSlot, t })', 'function PanelRow({ id, label, wide, usePanelInfo, selectPanel, trackEntryClick, renderSlot })');
+  replace('(PanelRow, { t, id, label:', '(PanelRow, { id, label:');
+  replace(' "zp.marketHint": "插件·技能",', '');
+  replace(' "zp.marketHint": "Plugins · skills",', '');
   return edit.finish();
 }
 

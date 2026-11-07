@@ -1,0 +1,249 @@
+{
+  "preview": "Dedicated persistent-browser tab; branch response substitution over the real authenticated server. Not a deployed image or Electron.",
+  "patched": [
+    "skin.js",
+    "skin.css",
+    "brand.css",
+    "settings",
+    "ui-sidebar",
+    "ui-workspace"
+  ],
+  "rows": [
+    {
+      "name": "soft-light-desktop",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 144,
+        "width": 280,
+        "height": 42
+      }
+    },
+    {
+      "name": "soft-light-collapsed",
+      "label": "市场",
+      "text": "",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 182,
+        "width": 55,
+        "height": 44
+      }
+    },
+    {
+      "name": "soft-light-mobile",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 166,
+        "width": 280,
+        "height": 48
+      }
+    },
+    {
+      "name": "soft-dark-desktop",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 144,
+        "width": 280,
+        "height": 42
+      }
+    },
+    {
+      "name": "soft-dark-collapsed",
+      "label": "市场",
+      "text": "",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 182,
+        "width": 55,
+        "height": 44
+      }
+    },
+    {
+      "name": "soft-dark-mobile",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 166,
+        "width": 280,
+        "height": 48
+      }
+    },
+    {
+      "name": "default-light-desktop",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 144,
+        "width": 280,
+        "height": 42
+      }
+    },
+    {
+      "name": "default-light-collapsed",
+      "label": "市场",
+      "text": "",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 182,
+        "width": 55,
+        "height": 44
+      }
+    },
+    {
+      "name": "default-light-mobile",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 166,
+        "width": 280,
+        "height": 48
+      }
+    },
+    {
+      "name": "default-dark-desktop",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 144,
+        "width": 280,
+        "height": 42
+      }
+    },
+    {
+      "name": "default-dark-collapsed",
+      "label": "市场",
+      "text": "",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 182,
+        "width": 55,
+        "height": 44
+      }
+    },
+    {
+      "name": "default-dark-mobile",
+      "label": "市场",
+      "text": "市场",
+      "icons": 1,
+      "subtitles": 0,
+      "clip": {
+        "x": 0,
+        "y": 166,
+        "width": 280,
+        "height": 48
+      }
+    }
+  ],
+  "checks": [
+    "ported search input and real sessions mount",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-light-desktop: market icon, plain accessible name, no subtitle",
+    "market rail mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-light-collapsed: market icon, plain accessible name, no subtitle",
+    "market sidebar restored",
+    "market mobile opener",
+    "market mobile drawer mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-light-mobile: market icon, plain accessible name, no subtitle",
+    "market mobile drawer closes",
+    "market desktop restored",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-dark-desktop: market icon, plain accessible name, no subtitle",
+    "market rail mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-dark-collapsed: market icon, plain accessible name, no subtitle",
+    "market sidebar restored",
+    "market mobile opener",
+    "market mobile drawer mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "soft-dark-mobile: market icon, plain accessible name, no subtitle",
+    "market mobile drawer closes",
+    "market desktop restored",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-light-desktop: market icon, plain accessible name, no subtitle",
+    "market rail mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-light-collapsed: market icon, plain accessible name, no subtitle",
+    "market sidebar restored",
+    "market mobile opener",
+    "market mobile drawer mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-light-mobile: market icon, plain accessible name, no subtitle",
+    "market mobile drawer closes",
+    "market desktop restored",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-dark-desktop: market icon, plain accessible name, no subtitle",
+    "market rail mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-dark-collapsed: market icon, plain accessible name, no subtitle",
+    "market sidebar restored",
+    "market mobile opener",
+    "market mobile drawer mounts",
+    "market row mounts",
+    "market responsive label settles",
+    "market drawer geometry settles before cropping",
+    "default-dark-mobile: market icon, plain accessible name, no subtitle",
+    "market mobile drawer closes",
+    "market desktop restored"
+  ],
+  "errors": [],
+  "notVerified": [
+    "Rebuilt partner image",
+    "Actual macOS/Windows Electron package"
+  ]
+}
