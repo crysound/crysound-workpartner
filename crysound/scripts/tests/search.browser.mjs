@@ -132,6 +132,7 @@ ws.onmessage = async event => {
 
 try {
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
+  await send('Page.bringToFront');
   await send('Network.setCacheDisabled', { cacheDisabled: true });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   await send('Fetch.enable', { patterns: ['*/plugins/*', '*/brand.css*', '*/skin.css*', '*/skin.js*'].map(urlPattern => ({ urlPattern, requestStage: 'Response' })) });
@@ -152,6 +153,60 @@ try {
   await call('function(){sessionStorage.removeItem("zp146.zp-interface-style");sessionStorage.removeItem("zp146.dsh.workspace.view.v5")}');
   await reloadPage();
   await until('!!document.querySelector("[data-zp-inline-search]") && document.querySelectorAll("[data-row-key^=\\"session:\\"]").length>0', 'ported search input and real sessions mount');
+  if (process.env.SIDEBAR_MARKET_ONLY === '1') {
+    const rows = [];
+    if (await evaluate('document.querySelector("[data-zp-sidebar]").className.includes("_collapsed")')) await click('[data-sidebar-toggle]');
+    for (const skin of ['soft', 'default']) {
+      await call('function(skin){document.documentElement.dataset.zpSkin=skin}', skin);
+      for (const dark of [false, true]) {
+        await call('function(dark){document.body.toggleAttribute("data-ds-dark-theme",dark)}', dark);
+        for (const mode of ['desktop', 'collapsed', 'mobile']) {
+          await send('Emulation.setDeviceMetricsOverride', { width: mode === 'mobile' ? 390 : 1440, height: 844, deviceScaleFactor: 1, mobile: mode === 'mobile' });
+          if (mode === 'collapsed') {
+            await click('[data-sidebar-toggle]');
+            await until('document.querySelector("[data-zp-sidebar]").className.includes("_collapsed")', 'market rail mounts');
+          } else if (mode === 'mobile') {
+            await until('!!document.querySelector("[data-sidebar-opener]")', 'market mobile opener');
+            await click('[data-sidebar-opener]');
+            await until('document.querySelector("[data-zp-sidebar]")?.getAttribute("aria-modal")==="true"', 'market mobile drawer mounts');
+          }
+          await until('!!document.querySelector("[data-zp-panel=plugins]")', 'market row mounts');
+          await until(mode === 'collapsed'
+            ? 'document.querySelector("[data-zp-panel=plugins]").innerText.trim()===""'
+            : 'document.querySelector("[data-zp-panel=plugins]").innerText.trim()==="市场"', 'market responsive label settles');
+          await until('!document.getAnimations().some(a=>a.playState==="running" && a.effect?.getTiming().iterations!==Infinity && a.effect?.target?.closest?.("[data-zp-sidebar]")) && document.querySelector("[data-zp-sidebar]").getBoundingClientRect().x>=0', 'market drawer geometry settles before cropping');
+          const row = await call(`function(){
+            const el=document.querySelector('[data-zp-panel=plugins]'), r=el.getBoundingClientRect();
+            const sidebar=document.querySelector('[data-zp-sidebar]').getBoundingClientRect();
+            return {label:el.getAttribute('aria-label'),text:el.innerText.trim(),icons:el.querySelectorAll('svg').length,
+              subtitles:el.querySelectorAll('small,.zp-sidebar-market-title').length,
+              clip:{x:sidebar.x,y:r.y-4,width:sidebar.width,height:r.height+8}};
+          }`);
+          assert.equal(row.label, '市场');
+          assert.equal(row.text, mode === 'collapsed' ? '' : '市场');
+          assert.ok(row.icons > 0);
+          assert.equal(row.subtitles, 0);
+          const name = [skin, dark ? 'dark' : 'light', mode].join('-');
+          await screenshot(name, row.clip);
+          rows.push({name,...row});
+          checks.push(name + ': market icon, plain accessible name, no subtitle');
+          if (mode === 'collapsed') {
+            await click('[data-sidebar-toggle]');
+            await until('!document.querySelector("[data-zp-sidebar]").className.includes("_collapsed")', 'market sidebar restored');
+          } else if (mode === 'mobile') {
+            await key('Escape');
+            await until('document.querySelector("[data-zp-sidebar]")?.getAttribute("aria-modal")!=="true"', 'market mobile drawer closes');
+            await send('Emulation.setDeviceMetricsOverride', { width:1440,height:844,deviceScaleFactor:1,mobile:false });
+            await until('!!document.querySelector("[data-zp-inline-search]")', 'market desktop restored');
+          }
+        }
+      }
+    }
+    assert.deepEqual(errors, []);
+    assert.ok(patched.has('ui-sidebar') && patched.has('brand.css'));
+    fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({preview:'Dedicated persistent-browser tab; branch response substitution over the real authenticated server. Not a deployed image or Electron.',patched:[...patched],rows,checks,errors,notVerified:['Rebuilt partner image','Actual macOS/Windows Electron package']},null,2)+'\n');
+    console.log(JSON.stringify({screenshots:rows.length,patched:[...patched],errors}));
+  } else {
   assert.equal(await evaluate('window.__zpSkinFirstPaint'), 'soft');
   assert.equal(await evaluate('window.zpSkin.get()'), 'soft');
   checks.push('first paint defaults to soft on a device with no saved preference');
@@ -262,6 +317,7 @@ try {
   assert.deepEqual(errors,[]);
   fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({preview:'Dedicated persistent-browser tab; branch response substitution over the real authenticated server. Not a deployed image or Electron.',patched:[...patched],checks,errors,notVerified:['Rebuilt partner image','Actual macOS/Windows Electron package','Linux web has no upstream default search shortcut; Ctrl+Alt+K tested with navigator.platform=Win32']},null,2)+'\n');
   console.log(JSON.stringify({patched:[...patched],checks,errors}));
+  }
 } finally {
   await send('Fetch.disable'); await send('Network.setCacheDisabled',{cacheDisabled:false}); await send('Emulation.clearDeviceMetricsOverride');
   if(preferencePreviewScript) await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:preferencePreviewScript});
