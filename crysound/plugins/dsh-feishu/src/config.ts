@@ -88,7 +88,7 @@ export const Config = z.object({
   appIdRef: z.string().default('DSH_FEISHU_APP_ID'),
   appSecretRef: z.string().default('DSH_FEISHU_APP_SECRET'),
   statusIntervalMs: z.number().min(5000).max(600000).step(1).default(5000),
-  previewIntervalMs: z.number().min(200).max(5000).step(1).default(250),
+  previewIntervalMs: z.number().min(200).max(5000).step(1).default(200),
   completionReminderSeconds: z.number().min(0).max(86400).step(1).default(60),
   bodySegmentChars: z.number().min(500).max(30000).step(1).default(4000),
   resumeListStyle: z.union([z.const('auto'), z.const('table'), z.const('list')]).default('auto'),
@@ -146,7 +146,7 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
   if (!Number.isSafeInteger(statusIntervalMs) || statusIntervalMs < 5000 || statusIntervalMs > 600000) {
     throw new Error('dsh-feishu: statusIntervalMs must be an integer in [5000, 600000]')
   }
-  const previewIntervalMs = config?.previewIntervalMs ?? 250
+  const previewIntervalMs = config?.previewIntervalMs ?? 200
   if (!Number.isSafeInteger(previewIntervalMs) || previewIntervalMs < 200 || previewIntervalMs > 5000) {
     throw new Error('dsh-feishu: previewIntervalMs must be an integer in [200, 5000]')
   }
