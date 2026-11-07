@@ -5,6 +5,7 @@
 ## 改了什么
 
 - 记忆默认使用第三方 `dsh-mnemon@0.5.42`（显示名“可组合记忆”），网页和桌面共用 `plugins.json`，使用包自带的分层策略和关闭的增强开关；不要把插件的 `insert` 块复制到个人 `cordis.patch.yml`。`retire.mnemon-v1` 用原生卸载移出 `@crysound/memory`，保留旧数据；市场按退役清单隐藏旧插件，保留包和审批记录。网页与同一 Host 内的飞书会话共用 `/data/.mnemon`；桌面 Host 的 `MNEMON_DATA_DIR` 指向应用 `userData/.mnemon`。部署先合入 #207（Mnemon Native 命令行），同步公司配置并重建网关、更新个人容器及桌面安装包；核对新用户、旧用户和已手装用户插件设置可保存，再验收网页存入、新对话和飞书召回。
+- 网页启动的 `profile-upgrades.mjs --web-preview` 以 `id: mnemon` 覆盖行设置 `remoteAccess: trusted-host`，允许本人经登录网关管理记忆；桌面不设置此项。首次遇到没有空间的默认全局存储，用随附的 `mnemon store create personal` 建个人空间，由原插件发现并激活；已有空间、停用记忆或自行配置的存储范围保留，成功检查或创建后记账，后续本人删除不重建。空闲审查仍沿用 Agent Teams 在役时暂停，避免默认增加模型调用及自动写入；部署和检查依据见 `crysound/mnemon/README.md`。
 
 - 设置市场图标：`crysound/config/plugin-patches.mjs` 修补 dshmarket 1.73.12 的真实发布路径 `client/client.js`；所有目标文件缺失都会输出“插件修补未命中”，pnpm 多处安装只在全部位置缺失时告警。真实包回归与路径审计见 [复核说明](crysound/settings-evidence/issue-167/README.md)。
 
