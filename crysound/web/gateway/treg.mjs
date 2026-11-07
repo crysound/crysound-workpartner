@@ -80,7 +80,9 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (value.kind === "routed") {
       if (!Array.isArray(children) || !children.length) throw fail(403, "无法核对路由的数据分类");
       const next = new Set([...ancestors, id]);
-      for (const child of children) await endpoint(child, next);
+      // Search is pinned to Exa below, so validate only that selected child, not 20 unused providers.
+      if (id === "treg.web.search" && !children.includes("exa.web.search")) throw fail(403, "搜索路由尚未开放 Exa");
+      for (const child of id === "treg.web.search" ? ["exa.web.search"] : children) await endpoint(child, next);
     }
     return value;
   };
@@ -168,6 +170,11 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     signal?.throwIfAborted();
     const headers = { ...authHeaders(user), "x-treg-route-max-cost": String((extraction ? Math.min(limits.call, 5000) : limits.call) / 1e6), "content-type": "application/json" };
     if (extraction) Object.assign(headers, { "x-treg-route-prefer": "crawl4ai", "x-treg-route-waterfall": "0" });
+    // Only this existing search route uses Exa; never trust caller routing/identity headers.
+    if (id === "treg.web.search") Object.assign(headers, {
+      "x-treg-route-prefer": "exa", "x-treg-route-waterfall": "0",
+      "x-treg-route-max-cost": String(Math.min(limits.call / 1e6, 0.01)),
+    });
     // 上游幂等键是组织级命名空间；把本人加入，避免拿另一人的缓存结果。
     if (idempotencyKey) headers["idempotency-key"] = crypto.createHash("sha256").update(`${user.slug}\0${idempotencyKey}`).digest("hex");
     let response, bytes;

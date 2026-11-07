@@ -98,3 +98,5 @@ node --experimental-vm-modules --test crysound/web/web-tools/web-tools.test.mjs
 完整本地证据和上线步骤见 [#182 验收说明](../../config/evidence/issue-182/README.md)。失败页至少救回 7/8、长尾不超过 10 秒，以及原三题性能目标，均待伙伴助理在真实部署验收。`fetchDeepSeek:false` 停 DeepSeek，`fetchTreg:false` 停 Treg；两个都关恢复原直抓时限。`DEEPSEEK_TOOLS_ENABLED=0` 在网关停 DeepSeek 上游调用，保留共用钥匙及账本。
 
 本次搜索顺序调整的自查依据、线上天气与三题调研验收要求见[交付记录](../../config/evidence/issue-181/README.md)。
+
+英文查询现在并发补充经现有 Treg 网关的 Exa 来源；正文仍保留原搜索回答，中文查询保持原路径。语言判定、五秒共同截止线、费用边界、自查以及部署后尚需完成的验收见[英文搜索记录](../../config/evidence/issue-185/README.md)。此项增加付费调用，须先按需求处理手册确认费用再交付上线。

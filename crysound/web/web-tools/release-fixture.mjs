@@ -46,7 +46,7 @@ export async function released(packageName, { fetch = globalThis.fetch, root = p
   };
   const module = new SourceTextModule(await readFile(file, "utf8"), { context, identifier: file });
   await module.link(async specifier => {
-    const exports = modules[specifier] ?? await import(pathToFileURL(join(dirname(file), specifier)).href);
+    const exports = modules[specifier] ?? await import(specifier.startsWith("file:") ? specifier : pathToFileURL(join(dirname(file), specifier)).href);
     return new SyntheticModule(Object.keys(exports), function () {
       for (const [name, value] of Object.entries(exports)) this.setExport(name, value);
     }, { context });

@@ -84,6 +84,12 @@ class ToolTiming {
     context.mark(`fetch-${stage}`, context.callId, outcome === undefined ? {} : { outcome });
   }
 
+  exa(stage, extra = {}) {
+    const context = this.context.getStore();
+    if (context?.callId === undefined) return;
+    context.mark(stage, context.callId, extra);
+  }
+
   search(stage) {
     const context = this.context.getStore();
     if (context?.callId === undefined) return;
