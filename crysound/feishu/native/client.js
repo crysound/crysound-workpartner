@@ -10,6 +10,7 @@ window.__ModuleLoader__.load({
     const base = '/_zp/feishu/';
     const namespace = 'crysound.feishu';
     const en = {
+      skinTitle: "Interface style", skinDefault: "Default", skinSoft: "Zhaohua soft", skinSaveError: "Unable to save on this device. Check browser storage and try again.",
       dailyTitle: "Daily check",
       dailyIntro: "On weekdays, this uses your Feishu identity to read unread @mentions, today’s and tomorrow’s calendar events, and Feishu tasks. Summaries use your model credits. Reminders are only for you; nothing is replied to or changed for you. You can turn this off at any time.",
       dailyQuietIntro: "No new items means no interruptions. At most one attempt per day, with no repeated failure reminders.",
@@ -66,6 +67,7 @@ window.__ModuleLoader__.load({
     };
     /** @type {Record<keyof typeof en, string>} */
     const zh = {
+      skinTitle: "界面风格", skinDefault: "默认", skinSoft: "兆华柔和", skinSaveError: "无法在此设备保存，请检查浏览器存储后重试。",
       dailyTitle: "每天帮我查一次",
       dailyIntro: "打开后，工作日会用你本人的飞书身份读取未读 @、今天和明天的日程、飞书任务。生成摘要会使用模型额度。只提醒你本人，不替你回复或操作，可以随时关闭。",
       dailyQuietIntro: "没有新事不打扰；同一天最多尝试一次，失败不反复提醒。",
@@ -433,6 +435,25 @@ window.__ModuleLoader__.load({
       } }, t('dailyUnread')) : null;
     }
 
+    function SkinRow({ t }) {
+      const [value, setValue] = useState(() => window.zpSkin?.get() || 'default');
+      const [failed, setFailed] = useState(false);
+      useEffect(() => {
+        const sync = () => setValue(window.zpSkin?.get() || 'default');
+        window.addEventListener('zp-skin-change', sync);
+        return () => window.removeEventListener('zp-skin-change', sync);
+      }, []);
+      return h('div', { className: 'zp-skin-setting' },
+        h('div', { className: 'zp-skin-setting-row' },
+          h('span', { id: 'zp-skin-label' }, t('skinTitle')),
+          h('div', { role: 'group', 'aria-labelledby': 'zp-skin-label', className: 'zp-skin-choices' },
+            ...['default', 'soft'].map(id => h(Button, { key: id, size: 'sm', variant: 'outline',
+              'aria-pressed': value === id,
+              onClick: () => setFailed(!window.zpSkin?.set(id)),
+            }, t(id === 'soft' ? 'skinSoft' : 'skinDefault'))))),
+        failed ? h('p', { role: 'alert' }, t('skinSaveError')) : null);
+    }
+
     function Banner(props) { return h(Panel, { ...props, banner: true }); }
     function Icon({ size }) { return h(IconLinkOutlineMedium, { size }); }
     return { name: '@crysound/feishu-settings', inject: ['slots', 'locale', 'uiWorkspace'], apply(ctx) {
@@ -440,6 +461,7 @@ window.__ModuleLoader__.load({
       ctx.effect(() => ctx.locale.register(namespace, 'zh', zh));
       const t = ctx.locale.bind(namespace);
       ctx.effect(() => { const sheet = document.createElement('style'); sheet.textContent = styles + dailyStyles; document.head.appendChild(sheet); return () => sheet.remove(); });
+      ctx.slots.inject('settings.general.item', () => ctx.slots.register({ name: 'settings.general.item', id: 'crysound-interface-style', order: 10.5, locale: namespace }, SkinRow));
       ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: sectionId, order: 65, label: () => t('title'), locale: namespace, inject: () => ({ formatTime: date => date.toLocaleString(ctx.locale.getSnapshot().active) }) }, Panel));
       ctx.slots.inject('conversation.header.leading', () => ctx.slots.register({ name: 'conversation.header.leading', id: 'crysound-feishu-reminder', locale: namespace, inject: () => ({ formatTime: date => date.toLocaleString(ctx.locale.getSnapshot().active) }) }, Banner));
       ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: sectionId }, Icon));
