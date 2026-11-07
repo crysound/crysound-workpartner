@@ -526,6 +526,8 @@ export async function packageTarget(
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime', '--dsh'], electronBuilderEnv)
   // CRYSOUND: both desktop platforms carry the same verified local archive.
   await execute(['exec', 'node', '../../crysound/plugin-artifacts.mjs', 'download', join(buildPaths.root, 'company-plugins')], downloadEnv)
+  // CRYSOUND: carry the native memory CLI; no user-installed Node/npm is required.
+  await execute(['exec', 'node', '../../crysound/mnemon/prepare.mjs', join(buildPaths.root, 'mnemon'), target.platform, target.arch], downloadEnv)
   // CRYSOUND: pre-install the company plugins so the first launch copies them instead of downloading.
   if (target.platform === 'darwin' || target.platform === 'win32') await execute(['exec', 'tsx', 'scripts/prepare-plugin-template.ts'], downloadEnv)
   if (invocation.prepareOnly) return
