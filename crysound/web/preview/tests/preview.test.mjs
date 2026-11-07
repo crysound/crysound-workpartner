@@ -33,7 +33,7 @@ async function fixture(t) {
   const editor = own(http.createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers });
     if (req.url.startsWith("/html")) {
-      const html = '<!doctype html><html><head data-editor="slides"><script>window.editorSawNativeDownloads=window.__baoyuNativeDownloads;</script></head><body>中文导出</body></html>';
+      const html = '<!doctype html><html><head data-editor="slides"><SCRIPT>window.editorSawNativeDownloads=window.__baoyuNativeDownloads;</SCRIPT></head><body>中文导出</body></html>';
       const encoding = req.url.split("/")[2];
       const bytes = encoding === "gzip" ? gzipSync(html) : encoding === "deflate" ? deflateSync(html) : encoding === "br" ? brotliCompressSync(html) : Buffer.from(html);
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": bytes.length,
@@ -112,7 +112,7 @@ test("web preview enables native downloads before editor startup, including comp
     const page = await f.request(b.origin + path, { jar: b.jar });
     assert.equal(page.status, 200);
     const window = {};
-    for (const [, script] of page.text.matchAll(/<script>(.*?)<\/script>/gs)) vm.runInNewContext(script, { window });
+    for (const [, script] of page.text.matchAll(/<script>(.*?)<\/script>/gis)) vm.runInNewContext(script, { window });
     assert.equal(window.editorSawNativeDownloads, true, path);
     assert(page.text.includes("中文导出"));
     for (const header of ["content-length", "content-encoding", "etag"]) assert.equal(page.headers[header], undefined);
