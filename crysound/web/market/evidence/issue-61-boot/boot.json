@@ -1,0 +1,31 @@
+{
+  "method": "full native page reload with tab-local response substitution; real remote API and guide endpoint; no component/session stubs",
+  "screenshot": "after.png crops out the sidebar and account; before.png is the native boot failure",
+  "before": {
+    "failedToLoadPlugins": true,
+    "errors": [
+      "guide activation Error: cannot get property \"remote\" without inject\n    at A2.<anonymous> (<runtime>)\n    at <runtime>\n    at installCompanyGuides (<runtime>)\n    at new apply (<runtime>)\n    at A2.execute (<runtime>)\n    at <runtime>\n    at R1 (<runtime>)\n    at A2._execute (<runtime>)\n    at A2._reload (<runtime>)",
+      "Error: web boot: 1 entry did not activate\n@deepseek-ai/dsh-client-ui-entry-customization: failed\n    at qZ (<runtime>)\n    at KZ (<runtime>)\n    at async oV.run (<runtime>)",
+      "guide activation Error: cannot get property \"remote\" without inject\n    at A2.<anonymous> (<runtime>)\n    at <runtime>\n    at installCompanyGuides (<runtime>)\n    at new apply (<runtime>)\n    at A2.execute (<runtime>)\n    at <runtime>\n    at R1 (<runtime>)\n    at A2._execute (<runtime>)\n    at A2._reload (<runtime>)\n    at async A2.await (<runtime>)"
+    ]
+  },
+  "after": {
+    "failedToLoadPlugins": false,
+    "errors": [],
+    "patchedModules": [
+      "ui-conversation",
+      "ui-entry-customization",
+      "ui-plugin-market"
+    ],
+    "home": [
+      "兆华动效",
+      "Explore the market"
+    ]
+  },
+  "pending": [
+    "approved installed package: shortcut to guide",
+    "approved installed package: market Use to guide",
+    "real model submission",
+    "packaged desktop"
+  ]
+}

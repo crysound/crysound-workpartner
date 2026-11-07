@@ -97,7 +97,7 @@ test("公司官方显示名、作者和标识来自管理员指定的账号与�
     assert.equal((await f.request("/_zp/market/admin", { method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin }, body: new URLSearchParams({ name: packageName, version: "1.0.0", action: "approved" }) })).status, 303);
   }
   const parsed = parseMarketIndex(await f.index(), `${publicOrigin}/_zp/market/index.json`);
-  for (const [packageName, title] of [["@crysound/design", "兆华设计"], ["@crysound/motion", "兆华动效"], ["@crysound/custom", "兆华示例工具"]]) {
+  for (const [packageName, title] of [["@crysound/design", "兆华设计"], ["@crysound/motion", "兆华动画"], ["@crysound/custom", "兆华示例工具"]]) {
     const entry = parsed.plugins.find((p) => p.name === packageName);
     assert.equal(entry.title, title);
     assert.equal(entry.author, "兆华工作伙伴");

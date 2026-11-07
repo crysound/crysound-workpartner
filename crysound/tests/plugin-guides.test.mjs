@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import vm from "node:vm";
 import { installCompanyGuides } from "../scripts/patch-market-guide-client.mjs";
-import { patchMarketGuides, patchGuideUse, patchGuidePlaceholder } from "../scripts/patch-market-guides.mjs";
+import { patchMarketGuides, patchGuideUse, patchGuidePlaceholder, installCompanyMarketNavigation } from "../scripts/patch-market-guides.mjs";
 import { patchCompanyMarketRuntime } from "../scripts/patch-market-ui.mjs";
 import { patchMarketEntry } from "../scripts/patch-market-entry.mjs";
 import { patchMarketCatalog } from "../scripts/patch-market-catalog.mjs";
@@ -28,20 +28,20 @@ async function fixture(t) {
   const registrations = new Map(), events = new Map(), disposers = [], sent = [], notices = [], calls = [];
   const inputState = store({ draft: "", draftRev: 0, phase: "plain", attachmentIds: [], occurrences: [] });
   const sessionState = store({ blank: true, running: false, promptAttempted: false });
-  let savedClaim, source, enabled = true, version = guide.version, language = "zh";
+  let savedClaim, source, enabled = true, installed = true, version = guide.version, language = "zh", remoteFailure = false;
   const input = {
     state: inputState, notify: (...args) => notices.push(args), focus() {},
     beginCommand(claim) { savedClaim = claim; inputState.set({ ...inputState.getSnapshot(), draft: claim.token, claim: { name: claim.name, token: claim.token }, phase: "claimed" }); return true; },
     insertText(text, span) { assert.equal(span.start, 2); const state = inputState.getSnapshot(); inputState.set({ ...state, draft: state.draft + text }); return true; },
     submit() { const state = inputState.getSnapshot(); inputState.set({ ...state, phase: "submitting" }); calls.push("submit"); },
   };
-  const scope = { conversation: { input: { for: () => input } }, bail(self, event, request) { assert.equal(request.guard.span.end, 1); const state = inputState.getSnapshot(); inputState.set({ ...state, draft: state.draft.slice(state.claim.token.trimEnd().length), claim: undefined, phase: "plain" }); } };
+  const scope = { get: name => { assert.equal(name, "conversation"); return { input: { for: () => input } }; }, bail(self, event, request) { assert.equal(request.guard.span.end, 1); const state = inputState.getSnapshot(); inputState.set({ ...state, draft: state.draft.slice(state.claim.token.trimEnd().length), claim: undefined, phase: "plain" }); } };
   const locale = store({ active: "zh" });
   const ctx = {
     locale: { ...locale, resolveText: value => value[language] },
     remote: { $on: () => () => {}, pluginManager: {
-      listBundles: async () => [{ name: guide.name, version, enabled, rows: [{ entryId: "design", moduleName: guide.name }] }],
-      listPlugins: async () => [{ entryId: "design", enabled, fiberPhase: "active" }],
+      listBundles: async () => remoteFailure ? { ok: false, error: { message: "unavailable" } } : { ok: true, value: installed ? [{ name: guide.name, version, enabled, rows: [{ entryId: "design", moduleName: guide.name }] }] : [] },
+      listPlugins: async () => ({ ok: true, value: [{ entryId: "design", enabled, fiberPhase: "active" }] }),
     } },
     sessions: { scope: () => scope, scopeOf: () => "blank", binding: () => ({ session: { prompt: async (content, mode) => { sent.push({ content, mode }); return { ok: true }; } } }), list: store({ byId: { current: { id: "current", retainedBy: { mainView: 1 } } } }) },
     workspaces: { list: store({ items: [{ workspaceId: "work", sessionIds: ["current"] }] }) },
@@ -49,6 +49,7 @@ async function fixture(t) {
     slots: { inject: (name, register) => register(), register: (definition, Component) => { registrations.set(definition.name, { definition, Component }); } },
     inputTriggers: { registerSource: value => { source = value; return () => { source = undefined; }; } },
     get: () => ({ openList: () => calls.push("market"), openBundle: name => calls.push(name) }),
+    bail: (self, event, ...args) => { calls.push({ event, args }); return events.get(event)?.(...args); },
     on: (event, callback) => { events.set(event, callback); return () => events.delete(event); },
     effect: action => { const dispose = action(); if (typeof dispose === "function") disposers.push(dispose); },
   };
@@ -61,8 +62,65 @@ async function fixture(t) {
   };
   const render = name => registrations.get(name).Component(props(name));
   return { ctx, sent, notices, calls, render, props, inputState, sessionState, events, source: () => source, claim: () => savedClaim,
-    enabled: value => { enabled = value; }, version: value => { version = value; }, language: value => { language = value; locale.set({ active: value }); } };
+    installed: value => { installed = value; }, enabled: value => { enabled = value; }, remoteFailure: value => { remoteFailure = value; }, version: value => { version = value; }, language: value => { language = value; locale.set({ active: value }); } };
 }
+
+test("首页未安装入口打开对应市场详情，已启用进入说明卡，逛市场打开公司列表", async t => {
+  const f = await fixture(t), face = f.props("conversation.composer.dock");
+  f.installed(false); face.choose(guide.name);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(f.calls, [{ event: "company-market/open", args: [guide.name] }]);
+  assert.equal(f.render("conversation.input.dock"), null);
+  f.calls.length = 0; f.installed(true); face.choose(guide.name);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(f.calls, ["work"]);
+  assert.equal(f.render("conversation.input.dock").props.children[0].props.children, guide.title);
+  f.calls.length = 0; face.browse();
+  assert.deepEqual(f.calls, [{ event: "company-market/open", args: [null] }]);
+  assert.equal(f.sent.length, 0);
+});
+
+test("公司来源排第二时，冷启动与旧筛选都定位公司包；缺公司来源不搜索其他市场", async t => {
+  const company = "https://gateway.test/_zp/market/index.json";
+  const other = "https://community.test/plugins.json";
+  let state = { indexes: [], selected: null, listing: null };
+  const listeners = new Set(), events = new Map(), disposers = [], queries = [], selections = [];
+  const publish = next => { state = next; for (const listener of listeners) listener(); };
+  const flush = () => new Promise(resolve => setImmediate(resolve));
+  const initial = { text: "", category: null, labels: [], sort: { kind: "index" } };
+  const face = { hooks: {}, ensure() {},
+    select(url) { selections.push(url); publish({ ...state, selected: url, listing: { url, query: initial } }); },
+    search: query => queries.push({ url: state.selected, query }),
+  };
+  const ctx = { effect: fn => disposers.push(fn()), on: (event, fn) => { events.set(event, fn); return () => events.delete(event); } };
+  t.after(() => { for (const dispose of disposers.reverse()) dispose(); });
+  installCompanyMarketNavigation(ctx, { store: { getSnapshot: () => state, subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn); } } }, face, store, initial);
+  events.get("company-market/select")(guide.name);
+  await flush(); assert.deepEqual(queries, []);
+  // The native cold load chooses the first configured source after publishing its indexes.
+  publish({ indexes: [{ url: other }, { url: company }], selected: other, listing: null });
+  publish({ ...state, listing: { url: other, query: initial } });
+  await flush();
+  assert.deepEqual(selections, [company]);
+  assert.deepEqual(queries, [{ url: company, query: { ...initial, text: guide.name } }]);
+  assert.equal(face.hooks.companyMarket.getSnapshot().name, guide.name);
+  face.closeCompanyEntry(); assert.deepEqual(queries.at(-1), { url: company, query: initial });
+  assert.equal(face.hooks.companyMarket.getSnapshot().name, null);
+  state.listing.query = { ...initial, text: "old search", category: "other" };
+  events.get("company-market/select")(guide.name); await flush();
+  assert.equal(state.selected, company);
+  assert.deepEqual(queries.at(-1), { url: company, query: { ...initial, text: guide.name } });
+  events.get("company-market/select")(null); await flush();
+  assert.deepEqual(queries.at(-1), { url: company, query: initial });
+  publish({ indexes: [{ url: other }], selected: other, listing: { url: other, query: initial } });
+  const before = queries.length;
+  events.get("company-market/select")(guide.name); await flush();
+  assert.equal(queries.length, before);
+  events.get("company-market/select")(guide.name);
+  for (const dispose of disposers.splice(0).reverse()) dispose();
+  await flush(); assert.equal(queries.length, before);
+  assert.equal(events.size, 0); assert.equal(listeners.size, 0);
+});
 
 test("仅空白新对话显示最多四个官方入口，草稿、附件和历史对话隐藏入口", async t => {
   const f = await fixture(t), name = "conversation.composer.dock";
@@ -112,6 +170,9 @@ test("能力提交携带真实指令与附件；停用或版本不符拒绝，�
   f.enabled(true); f.version("0.1.0"); assert.equal((await claim.submit("make it", scope, [])).kind, "error");
   assert.equal(f.sent.length, 2);
   assert.equal(await source.matchEnter({}, "/ordinary"), undefined);
+  f.version(guide.version); f.remoteFailure(true);
+  assert.equal((await claim.submit("make it", scope, [])).kind, "error");
+  assert.equal(f.sent.length, 2);
 });
 
 test("缺引导、未启用和旧版本均回到原生设置；打开新对话保留已有草稿", async t => {
@@ -150,9 +211,30 @@ test("固定发布模块修补幂等、兼容数据按钮先后顺序；未知�
   const conversation = fs.readFileSync(path.join(root, "ui-conversation/lib/client.js"), "utf8");
   const patched = patchMarketGuides(patchMarketEntry(entry));
   new vm.Script(patched); assert.equal(patchMarketGuides(patched), patched);
-  for (const text of [patchDataUse(patchGuideUse(patchMarketCatalog(market))), patchGuideUse(patchDataUse(patchMarketCatalog(market)))]) new vm.Script(text);
+  const catalog = patchGuideUse(patchMarketCatalog(market));
+  assert.equal(patchGuideUse(catalog), catalog);
+  const previous = catalog.replace("guide use v3", "guide use v2")
+    .replace(installCompanyMarketNavigation.toString(), "function installCompanyMarketNavigation() { throw new Error('legacy'); }");
+  assert.equal(patchGuideUse(previous), catalog);
+  assert.throws(() => patchGuideUse(previous.replace("function installCompanyMarketNavigation", "function unsupported")));
+  for (const text of [patchDataUse(catalog), patchGuideUse(patchDataUse(patchMarketCatalog(market)))]) new vm.Script(text);
   const next = patchGuidePlaceholder(conversation); new vm.Script(next); assert.equal(patchGuidePlaceholder(next), next);
   assert.throws(() => patchMarketGuides(entry.replace('function apply(ctx)', 'function changed(ctx)')));
+});
+
+test("旧引导升级后与新补丁字节一致；首页实际渲染快捷插槽", { skip: !process.env.GUIDE_RUNTIME }, () => {
+  const root = process.env.GUIDE_RUNTIME;
+  const entry = fs.readFileSync(path.join(root, "ui-entry-customization/lib/client.js"), "utf8");
+  const patched = patchMarketGuides(patchMarketEntry(entry));
+  const legacy = patched.replace("package guides v3", "package guides v1")
+    .replace('"remote", "remote.pluginManager"', '"remote.pluginManager"')
+    .replace(installCompanyGuides.toString(), "function installCompanyGuides() { throw new Error('legacy'); }");
+  assert.equal(patchMarketGuides(legacy), patched);
+  assert.equal(patchMarketGuides(legacy.replace("package guides v1", "package guides v2").replace('"remote.pluginManager"', '"remote", "remote.pluginManager"')), patched);
+  const conversation = fs.readFileSync(path.join(root, "ui-conversation/lib/client.js"), "utf8");
+  const next = patchGuidePlaceholder(conversation);
+  assert.ok(!next.includes('variant === "composer" && input !== void 0 && sessionId !== void 0 ? renderSlot("conversation.composer.dock", {})'));
+  assert.throws(() => patchMarketGuides(legacy.replace("function installCompanyGuides", "function unsupported")));
 });
 
 

@@ -52,7 +52,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
   const maintainers = (name) => officialMaintainers[name] ?? officialPlugins[name]?.maintainers ?? [];
   const designated = (name) => Object.hasOwn(officialPlugins, name);
   const isOfficial = (name, owner) => designated(name) || (officialPublishers.includes(owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*")));
-  const legacyNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动效", "@crysound/data": "兆华数据" };
+  const legacyNames = { "@crysound/design": "兆华设计", "@crysound/motion": "兆华动画", "@crysound/data": "兆华数据" };
   const categories = Object.fromEntries([
     ["design", "设计", "Design"], ["video", "视频", "Video"], ["documents", "文档与报告", "Documents and reports"],
     ["data", "数据", "Data"], ["development", "研发", "Development"], ["sales", "销售与市场", "Sales and marketing"], ["other", "其他", "Other"],

@@ -19,7 +19,8 @@
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
-- 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。缺引导或已装版本不符时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
+- 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
+- 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。
 - 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 在新老工作区一次性移出三款旧预装，保留作品和共用浏览器。发布与版本同步见市场说明。
 - 左下角账号按钮显示飞书头像和姓名，菜单里的“登录”项换成姓名（不可点）。`brand.js` 向 `/_zp/me` 取 `{name, avatar}`：网页版由网关按登录会话回答，桌面版由 `src/main.ts` 按本机保存的登录回答。网页版在账号按钮上方多一个“下载客户端”入口，指向网关的 `/_zp/download`。
 
@@ -73,6 +74,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 ## 网页版（`crysound/web`）
 每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
+- `preview/`：网页版预览 HTML 注入编辑器原生下载标记，主站适配器给公司预览 iframe 单独添加下载许可；桌面版维持存入作品 `exports/` 的原逻辑。此项只需 `build gateway` 后重建网关并刷新网页，不重建用户容器；验证方法见 `preview/README.md`。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
 - `Dockerfile`：每人容器的镜像。dsh 版本固定；公司插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
 - `web/web-tools/`：镜像构建时给固定 dsh 发布产物装公司搜索、抓取适配。搜索按会话模型在 ChatGPT 与 DeepSeek 间选择、失败互相回退；抓取允许最多五跳，对公网地址检查并固定连接地址，短动态页复用镜像 Chromium。登录页明确报错，私网与本机地址不再由 `web_fetch` 读取。测试和回退见 `crysound/web/web-tools/README.md`。
