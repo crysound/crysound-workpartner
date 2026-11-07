@@ -149,7 +149,7 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     const after = await readFile(file, "utf8");
     const config = load(after).findLast(row => row.id === "tool-web").config;
     assert.equal(config.fetchMaxOutputChars, 40000);
-    assert.equal(config.searchTimeoutMs, 25000);
+    assert.equal(config.searchTimeoutMs, 18000);
     assert.equal(config.fetchSummary, true);
     assert.equal(config.fetchSummaryModel, "deepseek/deepseek-flash");
     assert.equal(config.fetchSummaryTimeoutMs, 15000);
@@ -157,7 +157,7 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     assert.match(config.fetchSummaryBaseURL, /CRYSOUND_LLM_BASE/);
     const tools = [];
     apply({ tools: { register: tool => tools.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, Config(config));
-    assert.equal(tools.find(tool => tool.name === "web_search").timeoutMs, 25000);
+    assert.equal(tools.find(tool => tool.name === "web_search").timeoutMs, 18000);
     const fetch = tools.find(tool => tool.name === "web_fetch");
     const result = { url: "https://example.com/article", statusCode: 200, body: { kind: "text", content: "证据".repeat(30000) }, truncated: false };
     const output = fetch.output.render({}, result)[0].text;
@@ -406,7 +406,7 @@ test("startup refreshes missing and literal search settings from company config 
     const search = load(after).find(row => row.id === "web-search-deepseek");
     assert.equal(search.config.baseURL, "process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL");
     assert.match(after, /baseURL: !!js process.env.CRYSOUND_LLM_BASE \|\| process.env.DEEPSEEK_BASE_URL/);
-    assert.equal(search.config.model, "deepseek/deepseek-flash");
+    assert.equal(search.config.model, "codex/gpt-6-luna");
     if (baseURL !== undefined) {
       assert.equal(search.config.maxResults, 3);
       assert.equal(search.disabled, true);

@@ -148,15 +148,16 @@ test("compressed responses decode before text extraction and unsupported encodin
   await assert.rejects(wireCap.fetch({ url: "https://public.example/gzip" }), { code: "WEB_FETCH_TOO_LARGE" });
 });
 
-test("fallback always tries GPT then DeepSeek on HTTP, network, empty-tool and timeout failures", async t => {
+test("fallback always tries Luna then DeepSeek on HTTP, network, empty-tool and timeout failures", async t => {
+  const root = await patchedRelease(t);
   for (const failure of ["http", "network", "missing", "timeout"]) {
     const calls = [], logs = [];
-    const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
+    const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => {
       calls.push(JSON.parse(init.body).model);
       if (calls.length > 1) return Response.json(searchResult);
       if (failure === "http") return new Response("bad gateway", { status: 502 });
       if (failure === "network") throw new TypeError("network down");
-      if (failure === "missing") return Response.json({ content: [{ type: "text", text: "No native search" }] });
+      if (failure === "missing") return Response.json({ content: [{ type: "text", text: "   " }] });
       return new Promise((resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
     } });
     // Keep Node alive while the timeout under test fires (AbortSignal timers are unref'ed).
@@ -164,17 +165,18 @@ test("fallback always tries GPT then DeepSeek on HTTP, network, empty-tool and t
     try {
       const result = await searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: entry => logs.push(entry) }, { query: "新闻" }, undefined, 20);
       assert.equal(result.sources[0].title, "新闻");
-      assert.deepEqual(calls, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
+      assert.deepEqual(calls, ["codex/gpt-6-luna", "deepseek/deepseek-flash"]);
       assert.deepEqual(logs.map(entry => entry.body.model), calls);
     } finally { clearInterval(keepAlive); }
   }
 });
 
-test("default search attempts stop at ten seconds before falling back", async t => {
+test("default search attempts stop at seven seconds before falling back", async t => {
+  const root = await patchedRelease(t);
   const budgets = [], calls = [];
   const timeout = AbortSignal.timeout.bind(AbortSignal);
   t.mock.method(AbortSignal, "timeout", milliseconds => { budgets.push(milliseconds); return timeout(10); });
-  const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
+  const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => {
     calls.push(JSON.parse(init.body).model);
     if (calls.length === 2) return Response.json(searchResult);
     return new Promise((resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
@@ -183,8 +185,8 @@ test("default search attempts stop at ten seconds before falling back", async t 
   try {
     const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "新闻" });
     assert.equal(result.sources.length, 1);
-    assert.deepEqual(calls, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
-    assert.deepEqual(budgets, [10000, 10000]);
+    assert.deepEqual(calls, ["codex/gpt-6-luna", "deepseek/deepseek-flash"]);
+    assert.deepEqual(budgets, [7000, 7000]);
   } finally { clearInterval(keepAlive); }
 });
 
@@ -203,6 +205,65 @@ test("both failed searches produce one structured error after exactly two attemp
   const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async () => { calls++; return new Response(null, { status: 503 }); } });
   await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "q" }), error => error.code === "WEB_PROVIDER_ERROR" && error.cause.errors.length === 2);
   assert.equal(calls, 2);
+});
+
+test("released search returns bounded answer text with citations or without source blocks", async t => {
+  const root = await patchedRelease(t);
+  for (const mode of ["linked", "empty-results", "text-only", "short", "emoji"]) {
+    const answer = mode === "short" ? "杭州今天晴。" : mode === "emoji" ? "证".repeat(798) + "😀尾" : "杭州今天晴，最高气温 22℃。" + "证".repeat(900);
+    const excerpt = "杭州晴，22℃" + "证".repeat(900);
+    const blocks = mode === "text-only" ? [] : [
+      { type: "text", text: "Searching now; this is not the answer." },
+      { type: "web_search_tool_result", content: mode === "linked" ? searchResult.content[0].content : [] },
+    ];
+    blocks.push({ type: "text", text: answer, citations: mode === "linked" ? [{ url: "https://news.example/item", cited_text: excerpt }] : [] });
+    const api = await released("dsh-web-search-deepseek", { root, fetch: async () => Response.json({ content: blocks }) });
+    const result = await searchWithFallback(api.DeepSeekSearchProvider, WebError, options, { query: "杭州天气" });
+    if (mode === "short") assert.equal(result.content, answer);
+    else if (mode === "emoji") assert.equal(result.content, "证".repeat(798) + "…");
+    else {
+      assert.equal(result.content.length, 800);
+      assert.ok(result.content.endsWith("…"));
+      assert.ok(result.content.startsWith("杭州今天晴"));
+    }
+    assert.equal(result.sources.length, mode === "linked" ? 1 : 0);
+    if (mode === "linked") {
+      assert.equal(result.sources[0].url, "https://news.example/item");
+      assert.equal(result.sources[0].summary, excerpt.slice(0, 799) + "…");
+    }
+    const tools = await released("dsh-tool-web", { root });
+    const registered = [];
+    tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } }, web: { search: async () => result } }, tools.Config({}));
+    const tool = registered.find(tool => tool.name === "web_search");
+    const value = await tool.execute({ queries: ["杭州天气"] }, { signal: new AbortController().signal });
+    const rendered = tool.output.render({}, value)[0].text;
+    assert.ok(rendered.includes(result.content));
+    assert.doesNotMatch(rendered, /Searching now|No results found/);
+    assert.equal(tool.output.presentationMeta({}, value).answer, result.content);
+    if (mode === "linked") assert.match(rendered, /https:\/\/news.example\/item/);
+  }
+});
+
+test("released search dispatches after credentials and logging without a timer or extra model turn", { timeout: 5000 }, async t => {
+  const root = await patchedRelease(t);
+  const events = [];
+  const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => {
+    events.push("http:" + JSON.parse(init.body).model);
+    return Response.json(searchResult);
+  } });
+  let provider;
+  api.apply({
+    web: { registerSearchProvider: value => { provider = value; } },
+    get: name => name === "credentials" ? { resolve: async () => { events.push("credential"); return { value: "fixture-key" }; } }
+      : name === "agents" ? { currentInitiator: () => ({ session: {
+        requestContext: () => ({ provider: "magpie" }),
+        append: () => events.push("request-log"),
+      } }) } : undefined,
+  }, Object.fromEntries(Object.entries({ ...options, apiKey: undefined, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+  // No clock advance: an introduced sleep/debounce would prevent dispatch and fail this test.
+  t.mock.timers.enable({ apis: ["setTimeout", "setImmediate"] });
+  await provider.search({ query: "杭州天气" });
+  assert.deepEqual(events, ["credential", "request-log", "http:codex/gpt-6-luna"]);
 });
 
 test("login URLs and HTML are explicit failures; static articles need no browser", async () => {
@@ -318,8 +379,13 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const tools = await released("dsh-tool-web", { root });
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
-  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 65000, "two 30-second attempts fit in the real tool deadline");
+  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "two seven-second attempts fit in the real tool deadline");
   assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 45000);
+  const toolFile = join(root, "@deepseek-ai/dsh-tool-web/lib/index.js");
+  const currentTool = await readFile(toolFile, "utf8");
+  await writeFile(toolFile, currentTool.replace('searchTimeoutMs: z.number().default(18_000)', 'searchTimeoutMs: z.number().default(65_000)'));
+  patchWebTools(root);
+  assert.equal(await readFile(toolFile, "utf8"), currentTool, "previous company deadline migrates to the current deadline");
   const before = await readFile(file, "utf8");
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), before);
@@ -330,7 +396,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   await provider.search({ query: "q" });
   selected = "deepseek/chat";
   await provider.search({ query: "q" });
-  assert.deepEqual(log, ["codex/gpt-6.1-sol", "codex/gpt-6.1-sol"]);
+  assert.deepEqual(log, ["codex/gpt-6-luna", "codex/gpt-6-luna"]);
   const fetchApi = await released("dsh-web-fetch-http", { root });
   let fetcher;
   const context = { web: { registerFetchProvider: value => { fetcher = value; } } };
@@ -543,6 +609,8 @@ test("patched tool imports through real release dependencies and auxiliary reque
   const root = await patchedRelease(t);
   await symlink(process.env.DSH_WEB_TOOLS_RELEASE_ROOT, join(root, "node_modules"), "dir");
   const api = await import(pathToFileURL(join(root, "@deepseek-ai/dsh-tool-web/lib/index.js")).href);
+  const searchApi = await import(pathToFileURL(join(root, "@deepseek-ai/dsh-web-search-deepseek/lib/index.js")).href);
+  assert.equal(new searchApi.DeepSeekSearchProvider(() => options).available(), true);
   const require = createRequire(join(process.env.DSH_WEB_TOOLS_RELEASE_ROOT, "@deepseek-ai/dsh-web-search-deepseek/lib/index.js"));
   const { Session, SessionId, appendPluginRecord } = await import(pathToFileURL(require.resolve("@deepseek-ai/dsh-session")).href);
   const { credentialRef } = await import(pathToFileURL(require.resolve("@deepseek-ai/dsh-credentials")).href);

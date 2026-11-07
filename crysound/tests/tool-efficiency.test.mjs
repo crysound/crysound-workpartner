@@ -50,6 +50,7 @@ test("refreshed profile loads real company guidance through Loader and ordinary 
   assert.match(text, /approval/);
   assert.match(text, /stop searching and fetching once the evidence is sufficient/);
   assert.match(text, /meet any requested source count/);
+  assert.match(text, /If the search answer or source summaries already answer the question, answer directly with the available source links without web_fetch/);
   assert.match(text, /Supply web_fetch's optional prompt/);
   assert.match(text, /403, login required, or anti-bot restrictions/);
   assert.match(text, /use another source; do not write scripts, curl commands, or other workarounds/);
