@@ -54,7 +54,8 @@ async function until(expression, label) {
     if (await evaluate(expression)) { checks.push(label); return; }
     await pause(100);
   }
-  throw new Error('Timed out: ' + label);
+  const metrics=await call('function(){return {width:innerWidth,visible:document.visibilityState,frame:document.querySelector("[class*=frame]")?.getBoundingClientRect().width}}');
+  throw new Error('Timed out: ' + label + ' ' + JSON.stringify(metrics));
 }
 async function click(selector) {
   const rect = await call('function(selector){const r=document.querySelector(selector)?.getBoundingClientRect();return r&&{x:r.x+r.width/2,y:r.y+r.height/2}}', selector);
@@ -102,7 +103,6 @@ ws.onmessage = async event => {
         assert.ok(start >= 0);
         const chunk = body.slice(start, end < 0 ? undefined : end);
         body = body.slice(0, start) + patch(chunk) + (end < 0 ? '' : body.slice(end));
-        if (name === 'skin.js') body += '\nwindow.__zpSkinFirstPaint = document.documentElement.dataset.zpSkin;';
       patched.add(name);
       }
       if (body.includes("id: '@crysound/feishu-settings'")) {
@@ -231,15 +231,27 @@ try {
       const style=getComputedStyle(el);
       return ['color','backgroundColor','borderTopColor','outlineColor'].flatMap(key=>{
         const value=style[key], m=value.match(/rgba?\\((\\d+), (\\d+), (\\d+)/);
-        return m && +m[3]>+m[1]+20 && +m[3]>+m[2]+15 && !(key==='outlineColor' && style.outlineStyle==='none') ? [{tag:el.tagName,class:el.className,key,value}] : [];
+        const functional = (key==='outlineColor' && value==='rgb(65, 124, 221)') || (el.tagName==='A' && ['rgb(29, 78, 216)','rgb(147, 197, 253)'].includes(value)) || (el.getAttribute('role')==='switch' && key==='backgroundColor' && value==='rgb(65, 124, 221)');
+        return m && +m[3]>+m[1]+20 && +m[3]>+m[2]+15 && !functional && !(key==='outlineColor' && style.outlineStyle==='none') ? [{tag:el.tagName,class:el.className,key,value}] : [];
       });
     })}`);
-    assert.deepEqual(blue,[],name+' has no blue interaction emphasis');
-    checks.push(name+' visible interactive foregrounds, fills, borders and focus outlines contain no blue');
+    assert.deepEqual(blue,[],name+' has no blue emphasis outside Cindy functional colors');
+    checks.push(name+' visible interaction colors match neutral emphasis or Cindy functional blue');
   };
   for (const dark of [false,true]) {
     await call('function(dark){document.body.toggleAttribute("data-ds-dark-theme",dark)}', dark);
     const theme = dark ? 'dark' : 'light';
+    const geometry = await evaluate(`(()=>{
+      const root=document.querySelector('[data-zp-sidebar]'), mark=root.querySelector('[class*="_brandMark"]'), name=root.querySelector('[class*="_brandName"]'), icon=root.querySelector('[data-zp-panel] [class*="_panelGlyph"]'), title=root.querySelector('[data-zp-panel] [class*="_panelTitle"]');
+      const m=mark.getBoundingClientRect(), n=name.getBoundingClientRect(), i=icon.getBoundingClientRect(), t=title.getBoundingClientRect();
+      const text=getComputedStyle(name,'::after'), label=getComputedStyle(root.querySelector('[data-slot="sidebar.brand.name"]'),'::after');
+      return {mark:{x:m.x,y:m.y,w:m.width,h:m.height},iconCenter:i.x+i.width/2,markCenter:m.x+m.width/2,nameX:n.x,titleX:t.x,gap:n.x-m.right,font:label.fontSize,weight:label.fontWeight};
+    })()`);
+    assert.equal(geometry.mark.w,22); assert.equal(geometry.mark.h,22);
+    assert.ok(Math.abs(geometry.markCenter-geometry.iconCenter)<1,JSON.stringify(geometry));
+    assert.ok(Math.abs(geometry.nameX-geometry.titleX)<1,JSON.stringify(geometry));
+    assert.equal(geometry.gap,8); assert.equal(geometry.font,'15px'); assert.equal(geometry.weight,'600');
+    checks.push(theme+' brand alignment: '+JSON.stringify(geometry));
     const statusColors = async () => evaluate(`(()=>{const s=getComputedStyle(document.body);return Object.fromEntries([...s].filter(k=>k.startsWith('--dsw-alias-state-')&&!k.includes('business')).map(k=>[k,s.getPropertyValue(k)]))})()`);
     const softStatuses=await statusColors();
     await evaluate('document.documentElement.dataset.zpSkin="default"');
@@ -281,6 +293,7 @@ try {
     await until('document.querySelector("[data-zp-sidebar]").className.includes("_collapsed")','rail opens');
     await screenshot(theme+'-collapsed', {x:0,y:0,width:56,height:900});
     await click('[data-zp-sidebar] [data-zp-sidebar-search]'); await until(expanded+' && document.activeElement.tagName==="INPUT"','rail search expands and focuses input'); await key('Escape');
+    await send('Page.bringToFront');
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
     await until('!!document.querySelector("[data-sidebar-opener]")','mobile opener'); await click('[data-sidebar-opener]');
     await until('document.querySelector("[data-zp-sidebar]")?.getAttribute("aria-modal")==="true"','mobile drawer opens');
@@ -313,6 +326,55 @@ try {
     await until('!document.querySelector(".zp-skin-setting")','settings closes');
     await click('[data-row-key^="session:"]');
     await until('!!document.querySelector("[role=tab][aria-selected=true]")','conversation restored');
+  }
+  for (const dark of [false,true]) {
+    await call('function(d){document.body.toggleAttribute("data-ds-dark-theme",d)}',dark);
+    const normal = await evaluate('getComputedStyle(document.body).getPropertyValue("--dsw-specific-sidebar-fill").trim()');
+    assert.equal(normal,dark?'#080808':'#E0E0DC');
+    await call('function(){document.documentElement.dataset.platform="darwin"}');
+    const backing=await evaluate('getComputedStyle(document.querySelector("[class*=\\"_sidebarCol\\"]")).backgroundColor');
+    assert.equal(backing,dark?'rgba(5, 5, 5, 0.85)':'rgba(238, 238, 233, 0.85)');
+    await evaluate('delete document.documentElement.dataset.platform');
+    checks.push((dark?'dark':'light')+' Mac CSS backing and opaque web fallback match');
+  }
+  const desktopGeometry = await call(`async function(){
+    const results=[];
+    for(const platform of ['darwin','win32']) {
+      document.documentElement.dataset.platform=platform;
+      document.documentElement.toggleAttribute('data-windows-titlebar',platform==='win32');
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      const root=document.querySelector('[data-zp-sidebar]');
+      const mark=root.querySelector('[class*="_brandMark"]'),name=root.querySelector('[class*="_brandName"]'),icon=root.querySelector('[data-zp-panel] [class*="_panelGlyph"]'),title=root.querySelector('[data-zp-panel] [class*="_panelTitle"]');
+      const m=mark.getBoundingClientRect(),n=name.getBoundingClientRect(),i=icon.getBoundingClientRect(),t=title.getBoundingClientRect();
+      results.push({platform,markWidth:m.width,markHeight:m.height,centers:(m.x+m.width/2)-(i.x+i.width/2),textLeft:n.x-t.x,gap:n.x-m.right,weight:getComputedStyle(name).fontWeight,transform:getComputedStyle(mark).transform});
+    }
+    delete document.documentElement.dataset.platform;
+    document.documentElement.removeAttribute('data-windows-titlebar');
+    return results;
+  }`);
+  for(const item of desktopGeometry){
+    assert.equal(item.markWidth,22);assert.equal(item.markHeight,22);
+    assert.ok(Math.abs(item.centers)<1,JSON.stringify(item));assert.ok(Math.abs(item.textLeft)<1,JSON.stringify(item));
+    assert.equal(item.gap,8);assert.equal(item.weight,'600');assert.equal(item.transform,'none');
+    checks.push('desktop attribute simulation (not Electron): '+JSON.stringify(item));
+  }
+  for(const dark of [false,true]){
+    await call('function(d){document.body.toggleAttribute("data-ds-dark-theme",d)}',dark);
+    const colors=await call(`function(){
+      const box=document.createElement('div');
+      box.innerHTML='<a href="#zp-palette-probe">probe</a><button role="switch" aria-checked="true"><span>probe</span></button><button role="switch" aria-checked="false">probe</button><input>';
+      document.body.append(box);
+      const [link,on,off,input]=box.children;
+      const result={link:getComputedStyle(link).color,on:getComputedStyle(on).backgroundColor,off:getComputedStyle(off).backgroundColor,thumb:getComputedStyle(on.firstChild).backgroundColor,caret:getComputedStyle(input).caretColor};
+      document.documentElement.dataset.inputModality='keyboard';
+      result.focus=getComputedStyle(input).getPropertyValue('--dsw-focus-ring-color').trim();
+      box.remove();return result;
+    }`);
+    assert.equal(colors.link,dark?'rgb(147, 197, 253)':'rgb(29, 78, 216)');
+    assert.equal(colors.on,'rgb(65, 124, 221)');assert.equal(colors.off,dark?'rgb(120, 120, 120)':'rgb(128, 128, 128)');
+    assert.equal(colors.thumb,dark?'rgb(252, 252, 252)':'rgb(242, 242, 237)');
+    assert.equal(colors.caret,'rgb(65, 124, 221)');assert.equal(colors.focus,'#417CDD');
+    checks.push((dark?'dark':'light')+' isolated CSS functional-color probes: '+JSON.stringify(colors));
   }
   assert.deepEqual(errors,[]);
   fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({preview:'Dedicated persistent-browser tab; branch response substitution over the real authenticated server. Not a deployed image or Electron.',patched:[...patched],checks,errors,notVerified:['Rebuilt partner image','Actual macOS/Windows Electron package','Linux web has no upstream default search shortcut; Ctrl+Alt+K tested with navigator.platform=Win32']},null,2)+'\n');
