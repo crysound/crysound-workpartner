@@ -6,13 +6,14 @@ import { installCompanyGuides } from "./patch-market-guide-client.mjs";
  * @returns {string} Idempotently patched module; unsupported input throws.
  */
 export function patchMarketGuides(text) {
-  const marker = "/* CRYSOUND package guides v3 */";
+  const marker = "/* CRYSOUND package guides v4 */";
   if (text.includes(marker)) return text;
-  if (text.includes("/* CRYSOUND package guides v2 */")) {
+  const previous = ["/* CRYSOUND package guides v3 */", "/* CRYSOUND package guides v2 */"].find(value => text.includes(value));
+  if (previous) {
     const start = text.indexOf("function installCompanyGuides(");
     const end = text.indexOf("\nfunction apply(ctx) {", start);
     if (start < 0 || end < 0) throw new Error("插件引导导航升级未唯一命中");
-    return (text.slice(0, start) + installCompanyGuides.toString() + text.slice(end)).replace("/* CRYSOUND package guides v2 */", marker);
+    return (text.slice(0, start) + installCompanyGuides.toString() + text.slice(end)).replace(previous, marker);
   }
   if (text.includes("/* CRYSOUND package guides v1 */")) {
     const before = '"uiWorkspace", "sessions", "workspaces", "remote.pluginManager", "conversation", "inputTriggers"\n';
@@ -133,9 +134,8 @@ export function patchGuidePlaceholder(text) {
 }
 
 const guideCss = `
-.zp-guide-shortcuts { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:12px 0; }
-.zp-guide-shortcuts button,.zp-guide-card button { font:inherit; text-align:left; border:1px solid var(--dsw-alias-border-l3); background:var(--dsw-alias-bg-module-platform); color:inherit; border-radius:12px; padding:8px 12px; cursor:pointer; }
-.zp-guide-shortcuts button:hover,.zp-guide-card button:hover { background:var(--dsw-alias-bg-hover); }
+.zp-guide-card button { font:inherit; text-align:left; border:1px solid var(--dsw-alias-border-l3); background:var(--dsw-alias-bg-module-platform); color:inherit; border-radius:12px; padding:8px 12px; cursor:pointer; }
+.zp-guide-card button:hover { background:var(--dsw-alias-bg-hover); }
 .zp-guide-tag { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--dsw-alias-border-l3); border-radius:10px; padding:3px 8px; font-size:12px; white-space:nowrap; }
 .zp-guide-tag button { font:inherit; background:none; border:0; color:inherit; cursor:pointer; }
 [data-composer-command^="zp-guide:"] { display:none; }

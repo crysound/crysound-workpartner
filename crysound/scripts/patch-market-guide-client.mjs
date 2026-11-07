@@ -9,8 +9,8 @@
  */
 export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
   const copy = {
-    zh: { market: "去市场看看", cancel: "取消能力", unavailable: "请先安装或启用这个插件的已批准版本", draft: "请先发送或清空新对话中的草稿，再选择能力", failed: "插件引导暂时无法读取，请重试", retry: "重试", example: "试试这样问" },
-    en: { market: "Explore the market", cancel: "Remove capability", unavailable: "Install or enable the approved plugin version first", draft: "Send or clear the new conversation draft before choosing a capability", failed: "Could not load plugin guidance. Try again", retry: "Retry", example: "Try asking" },
+    zh: { cancel: "取消能力", unavailable: "请先安装或启用这个插件的已批准版本", draft: "请先发送或清空新对话中的草稿，再选择能力", failed: "插件引导暂时无法读取，请重试", example: "试试这样问" },
+    en: { cancel: "Remove capability", unavailable: "Install or enable the approved plugin version first", draft: "Send or clear the new conversation draft before choosing a capability", failed: "Could not load plugin guidance. Try again", example: "Try asking" },
   };
   const catalog = createSnapshotStore({ guides: [], error: false });
   const language = () => ctx.locale.resolveText({ zh: "zh", en: "en" }) === "zh" ? "zh" : "en";
@@ -71,10 +71,6 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
     hooks: { companyGuides: catalog, guideLocale: ctx.locale },
     copy: text,
     guideLanguage: language,
-    browse: () => ctx.bail(ctx, "company-market/open", null),
-    choose: name => { void open(name, () => ctx.bail(ctx, "company-market/open", name)).catch(() => {
-      const scope = ctx.sessions.scope(sessionId); scope?.get("conversation").input.for(scope).notify("error", text("draft"));
-    }); },
     cancel: state => {
       const scope = ctx.sessions.scope(sessionId);
       scope?.bail(scope, "slash/input-consume-token", { guard: { kind: "span", span: { start: 0, end: 1, draftRev: state.draftRev } } });
@@ -88,23 +84,12 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
       const end = state.draft.length - token(guide).trimEnd().length + 1;
       if (input.insertText(example, { start: end, end, draftRev: state.draftRev })) input.submit();
     },
-    retry: () => { void load(); },
   });
   function selected(props) {
     const input = props.useInput(state => state);
     const { guides } = props.useCompanyGuides(state => state);
     props.useGuideLocale(state => state);
     return { input, guide: guides.find(row => input.claim?.name === `zp-guide:${row.name}`) };
-  }
-  function Shortcuts(props) {
-    const blank = props.useSession(state => state.blank && !state.running && !state.promptAttempted);
-    const { input } = selected(props), { guides, error } = props.useCompanyGuides(state => state);
-    if (!blank || input.draft !== "" || input.attachmentIds.length) return null;
-    return jsxs("div", { className: "zp-guide-shortcuts", children: [
-      ...guides.filter(row => row.home).slice(0, 4).map(guide => jsx("button", { type: "button", onClick: () => props.choose(guide.name), children: guide.title }, guide.name)),
-      jsx("button", { type: "button", onClick: props.browse, children: props.copy("market") }),
-      error && jsx("button", { type: "button", onClick: props.retry, children: props.copy("retry"), title: props.copy("failed") }),
-    ] });
   }
   function Tag(props) {
     const { input, guide } = selected(props);
@@ -135,7 +120,7 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
     async matchClaim(session, spelling, signal) { if (!spelling.startsWith("/zp-guide-")) return; await load(); signal.throwIfAborted(); const guide = find(spelling); return guide ? claim(guide) : undefined; },
     async matchEnter(session, line) { if (!line.startsWith("/zp-guide-")) return; const guide = find(line.split(/\s/u)[0]); if (!guide) throw new Error(text("failed")); return { claim: claim(guide) }; },
   }));
-  for (const [name, Component] of [["conversation.composer.dock", Shortcuts], ["conversation.input.left", Tag], ["conversation.input.dock", Guide]]) {
+  for (const [name, Component] of [["conversation.input.left", Tag], ["conversation.input.dock", Guide]]) {
     ctx.slots.inject(name, () => ctx.slots.register({ name, id: "zp-guide", inject: face }, Component));
   }
 }
