@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { patchMarketCatalog } from "./patch-market-catalog.mjs";
 import { patchMarketEntry } from "./patch-market-entry.mjs";
+import { patchMarketGuides, patchGuideUse, patchGuidePlaceholder } from "./patch-market-guides.mjs";
 import { pathToFileURL } from "node:url";
 import { marketLocales } from "../brand/market-locales.mjs";
 
@@ -68,14 +69,15 @@ export function patchMarketUiFile(file) {
 }
 
 /**
- * Patch four pinned browser modules before runtime integrity records are generated.
+ * Patch five pinned browser modules before runtime integrity records are generated.
  * @param {string} root Materialized runtime node_modules directory.
  * @returns {void}
  */
 export function patchCompanyMarketRuntime(root) {
   const files = [
-    ["ui-plugin-manager", patchMarketUi], ["ui-plugin-market", patchMarketCatalog],
-    ["ui-entry-customization", patchMarketEntry], ["ui-sidebar", patchMarketSidebar],
+    ["ui-plugin-manager", patchMarketUi], ["ui-plugin-market", text => patchGuideUse(patchMarketCatalog(text))],
+    ["ui-entry-customization", text => patchMarketGuides(patchMarketEntry(text))], ["ui-sidebar", patchMarketSidebar],
+    ["ui-conversation", patchGuidePlaceholder],
   ];
   const changes = files.map(([name, patch]) => {
     const file = path.join(root, `@deepseek-ai/dsh-client-${name}/lib/client.js`);

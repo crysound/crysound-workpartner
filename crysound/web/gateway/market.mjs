@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import semver from "semver";
+import { parsePluginGuide } from "./plugin-guide.mjs";
 
 const PREFIX = "/_zp/npm/";
 const PACKAGE = /^@crysound\/[a-z0-9][a-z0-9._~-]*$/;
@@ -47,7 +48,7 @@ function readState(file) {
  */
 export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
   if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
-  if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
+  if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()) || (entry.home !== undefined && typeof entry.home !== "boolean"))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
   const maintainers = (name) => officialMaintainers[name] ?? officialPlugins[name]?.maintainers ?? [];
   const designated = (name) => Object.hasOwn(officialPlugins, name);
   const isOfficial = (name, owner) => designated(name) || (officialPublishers.includes(owner) && (officialPackages.includes(name) || officialPackages.includes("@crysound/*")));
@@ -93,6 +94,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     for (const field of ["displayName", "title"]) {
       if (manifest[field] !== undefined && (typeof manifest[field] !== "string" || !manifest[field].trim() || manifest[field].length > 80)) throw fail(400, `${field} 必须是 1 到 80 字的显示名`);
     }
+    try { parsePluginGuide(manifest.dsh?.market?.guide); } catch (error) { throw fail(400, error.message); }
     if (!doc._attachments || typeof doc._attachments !== "object" || Array.isArray(doc._attachments) || Object.keys(doc._attachments).length !== 1 || doc._deleted || doc._rev) throw fail(400, "只接受带 tarball 的新版本发布");
     // 仅向后端发送新版本数据，丢弃调用者的权限、修订号等注册表字段。
     const upload = JSON.stringify({ name, versions: { [version]: manifest }, "dist-tags": {}, _attachments: doc._attachments, readme: typeof doc.readme === "string" ? doc.readme : "" });
@@ -138,8 +140,9 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     });
   }
 
-  async function index(res) {
+  async function index(res, guidesOnly = false) {
     const plugins = [];
+    const guides = [];
     const users = readUsers();
     const labels = { "crysound-official": { title: { zh: "兆华官方", en: "CRYSOUND official" } } };
     for (const [name, pkg] of Object.entries(state.packages)) {
@@ -159,6 +162,11 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const manifest = doc.versions[(versions.find((v) => semver.prerelease(v.version) === null) ?? versions[0]).version];
       const official = isOfficial(name, pkg.owner);
       const title = (official ? (officialPlugins[name]?.displayName ?? legacyNames[name]) : undefined) || manifest.displayName || manifest.title;
+      if (guidesOnly && official) {
+        let guide;
+        try { guide = parsePluginGuide(manifest.dsh?.market?.guide); } catch (error) { throw fail(502, "已批准版本的引导内容无效"); }
+        if (guide) guides.push({ name, version: manifest.version, title: title || name, home: officialPlugins[name]?.home === true, guide });
+      }
       if (title !== undefined && (typeof title !== "string" || !title.trim() || title.length > 80)) throw fail(502, "已批准版本的显示名无效");
       const maintenanceLabels = official ? (maintainers(name).length ? maintainers(name) : [pkg.owner]).filter((slug, index, slugs) => slugs.indexOf(slug) === index).flatMap((slug) => {
         const person = users.find((user) => user.slug === slug)?.name;
@@ -180,6 +188,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       });
     }
     plugins.sort((a, b) => Number(b.metadata.labels.includes("crysound-official")) - Number(a.metadata.labels.includes("crysound-official")) || Math.max(...b.versions.map((v) => v.publishTimestamp)) - Math.max(...a.versions.map((v) => v.publishTimestamp)) || a.name.localeCompare(b.name));
+    if (guidesOnly) return json(res, 200, { guides: guides.sort((a, b) => Object.keys(officialPlugins).indexOf(a.name) - Object.keys(officialPlugins).indexOf(b.name)) });
     json(res, 200, { format: 1, title: "兆华市场", metadata: { categories, labels, sortKeys: {} }, plugins });
   }
 
@@ -222,6 +231,10 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     if (!url.pathname.startsWith(PREFIX) && !url.pathname.startsWith("/_zp/market/")) return false;
     try {
       if (url.pathname === "/_zp/market/admin") { await admin(req, res); return true; }
+      if (url.pathname === "/_zp/market/guides.json" && req.method === "GET") {
+        if (!authenticate(req) && !sessionUser(req)) throw fail(401, "市场登录已失效，请重新登录");
+        await index(res, true); return true;
+      }
       const user = authenticate(req);
       if (!user) throw fail(401, "市场登录已失效，请重新登录");
       if (url.pathname === "/_zp/market/index.json" && req.method === "GET") { await index(res); return true; }

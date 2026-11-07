@@ -520,3 +520,30 @@ test("兆华数据经同一审批进入普通市场索引，分类为数据，�
   assert.equal(parseMarketIndex(index, `${publicOrigin}/_zp/market/index.json`).plugins[0].name, "@crysound/data");
   assert.equal((await f.request("/_zp/market/data.json", { headers: bearer("alice") })).status, 404);
 });
+
+test("包内引导只读已批准官方版本，首页开关来自公司名单；网页与桌面均需本人身份", async (t) => {
+  const f = await fixture(t, { officialPlugins: { [name]: { displayName: "兆华示例", maintainers: ["alice"], home: true } } });
+  const guide = { zh: { summary: "整理文件", prompt: "使用示例插件", examples: ["整理报告", "生成清单", "检查格式"] }, en: { summary: "Organize files", prompt: "Use the example plugin", examples: ["Organize a report", "Make a list", "Check formatting"] } };
+  const publish = async (version, summary) => {
+    const body = doc(version); body.versions[version].dsh.market = { guide: { ...guide, zh: { ...guide.zh, summary } } };
+    return f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) });
+  };
+  const endpoint = "/_zp/market/guides.json";
+  assert.equal((await f.request(endpoint)).status, 401);
+  assert.equal((await publish("1.0.0", "批准的说明")).status, 201);
+  assert.deepEqual(JSON.parse((await f.request(endpoint, { headers: bearer("bob") })).text).guides, []);
+  await f.review("1.0.0");
+  await publish("2.0.0", "尚未批准的说明");
+  for (const headers of [bearer("bob"), { cookie: "test-session=alice" }]) {
+    const response = await f.request(endpoint, { headers });
+    assert.equal(response.status, 200);
+    assert.equal(JSON.parse(response.text).guides[0].version, "1.0.0");
+    assert.equal(JSON.parse(response.text).guides[0].guide.zh.summary, "批准的说明");
+    assert.equal(JSON.parse(response.text).guides[0].home, true);
+    assert.equal(JSON.parse(response.text).guides[0].title, "兆华示例");
+  }
+  const malformed = doc("3.0.0"); malformed.versions["3.0.0"].dsh.market = { guide: { zh: guide.zh } };
+  assert.equal((await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(malformed) })).status, 400);
+  f.options.officialPlugins = {}; f.restart();
+  assert.deepEqual(JSON.parse((await f.request(endpoint, { headers: bearer("alice") })).text).guides, []);
+});

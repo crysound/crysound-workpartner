@@ -8,17 +8,17 @@ import vm from "node:vm";
 import { patchCompanyMarketRuntime } from "../patch-market-ui.mjs";
 
 const source = process.env.MARKET_RUNTIME_MODULES;
-if (!source) throw new Error("MARKET_RUNTIME_MODULES must contain the four published @deepseek-ai browser modules");
+if (!source) throw new Error("MARKET_RUNTIME_MODULES must contain the five published @deepseek-ai browser modules");
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "zp-market-catalog-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.cpSync(source, root, { recursive: true });
-  const clients = ["ui-plugin-manager", "ui-plugin-market", "ui-entry-customization", "ui-sidebar"].map((name) => path.join(root, `@deepseek-ai/dsh-client-${name}/lib/client.js`));
+  const clients = ["ui-plugin-manager", "ui-plugin-market", "ui-entry-customization", "ui-sidebar", "ui-conversation"].map((name) => path.join(root, `@deepseek-ai/dsh-client-${name}/lib/client.js`));
   return { root, clients };
 }
 
-test("网页与桌面四模块修补可解析、重复执行字节不变且保留文件权限与独立副本", (t) => {
+test("网页与桌面五模块修补可解析、重复执行字节不变且保留文件权限与独立副本", (t) => {
   const { root, clients } = fixture(t);
   const linked = path.join(root, "unmodified-client.js");
   const original = fs.readFileSync(clients[0], "utf8");

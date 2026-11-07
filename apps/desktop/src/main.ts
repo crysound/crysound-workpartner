@@ -71,10 +71,11 @@ import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import {
-  BRAND_FILES, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
+  BRAND_FILES, PARTNER_ORIGIN, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
   openLoginWindow, openPreparingWindow, partnerHostEnvironment, type PreparingWindow,
 } from './crysound/partner.ts'
 import { prepareCompanyWorkspace } from './crysound/workspace.ts'
+import { companyGuideResponse } from './crysound/plugin-guides.ts'
 import { onPartnerAuthExpired } from './crysound/auth-events.ts'
 
 /** The company build never opens DeepSeek account pages or its welcome/sign-in window. */
@@ -833,6 +834,10 @@ async function main(): Promise<void> {
         return readPartnerSession().then(signedIn => signedIn === undefined
           ? new Response(null, { status: 401 })
           : Response.json({ name: signedIn.name, avatar: signedIn.avatar }))
+      }
+      // CRYSOUND: package guidance uses the same current desktop identity as the company market.
+      if (url.pathname === '/_zp/market/guides.json' && request.method === 'GET') {
+        return readPartnerSession().then(signedIn => companyGuideResponse(PARTNER_ORIGIN, signedIn))
       }
       if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname.startsWith('/assets/')
         || ['/favicon.svg', '/manifest.webmanifest'].includes(url.pathname)) {
