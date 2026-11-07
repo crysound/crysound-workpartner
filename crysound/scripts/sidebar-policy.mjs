@@ -1,6 +1,10 @@
 /** Company panel ordering without installation history or persisted preferences. */
 export function sidebarPanels(panels) {
-  const fixedIds = ['baoyu-design.artifacts', 'schedules', 'plugins'];
+  const fixedIds = ['crysound-artifacts.artifacts', 'schedules', 'plugins'];
+  const creators = ['@crysound/slides', '@crysound/design', '@crysound/design-system', '@crysound/dashboard', '@crysound/motion'];
+  // Navigation projection only: keep the installed plugins, enabled state and all artifact data.
+  panels = panels.filter(panel => panel.id !== 'baoyu-design.artifacts'
+    && !creators.includes((panel.owner ?? '').replace(/\/client$/, '')));
   const fixed = fixedIds.flatMap(id => panels.filter(panel => panel.id === id));
   const names = new Intl.Collator('zh-CN-u-co-pinyin', { numeric: true });
   const labels = new Map();

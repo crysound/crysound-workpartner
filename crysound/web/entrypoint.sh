@@ -18,11 +18,14 @@ mkdir -p /data/work && cd /data/work
 FEISHU_SPEC=$(node -e 'console.log(require(process.argv[1]).plugins.find(p => p.name === "@aiwayds/dsh-feishu")?.want || "")' "$CONFIG/plugins.json")
 node /opt/partner/plugin-artifacts.mjs repair "$DSH_HOME/profiles/web" "$(readlink -f "$(command -v dsh)")" "$FEISHU_SPEC" \
   || { echo "公司插件锁文件修复失败，停止启动" >&2; exit 1; }
-# 公司统一插件，版本固定，所有人一致，清单与桌面版共用（plugins.json）；已是该版本就跳过。
-node -e 'for (const p of require(process.argv[1]).plugins) console.log(p.name, p.spec, p.want)' "$CONFIG/plugins.json" |
-while read NAME SPEC WANT; do
-  grep -qF "\"$NAME\": \"$WANT\"" "$DSH_HOME/profiles/web/package.json" 2>/dev/null \
-    || dsh plugin --profile web add "$SPEC" </dev/null >/dev/null 2>&1 || echo "插件 $NAME 安装失败，本次不带它启动"
+# Pinned plugins follow their configured version; missingOnly creation plugins preserve every installed version.
+node -e '
+const fs=require("fs"),[config,profile]=process.argv.slice(1);
+const deps=fs.existsSync(profile)?JSON.parse(fs.readFileSync(profile,"utf8")).dependencies??{}:{};
+for(const p of require(config).plugins) if(p.missingOnly?!Object.hasOwn(deps,p.name):deps[p.name]!==p.want) console.log(p.name,p.spec);
+' "$CONFIG/plugins.json" "$DSH_HOME/profiles/web/package.json" |
+while read NAME SPEC; do
+  dsh plugin --profile web add "$SPEC" </dev/null >/dev/null 2>&1 || echo "插件 $NAME 安装失败，本次不带它启动"
 done
 # One-time preinstall retirement only touches profile dependencies, never the work directory.
 node "$CONFIG/company-plugins.mjs" "$DSH_HOME/profiles/web" "$CONFIG/plugins.json" "$(readlink -f "$(command -v dsh)")" web \

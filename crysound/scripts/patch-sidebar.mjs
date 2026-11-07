@@ -139,7 +139,7 @@ function patchWorkspaceV2(text) {
 }
 
 /** Put the search destination after New conversation, retaining the rail command. */
-export function patchSidebarModule(text) {
+function patchSidebarSearchV2(text) {
   const edit = editor(patchSidebarNavigationV1(text), 'navigation', 2);
   if (edit.done) return text;
   const { replace } = edit;
@@ -160,6 +160,19 @@ export function patchSidebarModule(text) {
     }), panels.length > 0 && (0, react_jsx_runtime.jsxs)("nav", {`);
   replace('renderSlot("sidebar.workspaces", {', 'renderSlot("sidebar.workspaces", { searchHost,');
   replace('"zp.search": "搜索对话"', '"zp.search": "搜索"');
+  return edit.finish();
+}
+
+/** Refresh the company artifacts destination in original and previously patched navigation. */
+export function patchSidebarModule(text) {
+  text = patchSidebarSearchV2(text);
+  const edit = editor(text, 'artifacts');
+  if (edit.done) return text;
+  const start = text.indexOf('function sidebarPanels(panels) {');
+  const end = text.indexOf('\nfunction SidebarRoot(', start);
+  if (start < 0 || end < 0) throw new Error('Sidebar artifacts: missing panel policy');
+  const previous = text.slice(start, end);
+  if (previous !== sidebarPanels.toString()) edit.replace(previous, sidebarPanels.toString());
   return edit.finish();
 }
 

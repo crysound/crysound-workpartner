@@ -153,3 +153,33 @@ test('startup copies the public template, retries a failed market install, and f
   assert.deepEqual(manifest.dsh.profile.bundles, ['test-bundle']);
   assert.deepEqual((await readFile(calls, 'utf8')).trim().split('\n').map(JSON.parse), [memory.spec, memory.spec, '@crysound/memory@0.2.0']);
 });
+
+
+test('creation preinstalls fill gaps, keep older and newer versions and disabled choices, and retry failures', async (t) => {
+  const { root, assets, profile, userData } = await fixture(t);
+  const plugins = JSON.parse(await readFile(join(source, 'crysound/config/plugins.json'), 'utf8')).plugins.filter(p => p.missingOnly);
+  assert.equal(plugins.length, 6);
+  await writeFile(join(assets, 'config/plugins.json'), JSON.stringify({ plugins, defaultBundles: [] }));
+  const installed = { [plugins[0].name]: '9.0.0', [plugins[1].name]: '0.0.1' };
+  await writeFile(join(profile, 'package.json'), JSON.stringify({ dependencies: installed, dsh: { profile: { bundles: [] } } }));
+  const calls = join(root, 'calls.jsonl'), allow = join(root, 'allow'), cliEntry = join(root, 'cli.cjs');
+  await writeFile(cliEntry, `const fs=require('node:fs');
+    const spec=process.argv.at(-1), cut=spec.lastIndexOf('@'), name=spec.slice(0,cut);
+    fs.appendFileSync(${JSON.stringify(calls)}, JSON.stringify(name)+'\\n');
+    if(!fs.existsSync(${JSON.stringify(allow)})) process.exit(1);
+    const file=${JSON.stringify(join(profile, 'package.json'))}, m=JSON.parse(fs.readFileSync(file));
+    m.dependencies[name]=spec.slice(cut+1); fs.writeFileSync(file,JSON.stringify(m));`);
+  const options = { assets, profile, userData, cliEntry, execPath: process.execPath,
+    environment: { ...process.env, CRYSOUND_LLM_BASE: 'https://partner.example.test/_zp/llm/v1', MAGPIE_API_KEY: '' } };
+  assert.deepEqual((await prepareCompanyWorkspace(options)).missing, plugins.slice(2).map(p => p.name));
+  await writeFile(allow, '');
+  assert.deepEqual((await prepareCompanyWorkspace(options)).missing, []);
+  const before = await readFile(calls, 'utf8');
+  assert.deepEqual((await prepareCompanyWorkspace(options)).missing, []);
+  assert.equal(await readFile(calls, 'utf8'), before);
+  const result = JSON.parse(await readFile(join(profile, 'package.json'), 'utf8'));
+  assert.equal(result.dependencies[plugins[0].name], '9.0.0');
+  assert.equal(result.dependencies[plugins[1].name], '0.0.1');
+  assert.deepEqual(result.dsh.profile.bundles, [], 'disabled plugin choices stay disabled');
+  assert.deepEqual(before.trim().split('\n').map(JSON.parse), [...plugins.slice(2), ...plugins.slice(2)].map(p => p.name));
+});
