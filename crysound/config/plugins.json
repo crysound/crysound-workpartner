@@ -12,8 +12,8 @@
     "@deepseek-ai/dsh-experimental-session-titles-bundle"
   ],
   "officialPlugins": {
-    "@crysound/design": {"displayName": "兆华设计", "maintainers": []},
-    "@crysound/motion": {"displayName": "兆华动效", "maintainers": []},
+    "@crysound/design": {"displayName": "兆华设计", "maintainers": [], "home": true},
+    "@crysound/motion": {"displayName": "兆华动效", "maintainers": [], "home": true},
     "@crysound/data": {"displayName": "兆华数据", "maintainers": []},
     "@crysound/memory": {"displayName": "兆华记忆", "maintainers": []},
     "@crysound/image": {"displayName": "兆华生图", "maintainers": []}
