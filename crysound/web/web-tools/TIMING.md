@@ -14,7 +14,7 @@
 
 每行是一个 JSON 对象，仅含版本、进程、会话、轮次、步骤、模型尝试、工具调用、阶段、时间和少量状态。不会写问题、参数、返回正文、请求体、网址、标头或凭据；原有上游搜索请求事件保持原样。
 
-`processStartTime` 为进程启动的 Unix 毫秒，`monotonicMs` 为进程单调时钟毫秒，`time = processStartTime + monotonicMs` 便于和会话记录对照。计算差值必须使用同一进程、同一尝试和同一调用的 `monotonicMs`，不要跨重启相减。`pid`、`processStartTime`、`session`、`turn`、`step`、`attempt`、`callId` 共同关联一次调用。并行工具各自记录；搜索重试的 `searchAttempt` 从 1 递增。
+`processStartTime` 为进程启动的 Unix 毫秒，`monotonicMs` 为进程单调时钟毫秒，`time = processStartTime + monotonicMs` 便于和会话记录对照。计算差值必须使用同一进程、同一尝试和同一调用的 `monotonicMs`，不要跨重启相减。`pid`、`processStartTime`、`session`、`turn`、`step`、`attempt`、`callId` 共同关联一次调用。并行工具各自记录；Flash/Luna 模型搜索重试的 `searchAttempt` 从 1 递增，API 调用通过独立阶段记录。
 
 | stage | 采样位置 |
 | --- | --- |
@@ -25,6 +25,9 @@
 | `assistant-message-written` | 同步追加返回，尚未发布流结束帧；不代表磁盘 fsync 完成 |
 | `tools-execute-start` | 进入本步骤的工具批次，所有调用共享这个时间点 |
 | `tool-dispatch-start` | 单个工具通过调度和 prepare 后，进入 dispatch |
+| `search-phase-start` | Search API、Flash、Luna 每级开始，含 `provider` 与按剩余时间分配的 `budgetMs` |
+| `search-phase-end` | 每级结束，含 `durationMs`、`status`（success/failed/timeout/cancelled）与 `won`；只记实际尝试的级别 |
+| `search-api-request-dispatch` | 读完容器身份并通过取消检查后、调用内部网关之前；没有模型请求记录 |
 | `search-request-record` | 该调用每次搜索尝试追加 `web/deepseek-search-llm-request` 之前 |
 | `search-request-dispatch` | 同一事件追加成功并通过取消检查后，调用 fetch 之前 |
 | `tool-result-returned` | dispatch 返回工具结果，尚未经过按模型顺序的结果提交 |
@@ -38,7 +41,7 @@
 node crysound/web/web-tools/timing-report.mjs /path/to/tool-timing.jsonl
 ```
 
-输出每个调用的 `durationsMs`、搜索尝试及缺失阶段。`blockToFinish` 大说明时间在模型流尾部；`finishToStreamEnd` 大说明结束块之后流仍未关闭；`assistantAppend` 单独给出同步追加耗时；`appendToExecute` 包含结束帧发布和批次准备；`executeToToolDispatch` 含排队、审查和 prepare；`executeToFirstSearch` 还包括工具执行、凭据读取与请求事件写入。`firstSearchToResult` 包含搜索、可能的第二次尝试和返回映射。非搜索工具的搜索字段为空；阶段缺失输出 null，不能视为零耗时或验收通过。
+输出每个调用的 `durationsMs`、模型 `searchAttempts`、各级 `searchPhases` 及缺失阶段。API 成功时不要求存在模型请求阶段；首次搜索时间取 API 或模型的首个派发阶段。`searchPhases` 给出每级耗时、状态与是否胜出，未尝试的服务不补造零耗时。`blockToFinish` 大说明时间在模型流尾部；`finishToStreamEnd` 大说明结束块之后流仍未关闭；`assistantAppend` 单独给出同步追加耗时；`appendToExecute` 包含结束帧发布和批次准备；`executeToToolDispatch` 含排队、审查和 prepare；`executeToFirstSearch` 还包括工具执行、凭据读取与请求事件写入。`firstSearchToResult` 包含搜索、可能的第二次尝试和返回映射。非搜索工具的搜索字段为空；阶段缺失输出 null，不能视为零耗时或验收通过。
 
 下面是缩写的合成样例，同一调用的其他阶段略去，**不是线上实测结果**：
 

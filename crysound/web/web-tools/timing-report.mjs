@@ -11,9 +11,10 @@ export function timingReport(records) {
   return [...calls.values()].map(records => {
     const { session, turn, step, attempt, callId, name, pid, processStartTime } = records[0];
     const first = stage => records.find(record => record.stage === stage)?.monotonicMs;
+    const firstDispatch = records.find(record => ["search-request-dispatch", "search-api-request-dispatch"].includes(record.stage))?.monotonicMs;
     const between = (from, to) => first(from) === undefined || first(to) === undefined ? null : first(to) - first(from);
     const required = ["block-end", "finish", "assistant-message-written", "tools-execute-start", "tool-result-returned"];
-    if (name === "web_search") required.push("search-request-record", "search-request-dispatch");
+    if (name === "web_search" && !records.some(record => record.stage === "search-api-request-dispatch")) required.push("search-request-record", "search-request-dispatch");
     const fetchStages = {};
     for (const segment of ["direct", "download", "extract", "render", "summary-request", "deepseek", "deepseek-request", "treg", "treg-request"]) {
       const starts = [], spans = [];
@@ -38,8 +39,8 @@ export function timingReport(records) {
         assistantAppend: between("assistant-message-append-start", "assistant-message-written"),
         appendToExecute: between("assistant-message-written", "tools-execute-start"),
         executeToToolDispatch: between("tools-execute-start", "tool-dispatch-start"),
-        executeToFirstSearch: between("tools-execute-start", "search-request-dispatch"),
-        firstSearchToResult: between("search-request-dispatch", "tool-result-returned"),
+        executeToFirstSearch: first("tools-execute-start") === undefined || firstDispatch === undefined ? null : firstDispatch - first("tools-execute-start"),
+        firstSearchToResult: first("tool-result-returned") === undefined || firstDispatch === undefined ? null : first("tool-result-returned") - firstDispatch,
       },
       exa: {
         calls: records.filter(record => record.stage === "exa-request-dispatch").length,
@@ -48,6 +49,9 @@ export function timingReport(records) {
         })),
         adopted: records.some(record => record.stage === "exa-result" && record.adopted === true),
       },
+      searchPhases: records.filter(record => record.stage === "search-phase-end").map(record => ({
+        provider: record.provider, status: record.status, won: record.won, durationMs: record.durationMs,
+      })),
       searchAttempts: records.filter(record => record.stage === "search-request-dispatch").map(record => {
         const logged = records.find(candidate => candidate.stage === "search-request-record" && candidate.searchAttempt === record.searchAttempt);
         return {

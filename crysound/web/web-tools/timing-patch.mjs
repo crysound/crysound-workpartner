@@ -24,6 +24,7 @@ export function instrumentTiming(name, source) {
     ['pipeline.dispatch(prepared.exec).then((outcome) => {', 'toolTiming.dispatch(prepared.exec, () => pipeline.dispatch(prepared.exec)).then((outcome) => {'],
     ['commit(block, result, callSeq) {', 'commit(block, result, callSeq) {\n\t\ttoolTiming.result(block.id, result.isError);'],
   ] : name === "@deepseek-ai/dsh-web-search-deepseek" ? [
+    ['searchWithFallback(DeepSeekSearchProvider, WebError, options(), request, signal)', 'searchWithFallback(DeepSeekSearchProvider, WebError, { ...options(), recordSearch: (stage, extra) => toolTiming.search(stage, extra) }, request, signal)'],
     ['options.recordRequest?.({', 'toolTiming.search("search-request-record");\n\t\toptions.recordRequest?.({'],
     ['response = await fetch(endpoint, {', 'toolTiming.search("search-request-dispatch");\n\t\t\tresponse = await fetch(endpoint, {'],
     ['options(), request, signal)', '{ ...options(), recordExa: (stage, extra) => toolTiming.exa(stage, extra) }, request, signal)'],

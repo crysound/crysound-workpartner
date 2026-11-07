@@ -174,7 +174,7 @@ test("fallback always tries DeepSeek Flash then Luna on HTTP, network, empty-too
   }
 });
 
-test("default search budgets allow twelve seconds for Flash and four for Luna", async t => {
+test("default search budgets give fast Flash failures remaining time for Luna", async t => {
   const root = await patchedRelease(t);
   const budgets = [], calls = [];
   const timeout = AbortSignal.timeout.bind(AbortSignal);
@@ -189,7 +189,8 @@ test("default search budgets allow twelve seconds for Flash and four for Luna", 
     const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "新闻" });
     assert.equal(result.sources.length, 1);
     assert.deepEqual(calls, ["deepseek/deepseek-flash", "codex/gpt-6-luna"]);
-    assert.deepEqual(budgets, [12000, 4000]);
+    assert.ok(budgets[0] <= 12000 && budgets[0] >= 11900);
+    assert.ok(budgets[1] > 17000 && budgets[1] <= 18000, "fast failure gives Luna nearly all the tool budget");
   } finally { clearInterval(keepAlive); }
 });
 
@@ -448,7 +449,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const tools = await released("dsh-tool-web", { root });
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
-  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "twelve-second primary and four-second fallback fit in the real tool deadline");
+  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "search attempts share the real tool deadline");
   assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 10000);
   const toolFile = join(root, "@deepseek-ai/dsh-tool-web/lib/index.js");
   const currentTool = await readFile(toolFile, "utf8");
