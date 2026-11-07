@@ -4,6 +4,11 @@ window.__ModuleLoader__.load({
   factory(require) {
     const { createElement: h, useState, useEffect, useRef, useId } = require('react');
     const { Button, Switch } = require('@deepseek-ai/dsh-client-ui-primitives');
+    const namespace = 'crysound.memory';
+    const en = { listTitle: 'My memories' };
+    /** @type {Record<keyof typeof en, string>} */
+    const zh = { listTitle: '我的记忆' };
+    /** @typedef {(key: keyof typeof en) => string} MemoryTranslate */
     const copy = {
       title: '记忆', description: '这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。',
       sync: '网页版和桌面版各存一份，目前不同步。',
@@ -15,7 +20,7 @@ window.__ModuleLoader__.load({
       capacity: '个人记忆接近或已达上限。伙伴会先提出合并或删除方案，得到你同意后再整理并记下新内容。',
       enabled: '使用记忆', disabled: '已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
       clear: '清空全部', clearConfirm: '确认清空全部个人记忆', clearNote: '全部条目会被删除，无法在这里恢复。',
-      add: '添加一条', listTitle: '我的记忆', edit: '编辑', save: '保存', kind: '类别', factTitle: '标题', content: '内容',
+      add: '添加一条', edit: '编辑', save: '保存', kind: '类别', factTitle: '标题', content: '内容',
       conversation: '对话中记下', manual: '手动添加', edited: '页面修改', created: '创建于', updated: '更新于',
       pending: '正在保存个人记忆…', failed: '个人记忆操作未完成。',
     };
@@ -50,7 +55,8 @@ window.__ModuleLoader__.load({
       if (!response.ok) throw new Error(value.error || copy.retry);
       return value;
     }
-    function MemoryPanel({ focusId } = {}) {
+    /** @param {{focusId?: string, t: MemoryTranslate}} props */
+    function MemoryPanel({ focusId, t }) {
       const panel = useRef(null);
       const editorId = useId();
       const [data, setData] = useState(null);
@@ -118,7 +124,7 @@ window.__ModuleLoader__.load({
           !data.enabled ? h('p', { role: 'status', className: 'zp-memory-muted' }, copy.disabled) : null,
           h('p', { role: 'status', className: 'zp-memory-muted' }, `已用 ${data.usage.count}/${data.limits.maxMemories} 条、${data.usage.chars}/${data.limits.recallChars} 字`),
           data.usage.nearCapacity ? h('p', { className: 'zp-memory-muted' }, copy.capacity) : null,
-          h('div', { className: 'zp-memory-heading' }, h('h3', null, copy.listTitle),
+          h('div', { className: 'zp-memory-heading' }, h('h3', null, t('listTitle')),
             h(Button, { ...buttonProps, disabled: busy, onClick: () => { setError(''); setAction({ type: 'edit', fact: { kind: 'preference', title: '', content: '' } }); } }, copy.add)),
           editor(),
           data.facts.length === 0 ? h('p', { className: 'zp-memory-empty zp-memory-muted' }, copy.empty) :
@@ -145,7 +151,7 @@ window.__ModuleLoader__.load({
     }
     // The same management component is used in Settings and this fallback dialog.
     // dsh 0.2.2 has no public action for a plugin to select a Settings section.
-    function MemoryDialog({ focusId, close }) {
+    function MemoryDialog({ focusId, close, t }) {
       const dialog = useRef(null);
       useEffect(() => {
         const element = dialog.current;
@@ -155,7 +161,7 @@ window.__ModuleLoader__.load({
       return h('dialog', { ref: dialog, onCancel: event => { event.preventDefault(); close(); },
         'aria-label': copy.title, style: { background: 'var(--dsw-alias-bg-layer-2, Canvas)', color: 'var(--dsw-alias-label-primary, CanvasText)', border: '1px solid var(--dsw-alias-border-l2)', borderRadius: '12px', width: 'min(800px, 90vw)', maxHeight: '85vh', padding: '16px' } },
         h(Button, { ...buttonProps, onClick: close }, '关闭'),
-        h(MemoryPanel, { focusId }));
+        h(MemoryPanel, { focusId, t }));
     }
     // Only traverse the closing Turn's indexed Tool nodes, including nested PTC calls.
     // No chat-window scan, raw arguments, or model prose can produce a receipt.
@@ -173,7 +179,7 @@ window.__ModuleLoader__.load({
       }
       return saved.size ? JSON.stringify([...saved.values()]) : '';
     }
-    function MemoryReceipt({ turn, useMemoryChat }) {
+    function MemoryReceipt({ turn, useMemoryChat, t }) {
       const value = useMemoryChat(snapshot => receipts(snapshot, turn));
       const [focusId, setFocusId] = useState(null);
       return value ? h('div', { style: { fontSize: '12px', color: 'var(--dsw-alias-label-tertiary, GrayText)', lineHeight: 1.6 } },
@@ -181,7 +187,7 @@ window.__ModuleLoader__.load({
           h('button', { type: 'button', onClick: () => setFocusId(saved.id),
             style: { border: 0, padding: 0, font: 'inherit', color: 'inherit', background: 'transparent', cursor: 'pointer', textAlign: 'start' },
             'aria-label': '查看记忆：' + saved.title }, '已记住：' + saved.title))),
-        focusId ? h(MemoryDialog, { focusId, close: () => setFocusId(null) }) : null) : null;
+        focusId ? h(MemoryDialog, { focusId, t, close: () => setFocusId(null) }) : null) : null;
     }
     // Render only persisted result metadata, never rejected raw arguments or credentials.
     function MemoryToolCard({ phase, block }) {
@@ -195,14 +201,16 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M4 2.5h8v11l-4-2.7-4 2.7z' }));
     }
     return {
-      name: '@crysound/memory', inject: ['slots', 'uiConversation'],
+      name: '@crysound/memory', inject: ['slots', 'uiConversation', 'locale'],
       apply(ctx) {
+        ctx.effect(() => ctx.locale.register(namespace, 'en', en));
+        ctx.effect(() => ctx.locale.register(namespace, 'zh', zh));
         ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({
-          name: 'conversation.chat.turnTail', id: '@crysound/memory', order: 70,
+          name: 'conversation.chat.turnTail', id: '@crysound/memory', order: 70, locale: namespace,
           inject: sessionId => ({ hooks: { memoryChat: ctx.uiConversation.binding(sessionId).target('chat') } }),
         }, MemoryReceipt));
         ctx.slots.inject('settings.section', () => ctx.slots.register({
-          name: 'settings.section', id: 'crysound-memory', order: 70, label: () => copy.title, locale: 'crysound-memory',
+          name: 'settings.section', id: 'crysound-memory', order: 70, label: () => copy.title, locale: namespace,
         }, MemoryPanel));
         ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: 'crysound-memory' }, MemoryIcon));
         ctx.slots.inject('tool.call.toolview', function* () {
