@@ -6,10 +6,30 @@ import {
   formatDuration,
   formatWhen,
   lastNonBlankLine,
+  preprocessCardMarkdown,
   segmentText,
   stripAnsi,
   truncateBody,
 } from '../lib/text.js'
+
+test('card Markdown preserves code examples while formatting surrounding prose', () => {
+  for (const fence of ['```markdown', '~~~markdown', '````markdown']) {
+    const close = fence.replace('markdown', '')
+    const code = [fence, '# example', '![diagram](https://example.com/a.png)',
+      '[config](./config.json)', '', '', '', 'literal ``` content', close].join('\n')
+    assert.equal(preprocessCardMarkdown(`# Title\n\n${code}\n\n[config](./config.json)\n![diagram](https://example.com/a.png)`),
+      `#### Title\n\n${code}\n\nconfig (./config.json)\n`)
+  }
+})
+
+test('card Markdown still formats prose, inline fence starts and excess tables', () => {
+  assert.equal(preprocessCardMarkdown('# Title\n## Sub\n[local](file:///a)\n![pic](https://a)\n![ok](img_key)\n\n\nend'),
+    '#### Title\n##### Sub\nlocal (file:///a)\n\n![ok](img_key)\n\nend')
+  assert.equal(preprocessCardMarkdown('hi```js\n# code\n```'), 'hi\n```js\n# code\n```')
+  const table = '| a | b |\n|---|---|\n| 1 | 2 |'
+  assert.equal(preprocessCardMarkdown(Array(4).fill(table).join('\n\n')),
+    `${Array(3).fill(table).join('\n\n')}\n\n\x60\x60\x60\n${table}\n\x60\x60\x60`)
+})
 
 test('segmentText splits at newline boundaries under the cap', () => {
   const body = 'a'.repeat(10) + '\n' + 'b'.repeat(10) + '\n' + 'c'.repeat(10)

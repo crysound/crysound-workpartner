@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseReceiveEvent, mentionText } from '../lib/inbound.js'
+import { parseReceiveEvent, mentionText, postContent } from '../lib/inbound.js'
+
+test('rich posts preserve link destinations and labels', () => {
+  const rich = { zh_cn: { content: [[
+    { tag: 'text', text: 'summarize ' },
+    { tag: 'a', text: 'report', href: 'https://example.com/report' },
+  ], [{ tag: 'a', text: 'https://example.com/same', href: 'https://example.com/same' }],
+  [{ tag: 'a', href: 'https://example.com/unnamed' }], [{ tag: 'a', text: 'label only' }]] } }
+  const expected = 'summarize report (https://example.com/report)\nhttps://example.com/same\nhttps://example.com/unnamed\nlabel only'
+  assert.equal(postContent(rich).text, expected)
+  assert.equal(parseReceiveEvent(payload({ message_type: 'post', content: JSON.stringify(rich) })).text, expected)
+})
 
 function payload(overrides = {}) {
   return {

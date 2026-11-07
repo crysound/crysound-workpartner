@@ -10,6 +10,7 @@ All notable changes to dsh-feishu are documented here. The format follows
 - Replace per-round sends with a single temporary, throttled preview per turn. Show safe Chinese tool summaries and streamed text, hide reasoning/tool results, fold old progress, and retract the preview before sending the final reply as new messages. Retraction denial updates the existing card instead.
 - Keep substantial intermediate content in the final answer; segment at 4000 characters by default, preprocess card Markdown, use rich posts for more than five tables, and fall back to text after delivery retries.
 - Preserve topic destinations and named mentions. Support reply chains, posts with images, files, merged forwards, and image bursts within 800 ms. Resource access failures degrade without adding permissions or event subscriptions.
+- Preserve fenced code examples during card formatting and keep rich-text hyperlink destinations in direct, quoted and forwarded prompts.
 - `/stop` cancels immediately, including child agents and btw, and finishes with a plain body message. Errors no longer send status cards. Web-originated turns send only the final answer to Feishu.
 
 ### Validation

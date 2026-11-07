@@ -28,7 +28,7 @@ export function parseContent(raw: string): Record<string, unknown> {
   try { const value = JSON.parse(raw); return value && typeof value === 'object' && !Array.isArray(value) ? value : {} }
   catch { return {} }
 }
-/** All supported rich text paragraphs; pictures are separate model inputs. */
+/** Rich text keeps link labels and destinations; pictures are separate model inputs. */
 export function postContent(value: Record<string, unknown>, mentions: readonly InboundMention[] = []): { text: string; images: string[] } {
   const post = (value.zh_cn ?? value.en_us ?? value) as Record<string, unknown>
   const images: string[] = []
@@ -39,7 +39,12 @@ export function postContent(value: Record<string, unknown>, mentions: readonly I
     for (const item of row) {
       if (!item || typeof item !== 'object') continue
       if (item.tag === 'img' && typeof item.image_key === 'string') images.push(item.image_key)
-      if (['text', 'a', 'md'].includes(item.tag) && typeof item.text === 'string') text.push(item.text)
+      if (['text', 'md'].includes(item.tag) && typeof item.text === 'string') text.push(item.text)
+      if (item.tag === 'a') {
+        const label = typeof item.text === 'string' ? item.text : ''
+        const href = typeof item.href === 'string' ? item.href : ''
+        text.push(label && href && label !== href ? `${label} (${href})` : label || href)
+      }
       if (item.tag === 'at') {
         const mention = mentions.find(entry => entry.openId === item.user_id || entry.key === item.user_id)
         text.push(mention?.key ?? (String(item.user_id).startsWith('@_') ? item.user_id : `@${mention?.name ?? item.user_name ?? item.name ?? item.user_id ?? ''}`))
