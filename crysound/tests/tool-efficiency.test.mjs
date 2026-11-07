@@ -50,6 +50,9 @@ test("refreshed profile loads real company guidance through Loader and ordinary 
   assert.match(text, /approval/);
   assert.match(text, /stop searching and fetching once the evidence is sufficient/);
   assert.match(text, /meet any requested source count/);
+  assert.match(text, /Supply web_fetch's optional prompt/);
+  assert.match(text, /403, login required, or anti-bot restrictions/);
+  assert.match(text, /use another source; do not write scripts, curl commands, or other workarounds/);
   const complete = { agent: "complete-preset" };
   await createScope(ctx, complete).ctx.plugin(Persona, { prefix: "Complete persona.", complete: true });
   assert.equal(renderPrompt(await ctx.systemPrompt.assemble({ scope: complete })), "Complete persona.");

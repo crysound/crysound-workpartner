@@ -8,11 +8,36 @@ const patches = [
   {
     package: "@deepseek-ai/dsh-tool-web",
     import: '// crysound: allow both bounded search attempts before the tool deadline.\n',
+    extraImport: 'import { summarizeFetch, validateSummaryConfig } from "./crysound-summary.mjs";\nimport { credentialRef } from "@deepseek-ai/dsh-credentials";\nimport { launchEnvironmentOf } from "@deepseek-ai/dsh-launch-environment";\nimport { appendPluginRecord } from "@deepseek-ai/dsh-session";\n',
     edits: [{
       from: 'searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS)',
       to: 'searchTimeoutMs: z.number().default(65_000)',
+    }, {
+      from: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS)',
+      to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(15_000),\n\tfetchSummaryMaxTokens: z.number().default(1600)',
+    }, {
+      from: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars) {',
+      to: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars, summaryConfig = { fetchSummary: false }) {',
+    }, {
+      from: 'if (resolved.fetch) applyWebFetchTool(ctx, resolved.fetchTimeoutMs, resolved.fetchMaxOutputChars);',
+      to: 'validateSummaryConfig(resolved);\n\tif (resolved.fetch) applyWebFetchTool(ctx, resolved.fetchTimeoutMs, resolved.fetchMaxOutputChars, resolved);',
+    }, {
+      from: 'description: "Fetch the content of a specific HTTP(S) URL and return it decoded to text.",',
+      to: 'description: "Fetch a specific HTTP(S) URL. Supply prompt with the information you need to receive a focused summary with key quotes and numbers; without prompt returns bounded page text.",',
+    }, {
+      from: 'description: "The HTTP(S) URL to fetch."\n\t\t} },',
+      to: 'description: "The HTTP(S) URL to fetch."\n\t\t}, prompt: { type: "string", description: "The question or specific information to extract from this page. Prefer providing this for web research." } },',
+    }, {
+      from: 'function parseFetchArgs(args) {',
+      to: 'function parseFetchArgs(args) {\n\tif (args.prompt !== void 0 && typeof args.prompt !== "string") throw new Error("prompt must be a string");',
+    }, {
+      from: 'const result = await ctx.web.fetch({ url: input.url }, exec.signal);',
+      to: 'let result = await ctx.web.fetch({ url: input.url }, exec.signal);\n\t\t\tresult = await summarizeFetch(ctx, summaryConfig, args.prompt, args.url, result, value => renderFetchOutput(value, maxOutputChars), exec.signal, { credentialRef, launchEnvironmentOf, appendPluginRecord, request: fetch });',
+    }, {
+      from: 'timeoutMs,\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
+      to: 'timeoutMs: timeoutMs + (summaryConfig.fetchSummary ? summaryConfig.fetchSummaryTimeoutMs : 0),\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
     }],
-    files: {},
+    files: { "summary.mjs": "crysound-summary.mjs" },
   },
   {
     package: "@deepseek-ai/dsh-web-search-deepseek",
@@ -49,15 +74,16 @@ export function patchWebTools(root) {
     let after = before;
     const alreadyPatched = before.startsWith(patch.import);
     for (const { from, previous, to } of patch.edits) {
-      if (alreadyPatched && after.split(to).length === 2 && !after.includes(from)) continue;
+      if (alreadyPatched && after.split(to).length === 2 && !after.replace(to, "").includes(from)) continue;
       if (alreadyPatched && previous && after.split(previous).length === 2 && !after.includes(from) && !after.includes(to)) {
         after = after.replace(previous, to);
         continue;
       }
-      if (alreadyPatched || after.split(from).length !== 2 || after.includes(to)) throw new Error(`Web tools patch did not match exactly once: ${patch.package}`);
+      if (after.split(from).length !== 2 || after.includes(to)) throw new Error(`Web tools patch did not match exactly once: ${patch.package}: ${from.slice(0, 100)}`);
       after = after.replace(from, to);
     }
     if (!alreadyPatched) after = patch.import + after;
+    if (patch.extraImport && !after.includes(patch.extraImport)) after = patch.import + patch.extraImport + after.slice(patch.import.length);
     for (const [source, destination] of Object.entries(patch.files)) {
       const target = path.join(directory, "lib", destination);
       const content = fs.readFileSync(path.join(here, source), "utf8");
