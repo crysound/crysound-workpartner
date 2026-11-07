@@ -399,14 +399,14 @@ test("startup refreshes missing and literal search settings from company config 
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   for (const baseURL of [undefined, "http://models.example.invalid:3425/v1", "https://partner.example.invalid/_zp/llm/v1"]) {
     const rows = baseURL === undefined ? [] : [{ id: "web-search-deepseek", disabled: true,
-      config: { baseURL, model: "deepseek-v4-flash", maxResults: 3 } }];
+      config: { baseURL, model: "codex/gpt-6-luna", maxResults: 3 } }];
     await writeFile(file, yaml.stringify(rows));
     refreshProfile(file, seed, yaml);
     const after = await readFile(file, "utf8");
     const search = load(after).find(row => row.id === "web-search-deepseek");
     assert.equal(search.config.baseURL, "process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL");
     assert.match(after, /baseURL: !!js process.env.CRYSOUND_LLM_BASE \|\| process.env.DEEPSEEK_BASE_URL/);
-    assert.equal(search.config.model, "codex/gpt-6-luna");
+    assert.equal(search.config.model, "deepseek/deepseek-flash");
     if (baseURL !== undefined) {
       assert.equal(search.config.maxResults, 3);
       assert.equal(search.disabled, true);

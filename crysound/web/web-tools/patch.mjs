@@ -10,6 +10,9 @@ const patches = [
     import: '// crysound: allow both bounded search attempts before the tool deadline.\n',
     extraImport: 'import { summarizeFetch, validateSummaryConfig } from "./crysound-summary.mjs";\nimport { credentialRef } from "@deepseek-ai/dsh-credentials";\nimport { launchEnvironmentOf } from "@deepseek-ai/dsh-launch-environment";\nimport { appendPluginRecord } from "@deepseek-ai/dsh-session";\n',
     edits: [{
+      from: 'description: "Search the web for current information. Returns an optional summary answer and a list of source URLs.",',
+      to: 'description: "Search the web for current information. Returns an optional summary answer and source URLs. If the answer or source summaries provide sufficient evidence, answer directly with available citations; do not web_fetch the same sources merely to confirm them. Fetch only to fill a specific evidence gap, such as original text, details or tables, or to meet the requested source count.",',
+    }, {
       from: 'searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS)',
       previous: 'searchTimeoutMs: z.number().default(65_000)',
       to: 'searchTimeoutMs: z.number().default(18_000)',
@@ -24,7 +27,8 @@ const patches = [
       to: 'validateSummaryConfig(resolved);\n\tif (resolved.fetch) applyWebFetchTool(ctx, resolved.fetchTimeoutMs, resolved.fetchMaxOutputChars, resolved);',
     }, {
       from: 'description: "Fetch the content of a specific HTTP(S) URL and return it decoded to text.",',
-      to: 'description: "Fetch a specific HTTP(S) URL. Supply prompt with the information you need to receive a focused summary with key quotes and numbers; without prompt returns bounded page text.",',
+      previous: 'description: "Fetch a specific HTTP(S) URL. Supply prompt with the information you need to receive a focused summary with key quotes and numbers; without prompt returns bounded page text.",',
+      to: 'description: "Fetch a specific HTTP(S) URL when original text, details or tables are needed, or to fill another specific evidence gap. If a web_search answer or source summaries are sufficient, answer directly without fetching the same sources. Supply prompt with the information you need to receive a focused summary with key quotes and numbers; without prompt returns bounded page text.",',
     }, {
       from: 'description: "The HTTP(S) URL to fetch."\n\t\t} },',
       to: 'description: "The HTTP(S) URL to fetch."\n\t\t}, prompt: { type: "string", description: "The question or specific information to extract from this page. Prefer providing this for web research." } },',
