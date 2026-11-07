@@ -4,6 +4,8 @@
 
 ## 改了什么
 
+- 设置市场图标：`crysound/config/plugin-patches.mjs` 修补 dshmarket 1.73.12 的真实发布路径 `client/client.js`；所有目标文件缺失都会输出“插件修补未命中”，pnpm 多处安装只在全部位置缺失时告警。真实包回归与路径审计见 [复核说明](crysound/settings-evidence/issue-167/README.md)。
+
 ### 网页版默认自动审查
 - `crysound/scripts/patch-web-auto-review.mjs` 只在网页镜像构建时修补固定版本的权限 Host、权限界面和自动审查退出路径，不改上游源码或桌面运行时。未设置个人默认权限时用自动审查，显式选择继续优先；插件不可用时新会话退回工作区内修改，停用插件也不升级为完全权限。部署、额外请求消耗和回退见 [网页说明](crysound/web/README.md#默认自动审查)。
 

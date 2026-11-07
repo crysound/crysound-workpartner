@@ -74,7 +74,7 @@ const pageError = error => errors.push(error.message);
 page.on('pageerror', pageError);
 let attached = false, marketPatched = false;
 const patchRoot = path.join(directory, 'runtime');
-const marketFile = path.join(patchRoot, 'dshmarket/lib/client.js');
+const marketFile = path.join(patchRoot, 'dshmarket/client/client.js');
 fs.mkdirSync(path.dirname(marketFile), { recursive: true });
 const patcher = fileURLToPath(new URL('../config/plugin-patches.mjs', import.meta.url));
 await page.route('**/*', async route => {

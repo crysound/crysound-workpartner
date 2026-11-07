@@ -48,7 +48,8 @@ export function patchMarketSettingsIcon(text) {
     'ctx.slots.inject("settings.section.icon", () => ctx.slots.register({ name: "settings.section.icon", id: "market" }, MarketLogo));');
 }
 
-const PATCHES = [
+/** Released plugin files patched by the shared company startup script. */
+export const PATCHES = [
   // Company artifacts 1.0.0: change page copy only; market metadata and storage paths stay intact.
   {
     file: "@crysound/artifacts/lib/client.js",
@@ -58,7 +59,7 @@ const PATCHES = [
   },
   // Use the released market glyph in the shell-owned icon wrapper; remove its CSS adapter.
   {
-    file: "dshmarket/lib/client.js",
+    file: "dshmarket/client/client.js",
     patch: patchMarketSettingsIcon,
   },
   // An explicit settings return owns the viewport until it closes; first-run onboarding resumes afterwards.
@@ -113,25 +114,30 @@ const roots = process.argv.slice(2).flatMap((root) => {
   const store = path.join(root, ".pnpm");
   return [root, ...(fs.existsSync(store) ? fs.readdirSync(store).map((entry) => path.join(store, entry, "node_modules")) : [])];
 });
-for (const root of roots) for (const p of PATCHES) {
-  const file = path.join(root, p.file);
-  if (!fs.existsSync(file)) continue;
-  const text = fs.readFileSync(file, "utf8");
-  if (p.patch) {
-    const next = p.patch(text);
-    if (next !== text) {
-      fs.unlinkSync(file);
-      fs.writeFileSync(file, next);
+for (const p of PATCHES) {
+  const files = roots.map(root => path.join(root, p.file)).filter(file => fs.existsSync(file));
+  if (!files.length) {
+    console.warn(`插件修补未命中，目标文件不存在：${p.file}`);
+    continue;
+  }
+  for (const file of files) {
+    const text = fs.readFileSync(file, "utf8");
+    if (p.patch) {
+      const next = p.patch(text);
+      if (next !== text) {
+        fs.unlinkSync(file);
+        fs.writeFileSync(file, next);
+      }
+      continue;
     }
-    continue;
+    if (!p.all && text.includes(p.replace)) continue;
+    if (!text.includes(p.find)) {
+      if (!text.includes(p.replace)) console.warn(`插件修补未命中，可能插件已升级：${p.file}`);
+      continue;
+    }
+    const next = p.all ? text.split(p.find).join(p.replace) : text.replace(p.find, p.replace);
+    // pnpm 用硬链接共享文件，先删再写，只改本人这一份。
+    fs.rmSync(file);
+    fs.writeFileSync(file, next);
   }
-  if (!p.all && text.includes(p.replace)) continue;
-  if (!text.includes(p.find)) {
-    if (!text.includes(p.replace)) console.log(`插件修补未命中，可能插件已升级：${p.file}`);
-    continue;
-  }
-  const next = p.all ? text.split(p.find).join(p.replace) : text.replace(p.find, p.replace);
-  // pnpm 用硬链接共享文件，先删再写，只改本人这一份。
-  fs.rmSync(file);
-  fs.writeFileSync(file, next);
 }
