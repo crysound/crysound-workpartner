@@ -40,8 +40,14 @@ export function patchMarketGuides(text) {
  * @returns {string} Idempotently patched module; unsupported input throws.
  */
 export function patchGuideUse(text) {
-  const marker = "/* CRYSOUND guide use v2 */";
+  const marker = "/* CRYSOUND guide use v3 */";
   if (text.includes(marker)) return text;
+  if (text.includes("/* CRYSOUND guide use v2 */")) {
+    const start = text.indexOf("function installCompanyMarketNavigation(");
+    const end = text.indexOf(")(ctx, controller, face,", start);
+    if (start < 0 || end < 0) throw new Error("公司市场来源定位升级未唯一命中");
+    return (text.slice(0, start) + installCompanyMarketNavigation.toString() + text.slice(end)).replace("/* CRYSOUND guide use v2 */", marker);
+  }
   if (!text.includes("/* CRYSOUND guide use v1 */")) {
     const first = 'function DiscoverSection(props) {';
     const face = 'const face = controller.face((text) => ctx.locale.resolveText(text));';
@@ -83,20 +89,26 @@ export function installCompanyMarketNavigation(ctx, controller, face, createSnap
   const target = createSnapshotStore({ name: null });
   let pending = false;
   const prepare = () => {
+    if (!pending) return;
     const state = controller.store.getSnapshot();
-    if (!pending || !state.listing || state.listing.url !== state.selected) return;
+    const company = state.indexes.find(row => new URL(row.url).pathname === "/_zp/market/index.json");
+    if (!company) return;
+    if (state.selected !== company.url) { face.select(company.url); return; }
+    if (state.listing?.url !== company.url) return;
     pending = false;
     face.search({ ...initialQuery, text: target.getSnapshot().name ?? "" });
   };
   face.hooks = { ...face.hooks, companyMarket: target };
   face.closeCompanyEntry = () => { target.set({ name: null }); face.search(initialQuery); };
-  ctx.effect(() => controller.store.subscribe(prepare));
+  ctx.effect(() => {
+    const dispose = controller.store.subscribe(() => queueMicrotask(prepare));
+    return () => { pending = false; dispose(); };
+  });
   ctx.effect(() => ctx.on("company-market/select", name => {
     target.set({ name }); pending = true;
     face.ensure();
-    const first = controller.store.getSnapshot().indexes[0];
-    if (first) face.select(first.url);
-    prepare();
+    // Let the native index load finish its initial selection before changing sources.
+    queueMicrotask(prepare);
     return true;
   }));
 }
