@@ -15,175 +15,162 @@
  * 门槛选择器 :root[data-zp-skin="soft"] 同时把优先级抬过 dsh 的同名规则
  * （dsh 的样式表在运行时追加到 <head> 末尾，同优先级时它赢）。
  *
- * 数值来源：标【取值】的数值直接取自 Cindy 设计 token（Apache-2.0，提交 d920573a），
- * 出处见 THIRD_PARTY_NOTICES.md；其余数值和全部选择器为本项目自写。交互使用中性色。
+ * 数值来源：色板声明后的注释逐项标明 Cindy 源 token；数值取自 Cindy 设计 token（Apache-2.0，提交 d920573a），
+ * 出处见 THIRD_PARTY_NOTICES.md；其余数值和全部选择器为本项目自写。功能色（焦点、光标、开关、链接）按追加要求保留 Cindy 原值。
  */
 
 /* ───────────── 1. 色板：浅色 ───────────── */
 
 :root[data-zp-skin="soft"] > body {
-  /* 皮肤自用变量（改观感先改这里） */
-  --zp-line: rgb(0 0 0 / 0.08);                 /* 【取值】边框墨水 8% */
-  --zp-row-selected: #FDFDF8;                   /* 【取值】选中行=卡片色，浮在侧栏上的近白胶囊 */
-  --zp-row-selected-ink: #141413;
-  --zp-card-fill: rgb(255 255 255 / 0.20);      /* 【取值】账号胶囊底 */
-  --zp-card-line: rgb(26 26 26 / 0.10);         /* 【取值】账号胶囊描边 */
-  --zp-card-hover: rgb(26 26 26 / 0.06);        /* 【取值】账号胶囊悬停 */
+  /* Cindy cindy-light.ts d920573a; comments name the source token. */
+  --dsw-alias-bg-base: #F2F2ED; /* surface */
+  --dsw-alias-bg-layer-1: #FDFDF8; /* surface-elevated */
+  --dsw-alias-bg-layer-2: #FDFDF8; /* surface-card-ivory */
+  --dsw-alias-bg-layer-3: #FAFAF5; /* surface-elevated-soft */
+  --dsw-alias-bg-module-platform: #FAFAF5; /* surface-chip-alt */
+  --dsw-alias-bg-multi-select: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-specific-input-major: #FDFDF8; /* chat-input-bg */
+  --dsw-specific-login-input: #FAFAF5; /* surface-elevated-soft */
+  --dsw-alias-label-primary: rgba(0, 0, 0, 0.88); /* text-primary */
+  --dsw-alias-label-secondary: rgba(0, 0, 0, 0.56); /* text-secondary */
+  --dsw-alias-label-tertiary: rgba(0, 0, 0, 0.44); /* text-tertiary */
+  --dsw-alias-label-caption: rgba(0, 0, 0, 0.32); /* text-placeholder */
+  --dsw-alias-border-l1: rgba(0, 0, 0, 0.08); /* border-default */
+  --dsw-alias-border-l2: rgba(0, 0, 0, 0.08); /* border-default */
+  --dsw-alias-border-l3: rgba(0, 0, 0, 0.08); /* border-default */
+  --dsw-alias-border-l4: rgba(0, 0, 0, 0.08); /* border-default */
+  --dsw-alias-interactive-bg-hover: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-interactive-bg-active: rgba(0, 0, 0, 0.08); /* perm-item-selected-bg */
+  --dsw-alias-interactive-bg-hover-accent: rgba(0, 0, 0, 0.10); /* file-chip-bg */
+  --dsw-alias-interactive-bg-hover-solid: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-specific-selector: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-specific-tip: rgba(0, 0, 0, 0.035); /* surface-hover-soft */
+  --dsw-specific-sidebar-nav-item-active: rgba(0, 0, 0, 0.08); /* settings-menu-bg-selected */
+  --dsw-specific-sidebar-nav-item-active-accent: rgba(0, 0, 0, 0.08); /* settings-menu-bg-selected */
+  --zp-row-selected: hsl(214.3 6.0% 99.0%); /* sidebar-item-active */
+  --zp-row-selected-ink: #292A2C; /* sidebar-item-active-foreground */
+  --zp-card-line: rgba(26, 26, 26, 0.10); /* sidebar-user-card-border */
+  --zp-card-hover: rgba(26, 26, 26, 0.06); /* sidebar-user-card-bg-hover */
+  --zp-composer-focus-line: rgba(107, 107, 103, 0.30); /* chat-input-border-focus */
+  --dsw-alias-brand-primary: #3C3F43; /* accent-cta-bg */
+  --dsw-alias-button-primary-fill: #3C3F43; /* accent-cta-bg */
+  --dsw-alias-button-primary-hover: #2E3237; /* accent-hover */
+  --dsw-alias-button-info-fill: #3C3F43; /* accent-cta-bg */
+  --dsw-alias-button-info-hover: #2E3237; /* accent-hover */
+  --zp-send: #3C3F43; /* send-btn-bg */
+  --zp-send-ink: #FCFCFC; /* send-btn-icon */
+  --zp-send-hover: #2E3237; /* accent-hover */
+  --dsw-alias-label-primary-foreground: #FCFCFC; /* send-btn-icon */
+  --dsw-alias-button-elevated-fill: #FDFDF8; /* surface-elevated */
+  --dsw-alias-button-floating-fill: #FDFDF8; /* surface-elevated */
+  --dsw-alias-button-floating-hover: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-button-ghost-active-fill: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-button-ghost-active-hover: rgba(0, 0, 0, 0.08); /* perm-item-selected-bg */
+  --dsw-alias-state-business-primary: #3C3F43; /* accent-emphasis */
+  --dsw-alias-state-business-tertiary: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-link: #1D4ED8; /* msg-link */
+  --dsw-specific-bubble: #FDFDF8; /* msg-user-bg */
+  --dsw-specific-bubble-highlight: rgba(0, 0, 0, 0.08); /* perm-item-selected-bg */
+  --dsw-alias-markdown-code-block: #FAFAF5; /* surface-elevated-soft */
+  --dsw-alias-markdown-code-block-banner: #FAFAF5; /* surface-elevated-soft */
+  --dsw-alias-markdown-inline-code: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-markdown-tag: rgba(0, 0, 0, 0.05); /* surface-hover */
+  --dsw-alias-tooltip-bg: #3C3F43; /* tooltip-bg */
+  --dsw-menu-surface-fill: rgba(251, 251, 246, 0.90); /* surface-translucent-overlay */
+  --dsw-alias-menu-group-header-fill: rgba(251, 251, 246, 0.90); /* surface-translucent-overlay */
+  --dsw-alias-label-primary-bluish: rgba(0, 0, 0, 0.95); /* text-primary-emphasis */
+  --dsw-alias-label-primary-dimmed: rgba(0, 0, 0, 0.70); /* text-secondary-mid */
+  --zp-switch-on: #417CDD; /* switch-track-on */
+  --zp-switch-off: #808080; /* switch-track-off */
+  --zp-switch-thumb: #F2F2ED; /* switch-thumb-on */
+  --zp-caret: #417CDD; /* caret-accent */
+  --zp-sidebar-hover: hsl(0.0 0.0% 0.0% / 0.05); /* sidebar-item-hover */
+  --zp-search-fill: rgba(255, 255, 250, 0.55); /* sidebar-search-input-bg */
+  --zp-line: var(--dsw-alias-border-l2);
   --zp-composer-radius: 16px;
-  --zp-composer-focus-line: rgb(107 107 103 / 0.30); /* 【取值】输入框聚焦描边 */
-  --zp-send: #3C3F43;                           /* 【取值】Cindy 反相按钮 */
-  --zp-send-hover: #2E3237;                   /* 【取值】 */
-  --zp-send-ink: #FCFCFC;                      /* 【取值】 */
-  --dsw-alias-label-primary-foreground: #FCFCFC;    /* 【取值】 */
-
-  /* 表面层级：页底 < 卡片/输入框；侧栏比页底深一档 */
-  --dsw-alias-bg-base: #F2F2ED;                 /* 【取值】暖象牙页底 */
-  --dsw-alias-bg-layer-1: #FDFDF8;              /* 【取值】卡片 */
-  --dsw-alias-bg-layer-2: #FDFDF8;              /* 【取值】卡片（设置卡片也走这里） */
-  --dsw-alias-bg-layer-3: #FFFFFF;
-  --dsw-alias-bg-module-platform: #EDEDE8;
-  --dsw-alias-bg-multi-select: #EDEDE8;
-  --dsw-specific-sidebar-fill: #EEEEE9;         /* 【取值】侧栏面 */
-  --dsw-specific-input-major: #FDFDF8;          /* 【取值】输入框 */
-  --dsw-specific-login-input: #FAFAF5;          /* 【取值】次级卡片 */
-
-  /* 线 */
-  --dsw-alias-border-l1: rgb(0 0 0 / 0.05);
-  --dsw-alias-border-l2: rgb(0 0 0 / 0.08);     /* 【取值】 */
-  --dsw-alias-border-l3: rgb(0 0 0 / 0.08);     /* 【取值】 */
-  --dsw-alias-border-l4: rgb(0 0 0 / 0.14);
-
-  /* 文字：Cindy 墨水阶梯 88/56/44/32% 在页底上折算的实色（实色避免多段图标交叠变深） */
-  --dsw-alias-label-primary: #1D1D1C;           /* 【取值·折算】 */
-  --dsw-alias-label-secondary: #6B6B68;         /* 【取值·折算】 */
-  --dsw-alias-label-tertiary: #878785;          /* 【取值·折算】 */
-  --dsw-alias-label-caption: #A5A5A2;           /* 【取值·折算】占位符 */
-
-  /* 交互填充 */
-  --dsw-alias-interactive-bg-hover: rgb(0 0 0 / 0.05);   /* 【取值】 */
-  --dsw-alias-interactive-bg-active: rgb(0 0 0 / 0.08);  /* 【取值】 */
-  --dsw-alias-interactive-bg-hover-accent: rgb(0 0 0 / 0.10);
-  --dsw-alias-interactive-bg-hover-solid: #E6E6E1;
-  --dsw-specific-selector: rgb(0 0 0 / 0.05);
-  --dsw-specific-tip: rgb(0 0 0 / 0.04);
-  --dsw-specific-sidebar-nav-item-active: rgb(0 0 0 / 0.08); /* 【取值】设置页左栏选中 */
-  --dsw-specific-sidebar-nav-item-active-accent: #E6E6E1;
-
-  /* 按钮：主按钮、开关、勾选用中性色；其余中性 */
-  --dsw-alias-brand-primary: #3C3F43; /* 【取值】 */
-  --dsw-alias-button-primary-fill: #3C3F43; /* 【取值】 */
-  --dsw-alias-button-info-fill: #3C3F43;
-  --dsw-alias-button-info-hover: #2E3237;
-  --dsw-alias-button-primary-hover: #2E3237; /* 【取值】 */
-  --dsw-alias-button-elevated-fill: #FDFDF8; /* 【取值】 */
-  --dsw-alias-button-floating-fill: #FDFDF8; /* 【取值】 */
-  --dsw-alias-button-floating-hover: #F5F5F0;
-  --dsw-alias-button-ghost-active-fill: rgb(0 0 0 / 0.06);
-  --dsw-alias-button-ghost-active-hover: rgb(0 0 0 / 0.09);
-
-  /* 强调色：焦点环、选中态、链接和信息按钮统一用中性色 */
-  --dsw-alias-state-business-primary: #3C3F43; /* 【取值】 */
-  --dsw-alias-state-business-tertiary: #EDEDE8;
-  --dsw-alias-link: #1D1D1C; /* 【取值】 */
-
-  /* 对话 */
-  --dsw-specific-bubble: #FDFDF8; /* 【取值】 */
-  --dsw-specific-bubble-highlight: #EDEDE8;
-  --dsw-alias-markdown-code-block: #FAFAF5;     /* 【取值】次级卡片 */
-  --dsw-alias-markdown-code-block-banner: #F5F5F0;
-  --dsw-alias-markdown-inline-code: rgb(0 0 0 / 0.05);
-  --dsw-alias-markdown-tag: rgb(0 0 0 / 0.05);
-
-  /* 浮层 */
-  --dsw-alias-tooltip-bg: #3C3F43;              /* 【取值】 */
-  --dsw-menu-surface-fill: rgb(251 251 246 / 0.90); /* 【取值】浮层玻璃 */
-  --dsw-alias-menu-group-header-fill: rgb(251 251 246 / 0.96);
+  --zp-card-fill: rgb(255 255 255 / 0.20);
   --dsw-specific-menu: var(--dsw-menu-surface-fill);
+  /* Web/Windows opaque approximation; see evidence/search/README.md. */
+  --dsw-specific-sidebar-fill: #E0E0DC;
 }
 
-/* ───────────── 2. 色板：深色（中性近黑） ───────────── */
-
 :root[data-zp-skin="soft"] > body[data-ds-dark-theme] {
-  --zp-line: rgb(255 255 255 / 0.10);           /* 【取值】 */
-  --zp-row-selected: rgb(255 255 255 / 0.10);
-  --zp-row-selected-ink: #F2F2F2;
-  --zp-card-fill: rgb(255 255 255 / 0.05);      /* 【取值】 */
-  --zp-card-line: rgb(255 255 255 / 0.13);      /* 【取值】 */
-  --zp-card-hover: rgb(255 255 255 / 0.10);     /* 【取值】 */
-  --zp-composer-focus-line: rgb(193 193 193 / 0.30); /* 【取值】 */
-  --zp-send: #EEEEEE; /* 【取值】 */
-  --zp-send-hover: #FCFCFC;                   /* 【取值】 */
-  --zp-send-ink: #151515;                      /* 【取值】 */
-  --dsw-alias-label-primary-foreground: #151515;    /* 【取值】 */
-
-  --dsw-alias-bg-base: #181818;                 /* 【取值】 */
-  --dsw-alias-bg-layer-1: #1F1F1F;              /* 【取值】 */
-  --dsw-alias-bg-layer-2: #1F1F1F;              /* 【取值】 */
-  --dsw-alias-bg-layer-3: #262626;
-  --dsw-alias-bg-module-platform: #222222;
-  --dsw-alias-bg-multi-select: #222222;
-  --dsw-specific-sidebar-fill: #141414;
-  --dsw-specific-input-major: #1F1F1F;          /* 【取值】 */
-  --dsw-specific-login-input: #1D1D1D;          /* 【取值】 */
-
-  --dsw-alias-border-l1: rgb(255 255 255 / 0.06);
-  --dsw-alias-border-l2: rgb(255 255 255 / 0.10); /* 【取值】 */
-  --dsw-alias-border-l3: rgb(255 255 255 / 0.10); /* 【取值】 */
-  --dsw-alias-border-l4: rgb(255 255 255 / 0.16);
-
-  /* 墨水阶梯 82/55/40/30% 在 #181818 上折算 */
-  --dsw-alias-label-primary: #D5D5D5;           /* 【取值·折算】 */
-  --dsw-alias-label-secondary: #979797;         /* 【取值·折算】 */
-  --dsw-alias-label-tertiary: #747474;          /* 【取值·折算】 */
-  --dsw-alias-label-caption: #5D5D5D;           /* 【取值·折算】 */
-
-  --dsw-alias-interactive-bg-hover: rgb(255 255 255 / 0.06);  /* 【取值】 */
-  --dsw-alias-interactive-bg-active: rgb(255 255 255 / 0.10); /* 【取值】 */
-  --dsw-alias-interactive-bg-hover-accent: rgb(255 255 255 / 0.13);
-  --dsw-alias-interactive-bg-hover-solid: #232323;
-  --dsw-specific-selector: rgb(255 255 255 / 0.06);
-  --dsw-specific-tip: rgb(255 255 255 / 0.05);
-  --dsw-specific-sidebar-nav-item-active: rgb(255 255 255 / 0.10); /* 【取值】 */
-  --dsw-specific-sidebar-nav-item-active-accent: #2B2B2B;
-
-  --dsw-alias-brand-primary: #EEEEEE; /* 【取值】 */
-  --dsw-alias-button-primary-fill: #EEEEEE; /* 【取值】 */
-  --dsw-alias-button-info-fill: #EEEEEE;
-  --dsw-alias-button-info-hover: #FCFCFC;
-  --dsw-alias-button-primary-hover: #FCFCFC; /* 【取值】 */
-  --dsw-alias-button-elevated-fill: #262626;
-  --dsw-alias-button-floating-fill: #1F1F1F;
-  --dsw-alias-button-floating-hover: #262626;
-  --dsw-alias-button-ghost-active-fill: rgb(255 255 255 / 0.08);
-  --dsw-alias-button-ghost-active-hover: rgb(255 255 255 / 0.12);
-
-  --dsw-alias-state-business-primary: #EEEEEE; /* 【取值】 */
-  --dsw-alias-state-business-tertiary: #292929;
-  --dsw-alias-link: #D5D5D5;
-
-  --dsw-specific-bubble: #1F1F1F;
-  --dsw-specific-bubble-highlight: #2B2B2B;
-  --dsw-alias-markdown-code-block: #1D1D1D;     /* 【取值】 */
-  --dsw-alias-markdown-code-block-banner: #222222;
-  --dsw-alias-markdown-inline-code: rgb(255 255 255 / 0.06);
-  --dsw-alias-markdown-tag: rgb(255 255 255 / 0.06);
-
-  --dsw-alias-tooltip-bg: #2A2A2A;
-  --dsw-menu-surface-fill: rgb(21 21 21 / 0.80); /* 【取值】 */
-  --dsw-alias-menu-group-header-fill: rgb(24 24 24 / 0.96);
+  /* Cindy cindy-dark.ts d920573a; comments name the source token. */
+  --dsw-alias-bg-base: #181818; /* surface */
+  --dsw-alias-bg-layer-1: #1F1F1F; /* surface-elevated */
+  --dsw-alias-bg-layer-2: #1F1F1F; /* surface-card-ivory */
+  --dsw-alias-bg-layer-3: #1D1D1D; /* surface-elevated-soft */
+  --dsw-alias-bg-module-platform: #1D1D1D; /* surface-chip-alt */
+  --dsw-alias-bg-multi-select: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-specific-input-major: #1F1F1F; /* chat-input-bg */
+  --dsw-specific-login-input: #1D1D1D; /* surface-elevated-soft */
+  --dsw-alias-label-primary: rgba(255, 255, 255, 0.82); /* text-primary */
+  --dsw-alias-label-secondary: rgba(255, 255, 255, 0.55); /* text-secondary */
+  --dsw-alias-label-tertiary: rgba(255, 255, 255, 0.40); /* text-tertiary */
+  --dsw-alias-label-caption: rgba(255, 255, 255, 0.30); /* text-placeholder */
+  --dsw-alias-border-l1: rgba(255, 255, 255, 0.10); /* border-default */
+  --dsw-alias-border-l2: rgba(255, 255, 255, 0.10); /* border-default */
+  --dsw-alias-border-l3: rgba(255, 255, 255, 0.10); /* border-default */
+  --dsw-alias-border-l4: rgba(255, 255, 255, 0.10); /* border-default */
+  --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-interactive-bg-active: rgba(255, 255, 255, 0.10); /* perm-item-selected-bg */
+  --dsw-alias-interactive-bg-hover-accent: rgba(255, 255, 255, 0.13); /* file-chip-bg */
+  --dsw-alias-interactive-bg-hover-solid: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-specific-selector: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-specific-tip: rgba(255, 255, 255, 0.04); /* surface-hover-soft */
+  --dsw-specific-sidebar-nav-item-active: rgba(255, 255, 255, 0.10); /* settings-menu-bg-selected */
+  --dsw-specific-sidebar-nav-item-active-accent: rgba(255, 255, 255, 0.10); /* settings-menu-bg-selected */
+  --zp-row-selected: hsl(214.3 5.5% 24.9%); /* sidebar-item-active */
+  --zp-row-selected-ink: #EEEEEE; /* sidebar-item-active-foreground */
+  --zp-card-line: rgba(255, 255, 255, 0.13); /* sidebar-user-card-border */
+  --zp-card-hover: rgba(255, 255, 255, 0.10); /* sidebar-user-card-bg-hover */
+  --zp-composer-focus-line: rgba(193, 193, 193, 0.30); /* chat-input-border-focus */
+  --dsw-alias-brand-primary: #EEEEEE; /* accent-cta-bg */
+  --dsw-alias-button-primary-fill: #EEEEEE; /* accent-cta-bg */
+  --dsw-alias-button-primary-hover: #E2E2E2; /* accent-hover */
+  --dsw-alias-button-info-fill: #EEEEEE; /* accent-cta-bg */
+  --dsw-alias-button-info-hover: #E2E2E2; /* accent-hover */
+  --zp-send: #EEEEEE; /* send-btn-bg */
+  --zp-send-ink: #151515; /* send-btn-icon */
+  --zp-send-hover: #E2E2E2; /* accent-hover */
+  --dsw-alias-label-primary-foreground: #151515; /* send-btn-icon */
+  --dsw-alias-button-elevated-fill: #1F1F1F; /* surface-elevated */
+  --dsw-alias-button-floating-fill: #1F1F1F; /* surface-elevated */
+  --dsw-alias-button-floating-hover: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-button-ghost-active-fill: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-button-ghost-active-hover: rgba(255, 255, 255, 0.10); /* perm-item-selected-bg */
+  --dsw-alias-state-business-primary: #EEEEEE; /* accent-emphasis */
+  --dsw-alias-state-business-tertiary: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-link: #93C5FD; /* msg-link */
+  --dsw-specific-bubble: #1F1F1F; /* msg-user-bg */
+  --dsw-specific-bubble-highlight: rgba(255, 255, 255, 0.10); /* perm-item-selected-bg */
+  --dsw-alias-markdown-code-block: #1D1D1D; /* surface-elevated-soft */
+  --dsw-alias-markdown-code-block-banner: #1D1D1D; /* surface-elevated-soft */
+  --dsw-alias-markdown-inline-code: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-markdown-tag: rgba(255, 255, 255, 0.06); /* surface-hover */
+  --dsw-alias-tooltip-bg: #181818; /* tooltip-bg */
+  --dsw-menu-surface-fill: rgba(21, 21, 21, 0.80); /* surface-translucent-overlay */
+  --dsw-alias-menu-group-header-fill: rgba(21, 21, 21, 0.80); /* surface-translucent-overlay */
+  --dsw-alias-label-primary-bluish: rgba(255, 255, 255, 1.00); /* text-primary-emphasis */
+  --dsw-alias-label-primary-dimmed: rgba(255, 255, 255, 0.66); /* text-secondary-mid */
+  --zp-switch-on: #417CDD; /* switch-track-on */
+  --zp-switch-off: #787878; /* switch-track-off */
+  --zp-switch-thumb: #FCFCFC; /* switch-thumb-on */
+  --zp-caret: #417CDD; /* caret-accent */
+  --zp-sidebar-hover: hsl(0.0 0.0% 100.0% / 0.09); /* sidebar-item-hover */
+  --zp-search-fill: rgba(0, 0, 0, 0.25); /* sidebar-search-input-bg */
+  --zp-line: var(--dsw-alias-border-l2);
+  --zp-composer-radius: 16px;
+  --zp-card-fill: rgb(255 255 255 / 0.05);
   --dsw-specific-menu: var(--dsw-menu-surface-fill);
+  /* Web/Windows opaque approximation; see evidence/search/README.md. */
+  --dsw-specific-sidebar-fill: #080808;
 }
 
 /* ───────────── 3. 桌面版 macOS：毛玻璃侧栏 ─────────────
  * dsh 在 macOS 上已开窗口原生毛玻璃，侧栏列只铺一层半透明底（原来带蓝色渐变）。
  * 换成暖灰 85% 单色底。属性选择器写两遍只为抬优先级，盖过 dsh 深色规则。 */
 
-:root[data-platform="darwin"][data-zp-skin="soft"] > body {
-  --dsw-specific-menu: rgb(251 251 246 / 0.94);
-}
-:root[data-platform="darwin"][data-zp-skin="soft"] > body[data-ds-dark-theme] {
-  --dsw-specific-menu: rgb(30 30 30 / 0.94);
-}
 :root[data-platform="darwin"][data-zp-skin="soft"] [class*="_sidebarCol"][class*="_sidebarCol"] {
   background: rgb(238 238 233 / 0.85);          /* 【取值】侧栏玻璃 */
 }
@@ -196,7 +183,7 @@
 /* 侧栏根（直接子元素里有 logo 行的那一层）：行内边距、图标与文字间距 */
 :root[data-zp-skin="soft"] [class*="_root"]:has(> [class*="_logoRow"]) {
   --dsh-sidebar-row-padding: 14px;
-  --dsh-sidebar-label-gap: 10px;                /* 【取值】 */
+  --dsh-sidebar-label-gap: 11px; /* Align a 16px navigation icon with the 22px brand mark and its 8px gap. */
 }
 
 /* “新建会话”从带边框的大按钮改成和下面导航一样的行 */
@@ -240,7 +227,7 @@
   corner-shape: round;
 }
 
-/* 选中态：近白胶囊浮在侧栏上（深色为白 10%），悬停不闪回 */
+/* 选中态直接使用 Cindy sidebar-item-active 及其前景，悬停不闪回。 */
 :root[data-zp-skin="soft"] [class*="_panelRow"][aria-current="page"]:not([data-sidebar-collapsed] *),
 :root[data-zp-skin="soft"] [data-row-key^="session:"][aria-selected="true"]:not([data-sidebar-collapsed] *) {
   background-color: var(--zp-row-selected);
@@ -305,6 +292,24 @@
   color: var(--zp-send-ink);
 }
 :root[data-zp-skin="soft"] a[href] {
+  color: var(--dsw-alias-link);
   text-decoration-line: underline;
   text-underline-offset: 2px;
 }
+
+/* Functional colors remain independent of neutral navigation/tab emphasis. */
+:root[data-zp-skin="soft"][data-input-modality="keyboard"] { --dsw-focus-ring-color: #417CDD; }
+:root[data-zp-skin="soft"] > body { caret-color: var(--zp-caret); }
+:root[data-zp-skin="soft"] [role="switch"] { background: var(--zp-switch-off); }
+:root[data-zp-skin="soft"] [role="switch"][aria-checked="true"] { background: var(--zp-switch-on); }
+:root[data-zp-skin="soft"] [role="switch"] > span { background: var(--zp-switch-thumb); }
+:root[data-zp-skin="soft"] [data-zp-sidebar] [class*="_panelRow"]:hover,
+:root[data-zp-skin="soft"] [data-zp-sidebar] [data-row-key^="session:"]:hover,
+:root[data-zp-skin="soft"] [data-zp-sidebar] button[class*="_newSession"]:hover { background-color: var(--zp-sidebar-hover); }
+:root[data-zp-skin="soft"] [data-zp-sidebar] [class*="_panelRow"][aria-current="page"]:hover,
+:root[data-zp-skin="soft"] [data-zp-sidebar] [data-row-key^="session:"][aria-selected="true"]:hover { background-color: var(--zp-row-selected); }
+:root[data-zp-skin="soft"] [data-zp-search-host] [data-zp-inline-search][data-expanded="true"] { background: var(--zp-search-fill); }
+
+/* Selected navigation glyphs use the same foreground as their capsule text. */
+:root[data-zp-skin="soft"] [data-zp-sidebar] [class*="_panelRow"][aria-current="page"] [class*="_panelGlyph"],
+:root[data-zp-skin="soft"] [data-zp-sidebar] [data-row-key^="session:"][aria-selected="true"] [class*="_slot"] { color: var(--zp-row-selected-ink); }

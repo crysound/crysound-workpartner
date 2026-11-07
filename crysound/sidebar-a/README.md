@@ -79,11 +79,11 @@ CDP_TAB=<专用标签页> SIDEBAR_EVIDENCE_DIR=/tmp/sidebar-evidence node crysou
 
 ## 默认柔和与搜索入口行（#146）
 
-柔和外观的业务强调、信息按钮和链接使用中性色，覆盖对话页签、焦点环、选中态、开关等共享 token；成功、警告和错误色沿用上游。经典外观仅把新对话图标改成与入口一致的前景色。存储不可用或清除皮肤偏好时选择柔和；明确选择经典的设备不被改写。
+柔和外观按追加要求逐项映射 Cindy `d920573a` 浅深色表：正文、表面、边框、悬停、选中胶囊及前景、反相按钮保留原值；新对话和对话页签仍中性，焦点、光标、开关和链接保留 Cindy 功能蓝。成功、警告和错误不作中性替换（指定的 Cindy 色表未另行覆盖这些通用状态色）。Mac 使用 Cindy 85% 半透明底，网页和 Windows 用不透明近似值，依据见下方证据。品牌 mark 为 22px，中心及文字左缘对齐入口，gap 8px、文字 15px/600/.02em；保留原生标题栏控件。经典外观的配色仅把新对话图标改成与入口一致的前景色。存储不可用或清除皮肤偏好时选择柔和；明确选择经典的设备不被改写。
 
 轻量复跑：`SIDEBAR_RUNTIME_MODULES=<原始固定版 node_modules> node --test crysound/scripts/tests/sidebar.test.mjs crysound/brand/tests/skin.test.mjs crysound/brand/tests/skin-injection.test.mjs`。浏览器复跑使用手册的持久浏览器专用标签页：`CDP_TAB=<标签页> SIDEBAR_EVIDENCE_DIR=<截图目录> node crysound/scripts/tests/search.browser.mjs`，可用 `SIDEBAR_SEARCH_QUERY` 指定能命中已有会话的普通查询词（默认“作文”）。脚本只替换本标签页响应，将外观和列表偏好隔离到临时会话存储，不改服务器或本人偏好。截图只含遮罩过的侧栏、页签及外观设置行。
 
-浏览器通过浅色/深色 × 桌面/收起/390px 手机检查：静息、展开和结果、图标不位移、真实搜索、点结果打开对话、清空、Esc、聚焦和原快捷键。原生手机抽屉保留，第一次 Esc 收搜索、第二次收抽屉。设置及市场可见控件的前景、背景、边框及焦点轮廓均核对无蓝色强调。快捷键为上游既有的 Windows 网页 `Control+Alt+K`（仅在专用标签页模拟 Windows 平台）；Linux 网页上游没有此默认快捷键，未将其记为通过，也未改变快捷键定义。截图和完整报告见[本轮交付证据](evidence/search/README.md)。
+浏览器通过浅色/深色 × 桌面/收起/390px 手机检查：静息、展开和结果、图标不位移、真实搜索、点结果打开对话、清空、Esc、聚焦和原快捷键。原生手机抽屉保留，第一次 Esc 收搜索、第二次收抽屉。设置及市场可见控件的前景、背景、边框及焦点轮廓核对为中性强调或 Cindy 的功能蓝。另以隔离的页面元素核对开关、链接、光标和键盘焦点的计算色；Mac/Windows 属性模拟核对品牌几何，不能代替原生 Electron 验收。快捷键为上游既有的 Windows 网页 `Control+Alt+K`（仅在专用标签页模拟 Windows 平台）；Linux 网页上游没有此默认快捷键，未将其记为通过，也未改变快捷键定义。126 项声明直接与固定 Cindy 源码逐项比对，运行 `node crysound/brand/tests/verify-cindy-palette.mjs <Cindy checkout>`；故意改错页底色时该检查拒绝。截图、与原参考图同尺寸的并排图和品牌行前后图见[本轮交付证据](evidence/search/README.md)。
 
 网页版由伙伴助理重建伙伴镜像，桌面随下一安装包；回退到上一镜像/安装包即可，设备偏好键与取值不变，未保存过的设备回到旧版默认，明确选择经典或柔和的设备仍保留选择。真实发布镜像及 macOS/Windows Electron 安装包仍须伙伴助理验收，本标签页预览不代替上线验收。
 

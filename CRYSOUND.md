@@ -12,7 +12,7 @@
 
 ### 品牌
 - 侧栏方案 A：`crysound/scripts/patch-sidebar.mjs` 对固定版共享侧栏和工作区客户端产物做版本检查与幂等修补；网页安装运行时后、桌面生成完整性清单前使用同一份。固定入口按新对话 / 作品 / 自动化 / 市场排列，市场只保留图标和名称，其他插件按名称排序，超过两个全收进更多；单工作区默认平铺、多个默认分组，保留搜索和管理。和皮肤 #133 同批更新镜像，发布及验收见 `crysound/sidebar-a/README.md`。不改上游 `packages/` 源码。
-- 可选“兆华柔和”皮肤：设置→通用→外观下方切换，默认关闭，按设备保存。`skin.js` 在首屏前同步读取，`skin.css` 仅在 `data-zp-skin="soft"` 下覆盖外观，不改导航结构；网页重建镜像，桌面版随下一安装包。选回“默认”可立即回退，移除皮肤资源也不影响默认界面。
+- “兆华柔和”作为无偏好设备的默认外观，明确保存 `default` 的设备保留经典，设置→通用中仍可切换。`skin.js` 在首屏前同步读取，`skin.css` 仅在 `data-zp-skin="soft"` 下生效；浅深色逐项映射 Cindy 原值，Mac 用同款半透明底，网页/Windows 用不透明近似色。品牌行、配色依据与搜索验收见 `crysound/sidebar-a/README.md`。网页重建镜像，桌面随下一安装包。
 - `crysound/brand/timezone.js` 在网页与桌面前端启动前加载：仅在浏览器同时报告零偏移与 UTC/GMT 类时区时，默认日期格式化改用北京时间；显式时区保留。dsh 使用的本地日期取值、设值与日期字符串按现代北京时间（UTC+08:00）兜底，时间戳、UTC 方法与序列化不变。此脚本不模拟历史夏令时，也不改变原生日期构造或解析规则；回退时撤下两端 HTML 的该脚本入口。网页版需重建用户镜像并在空闲时更新容器，网关无改动；桌面版随下次打包生效。轻量回归：`node crysound/scripts/check-timezone.mjs`；截图与验收边界见 `crysound/web/tests/evidence/issue-80/`。
 - 产品名“兆华工作伙伴”，英文 CRYSOUND WorkPartner，appId `com.crysound.workpartner`。`.app` 与可执行文件名为 `CRYSOUND WorkPartner`（ASCII，命令行入口 `dsh` 依赖它）；Finder、Dock 与菜单栏显示中文名（`CFBundleDisplayName` 与 `crysound/macos/zh_CN.lproj/InfoPlist.strings`）。
 - 系统 URL 协议 `dsh://` 改为 `crysound-workpartner://`；命令行入口仍叫 `dsh`。
@@ -20,7 +20,7 @@
 - 图标由品牌源稿生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
-- 共用 `skin.js` 首屏选择“兆华柔和”；明确保存为 `default` 的设备保留经典外观。柔和交互使用中性色，设置可切换；侧栏搜索在新对话下一行就地展开，固定版运行时补丁与验收见 `crysound/sidebar-a/README.md`。
+- 共用 `skin.js` 首屏选择“兆华柔和”；明确保存为 `default` 的设备保留经典外观。柔和页签和导航强调使用中性色，焦点、光标、开关和链接保留 Cindy 功能色，设置可切换；侧栏搜索在新对话下一行就地展开，固定版运行时补丁与验收见 `crysound/sidebar-a/README.md`。
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
 - 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。

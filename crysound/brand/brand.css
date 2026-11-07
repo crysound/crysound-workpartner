@@ -179,3 +179,15 @@ html[data-windows-titlebar]:has([data-sidebar-collapsed="true"]) { --dsh-windows
 @media (max-width: 700px), (pointer: coarse) {
   [data-zp-search-host] [data-zp-inline-search] { height: 40px; }
 }
+
+/* Brand mark and navigation icons share a centerline; keep native titlebar controls. */
+:root [data-zp-sidebar]:not([class*="_collapsed"]) > [class*="_logoRow"] {
+  padding-inline-start: calc(var(--dsh-sidebar-row-padding) - 3px); gap: 8px;
+}
+[data-zp-sidebar] [class*="_brandIdentity"] { gap: 8px; }
+:root [data-zp-sidebar] [class*="_brandMark"] { width: 22px; height: 22px; transform: none; }
+[data-zp-sidebar] [class*="_brandMark"] .zp-pet,
+[data-zp-sidebar] [class*="_railMark"] .zp-pet { --size: 22px !important; }
+:root [data-zp-sidebar] [class*="_brandName"] { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: var(--dsw-alias-label-primary); }
+:root[data-windows-titlebar] [data-zp-sidebar]:not([class*="_collapsed"]) [class*="_brand"] { padding-left: 0; }
+[data-zp-sidebar][class*="_collapsed"] [class*="_railMark"] { width: 22px; height: 22px; }

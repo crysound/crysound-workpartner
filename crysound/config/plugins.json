@@ -2,7 +2,7 @@
   "plugins": [
     {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.5.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.5.tgz"},
     {"name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12"},
-    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.3", "want": "0.1.3"},
+    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.4", "want": "0.1.4"},
     {"name": "@crysound/artifacts", "spec": "@crysound/artifacts@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/design-system", "spec": "@crysound/design-system@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/slides", "spec": "@crysound/slides@1.1.0", "want": "1.1.0", "missingOnly": true},
