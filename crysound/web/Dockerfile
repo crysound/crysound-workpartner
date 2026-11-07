@@ -11,6 +11,9 @@ RUN node /opt/partner/scripts/patch-market-ui.mjs --runtime "$(npm root -g)/@dee
 # Sidebar and skin #133 ship together; this patch also runs before Desktop integrity manifests.
 COPY scripts/patch-sidebar.mjs scripts/sidebar-policy.mjs /opt/partner/scripts/
 RUN node /opt/partner/scripts/patch-sidebar.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
+# Neutral running indicator shared with the next Desktop package.
+COPY scripts/patch-running-status.mjs /opt/partner/scripts/
+RUN node /opt/partner/scripts/patch-running-status.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 # Web containers use Auto review for an unset personal default; desktop artifacts are never patched here.
 COPY scripts/patch-web-auto-review.mjs /opt/partner/scripts/
 RUN node /opt/partner/scripts/patch-web-auto-review.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
