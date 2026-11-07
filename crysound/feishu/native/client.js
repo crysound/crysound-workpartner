@@ -3,7 +3,7 @@ window.__ModuleLoader__.load({
   id: '@crysound/feishu-settings',
   factory(require) {
     const { createElement: h, useState, useEffect, useRef } = require('react');
-    const { Button, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
+    const { Button, Switch, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
     const sectionId = 'crysound-feishu';
     const desktop = location.protocol === 'dsh-app:';
     const embedded = /Lark|Feishu/i.test(navigator.userAgent);
@@ -207,14 +207,110 @@ window.__ModuleLoader__.load({
         projectRetry ? h('p', { className: 'zp-feishu-feedback', role: 'alert' }, t('projectRetry')) : null,
         error ? h('p', { className: 'zp-feishu-feedback', role: 'alert' }, error) : null);
     }
+    const dailyTitle = '每天帮我查一次';
+    const dailyStyles = `
+.zp-daily{font-size:14px;line-height:1.7;color:var(--dsw-alias-label-primary)}
+.zp-daily h2{font-size:16px;font-weight:500;margin:0 0 8px}
+.zp-daily p{margin:8px 0}.zp-daily-muted{color:var(--dsw-alias-label-secondary);font-size:13px}
+.zp-daily-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 0}
+.zp-daily input[type=time]{font:inherit;color:inherit;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:5px 8px}
+.zp-daily label{display:flex;align-items:center;gap:8px}
+.zp-daily-record{padding:12px 0;border-bottom:1px solid var(--dsw-alias-border-l2);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+`;
+    const outcomes = { quiet: '没有新事，未发消息', failed: '检查失败，今天不会自动重试', interrupted: '运行中；若意外中断，今天不会重试', pending: '摘要已生成，等待写入对话', delivered: '已放进伙伴对话', cancelled: '已关闭，取消本次提醒' };
+    async function dailyApi(route, body, signal) {
+      const response = await fetch('/_zp/daily-check/' + route, {
+        method: body ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', signal,
+        ...(body ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || '暂时无法查看每日检查，请稍后打开设置');
+      return result;
+    }
+    function DailyPanel({ openSession }) {
+      const [state, setState] = useState(null), [time, setTime] = useState('09:00');
+      const [busy, setBusy] = useState(false), [error, setError] = useState('');
+      const life = useRef(null);
+      useEffect(() => {
+        const controller = new AbortController(); life.current = controller;
+        let timer;
+        async function refresh() {
+          try { const value = await dailyApi('status', undefined, controller.signal); if (!controller.signal.aborted) { setState(value); setTime(value.time); setError(''); } }
+          catch (error) { if (!controller.signal.aborted) setError(error.message); }
+        }
+        void refresh();
+        const focus = () => { void refresh(); };
+        window.addEventListener('focus', focus);
+        timer = setInterval(refresh, 60000);
+        return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', focus); };
+      }, []);
+      async function action(route, body) {
+        setBusy(true); setError('');
+        try { const result = await dailyApi(route, body, life.current.signal); if (!life.current.signal.aborted) { setState(result); setTime(result.time); } }
+        catch (error) { if (!life.current.signal.aborted) setError(error.message); }
+        finally { if (!life.current.signal.aborted) setBusy(false); }
+      }
+      function view(record) {
+        openSession(record.sessionId);
+        void dailyApi('read', { id: record.id }, life.current.signal).then(() => {
+          if (!life.current.signal.aborted) setState(previous => ({ ...previous, records: previous.records.map(item => item.id === record.id ? { ...item, unread: false } : item) }));
+        }).catch(error => { if (!life.current.signal.aborted) setError(error.message); });
+      }
+      return h('section', { className: 'zp-daily', 'aria-label': dailyTitle },
+        h('h2', null, dailyTitle),
+        h('p', { className: 'zp-daily-muted' }, '打开后，工作日会用你本人的飞书身份读取未读 @、今天和明天的日程、飞书任务。生成摘要会使用模型额度。只提醒你本人，不替你回复或操作，可以随时关闭。'),
+        h('p', { className: 'zp-daily-muted' }, '没有新事不打扰；同一天最多尝试一次，失败不反复提醒。'),
+        state && !state.available ? h('p', { role: 'status' }, '正在分批试用，暂未向你开放。') : null,
+        state && !state.connected ? h('p', { role: 'status' }, '尚未连接飞书，检查不会运行。', h('a', { href: '/?zp-settings=feishu' }, '去连接飞书')) : null,
+        h('div', { className: 'zp-daily-controls' }, h('label', null,
+          h(Switch, { label: dailyTitle, checked: state?.enabled || false, disabled: busy || !state || (!state.enabled && (!state.available || !state.connected)), onChange: enabled => { void action('settings', { enabled, time }); } }), dailyTitle),
+          state ? h('span', { className: 'zp-daily-muted' }, state.enabled ? '已打开' : '默认关闭') : h('span', null, '正在读取…')),
+        h('div', { className: 'zp-daily-controls' }, h('label', null, '工作日 · 北京时间', h('input', { type: 'time', value: time, disabled: busy || !state, onChange: event => setTime(event.target.value) })),
+          h(Button, { size: 'sm', variant: 'outline', disabled: busy || !state || time === state.time || !time, onClick: () => { void action('settings', { enabled: state.enabled, time }); } }, '保存时间'),
+          h(Button, { size: 'sm', variant: 'outline', disabled: busy || !state?.enabled || !state.connected || !state.available, onClick: () => { void action('run', {}); } }, busy ? '正在处理…' : '现在查一次')),
+        h('h3', null, '运行记录'),
+        state && !state.records.length ? h('p', { className: 'zp-daily-muted' }, '还没有运行记录。周一至周五按北京时间检查；错过时间会在当天补查。') : null,
+        ...(state?.records || []).map(record => h('div', { className: 'zp-daily-record', key: record.id },
+          h('span', null, record.date + ' · ' + outcomes[record.outcome] + (record.reason ? '：' + record.reason : '')),
+          record.outcome === 'delivered' ? h(Button, { size: 'sm', variant: 'outline', onClick: () => view(record) }, record.unread ? '● 查看新提醒' : '查看对话') : null)),
+        error ? h('p', { role: 'alert' }, error) : null);
+    }
+    function DailyUnread({ openSession }) {
+      const [record, setRecord] = useState(null);
+      useEffect(() => {
+        const controller = new AbortController();
+        async function refresh() {
+          try { const result = await dailyApi('status', undefined, controller.signal); if (!controller.signal.aborted) setRecord(result.records.find(item => item.unread) || null); }
+          catch { /* Settings owns visible errors; unread polling never interrupts. */ }
+        }
+        void refresh(); const timer = setInterval(refresh, 60000);
+        window.addEventListener('focus', refresh);
+        return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', refresh); };
+      }, []);
+      return record ? h(Button, { size: 'sm', variant: 'outline', 'aria-label': '查看新的伙伴提醒', onClick: () => {
+        openSession(record.sessionId);
+        void dailyApi('read', { id: record.id }).then(() => setRecord(null)).catch(() => {});
+      } }, '● 伙伴提醒') : null;
+    }
+
     function Icon({ size }) { return h(IconLinkOutlineMedium, { size }); }
-    return { name: '@crysound/feishu-settings', inject: ['slots', 'locale'], apply(ctx) {
+    return { name: '@crysound/feishu-settings', inject: ['slots', 'locale', 'uiWorkspace'], apply(ctx) {
       ctx.effect(() => ctx.locale.register(namespace, 'en', en));
       ctx.effect(() => ctx.locale.register(namespace, 'zh', zh));
       const t = ctx.locale.bind(namespace);
-      ctx.effect(() => { const sheet = document.createElement('style'); sheet.textContent = styles; document.head.appendChild(sheet); return () => sheet.remove(); });
+      ctx.effect(() => { const sheet = document.createElement('style'); sheet.textContent = styles + dailyStyles; document.head.appendChild(sheet); return () => sheet.remove(); });
       ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: sectionId, order: 65, label: () => t('title'), locale: namespace, inject: () => ({ formatTime: date => date.toLocaleString(ctx.locale.getSnapshot().active) }) }, Panel));
       ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: sectionId }, Icon));
+      if (!desktop) {
+        const injectDaily = () => ({ openSession: id => {
+          ctx.uiWorkspace.openSession(id);
+          const shell = ctx.slots.entries('sidebar.settings').find(entry => entry.store)?.store;
+          shell?.create().actions.close();
+        } });
+        ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'crysound-daily-check', order: 66, label: dailyTitle, inject: injectDaily }, DailyPanel));
+        ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: 'crysound-daily-check' }, Icon));
+        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({ name: 'sidebar.footer.action', id: 'crysound-daily-unread', inject: injectDaily }, DailyUnread));
+      }
       ctx.effect(() => {
         const reopen = () => {
           if (new URLSearchParams(location.search).get('zp-settings') !== 'feishu' && sessionStorage.getItem('zp-feishu-return') !== '1') return;

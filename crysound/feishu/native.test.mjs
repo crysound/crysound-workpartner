@@ -49,7 +49,7 @@ test('设置入口注册原生页和图标，授权回跳打开同一原生设�
     inject:(_key,work)=>work(), register:(options,component)=>entries.push({options,component}),
     entries:()=>[{store:{create:()=>({actions:{openSection:id=>actions.push(id)}})}}], subscribe:()=>()=>{},
   }});
-  assert.deepEqual(entries.map(entry=>entry.options.name),['settings.section','settings.section.icon']);
+  assert.deepEqual(entries.filter(entry=>entry.options.id==='crysound-feishu').map(entry=>entry.options.name),['settings.section','settings.section.icon']);
   assert.equal(entries[0].options.id,entries[1].options.id);
   assert.deepEqual(actions,['crysound-feishu']); assert.equal(location.search,'');
 });
@@ -92,7 +92,7 @@ function panelFixture(t, { saved, respond } = {}) {
   definition.factory(name=>name==='react'?react:{}).apply({
     effect:work=>{const stop=work();if(typeof stop==='function')disposers.push(stop);},
     locale:{register:(_ns,language,dict)=>{dictionaries.set(language,dict);return()=>dictionaries.delete(language);},bind:()=>translate,getSnapshot:()=>({active})},
-    slots:{inject:(_name,work)=>work(),register:(options,component)=>{registrations.push(options);if(options.name==='settings.section'){panel=component;slot=options;}},entries:()=>[],subscribe:()=>()=>{}},
+    slots:{inject:(_name,work)=>work(),register:(options,component)=>{registrations.push(options);if(options.name==='settings.section' && options.id==='crysound-feishu'){panel=component;slot=options;}},entries:()=>[],subscribe:()=>()=>{}},
   });
   function render(){cursor=0;return panel({t:translate,...slot.inject?.()});}
   render();

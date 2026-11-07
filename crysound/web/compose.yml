@@ -25,6 +25,8 @@ services:
       TREG_DAILY_USD: ${TREG_DAILY_USD:-1}
       TREG_MONTHLY_USD: ${TREG_MONTHLY_USD:-5}
       TREG_CALL_MAX_USD: ${TREG_CALL_MAX_USD:-1}
+      DAILY_CHECK_USERS: ${DAILY_CHECK_USERS:-}
+      DAILY_CHECK_MODEL: ${DAILY_CHECK_MODEL:-}
       MEEGLE_HOST: ${MEEGLE_HOST:-}
       MARKET_ADMINS: ${MARKET_ADMINS:?在 .env 设置市场管理员（首期 Jason 的已开通 slug）}
       MARKET_OFFICIAL_PUBLISHERS: ${MARKET_OFFICIAL_PUBLISHERS:-}
@@ -59,6 +61,7 @@ services:
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
       - ./gateway/feishu.mjs:/app/feishu.mjs:ro
       - ../feishu:/feishu:ro
+      - ../daily-check:/daily-check:ro
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure
