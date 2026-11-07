@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, cp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import http from "node:http";
-import { gzipSync, deflateSync, brotliCompressSync } from "node:zlib";
+import { gzipSync, deflateSync, brotliCompressSync, constants } from "node:zlib";
 import { once } from "node:events";
 import { isPublicAddress, publicTarget, publicRequest, USER_AGENT, LANGUAGE } from "./network.mjs";
 import { companyFetcher, followPublic, loginPage, needsRendering } from "./fetch.mjs";
@@ -85,6 +85,16 @@ test("real HTTP transport sends browser headers and uses the checked DNS answer"
   const pending = publicRequest("https://slow-dns.example", controller.signal, {}, () => new Promise(() => {}));
   controller.abort(new Error("cancelled DNS"));
   await assert.rejects(pending, /cancelled DNS/);
+});
+
+test("Baidu HTTPS returns a title and body through the real public transport", { skip: !process.env.PARTNER_TEST_LIVE_FETCH, timeout: 45000 }, async () => {
+  const { HttpFetchProvider, Config } = await released("dsh-web-fetch-http");
+  const config = Config({});
+  const result = await companyFetcher(HttpFetchProvider, WebError, config).fetch({ url: "https://www.baidu.com/" });
+  assert.equal(result.statusCode, 200);
+  assert.match(result.body.content, /百度一下，你就知道/);
+  assert.match(result.body.content, /新闻|贴吧|学术/);
+  assert.ok(result.body.content.length <= config.maxBodyChars);
 });
 
 test("compressed responses decode before text extraction and unsupported encodings fail", async t => {
@@ -202,7 +212,9 @@ test("fetch byte/character limits and timeout/cancellation stay structured", asy
   assert.equal(truncated.body.content.length, 12);
   assert.equal(truncated.truncated, true);
   const tooLarge = companyFetcher(HttpFetchProvider, WebError, { ...limits, maxResponseBytes: 12 }, { request: async () => new Response(content, { headers: { "content-type": "text/html", "content-length": Buffer.byteLength(content) } }) });
-  await assert.rejects(tooLarge.fetch({ url: "https://example.com/news" }), { code: "WEB_FETCH_TOO_LARGE" });
+  const prefix = await tooLarge.fetch({ url: "https://example.com/news" });
+  assert.equal(prefix.body.content, "国内网页");
+  assert.equal(prefix.truncated, true);
   const origin = await server(t, (req, res) => { /* Hold the response until the caller's deadline closes the socket. */ });
   const timeout = companyFetcher(HttpFetchProvider, WebError, { ...limits, timeoutMs: 20 }, { request: fixtureRequest(origin) });
   await assert.rejects(timeout.fetch({ url: "https://example.com/news" }), { code: "WEB_FETCH_TIMEOUT" });
@@ -210,6 +222,52 @@ test("fetch byte/character limits and timeout/cancellation stay structured", asy
   const cancelled = timeout.fetch({ url: "https://example.com/news" }, controller.signal);
   controller.abort();
   await assert.rejects(cancelled, { code: "WEB_ABORTED" });
+});
+
+test("large HTML retains its title and article after a large head, with bounded streamed prefixes", { timeout: 15000 }, async t => {
+  const { HttpFetchProvider } = await released("dsh-web-fetch-http");
+  const article = `<title>大页面标题</title><main>${content}</main>`;
+  const largeHead = `<style>${".unused{}".repeat(40_000)}</style><script>${"/* ignored */".repeat(30_000)}</script>`;
+  const hidden = `<textarea style="display: none !important">${"ignored CSS".repeat(20_000)}</textarea>`;
+  const visible = '<textarea title="not hidden" aria-hidden="false">visible input text <style>literal CSS</style></textarea>';
+  const page = `<html><head><!-- ${largeHead} -->${largeHead}</head><body>${hidden}${article}${visible}</body></html>`;
+  const closed = new Map(["/declared", "/chunked", "/compressed"].map(path => {
+    let resolve;
+    const promise = new Promise(done => { resolve = done; });
+    return [path, { promise, resolve }];
+  }));
+  const origin = await server(t, (req, res) => {
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    if (req.url === "/large-head") return res.end(page);
+    res.on("close", () => closed.get(req.url).resolve());
+    if (req.url === "/declared") res.setHeader("content-length", 10_000_000);
+    if (req.url === "/compressed") res.setHeader("content-encoding", "gzip");
+    const text = article + "文".repeat(10_000);
+    res.write(req.url === "/compressed" ? gzipSync(text, { finishFlush: constants.Z_SYNC_FLUSH }) : text);
+    // The response intentionally remains open: a bounded read must close its socket.
+  });
+  const fetcher = companyFetcher(HttpFetchProvider, WebError, { ...limits, maxResponseBytes: 2_000_000 }, { request: fixtureRequest(origin) });
+  const result = await fetcher.fetch({ url: "https://public.example/large-head" });
+  assert.ok(result.body.content.includes("<title>大页面标题</title>"));
+  assert.ok(result.body.content.includes(content));
+  assert.ok(result.body.content.includes(visible));
+  assert.equal(result.body.content.includes("ignored"), false);
+  assert.equal(result.truncated, false, "removing scripts and styles does not discard readable text");
+  const small = companyFetcher(HttpFetchProvider, WebError, { ...limits, maxResponseBytes: 2048 }, { request: fixtureRequest(origin) });
+  for (const path of ["/declared", "/chunked", "/compressed"]) {
+    const value = await small.fetch({ url: `https://public.example${path}` });
+    assert.equal(value.truncated, true, path);
+    assert.ok(value.body.content.includes("大页面标题"), path);
+    assert.ok(value.body.content.includes(content), path);
+    assert.equal(value.body.content, Buffer.from(article + "文".repeat(10_000)).subarray(0, 2048).toString("utf8"), path);
+    await closed.get(path).promise;
+  }
+  for (const length of [2048, 2049]) {
+    const exact = companyFetcher(HttpFetchProvider, WebError, { ...limits, maxResponseBytes: 2048 }, { request: async () => new Response("x".repeat(length), { headers: { "content-type": "text/plain", "content-length": length } }) });
+    const value = await exact.fetch({ url: "https://example.com/text" });
+    assert.equal(value.body.content.length, 2048);
+    assert.equal(value.truncated, length > 2048);
+  }
 });
 
 test("patches apply to the pinned artifacts, repeat identically, and reject upstream drift", async t => {

@@ -5,4 +5,5 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean -
 COPY web/gateway/*.mjs ./
 COPY web/preview/ /preview/
 COPY feishu/ /feishu/
+COPY daily-check/ /daily-check/
 CMD ["node", "/app/gateway.mjs"]

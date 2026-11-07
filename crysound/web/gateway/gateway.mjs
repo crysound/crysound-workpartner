@@ -14,6 +14,9 @@ import { createMarket } from "./market.mjs";
 import { createTreg } from "./treg.mjs";
 import { createFeishu } from "./feishu.mjs";
 import { createSettingsHandler } from "../../feishu/settings.mjs";
+import { createDailyCheck, createDailyCheckHandler } from "../../daily-check/service.mjs";
+import { createCollector } from "../../daily-check/collect.mjs";
+import { createContainerReader, createSummarizer } from "../../daily-check/container.mjs";
 import { createContainerProject } from "../../feishu/container-project.mjs";
 
 const PORT = 3090;
@@ -142,9 +145,31 @@ const feishuSettings = createSettingsHandler({
   status: (user) => feishu.status(user.unionId), disconnect: (user) => feishu.disconnect(user.unionId),
   project: createContainerProject(), connectUrl: `https://${PUBLIC_HOST}/_zp/feishu/connect`,
 });
+// Pilot allowlist is empty until a reviewer enables the one-week personal trial.
+const dailyUsers = new Set(String(process.env.DAILY_CHECK_USERS || "").split(",").map(value => value.trim()).filter(Boolean));
+const dailyCheck = createDailyCheck({
+  directory: "/state/daily-check", users,
+  available: user => Boolean(process.env.DAILY_CHECK_MODEL) && dailyUsers.has(user.slug),
+  connected: user => feishu.status(user.unionId).connected,
+  collect: createCollector(createContainerReader({ ensureRunning: upstream })),
+  summarize: createSummarizer({ baseUrl: MAGPIE.href, model: process.env.DAILY_CHECK_MODEL,
+    keyFor: user => fs.readFileSync(`/secure/${MAGPIE_KEY_PREFIX}${user.slug}.key`, "utf8").trim() }),
+});
+const dailyPublic = createDailyCheckHandler({ service: dailyCheck, identify: req => userFor(req).user, origin: `https://${PUBLIC_HOST}` });
+const dailyInternal = createDailyCheckHandler({ service: dailyCheck, identify: desktopUser, internal: true });
+let dailyTicking = false;
+const checkDaily = async () => {
+  if (dailyTicking) return;
+  dailyTicking = true;
+  try { await dailyCheck.tick(); } catch { console.warn("每日检查暂时不可用，请查看运行记录"); }
+  finally { dailyTicking = false; }
+};
+const dailyTimer = setInterval(checkDaily, 60000); dailyTimer.unref();
+void checkDaily();
 // 此端口不映射到宿主机，也不经公网网关路由，容器仍须通过 tokenUser 鉴权。
 const feishuInternal = http.createServer(async (req, res) => {
   if (req.url === "/token") return feishu.token(req, res);
+  if (await dailyInternal(req, res, new URL(req.url, "http://gateway.internal"))) return;
   res.writeHead(404); res.end();
 });
 feishuInternal.listen(3091, "0.0.0.0");
@@ -396,6 +421,7 @@ const server = http.createServer(async (req, res) => {
     if (await feishu.handle(req, res, url)) return;
     if (url.pathname.startsWith("/_zp/feishu/") && !userFor(req).user) return redirect(res, "/_zp/login?next=%2F_zp%2Ffeishu%2F");
     if (await feishuSettings(req, res, url)) return;
+    if (await dailyPublic(req, res, url)) return;
     if (await treg(req, res, url)) return;
     if (await market(req, res, url)) return;
     if (url.pathname === "/_zp/login" || url.pathname === "/_zp/callback") return await login(req, res, url, oldHost ? host : PUBLIC_HOST);

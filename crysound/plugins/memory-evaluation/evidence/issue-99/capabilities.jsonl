@@ -1,0 +1,5 @@
+{"capability":"llm","prepareCall":true}
+{"capability":"timer","fired":true}
+{"capability":"status","status":"running"}
+{"capability":"status","status":"idle"}
+{"capability":"history","userMessages":2,"auxiliaryRequests":1}

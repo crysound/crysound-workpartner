@@ -77,6 +77,8 @@ export async function publicRequest(input, signal, headers = {}, resolve = looku
     const dispatch = send ?? (url.protocol === "https:" ? https.request : http.request);
     const request = dispatch(url, {
       method: "GET", signal, agent: false, lookup: pinnedLookup,
+      // Some HTTPS sites close connections that do not negotiate an HTTP protocol.
+      ALPNProtocols: ["http/1.1"],
       headers: { ...headers, "user-agent": USER_AGENT, "accept-language": LANGUAGE, "accept-encoding": "identity" },
     }, response => {
       const responseHeaders = new Headers();
