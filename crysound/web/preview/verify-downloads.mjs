@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { Readable } from "node:stream";
 import { installPreviewClient } from "./client.mjs";
 import { previewDownloadBody } from "./downloads.mjs";
@@ -50,10 +51,25 @@ document.getElementById('download').onclick=async()=>{
   a.href=URL.createObjectURL(new Blob(['中文下载内容'],{type:'text/plain'}));
   a.download='中文下载验证.txt'; a.click();
 };</script></body></html>`;
-const reply = Object.assign(Readable.from([Buffer.from(editor)]), { statusCode: 200 });
-const chunks = [];
-for await (const chunk of previewDownloadBody(reply, { "content-type": "text/html; charset=utf-8" })) chunks.push(chunk);
-const rewritten = Buffer.concat(chunks).toString();
+// Like the real editors: only the original inline scripts are hashed, no unsafe-inline.
+const hashes = [...editor.matchAll(/<script>(.*?)<\/script>/gis)]
+  .map(([, source]) => `'sha256-${createHash("sha256").update(source).digest("base64")}'`);
+const policies = {
+  editor: `default-src 'self'; script-src 'self' 'unsafe-eval' ${hashes.join(" ")}; style-src 'unsafe-inline'`,
+  inline: "default-src 'self'; script-src 'unsafe-inline'",
+  fallback: `default-src 'self' ${hashes.join(" ")}`,
+  elements: `script-src 'none'; script-src-elem 'self' ${hashes.join(" ")}`,
+  nonce: `script-src 'unsafe-inline' 'nonce-test' ${hashes.join(" ")}`,
+  multiple: `script-src ${hashes.join(" ")}, default-src 'self' ${hashes.join(" ")}`,
+};
+const pages = {};
+for (const [name, policy] of Object.entries(policies)) {
+  const headers = { "content-type": "text/html; charset=utf-8", "content-security-policy": policy };
+  const reply = Object.assign(Readable.from([Buffer.from(editor)]), { statusCode: 200 });
+  const chunks = [];
+  for await (const chunk of previewDownloadBody(reply, headers)) chunks.push(chunk);
+  pages[name] = { headers, body: Buffer.concat(chunks).toString() };
+}
 ws.addEventListener("message", async ({ data }) => {
   const message = JSON.parse(data);
   if (message.id) {
@@ -68,11 +84,13 @@ ws.addEventListener("message", async ({ data }) => {
   events.push(message);
   if (message.method !== "Fetch.requestPaused") return;
   const url = message.params.request.url;
+  const page = pages[new URL(url).pathname.slice(1)] || pages.editor;
   const text = url.startsWith("https://main.issue-113.test/") ? main
-    : url.startsWith(`https://${previewHost}/`) ? rewritten : '<!doctype html><title>外部网页</title>';
+    : url.startsWith(`https://${previewHost}/`) ? page.body : '<!doctype html><title>外部网页</title>';
   try {
     await send("Fetch.fulfillRequest", { requestId: message.params.requestId, responseCode: 200,
-      responseHeaders: [{ name: "Content-Type", value: "text/html; charset=utf-8" }],
+      responseHeaders: Object.entries(url.startsWith(`https://${previewHost}/`) ? page.headers
+        : { "content-type": "text/html; charset=utf-8" }).map(([name, value]) => ({ name, value })),
       body: Buffer.from(text).toString("base64") });
   } catch (error) { errors.push(error.message); }
 });
@@ -111,9 +129,17 @@ try {
   assert.equal(standaloneDownload.params.suggestedFilename, "中文下载验证.txt");
   await until(() => events.slice(firstEvent).find((e) => e.method === "Page.downloadProgress"
     && e.params.guid === standaloneDownload.params.guid && e.params.state === "completed"));
+  for (const name of Object.keys(policies).filter((name) => name !== "editor")) {
+    await send("Page.navigate", { url: `https://${previewHost}/${name}` });
+    await until(() => evaluate(`location.pathname === '/${name}' && window.startupFlag === true
+      && typeof document.querySelector('#download')?.onclick === 'function'`));
+  }
   assert.deepEqual(errors, []);
   assert(!events.some((e) => e.method === "Runtime.exceptionThrown"));
+  assert(!events.some((e) => e.method === "Log.entryAdded" && e.params.entry.source === "security"
+    && e.params.entry.level === "error"), "CSP must allow the marker and original editor scripts");
   const result = { startupFlag: true, externalUnchanged: true, revokedOnExternalNavigation: true, standaloneDownload: true,
+    contentSecurityPolicy: pages.editor.headers["content-security-policy"], cspVariants: Object.keys(policies),
     filename: download.params.suggestedFilename, download: complete.params };
   fs.writeFileSync(path.join(evidenceDir, "native-downloads.json"), JSON.stringify(result, null, 2) + "\n");
   console.log(JSON.stringify(result, null, 2));

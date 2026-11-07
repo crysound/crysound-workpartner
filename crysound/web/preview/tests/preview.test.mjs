@@ -37,6 +37,7 @@ async function fixture(t) {
       const encoding = req.url.split("/")[2];
       const bytes = encoding === "gzip" ? gzipSync(html) : encoding === "deflate" ? deflateSync(html) : encoding === "br" ? brotliCompressSync(html) : Buffer.from(html);
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": bytes.length,
+        "content-security-policy": "default-src 'self'; script-src 'self' 'sha256-editor'",
         ...(encoding ? { "content-encoding": encoding } : {}), etag: '"original"' });
       return res.end(bytes);
     }
@@ -114,6 +115,8 @@ test("web preview enables native downloads before editor startup, including comp
     const window = {};
     for (const [, script] of page.text.matchAll(/<script>(.*?)<\/script>/gis)) vm.runInNewContext(script, { window });
     assert.equal(window.editorSawNativeDownloads, true, path);
+    const injected = page.text.match(/<script>(.*?)<\/script>/is)[1];
+    assert(page.headers["content-security-policy"].includes(`'sha256-${crypto.createHash("sha256").update(injected).digest("base64")}'`));
     assert(page.text.includes("中文导出"));
     for (const header of ["content-length", "content-encoding", "etag"]) assert.equal(page.headers[header], undefined);
   }

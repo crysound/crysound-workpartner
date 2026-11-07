@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Readable } from "node:stream";
+import { createHash } from "node:crypto";
 import { nativeDownloadHtml, previewDownloadBody } from "../downloads.mjs";
 
 const collect = async (stream) => { const chunks = []; for await (const chunk of stream) chunks.push(chunk); return Buffer.concat(chunks); };
@@ -33,10 +34,38 @@ test("attachments, binary, SSE, unsupported charset and non-200 responses are by
     [200, { "content-type": "text/html; charset=gbk" }], [206, {}], [304, {}],
   ]) {
     const reply = Object.assign(Readable.from([Buffer.from([0, 255, 17])]), { statusCode });
-    const headers = { "content-type": "text/html", "content-length": 3, ...extra };
+    const headers = { "content-type": "text/html", "content-length": 3,
+      "content-security-policy": "script-src 'self'", ...extra };
     const original = { ...headers };
     assert.equal(previewDownloadBody(reply, headers), reply);
     assert.deepEqual(headers, original);
     assert.deepEqual(await collect(reply), Buffer.from([0, 255, 17]));
+  }
+});
+
+test("CSP authorizes the injected script without disabling existing inline scripts", async () => {
+  const hash = `'sha256-${createHash("sha256").update("window.__baoyuNativeDownloads=true;").digest("base64")}'`;
+  const cases = [
+    ["script-src 'self' 'sha256-editor'", `script-src 'self' 'sha256-editor' ${hash}`],
+    ["script-src 'nonce-editor' 'unsafe-inline'", `script-src 'nonce-editor' 'unsafe-inline' ${hash}`],
+    ["script-src 'unsafe-inline' 'sha384-editor'", `script-src 'unsafe-inline' 'sha384-editor' ${hash}`],
+    ["script-src 'sha512-editor' 'strict-dynamic'", `script-src 'sha512-editor' 'strict-dynamic' ${hash}`],
+    ["default-src 'none'; img-src data:", `default-src 'none' ${hash}; img-src data:`],
+    ["default-src 'self'; SCRIPT-SRC 'none'; script-src-elem 'nonce-editor'", `default-src 'self'; SCRIPT-SRC 'none'; script-src-elem 'nonce-editor' ${hash}`],
+    ["script-src 'unsafe-inline'", "script-src 'unsafe-inline'"],
+    ["default-src 'self' 'unsafe-inline'; img-src data:", "default-src 'self' 'unsafe-inline'; img-src data:"],
+    ["img-src 'none'", "img-src 'none'"],
+    [`script-src ${hash}`, `script-src ${hash}`],
+    ["script-src 'self'; script-src 'none'", `script-src 'self' ${hash}; script-src 'none'`],
+    ["script-src 'self', default-src 'none'", `script-src 'self' ${hash}, default-src 'none' ${hash}`],
+    [["script-src 'self'", "script-src 'unsafe-inline'"], [`script-src 'self' ${hash}`, "script-src 'unsafe-inline'"]],
+  ];
+  for (const [policy, expected] of cases) {
+    const reply = Object.assign(Readable.from(["<head></head>"]), { statusCode: 200 });
+    const headers = { "content-type": "text/html", "content-security-policy": policy,
+      "content-security-policy-report-only": "script-src 'none'" };
+    await collect(previewDownloadBody(reply, headers));
+    assert.deepEqual(headers["content-security-policy"], expected);
+    assert.equal(headers["content-security-policy-report-only"], "script-src 'none'");
   }
 });

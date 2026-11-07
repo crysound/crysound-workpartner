@@ -38,6 +38,8 @@ HTTP、保存请求、SSE 和 WebSocket 流式经过网关与转发器。浏览�
 
 网页版网关在预览 HTML 的 `<head>` 开头设置 `window.__baoyuNativeDownloads=true`，让宝玉系列编辑器使用原生下载。注入支持 UTF-8 HTML（含 gzip、deflate、Brotli），移除失效的长度和校验头；附件、其他类型和非成功响应保持原样，SSE 与 WebSocket 继续流式转发。不会修改插件包、容器转发器或桌面版；桌面版仍按编辑器的 Electron 判断存入作品的 `exports/`。
 
+若响应有强制执行的 Content-Security-Policy，网关仅把注入脚本的精确 SHA-256 哈希加到生效的脚本指令（依次为 `script-src-elem`、`script-src`、`default-src`）。多条策略逐条处理；原本仅靠 `unsafe-inline` 放行脚本的指令保持原样，避免新增哈希使已有内联脚本失效。报告模式策略保持原样。浏览器回归页使用和真实编辑器同类的“已有脚本哈希、无 `unsafe-inline`”策略，并检查原脚本仍执行、无策略拦截错误。
+
 主站适配器只给 `src` 为配置的 HTTPS 预览来源的沙箱 iframe 补 `allow-downloads`。它保留其余限制，重新挂载同一个元素使策略生效；改到其他来源时撤回自己添加的许可。此改动涉及下载许可，合入前须按需求单流程经分诊确认。
 
 本次修复只需构建、重建网关，再刷新网页，无需重建用户容器：
