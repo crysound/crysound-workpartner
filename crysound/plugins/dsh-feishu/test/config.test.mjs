@@ -146,3 +146,9 @@ test('CardKit interval defaults to 250ms, accepts deployment pacing, and rejects
   for (const value of [200, 300, 5000]) assert.equal(resolveConfig({ previewIntervalMs: value }, {}).previewIntervalMs, value)
   for (const value of [0, 199, 5001, 250.5, NaN]) assert.throws(() => resolveConfig({ previewIntervalMs: value }, {}), /previewIntervalMs/)
 })
+
+test('completion reminder defaults to 60 seconds, accepts zero, and validates the boundary', () => {
+  assert.equal(resolveConfig({}, {}).completionReminderSeconds, 60)
+  for (const value of [0, 1, 60, 86400]) assert.equal(resolveConfig({ completionReminderSeconds: value }, {}).completionReminderSeconds, value)
+  for (const value of [-1, 1.5, 86401, NaN]) assert.throws(() => resolveConfig({ completionReminderSeconds: value }, {}), /completionReminderSeconds/)
+})

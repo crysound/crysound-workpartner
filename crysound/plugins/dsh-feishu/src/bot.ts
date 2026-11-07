@@ -15,7 +15,7 @@
  *   turn's next round — the operator's mid-course corrections land
  *   immediately) and `agent.followup` when idle (open the next turn);
  * - OnIt precedes session work; one retained preview spans the whole turn;
- * - turn/end settles the preview in place, sends a new final reply, then clears OnIt;
+ * - turn/end retains the answer in the preview, then clears OnIt;
  * - card operations serialize final replies in turn order;
  * - no replay of session history on bind (live events from bind time on).
  */
@@ -120,7 +120,7 @@ interface LlmModelSurface {
 }
 import type { BindResult, SessionBinder } from './binder.ts'
 import type { StateStore } from './state-store.ts'
-import { clipLine, segmentText, textOfContent, markdownTableCount } from './text.ts'
+import { clipLine, segmentText, markdownTableCount } from './text.ts'
 import { Preview, TurnOutput } from './preview.ts'
 import { toolProgress } from './progress.ts'
 import { replyChain, forwardedContent, type ResourceImage } from './resources.ts'
@@ -1798,7 +1798,8 @@ export class FeishuBot {
         this.turnHasUser = true
       } else if (event.type === 'assistant/message') {
         this.turnOutput ??= new TurnOutput()
-        this.turnOutput.assistant(textOfContent(event.data.message.content),
+        // Match streamed deltas verbatim, including whitespace between text blocks.
+        this.turnOutput.assistant(event.data.message.content.filter(block => block.type === 'text').map(block => block.text).join(''),
           event.data.message.content.some(block => block.type === 'tool-call'))
       } else if (event.type === 'tool/call') {
         this.turnOutput?.tool(event.data.callId, toolProgress(event.data.name, event.data.arguments))
@@ -1815,8 +1816,9 @@ export class FeishuBot {
         this.turnOutput = undefined
         this.turnMessages = []
         const lastChatId = this.store.get().lastChatId
+        const endedAt = this.now()
         void this.chain(() => this.finishOutput(output, messages, reason, endError,
-          lastChatId ? { chatId: lastChatId } : undefined))
+          lastChatId ? { chatId: lastChatId } : undefined, endedAt))
       }
       return
     }
@@ -1981,7 +1983,7 @@ export class FeishuBot {
     }
   }
 
-  private async finishOutput(output: TurnOutput, messages: InboundMessage[], reason?: string, error?: string, fallbackTarget?: MessageTarget): Promise<void> {
+  private async finishOutput(output: TurnOutput, messages: InboundMessage[], reason?: string, error?: string, fallbackTarget?: MessageTarget, endedAt = this.now()): Promise<void> {
     let override: string | undefined
     if (reason === 'error') {
       override = /Session not found/i.test(error ?? '') ? '⚠️ 会话已过期，请发送 /new 开始新会话' : `❌ 错误: ${error || '本轮执行失败'}`
@@ -1993,9 +1995,17 @@ export class FeishuBot {
       : reason === 'aborted' || reason === 'stopped' ? '已停止'
       : reason === 'max-tokens' ? '已达到长度上限'
       : reason === 'blocked' ? '已被拦截' : '已完成'
-    await output.preview?.finish(status.slice(0, 500))
+    const retained = await output.preview?.finish(status.slice(0, 500), body, endedAt)
     const target = output.target ?? fallbackTarget
-    if (target) await this.sendFinal(target, body)
+    if (target) {
+      if (!retained?.delivered || retained.overflow) await this.sendFinal(target, body)
+      else {
+        const threshold = this.config.completionReminderSeconds ?? 60
+        if (threshold > 0 && retained.elapsedMs > threshold * 1000) {
+          await this.lark.sendMessage(target, 'text', { text: '做完了，结果在上面。' })
+        }
+      }
+    }
     await this.clearAcknowledgements(messages)
   }
 

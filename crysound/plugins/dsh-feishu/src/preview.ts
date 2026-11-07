@@ -1,12 +1,39 @@
 import { randomBytes } from 'node:crypto'
-import { buildBodyCard } from './card.ts'
+import { buildBodyCard, type Schema2Card } from './card.ts'
+import { closeOpenFence } from './text.ts'
 import type { LarkGateway, MessageTarget } from './lark-client.ts'
 
 export const PREVIEW_INTERVAL_MS = 250
+
+/** Delivery outcome for the final card; failed or clipped cards need a separate body. */
+export interface PreviewResult {
+  readonly delivered: boolean
+  readonly overflow: boolean
+  readonly elapsedMs: number
+}
+
+/** Keep ample room below Feishu's 30 KB card limit, including nested JSON encoding. */
+function finalCard(body: string, footer: string) {
+  const make = (text: string): Schema2Card => ({
+    schema: '2.0',
+    config: { width_mode: 'fill' },
+    body: { elements: [
+      { tag: 'markdown', content: text },
+      { tag: 'markdown', content: footer, text_size: 'notation' },
+    ] },
+  })
+  const fits = (text: string) => text.length <= 8000
+    && Buffer.byteLength(JSON.stringify(JSON.stringify(make(text)))) <= 28000
+  if (fits(body)) return { card: make(body), overflow: false }
+  const suffix = '\n\n全文见下条'
+  let prefix = Array.from(body).slice(0, 8000).join('')
+  while (!fits(closeOpenFence(prefix) + suffix)) prefix = Array.from(prefix).slice(0, -200).join('')
+  return { card: make(closeOpenFence(prefix) + suffix), overflow: true }
+}
 const FALLBACK_INTERVAL_MS = 700
 export function previewBody(lines: readonly string[], paragraph: string, streaming = false): string | undefined {
   const rows = lines.flatMap(line => line.match(/[\s\S]{1,2000}/g) ?? [])
-  paragraph = paragraph.split('\n').map(line => (line.match(/[\s\S]{1,2000}/g) ?? ['']).join('\n')).join('\n')
+  if (!streaming) paragraph = paragraph.split('\n').map(line => (line.match(/[\s\S]{1,2000}/g) ?? ['']).join('\n')).join('\n')
   let folded = 0
   for (;;) {
     const parts = [...(folded ? [`…（前 ${folded} 条已折叠）`] : []), ...rows]
@@ -35,7 +62,7 @@ export class Preview {
   private lastSent = -Infinity
   private timer: ReturnType<typeof setTimeout> | undefined
   private flight: Promise<void> | undefined
-  private finishFlight: Promise<void> | undefined
+  private finishFlight: Promise<PreviewResult> | undefined
   private stopped = false
   private disabled = false
   private readonly lark: LarkGateway
@@ -54,7 +81,11 @@ export class Preview {
 
   line(text: string): void { if (text) { this.lines.push(text); this.schedule() } }
   delta(text: string): void { if (text) { this.paragraph += text; this.schedule() } }
-  settled(): void { this.paragraph = ''; this.schedule() }
+  settled(text = '', hasTools = true): void {
+    this.paragraph = hasTools ? '' : text
+    if (!hasTools) this.lines = []
+    this.schedule()
+  }
 
   private schedule(): void {
     if (this.stopped || this.disabled || this.flight || this.timer) return
@@ -97,22 +128,28 @@ export class Preview {
     card.config.summary = { content: '思考中…' }
     return card
   }
-  finish(status = '已完成'): Promise<void> {
-    return this.finishFlight ??= this.settle(status)
+  /** Keep a supplied body, or the current paragraph for lifecycle notices; endedAt excludes queued delivery time. */
+  finish(status = '已完成', body?: string, endedAt = this.now()): Promise<PreviewResult> {
+    return this.finishFlight ??= this.settle(status, body, Math.max(0, endedAt - this.startedAt))
   }
-  private async settle(status: string): Promise<void> {
+  private async settle(status: string, body: string | undefined, elapsedMs: number): Promise<PreviewResult> {
     this.start()
     this.stopped = true
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined
     await this.flight
-    if (!this.messageId) return
-    const seconds = Math.max(0, Math.round((this.now() - this.startedAt) / 1000))
-    const text = `${status} · 用时 ${seconds} 秒`
-    const card = buildBodyCard(text)
-    card.config = { ...card.config, summary: { content: text } }
-    if (this.cardId && await this.lark.settleStreamingCard(this.cardId, ++this.sequence, card)) return
-    await this.lark.patchCard(this.messageId, card)
+    const seconds = Math.round(elapsedMs / 1000)
+    const footer = `${status} · 用时 ${seconds} 秒`
+    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), footer)
+    const result = (delivered: boolean): PreviewResult => ({ delivered, overflow, elapsedMs })
+    if (!this.messageId) return result(false)
+    if (this.cardId) {
+      // Flush the exact rendered final body before disabling the typewriter.
+      const text = String(card.body.elements[0]!.content)
+      await this.lark.streamCardContent(this.cardId, this.elementId, text, ++this.sequence)
+      if (await this.lark.settleStreamingCard(this.cardId, ++this.sequence, card)) return result(true)
+    }
+    return result(await this.lark.patchCard(this.messageId, card))
   }
 }
 
@@ -135,7 +172,7 @@ export class TurnOutput {
     if (hasTools) {
       if (text) { this.intermediate.push(text); this.preview?.line(text.replace(/[\r\n]+/g, ' ')) }
     } else this.finalText = text
-    this.preview?.settled()
+    this.preview?.settled(text, hasTools)
   }
   body(override?: string): string {
     const final = (override ?? this.finalText ?? this.lastText) || '(空响应)'
