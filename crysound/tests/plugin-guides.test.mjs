@@ -80,28 +80,45 @@ test("首页未安装入口打开对应市场详情，已启用进入说明卡�
   assert.equal(f.sent.length, 0);
 });
 
-test("冷启动与旧筛选下都定位官方包，返回列表清掉定位，释放后不再处理", t => {
+test("公司来源排第二时，冷启动与旧筛选都定位公司包；缺公司来源不搜索其他市场", async t => {
+  const company = "https://gateway.test/_zp/market/index.json";
+  const other = "https://community.test/plugins.json";
   let state = { indexes: [], selected: null, listing: null };
-  const listeners = new Set(), events = new Map(), disposers = [], queries = [];
+  const listeners = new Set(), events = new Map(), disposers = [], queries = [], selections = [];
   const publish = next => { state = next; for (const listener of listeners) listener(); };
+  const flush = () => new Promise(resolve => setImmediate(resolve));
   const initial = { text: "", category: null, labels: [], sort: { kind: "index" } };
-  const face = { hooks: {}, ensure() {}, select() {}, search: query => queries.push(query) };
+  const face = { hooks: {}, ensure() {},
+    select(url) { selections.push(url); publish({ ...state, selected: url, listing: { url, query: initial } }); },
+    search: query => queries.push({ url: state.selected, query }),
+  };
   const ctx = { effect: fn => disposers.push(fn()), on: (event, fn) => { events.set(event, fn); return () => events.delete(event); } };
   t.after(() => { for (const dispose of disposers.reverse()) dispose(); });
   installCompanyMarketNavigation(ctx, { store: { getSnapshot: () => state, subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn); } } }, face, store, initial);
   events.get("company-market/select")(guide.name);
-  assert.deepEqual(queries, []);
-  publish({ indexes: [{ url: "company" }], selected: "company", listing: { url: "company", query: initial } });
-  assert.deepEqual(queries, [{ ...initial, text: guide.name }]);
+  await flush(); assert.deepEqual(queries, []);
+  // The native cold load chooses the first configured source after publishing its indexes.
+  publish({ indexes: [{ url: other }, { url: company }], selected: other, listing: null });
+  publish({ ...state, listing: { url: other, query: initial } });
+  await flush();
+  assert.deepEqual(selections, [company]);
+  assert.deepEqual(queries, [{ url: company, query: { ...initial, text: guide.name } }]);
   assert.equal(face.hooks.companyMarket.getSnapshot().name, guide.name);
-  face.closeCompanyEntry(); assert.deepEqual(queries.at(-1), initial);
+  face.closeCompanyEntry(); assert.deepEqual(queries.at(-1), { url: company, query: initial });
   assert.equal(face.hooks.companyMarket.getSnapshot().name, null);
   state.listing.query = { ...initial, text: "old search", category: "other" };
+  events.get("company-market/select")(guide.name); await flush();
+  assert.equal(state.selected, company);
+  assert.deepEqual(queries.at(-1), { url: company, query: { ...initial, text: guide.name } });
+  events.get("company-market/select")(null); await flush();
+  assert.deepEqual(queries.at(-1), { url: company, query: initial });
+  publish({ indexes: [{ url: other }], selected: other, listing: { url: other, query: initial } });
+  const before = queries.length;
+  events.get("company-market/select")(guide.name); await flush();
+  assert.equal(queries.length, before);
   events.get("company-market/select")(guide.name);
-  assert.deepEqual(queries.at(-1), { ...initial, text: guide.name });
-  events.get("company-market/select")(null);
-  assert.deepEqual(queries.at(-1), initial);
   for (const dispose of disposers.splice(0).reverse()) dispose();
+  await flush(); assert.equal(queries.length, before);
   assert.equal(events.size, 0); assert.equal(listeners.size, 0);
 });
 
@@ -194,7 +211,13 @@ test("固定发布模块修补幂等、兼容数据按钮先后顺序；未知�
   const conversation = fs.readFileSync(path.join(root, "ui-conversation/lib/client.js"), "utf8");
   const patched = patchMarketGuides(patchMarketEntry(entry));
   new vm.Script(patched); assert.equal(patchMarketGuides(patched), patched);
-  for (const text of [patchDataUse(patchGuideUse(patchMarketCatalog(market))), patchGuideUse(patchDataUse(patchMarketCatalog(market)))]) new vm.Script(text);
+  const catalog = patchGuideUse(patchMarketCatalog(market));
+  assert.equal(patchGuideUse(catalog), catalog);
+  const previous = catalog.replace("guide use v3", "guide use v2")
+    .replace(installCompanyMarketNavigation.toString(), "function installCompanyMarketNavigation() { throw new Error('legacy'); }");
+  assert.equal(patchGuideUse(previous), catalog);
+  assert.throws(() => patchGuideUse(previous.replace("function installCompanyMarketNavigation", "function unsupported")));
+  for (const text of [patchDataUse(catalog), patchGuideUse(patchDataUse(patchMarketCatalog(market)))]) new vm.Script(text);
   const next = patchGuidePlaceholder(conversation); new vm.Script(next); assert.equal(patchGuidePlaceholder(next), next);
   assert.throws(() => patchMarketGuides(entry.replace('function apply(ctx)', 'function changed(ctx)')));
 });
