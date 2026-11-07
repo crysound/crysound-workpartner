@@ -563,3 +563,24 @@ test("patched tool imports through real release dependencies and auxiliary reque
   assert.deepEqual(record.data.body, sent);
   assert.doesNotMatch(JSON.stringify(record), /fake-key/);
 });
+
+test("summary length follows the configured output budget and retains trailing caveats when they fit", async t => {
+  const caveat = "仅适用于完成校准的设备，不含未校准样本。";
+  const summary = "证".repeat(6500) + caveat;
+  for (const cap of [40000, 4000]) {
+    const { tool, result } = await summaryTool(t, { fetchMaxOutputChars: cap, fetchSummaryMaxTokens: 5000 }, async () => Response.json({ content: [{ type: "text", text: summary }] }));
+    result.body.content = "已校准设备数据。";
+    const args = { url: result.url, prompt: "结果及适用条件？" };
+    const value = await tool.execute(args, {});
+    const output = tool.output.render(args, value)[0].text;
+    assert.ok(output.length <= cap);
+    if (cap === 40000) {
+      assert.ok(output.includes(caveat), "the evidence caveat must survive within the deployment's output budget");
+      assert.equal(tool.output.presentationMeta(args, value).truncated, false);
+    } else {
+      assert.equal(output.length, cap);
+      assert.match(output, /Content truncated/);
+      assert.equal(tool.output.presentationMeta(args, value).truncated, true);
+    }
+  }
+});
