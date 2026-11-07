@@ -3,6 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 const TOOL_EFFICIENCY_GUIDANCE = `Use tools efficiently while preserving correctness and the user's permission boundaries. The following company deployment exceptions replace the single-file read/search tool preferences above for multi-file inspection and small scripts; all permission and sandbox rules still apply.
 - When inspecting several text files in the shell's workspace, prefer one bounded shell command or an available batch-read tool over separate read calls for every file. A single command can discover paths, read relevant content and calculate an aggregate. Use rg with context or combine bounded file ranges with path headings; cap total output. Do not first list paths and then read every file separately. If grep already returned sufficient evidence, use it without rereading every match. If truncated or ambiguous, fetch the missing relevant portions before drawing conclusions. Use the original readers when shell access is unavailable, the files belong to a different execution environment, or a specialized reader is needed (such as images); never bypass access restrictions.
@@ -80,8 +82,20 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
     mine.setIn([...toolPath, key], toolConfig.get(key, true).clone());
   }
 
-  // Existing Web profiles need the same Browser opt-in; desktop choices stay personal.
+  // Web deployment grants memory management and enables Browser; desktop choices stay personal.
   if (enableWebBrowser) {
+    // The authenticated gateway is the only route into each person's Web Host.
+    let memoryIndex = find(mine, "mnemon");
+    if (memoryIndex < 0) {
+      mine.add(mine.createNode({ id: "mnemon", config: {} }));
+      memoryIndex = mine.contents.items.length - 1;
+    }
+    const memoryPath = [memoryIndex, "config"];
+    const memory = mine.getIn(memoryPath, true);
+    if (memory === undefined) mine.setIn(memoryPath, mine.createNode({}));
+    else if (!yaml.isMap(memory)) throw new Error("个人记忆配置使用了动态表达式，无法安全设置网页访问；请把 config 改为映射");
+    mine.setIn([...memoryPath, "remoteAccess"], "trusted-host");
+
     const browserIndex = find(mine, "ui-sidebar-browser");
     if (browserIndex < 0) {
       const companyBrowser = find(seed, "ui-sidebar-browser");
@@ -155,6 +169,73 @@ export function apply(ctx) {
   }
 }
 
+/**
+ * Seed a Native store before the Web Host starts; its Source discovers and activates the first store.
+ * @param {string} file Personal profile patch, with plugin dependencies installed beside it.
+ * @param {object} yaml DSH's YAML parser.
+ * @param {NodeJS.ProcessEnv} environment Host environment, including the default memory root and CLI PATH.
+ * @returns {Promise<void>} Leaves personal scopes and existing stores intact; throws on failed initialization.
+ */
+export async function initializeWebMemory(file, yaml, environment = process.env) {
+  const profile = path.dirname(file);
+  const marker = path.join(profile, ".zp-personal-memory-v1");
+  if (fs.existsSync(marker)) return;
+  const manifest = JSON.parse(fs.readFileSync(path.join(profile, "package.json"), "utf8"));
+  if (!manifest.dsh?.profile?.bundles?.includes("dsh-mnemon")) return;
+  const document = yaml.parseDocument(fs.readFileSync(file, "utf8"), {
+    customTags: [{ tag: "tag:yaml.org,2002:js", resolve: value => value }],
+  });
+  if (document.errors.length) throw document.errors[0];
+  if (!yaml.isSeq(document.contents)) throw new Error("个人配置必须是 YAML 条目列表");
+  let command = "mnemon";
+  for (const row of document.contents.items) {
+    if (!yaml.isMap(row) || !["mnemon", "mnemon-source-memory-spaces"].includes(row.get("id"))) continue;
+    if (row.has("disabled") && row.get("disabled", true)?.value !== false) return;
+    const config = row.get("config", true);
+    if (config === undefined) continue;
+    if (!yaml.isMap(config)) return;
+    // Personal scopes and expressions are resolved by the plugin, never guessed during offline startup.
+    if (["dataDir", "customPackId", "customPacks", "store", "providers"].some(key => config.has(key))) return;
+    const scope = config.get("storageScope", true);
+    if (scope !== undefined && (scope.tag || scope.value !== "global")) return;
+    if (config.has("writeEnabled") && config.get("writeEnabled", true)?.value !== true) return;
+    if (config.has("cliPath")) {
+      const cli = config.get("cliPath", true);
+      if (cli.tag || typeof cli.value !== "string" || !cli.value.trim()) return;
+      command = cli.value;
+    }
+  }
+  const root = environment.MNEMON_DATA_DIR;
+  if (!root || !path.isAbsolute(root)) throw new Error("网页记忆目录必须是绝对路径");
+  const requirePlugin = createRequire(createRequire(path.join(profile, "package.json")).resolve("dsh-mnemon/package.json"));
+  const contracts = await import(pathToFileURL(requirePlugin.resolve("dsh-mnemon-source-memory-spaces/contracts")).href);
+  const data = path.join(root, contracts.MEMORY_SPACES_DIRECTORY);
+  const registries = [
+    [path.join(data, contracts.MEMORY_SPACE_REGISTRY_FILE), contracts.summarizeMemorySpaceRegistry, [1]],
+    [path.join(root, "state", contracts.MEMORY_PROVIDER_REGISTRY_FILE), contracts.summarizeMemoryProviderRegistry, [1, 2, 3, 4]],
+  ];
+  for (const [registry, summarize, versions] of registries) {
+    if (!fs.existsSync(registry)) continue;
+    const stored = JSON.parse(fs.readFileSync(registry, "utf8"));
+    const summary = summarize(stored);
+    if (!summary.valid || !versions.includes(stored.version) || !Array.isArray(stored.bodies)) throw new Error("已有记忆空间目录无法识别，未创建默认空间");
+    if (stored.bodies.length > 0) {
+      fs.writeFileSync(marker, "existing\n", { mode: 0o600 });
+      return;
+    }
+  }
+  // Any existing store or incomplete directory belongs to its owner; do not replace it.
+  if (fs.existsSync(data) && fs.readdirSync(data, { withFileTypes: true }).some(entry => entry.isDirectory() || entry.isSymbolicLink())) {
+    fs.writeFileSync(marker, "existing\n", { mode: 0o600 });
+    return;
+  }
+  execFileSync(command, ["--data-dir", root, "store", "create", "personal"], {
+    env: environment, encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (!fs.existsSync(path.join(data, "personal", contracts.MEMORY_SPACE_DATABASE_FILE))) throw new Error("默认记忆空间未生成数据库");
+  fs.writeFileSync(marker, "created\n", { mode: 0o600 });
+}
+
 if (import.meta.main) {
   const [file, seed, cliEntry, ...flags] = process.argv.slice(2);
   if (!file || !seed || !cliEntry) throw new Error("用法：node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]");
@@ -162,5 +243,10 @@ if (import.meta.main) {
   // Follow exported package manifests so both source checkouts and packaged dependency trees work without loading lib outputs.
   let require = createRequire(cliEntry);
   for (const name of ["@deepseek-ai/dsh/package.json", "@deepseek-ai/dsh-base/package.json", "@deepseek-ai/dsh-config-editor/package.json"]) require = createRequire(require.resolve(name));
-  refreshProfile(file, seed, require("yaml"), flags.includes("--seed"), flags.includes("--web-preview"));
+  const yaml = require("yaml");
+  refreshProfile(file, seed, yaml, flags.includes("--seed"), flags.includes("--web-preview"));
+  if (flags.includes("--web-preview")) {
+    try { await initializeWebMemory(file, yaml); }
+    catch (error) { console.error("警告：默认记忆空间初始化未完成，下次启动重试；记忆空间尚未验收：", error.message); }
+  }
 }
