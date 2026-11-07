@@ -22,11 +22,15 @@ async function fixture(t, options = {}) {
   let time = Date.parse("2026-10-31T15:59:00Z"), notifications = 0, response = () => Response.json({ results: ["ok"] }, { headers: { "x-treg-cost-micro": "1000" } });
   let platformRows = [{ slug: "web", label: "Web", category: "SEO/AEO" }];
   let lookup = (id) => ep(id), budgetFailure = false, reportResponse;
+  let searchRows = [ep(), ep("provider.ai.generate", { platform: "ai" })];
   const fetcher = async (url, init) => {
     calls.push({ url, ...init });
     if (url.endsWith("/catalog/platforms")) return Response.json({ platforms: platformRows });
-    if (url.includes("/catalog/endpoints/")) return Response.json({ endpoint: lookup(decodeURIComponent(url.split("/").pop())) });
-    if (url.includes("/catalog/search")) return Response.json({ results: [ep(), ep("provider.ai.generate", { platform: "ai" })] });
+    if (url.includes("/catalog/endpoints/")) {
+      const value = lookup(decodeURIComponent(url.split("/").pop()));
+      return value instanceof Response ? value : Response.json({ endpoint: value });
+    }
+    if (url.includes("/catalog/search")) return Response.json({ results: searchRows });
     if (url.includes("/budgets/")) {
       if (!budgetFailure) nativeBudgets.set(url.split("/budgets/user")[1] || "", JSON.parse(init.body));
       return Response.json({}, { status: budgetFailure ? 503 : 200 });
@@ -76,6 +80,7 @@ async function fixture(t, options = {}) {
   return { dir, calls, spendRows, started, request, mcp, call, notifications: () => notifications, now: () => time,
     setTime: (next) => { time = Date.parse(next); }, setResponse: (next) => { response = next; },
     setPlatforms: (next) => { platformRows = next; },
+    setSearch: (next) => { searchRows = next; },
     lookup: (next) => { lookup = next; }, failBudget: (value = true) => { budgetFailure = value; }, setReport: (next) => { reportResponse = next; }, restart: () => { handle = createTreg(config); } };
 }
 
@@ -283,12 +288,13 @@ test("上游用量失败或本人金额无效时不显示零用量，不泄漏�
 });
 
 
-test("无市场目录缓存：真实调用按当前公共平台白名单校验，不向目录附凭据", async (t) => {
+test("公共平台缓存到期后按新白名单校验，不向目录附凭据", async (t) => {
   const f = await fixture(t, { catalog: undefined });
   assert.equal((await f.call()).status, 200);
   const listing = await f.request("/catalog/platforms");
   assert.deepEqual(listing.body.platforms, [{ slug: "web", name: "Web", category: "SEO/AEO" }]);
   f.setPlatforms([{ slug: "web", label: "Web", category: "AI generation" }]);
+  f.setTime(new Date(f.now() + 300000).toISOString());
   assert.equal((await f.call()).status, 403);
   assert.equal(f.calls.filter((call) => call.url.includes("/call/")).length, 1);
   for (const call of f.calls.filter((call) => call.url.endsWith("/catalog/platforms"))) {
@@ -368,4 +374,87 @@ test("web.search 固定 Exa 且关闭瀑布，上限不超过个人设置和一�
   const blocked = await fixture(t, { env: { TREG_MONTHLY_USD: "0" } });
   assert.equal((await blocked.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust"}' })).status, 429);
   assert.equal(blocked.calls.filter(r => r.url.includes("/call/")).length, 0);
+});
+
+test("目录搜索隔离单行失败，暂停或下架的路由子接口不挡住其余结果", async t => {
+  const f = await fixture(t);
+  f.setSearch([ep("provider.broken.search"), ep("treg.people.find"), ep()]);
+  f.lookup(id => {
+    if (id === "provider.broken.search") return Response.json({ error: "private-error" }, { status: 502 });
+    if (id === "provider.paused.find") return Response.json({ detail: { error: "provider_paused", message: "private-provider" } }, { status: 503 });
+    if (id === "provider.missing.find") return new Response("not found", { status: 404 });
+    if (id === "treg.people.find") return ep(id, { kind: "routed", routed_children: ["provider.paused.find", "provider.missing.find", "provider.active.find"] });
+    return ep(id);
+  });
+  const rest = await f.request("/catalog/search?q=company+profile&limit=3");
+  assert.equal(rest.status, 200);
+  assert.deepEqual(rest.body.results.map(row => row.id), ["treg.people.find", "provider.web.search"]);
+  const mcp = await f.mcp("catalog_search", { query: "company profile", limit: 3 });
+  assert.equal(mcp.body.result.isError, false);
+  assert.deepEqual(mcp.body.result.structuredContent, rest.body);
+  assert.equal((await f.mcp("catalog_get", { endpoint_id: "treg.people.find" })).body.result.isError, false);
+  assert.equal((await f.request("/catalog/endpoints/treg.people.find")).status, 200);
+  assert.equal((await f.request("/call/treg.people.find", { method: "POST", body: "{}" })).status, 502);
+  assert.equal((await f.mcp("call", { endpoint_id: "treg.people.find", params: {} })).body.result.isError, true);
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 0);
+  assert.doesNotMatch(rest.text, /private-error|private-provider/);
+});
+
+test("路由目录仍拒绝受限分类、未知错误和没有可用子接口的路由", async t => {
+  for (const children of [["provider.paused.find"], ["provider.missing.find"],
+    ["provider.active.find", "provider.ai.find"], ["provider.active.find", "provider.broken.find"]]) {
+    const f = await fixture(t);
+    f.lookup(id => {
+      if (id === "treg.people.find") return ep(id, { kind: "routed", routed_children: children });
+      if (id.includes("paused")) return Response.json({ error: "provider_paused" }, { status: 503 });
+      if (id.includes("missing")) return new Response(null, { status: 404 });
+      if (id.includes("broken")) return Response.json({ error: "other" }, { status: 503 });
+      return ep(id, { platform: id.includes("ai") ? "ai" : "web" });
+    });
+    assert.equal((await f.mcp("catalog_get", { endpoint_id: "treg.people.find" })).body.result.isError, true);
+    assert.ok((await f.request("/catalog/endpoints/treg.people.find")).status >= 400);
+  }
+});
+
+test("搜索无匹配返回空列表，全部核对失败报错，网络或解析失败只跳过该行", async t => {
+  const f = await fixture(t);
+  f.setSearch([]);
+  assert.equal((await f.request("/catalog/search?q=none")).body.count, 0);
+  f.setSearch([ep("provider.broken.search")]);
+  f.lookup(() => Response.json({ error: "private" }, { status: 502 }));
+  assert.equal((await f.request("/catalog/search?q=broken")).status, 502);
+  assert.equal((await f.mcp("catalog_search", { query: "broken" })).body.result.isError, true);
+  f.setSearch([ep("provider.network.search"), ep("provider.invalid.search"), ep()]);
+  f.lookup(id => {
+    if (id.includes("network")) throw new Error("private-network");
+    if (id.includes("invalid")) return new Response("invalid-json");
+    return ep(id);
+  });
+  const result = await f.request("/catalog/search?q=partial");
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.results.map(row => row.id), ["provider.web.search"]);
+  assert.doesNotMatch(result.text, /private-network|invalid-json/);
+});
+
+test("平台目录五分钟内复用，到期更新白名单，读取失败不使用旧缓存且可恢复", async t => {
+  const f = await fixture(t, { catalog: undefined });
+  const start = f.now();
+  f.lookup(id => id === "treg.people.find" ? ep(id, { kind: "routed", routed_children: ["provider.one.find", "provider.two.find"] }) : ep(id));
+  f.setSearch([ep("treg.people.find"), ep()]);
+  assert.equal((await f.request("/catalog/search?q=profile")).body.count, 2);
+  await Promise.all([f.request("/catalog/platforms"), f.request("/catalog/endpoints/provider.other.find")]);
+  const platformCalls = () => f.calls.filter(row => row.url.endsWith("/catalog/platforms")).length;
+  assert.equal(platformCalls(), 1);
+  f.setTime(new Date(start + 299999).toISOString());
+  assert.equal((await f.call()).status, 200);
+  assert.equal(platformCalls(), 1);
+  f.setTime(new Date(start + 300000).toISOString());
+  f.setPlatforms([]);
+  assert.equal((await f.call()).status, 503);
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 1);
+  f.setPlatforms([{ slug: "web", label: "Web", category: "AI generation" }]);
+  assert.equal((await f.call()).status, 403);
+  f.setTime(new Date(start + 600000).toISOString());
+  f.setPlatforms([{ slug: "web", label: "Web", category: "SEO/AEO" }]);
+  assert.equal((await f.call()).status, 200);
 });
