@@ -53,7 +53,7 @@ m.dependencies[name]=spec.slice(cut+1); fs.writeFileSync(file,JSON.stringify(m))
   assert.equal(fs.readFileSync(path.join(profile, 'work.txt'), 'utf8'), 'existing work');
 });
 
-test('published artifacts client page copy is patched completely and idempotently without changing storage or market metadata', t => {
+test('published artifacts client keeps page copy, storage and market metadata after shared startup patches', t => {
   const source = process.env.ARTIFACTS_CLIENT;
   assert.ok(source, 'ARTIFACTS_CLIENT must point to published @crysound/artifacts 1.0.0 lib/client.js');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creation-copy-'));
@@ -72,8 +72,20 @@ test('published artifacts client page copy is patched completely and idempotentl
   };
   run();
   const after = fs.readFileSync(path.join(plugin, 'lib/client.js'), 'utf8');
-  assert.equal(after, before.replaceAll('兆华作品', '作品'));
+  const dictionary = after.match(/var zh2 = (\{[\s\S]*?\n\s*\});/);
+  assert.ok(dictionary, 'Published artifacts page dictionary remains available');
+  const labels = vm.runInNewContext(`(${dictionary[1]})`);
+  assert.equal(labels.panel, '作品');
+  assert.equal(labels.title, '作品');
   assert.ok(!after.includes('兆华作品'));
+  for (const declaration of [
+    'var base = "/api/crysound-artifacts.artifacts";',
+    'var PANEL_ID = "crysound-artifacts.artifacts";',
+    'var VIEW_KEY = "crysound-artifacts.artifacts.view";',
+  ]) {
+    assert.ok(before.includes(declaration));
+    assert.ok(after.includes(declaration), 'Keep artifact routes and saved page preferences');
+  }
   new vm.Script(after);
   run();
   assert.equal(fs.readFileSync(path.join(plugin, 'lib/client.js'), 'utf8'), after);
