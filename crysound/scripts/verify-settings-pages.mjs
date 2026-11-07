@@ -69,6 +69,7 @@ function attach() {
     registration.id === '@crysound/feishu-settings' ? window.__zpFeishuPreview : registration);
 }
 const errors = [], requests = [], measurements = [];
+const marketControl = process.env.SETTINGS_MARKET_CONTROL === '1';
 const pageError = error => errors.push(error.message);
 page.on('pageerror', pageError);
 let attached = false, marketPatched = false;
@@ -92,11 +93,12 @@ await page.route('**/*', async route => {
   }
   if (!url.pathname.startsWith('/plugins/') || !url.href.includes('/client.js')) return route.continue();
   const response = await route.fetch(); let text = await response.text();
-  if (text.includes('[${NAV_ICON_MARKER}] > svg')) {
+  if (!marketControl && text.includes('id: "dshmarket"')) {
     fs.writeFileSync(marketFile, text);
     execFileSync(process.execPath, [patcher, patchRoot]);
     text = fs.readFileSync(marketFile, 'utf8');
-    assert.ok(text.includes('[${NAV_ICON_MARKER}] > [aria-hidden="true"]'));
+    assert.ok(text.includes('name: "settings.section.icon", id: "market"'));
+    assert.ok(!text.includes('data-dsh-market-nav-icon'));
     execFileSync(process.execPath, [patcher, patchRoot]);
     assert.equal(fs.readFileSync(marketFile, 'utf8'), text, 'Market patch is idempotent');
     marketPatched = true;
@@ -113,6 +115,43 @@ const memoryPanel = panel.locator('.zp-memory');
 const reminderPanel = panel.locator('.zp-daily');
 const nav = label => panel.locator('nav button').filter({ hasText: new RegExp('^' + label + '$') });
 async function screenshot(name) { await panel.screenshot({ path: path.join(output, name + '.png'), animations: 'disabled' }); }
+async function navigationIcons() {
+  const icons = await panel.locator('nav').evaluate(el => [...el.querySelectorAll('button')].map(button => {
+    const visible = node => {
+      const style = getComputedStyle(node), rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && style.visibility === 'visible' && style.display !== 'none';
+    };
+    const svgs = [...button.querySelectorAll('svg')].filter(visible);
+    const pseudo = [...button.querySelectorAll('*'), button].flatMap(node => ['::before', '::after'].flatMap(part => {
+      const style = getComputedStyle(node, part);
+      return visible(node) && !['none', 'normal'].includes(style.content) && style.display !== 'none' &&
+        parseFloat(style.width) > 0 && parseFloat(style.height) > 0 ? [{ part, content: style.content }] : [];
+    }));
+    return {
+      label: button.innerText, visibleSvg: svgs.map(svg => svg.getAttribute('data-icon')),
+      pseudo, count: svgs.length + pseudo.length, x: svgs[0]?.getBoundingClientRect().x,
+      slot: !!button.querySelector('[aria-hidden="true"] [data-slot="settings.section.icon"] svg'),
+      marketRects: button.querySelectorAll('[data-slot="settings.section.icon"] svg rect').length,
+    };
+  }));
+  const expected = {
+    '通用设置': 'dsw-icon-settings-outline-medium', '模型': 'dsw-icon-data-outline-medium',
+    '内置插件': 'dsw-icon-personalization-outline-medium', 'Agent 预设': 'dsw-icon-agent-preset-outline-medium',
+    '飞书授权': 'dsw-icon-link-outline-medium', '主动提醒': 'crysound-reminder-bell', '记忆': 'crysound-memory-bookmark',
+  };
+  for (const [label, icon] of Object.entries(expected)) {
+    assert.deepEqual(icons.find(row => row.label === label)?.visibleSvg, [icon], `${label} retains its glyph`);
+  }
+  for (const row of icons) {
+    assert.equal(row.count, 1, `${row.label}: exactly one visible icon`);
+    assert.equal(row.slot, true, `${row.label}: real shell wraps the SVG in its icon slot`);
+    assert.ok(Math.abs(row.x - icons[0].x) < 0.5, `${row.label}: icons align`);
+  }
+  const market = icons.find(row => row.label === '插件市场');
+  assert.ok(market.marketRects > 1, 'Market uses its existing block glyph');
+  assert.deepEqual(market.visibleSvg, [null], 'No settings gear remains in the market row');
+  return icons;
+}
 async function add(title) {
   await memoryPanel.getByRole('button', { name: '添加一条', exact: true }).click();
   await memoryPanel.getByLabel('标题', { exact: true }).fill(title);
@@ -125,7 +164,27 @@ try {
   await page.goto(origin + '/?zp-settings=feishu', { waitUntil: 'domcontentloaded' });
   await panel.getByRole('heading', { name: '飞书授权', exact: true }).waitFor();
   await page.addStyleTag({ content: skin });
-  assert.equal(attached, true); assert.equal(marketPatched, true);
+  assert.equal(attached, true); assert.equal(marketPatched, !marketControl);
+  if (process.env.SETTINGS_ICONS_ONLY === '1') {
+    await nav('主动提醒').click();
+    await reminderPanel.getByRole('heading', { name: '主动提醒', exact: true }).waitFor();
+    for (const appearance of ['default', 'soft']) for (const mode of ['light', 'dark']) {
+      await page.evaluate(({ appearance, mode }) => {
+        document.documentElement.dataset.zpSkin = appearance;
+        document.body.toggleAttribute('data-ds-dark-theme', mode === 'dark');
+        document.documentElement.style.colorScheme = mode;
+      }, { appearance, mode });
+      const icons = await navigationIcons();
+      measurements.push({ appearance, mode, icons });
+      await screenshot(`${appearance}-${mode}-market-icon`);
+    }
+    assert.deepEqual(errors, []);
+    fs.writeFileSync(path.join(output, 'market-icons.json'), JSON.stringify({
+      measurements, errors, marketPatchIdempotent: true, shell: 'Unmodified live settings module with nested settings.section.icon slots',
+      unverified: ['Production deployment', 'Desktop installed package'],
+    }, null, 2) + '\n');
+    console.log('PASS: four appearances, real nested settings icon slots, exactly one aligned market glyph, all other navigation glyphs unchanged.');
+  } else {
   await nav('记忆').click();
   await memoryPanel.getByRole('switch', { name: '使用记忆' }).waitFor();
   assert.equal(await memoryPanel.getByText('删除后，', { exact: false }).count(), 0);
@@ -184,14 +243,7 @@ try {
     assert.equal(fs.readFileSync(savedFile, 'utf8'), savedDaily, 'Renamed UI must not rewrite existing state');
     const dailyTitleSize = await reminderPanel.locator('h2').evaluate(el => getComputedStyle(el).fontSize);
     assert.equal(dailyTitleSize, style.titleSize);
-    const icons = await panel.locator('nav').evaluate(el => [...el.querySelectorAll('button')].map(button => ({
-      label: button.innerText, before: getComputedStyle(button, '::before').content,
-      visibleSvg: [...button.querySelectorAll('svg')].filter(svg => svg.getBoundingClientRect().width > 0).map(svg => svg.getAttribute('data-icon')),
-    })));
-    assert.deepEqual(icons.find(icon => icon.label === '记忆').visibleSvg, ['crysound-memory-bookmark']);
-    assert.deepEqual(icons.find(icon => icon.label === '主动提醒').visibleSvg, ['crysound-reminder-bell']);
-    assert.equal(icons.find(icon => icon.label === '插件市场').visibleSvg.length, 0, 'Market has its one CSS glyph and no gear');
-    assert.equal(icons.find(icon => icon.label === '插件市场').before, '""');
+    const icons = await navigationIcons();
     measurements.push({ appearance, mode, ...style, dailyTitleSize, icons });
     await screenshot(`${appearance}-${mode}-reminders`);
     await nav('记忆').click();
@@ -223,6 +275,7 @@ try {
     unverified: ['Production deployment and real user data', 'Desktop installed package'],
   }, null, 2) + '\n');
   console.log('PASS: four appearances, native controls, memory enable/add/edit/delete/clear confirmations, narrow layout, distinct icons, one market glyph, existing reminder state byte-for-byte unchanged. Synthetic data only.');
+  }
 } catch (error) {
   console.error(JSON.stringify({ errors, requests, panel: await panel.innerText().catch(() => '') }));
   throw error;

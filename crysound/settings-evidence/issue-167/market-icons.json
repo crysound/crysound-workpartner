@@ -1,0 +1,387 @@
+{
+  "measurements": [
+    {
+      "appearance": "default",
+      "mode": "light",
+      "icons": [
+        {
+          "label": "通用设置",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "模型",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "内置插件",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "Agent 预设",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "插件市场",
+          "visibleSvg": [
+            null
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 9
+        },
+        {
+          "label": "飞书授权",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "主动提醒",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "记忆",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        }
+      ]
+    },
+    {
+      "appearance": "default",
+      "mode": "dark",
+      "icons": [
+        {
+          "label": "通用设置",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "模型",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "内置插件",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "Agent 预设",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "插件市场",
+          "visibleSvg": [
+            null
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 9
+        },
+        {
+          "label": "飞书授权",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "主动提醒",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "记忆",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        }
+      ]
+    },
+    {
+      "appearance": "soft",
+      "mode": "light",
+      "icons": [
+        {
+          "label": "通用设置",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "模型",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "内置插件",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "Agent 预设",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "插件市场",
+          "visibleSvg": [
+            null
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 9
+        },
+        {
+          "label": "飞书授权",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "主动提醒",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "记忆",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        }
+      ]
+    },
+    {
+      "appearance": "soft",
+      "mode": "dark",
+      "icons": [
+        {
+          "label": "通用设置",
+          "visibleSvg": [
+            "dsw-icon-settings-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "模型",
+          "visibleSvg": [
+            "dsw-icon-data-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "内置插件",
+          "visibleSvg": [
+            "dsw-icon-personalization-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "Agent 预设",
+          "visibleSvg": [
+            "dsw-icon-agent-preset-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "插件市场",
+          "visibleSvg": [
+            null
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 9
+        },
+        {
+          "label": "飞书授权",
+          "visibleSvg": [
+            "dsw-icon-link-outline-medium"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "主动提醒",
+          "visibleSvg": [
+            "crysound-reminder-bell"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        },
+        {
+          "label": "记忆",
+          "visibleSvg": [
+            "crysound-memory-bookmark"
+          ],
+          "pseudo": [],
+          "count": 1,
+          "x": 344,
+          "slot": true,
+          "marketRects": 0
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "marketPatchIdempotent": true,
+  "shell": "Unmodified live settings module with nested settings.section.icon slots",
+  "unverified": [
+    "Production deployment",
+    "Desktop installed package"
+  ]
+}

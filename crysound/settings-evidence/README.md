@@ -2,7 +2,7 @@
 
 记忆页使用 dsh Button / Switch，字段与说明使用 `--dsw-*` 变量，标题与主动提醒页同为 16px / 500。列表标题和添加入口组成一行，危险操作放在列表下方；空列表隐藏清空入口和删除说明，失败时仍可刷新重试。编辑字段采用独立标签关联，已有内容不会混入字段名称。
 
-主动提醒沿用 `crysound-daily-check` 注册身份、原接口和个人记录格式，只更换可见名称与铃铛图标。记忆使用书签图标。插件市场的第二个图标来自 dshmarket 1.73.12：其样式只隐藏导航按钮的直接 SVG，而设置壳已把 SVG 包进装饰性容器。本次在已有启动修补里同时隐藏这个容器，保留市场自己的方块图标，不修改 dsh 本体。
+主动提醒沿用 `crysound-daily-check` 注册身份、原接口和个人记录格式，只更换可见名称与铃铛图标。记忆使用书签图标。插件市场图标的旧隐藏补丁未覆盖真实插槽层级，旧截图及“只有一个图标”的结论已由 [#167 真实外壳复核](issue-167/README.md)取代。当前公司启动修补直接将既有市场方块注册到 `settings.section.icon`，移除旧伪元素和隐藏规则，不修改 dsh 本体。
 
 ## 浏览器证据
 
@@ -21,7 +21,7 @@
 
 ## 重跑与覆盖
 
-在 Node 24 下运行 `node crysound/scripts/verify-settings-pages.mjs`。必填 `CDP_TAB`（本人创建的标签页编号）与 `APP_ORIGIN`（已登录的应用来源）；`PLAYWRIGHT_MODULE` 可指定现有 Playwright 模块，`CDP_ENDPOINT` 默认为本机 9222。`PREVIEW_SKIN_CSS` 可指定待审皮肤文件，否则用本分支皮肤；`SETTINGS_EVIDENCE` 可指定输出目录。不安装依赖，不启动新浏览器，不修改登录会话。
+在 Node 24 下运行 `node crysound/scripts/verify-settings-pages.mjs`。必填 `CDP_TAB`（本人创建的标签页编号）与 `APP_ORIGIN`（已登录的应用来源）；`PLAYWRIGHT_MODULE` 可指定现有 Playwright 模块，`CDP_ENDPOINT` 默认为本机 9222。`PREVIEW_SKIN_CSS` 可指定待审皮肤文件，否则用本分支皮肤；`SETTINGS_EVIDENCE` 可指定输出目录。`SETTINGS_ICONS_ONLY=1` 只验证四种外观的导航图标；加 `SETTINGS_MARKET_CONTROL=1` 可验证未修复模块被同一图标检查拒绝。不安装依赖，不启动新浏览器，不修改登录会话。
 
 - 浏览器：四种外观下的开关、添加、编辑、单条删除和清空；打开确认与取消均不删除条目；空状态无删除说明；实际标题字号一致；无横向溢出；记忆和提醒分别使用书签与铃铛；市场只显示一个图标。提醒预先保存启用状态、10:45 时间和一条运行记录，读取页面前后文件逐字节不变，另检查开关与时间保存后历史保留。没有调用模型或读取真实飞书资料。
 - Node 24：`node --test crysound/plugins/memory/tests/client.test.mjs crysound/plugins/memory/tests/memory.test.mjs crysound/feishu/native.test.mjs crysound/daily-check/service.test.mjs` 全部 40 项通过，覆盖临时真实数据库、HTTP、版本冲突、开关持久化、回执、每日检查去重和 Host 投递。另尝试 `tools.test.mjs`，因检出未安装 `@deepseek-ai/schemastery` 未启动；本机按手册不装依赖，不把这项记为通过。

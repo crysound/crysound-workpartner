@@ -1,0 +1,6 @@
+{
+  "shell": "Unmodified live settings shell; no module interception",
+  "expectedFailure": "插件市场: exactly one visible icon",
+  "actualMarketIconCount": 2,
+  "result": "PASS: current navigation checker rejects the live duplicate icons"
+}
