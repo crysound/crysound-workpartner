@@ -228,6 +228,7 @@ test('CardKit creates streaming JSON 2.0, sends card_id into threads, streams an
   assert.equal(initial.body.elements[0].element_id, 'unique_element')
   assert.equal(initial.body.elements[0].content, '')
   assert.equal(initial.body.elements[1].element_id, 'progress_element')
+  assert.equal(initial.body.elements[1].content, '思考中.')
   await client.sendMessage({ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'interactive', { type: 'card', data: { card_id: 'card' } })
   assert.deepEqual(JSON.parse(calls[1].data.content), { type: 'card', data: { card_id: 'card' } })
   assert.equal(calls[1].data.reply_in_thread, true)
@@ -262,4 +263,14 @@ test('progress and new answer rounds use non-typing element replacement', async 
   assert.deepEqual(calls[0].data, { element: JSON.stringify(element), sequence: 1 })
   client.client.request = async () => ({ code: 300309, msg: 'closed' })
   assert.equal(await client.updateCardElement('card', 'progress', element, 2), false)
+})
+
+
+test('CardKit creation includes the turn note and no elapsed seconds', async () => {
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu' })
+  let card
+  client.client.request = async args => { card = JSON.parse(args.data.data); return { code: 0, data: { card_id: 'card' } } }
+  await client.createStreamingCard('body', 'progress', '已新开会话\n思考中.')
+  assert.equal(card.body.elements[1].content, '已新开会话\n思考中.')
+  assert.equal(card.body.elements[0].content, '')
 })

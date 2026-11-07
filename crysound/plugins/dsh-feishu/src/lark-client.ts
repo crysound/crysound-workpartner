@@ -45,7 +45,7 @@ export interface LarkGateway {
   react(messageId: string, emojiType: string): Promise<string | undefined>
   deleteReaction(messageId: string, reactionId: string): Promise<void>
   /** Create a CardKit entity; undefined falls back to ordinary cards. */
-  createStreamingCard(elementId: string, progressId: string): Promise<string | undefined>
+  createStreamingCard(elementId: string, progressId: string, progress?: string): Promise<string | undefined>
   /** Replace progress without typing, or start a new answer with an empty element. */
   updateCardElement(cardId: string, elementId: string, element: Record<string, unknown>, sequence: number): Promise<boolean>
   streamCardContent(cardId: string, elementId: string, content: string, sequence: number): Promise<boolean>
@@ -431,7 +431,7 @@ export class LarkClient implements LarkGateway {
     } catch (error) { this.warnOnce('delete-reaction', error) }
   }
 
-  async createStreamingCard(elementId: string, progressId: string): Promise<string | undefined> {
+  async createStreamingCard(elementId: string, progressId: string, progress = '思考中.'): Promise<string | undefined> {
     try {
       const response = await requestFeishu(() => this.client.request<{ data?: { card_id?: unknown } }>({
         url: '/open-apis/cardkit/v1/cards', method: 'POST',
@@ -444,7 +444,7 @@ export class LarkClient implements LarkGateway {
           },
           body: { elements: [
             { tag: 'markdown', element_id: elementId, content: '' },
-            { tag: 'markdown', element_id: progressId, content: '思考中 · 已 0 秒', text_size: 'notation' },
+            { tag: 'markdown', element_id: progressId, content: progress, text_size: 'notation' },
           ] },
         }) },
       }), { maxRetries: 0 })

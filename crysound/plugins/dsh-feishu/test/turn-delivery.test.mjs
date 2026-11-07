@@ -89,7 +89,7 @@ test('normal turn retains the full answer and footer in the original card withou
   assert.equal(h.calls.filter(c => c[0] === 'patch').length, 1)
   const preview = h.calls.find(c => c[0] === 'patch')[2].body.elements[0].content
   assert.equal(preview, 'final')
-  assert.match(h.calls.find(c => c[0] === 'patch')[2].body.elements[1].content, /运行命令\n正在检查/)
+  assert.doesNotMatch(h.calls.find(c => c[0] === 'patch')[2].body.elements[1].content, /已 \d+ 秒|正在检查/)
   h.assistant('x'.repeat(4500))
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   await h.end()
@@ -237,14 +237,14 @@ test('single/multi-level quotes, quote permission degradation, forwarded tree wi
   assert.equal(forward.images.length, 1)
 })
 
-test('progress summaries filter secret labels, basenames, commands, hosts, and actual dsh tool names', () => {
-  for (const path of ['.env', 'my-secret.txt', 'a'.repeat(24), 'bad name', 'id_rsa']) assert.equal(toolProgress('read', { path }), '读取文件')
-  assert.equal(toolProgress('read', { path: '/workspace/README.md' }), '读取文件 README.md')
-  assert.equal(toolProgress('bash', { command: 'secret command' }), '运行命令')
-  assert.equal(toolProgress('web_fetch', { url: 'https://example.com/secret?token=private' }), '读取网页 example.com')
-  assert.equal(toolProgress('skill', { name: 'design' }), '加载技能 design')
-  assert.equal(toolProgress('mcp__calendar__list', {}), '调用工具 calendar')
-  assert.equal(toolProgress('edit', { description: '修改配置\n完成' }), '修改配置 完成')
+test('progress names never include tool arguments, descriptions, file paths or hosts', () => {
+  const raw = { path: '/workspace/README.md', command: 'secret command', url: 'https://example.com/private',
+    name: 'design', description: '修改私密资料', title: '内部标题' }
+  for (const [tool, expected] of [
+    ['read', '读取文件'], ['bash', '执行命令'], ['exec_command', '执行命令'],
+    ['web_fetch', '读取网页'], ['web_search', '搜索网页'], ['skill', '加载技能'],
+    ['mcp__calendar__list', '执行工具'], ['edit', '修改文件'],
+  ]) assert.equal(toolProgress(tool, raw), expected)
 })
 
 test('substantive intermediate content remains in final reply', () => {
@@ -387,11 +387,11 @@ test('CardKit cumulative code text keeps prefixes, paces updates, and drains bef
   assert.equal(frames.length, 2)
   assert.equal(frames[1][3], frames[0][3] + '1;')
   assert.equal(frames[0][3], '```js\nconst x = ')
-  assert.deepEqual(frames.map(c => c[4]), [1, 3])
+  assert.deepEqual(frames.map(c => c[4]), [1, 2])
   const finish = preview.finish(); await tick()
   assert.ok(!calls.some(c => c[0] === 'settle'))
   release(); await finish
-  assert.equal(calls.at(-1)[2], 4)
+  assert.equal(calls.at(-1)[2], 3)
   assert.equal(calls.at(-1)[3].body.elements.length, 1)
   now = 2000; t.mock.timers.tick(1500); await tick()
   assert.equal(calls.filter(c => c[0] === 'stream').length, 2)
@@ -471,13 +471,14 @@ for (const scenario of [
   assert.equal(sends.length, 1)
   assert.equal(sends[0][3].body.elements[0].content, '')
   assert.equal(sends[0][3].config.summary.content, '思考中…')
-  assert.equal(sends[0][3].body.elements[1].content, '思考中 · 已 0 秒')
+  assert.equal(sends[0][3].body.elements[1].content, '思考中.')
   h.assistant('final'); await h.end()
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements.length, 1)
 })
 
-for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progress content retains one thought card on ${reason}`, async () => {
+for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progress content retains one thought card on ${reason}`, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] })
   const h = harness()
   await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
   await h.end(reason, { error: { message: 'preparation failed' } })
@@ -488,6 +489,9 @@ for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progr
   assert.equal(card.body.elements.length, reason === 'completed' ? 1 : 2)
   if (reason !== 'completed') assert.equal(card.body.elements[1].content, reason === 'error' ? '出错了' : '已停止')
   assert.doesNotMatch(JSON.stringify(card), /用时|已完成/)
+  const count = h.calls.length
+  h.clock(30000); t.mock.timers.tick(30000); await tick()
+  assert.equal(h.calls.length, count, 'turn/end stops all progress updates')
 })
 
 test('turn/start publishes immediately before the first user event; preparation failure settles that one card', async () => {
