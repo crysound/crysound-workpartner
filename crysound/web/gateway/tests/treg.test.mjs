@@ -89,6 +89,50 @@ test("鉴权先于上游：网页 Cookie、伪造、过期及未开通身份均�
   assert.equal(f.calls.length, 0);
 });
 
+test("MCP 协议探测返回方法不存在并保留标识，随后仍能握手和列工具", async (t) => {
+  const f = await fixture(t);
+  for (const id of [0, 42, "discover-1"]) {
+    const probe = await f.mcp("unused", {}, { method: "server/discover", params: {}, id });
+    assert.equal(probe.status, 200);
+    assert.deepEqual(probe.body, { jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found" } });
+    assert.match(probe.headers.get("content-type"), /application\/json/);
+  }
+  const initialized = await f.mcp("unused", {}, { method: "initialize", params: {} });
+  assert.equal(initialized.status, 200);
+  assert.equal(initialized.body.result.protocolVersion, "2025-03-26");
+  const list = await f.mcp("unused", {}, { method: "tools/list", params: {} });
+  assert.deepEqual(list.body.result.tools.map((tool) => tool.name), ["catalog_search", "catalog_get", "call"]);
+  assert.equal(f.calls.length, 0);
+});
+
+test("MCP 协议探测不能绕过身份校验和服务开关", async (t) => {
+  const f = await fixture(t);
+  const probe = { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "server/discover" }) };
+  for (const h of [{}, { cookie: "zp_sid=fake" }, { authorization: "Bearer fake" },
+    { authorization: `Bearer ${issueToken(key, alice, 0)}` },
+    { authorization: `Bearer ${issueToken(key, { unionId: "stranger" })}` }]) {
+    assert.equal((await f.request("/mcp/", { ...probe, headers: h })).status, 401);
+  }
+  assert.equal(f.calls.length, 0);
+  for (const config of [{ enabled: false }, { token: () => "" }]) {
+    const disabled = await fixture(t, config);
+    assert.equal((await disabled.request("/mcp/", probe)).status, 503);
+    assert.equal((await disabled.request("/mcp/", { ...probe, headers: {} })).status, 401);
+    assert.equal(disabled.calls.length, 0);
+  }
+});
+
+test("MCP 其他受限方法仍拒绝，协议探测仍校验格式和请求标识", async (t) => {
+  const f = await fixture(t);
+  for (const method of ["resources/list", "prompts/list", "server/other", "admin", "unknown"]) {
+    assert.equal((await f.mcp("unused", {}, { method })).status, 403);
+  }
+  for (const extra of [{ id: undefined }, { id: null }, { jsonrpc: "1.0" }, { unexpected: true }]) {
+    assert.equal((await f.mcp("unused", {}, { method: "server/discover", ...extra })).status, 400);
+  }
+  assert.equal(f.calls.length, 0);
+});
+
 test("REST 强制本人归属与认证、日/月默认预算；普通用户不创建逐人预算", async (t) => {
   const f = await fixture(t);
   const r = await f.call({ headers: { ...headers, "x-treg-meta": "user=bob", "x-treg-route-max-cost": "999", "x-treg-org": "other", "x-treg-token": "fake-user-token" } });
