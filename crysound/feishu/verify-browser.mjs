@@ -113,15 +113,15 @@ try {
     // Observe the real click handler while preventing all provider navigation.
     await page.evaluate(() => { window.open = () => ({ closed: false, location: { replace(url) { window.__previewTarget = url; } }, close() {} }); });
     const feishu = panel.locator('.zp-feishu-row').first();
-    await feishu.getByRole('button', { name: '重新授权', exact: true }).click();
+    await feishu.getByRole('button', { name: '重新授权飞书', exact: true }).click();
     assert.match(await page.evaluate(() => window.__previewTarget), /connect\?return=settings&display=popup/);
     assert.equal(new URL(page.url()).pathname, '/');
-    await feishu.getByRole('button', { name: '断开', exact: true }).click();
+    await feishu.getByRole('button', { name: '断开飞书', exact: true }).click();
     await feishu.getByText('断开后，伙伴将无法继续使用这项授权。确认断开？').waitFor();
     await feishu.getByRole('button', { name: '取消', exact: true }).click();
     assert.equal(await feishu.getByText(/已连接 · 测试同事/).count(), 1);
-    await feishu.getByRole('button', { name: '断开', exact: true }).click();
-    await feishu.getByRole('button', { name: '断开', exact: true }).click();
+    await feishu.getByRole('button', { name: '断开飞书', exact: true }).click();
+    await feishu.getByRole('button', { name: '断开飞书', exact: true }).click();
     await feishu.getByText('未连接', { exact: true }).waitFor();
     await panel.locator('nav button').first().click();
     assert.equal(await nav.getAttribute('aria-current'), null);

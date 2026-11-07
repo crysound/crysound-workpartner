@@ -1,0 +1,2467 @@
+{
+  "scope": "Synthetic conversations only; one real run per case and prompt. Only committed facts determine rates.",
+  "baselineCommit": "33c57a3fc0",
+  "candidateSourceCommit": "8bde5cda98",
+  "dsh": "0.2.2-rc.1",
+  "node": "24.22.2",
+  "variants": {
+    "baseline": {
+      "summary": {
+        "complete": true,
+        "extraction": {
+          "hit": 18,
+          "total": 18,
+          "rate": 1
+        },
+        "falseMemory": {
+          "hit": 0,
+          "total": 12,
+          "rate": 0
+        }
+      },
+      "cases": [
+        {
+          "id": "m01",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "1d2ef102b62819a1e04eb880",
+              "kind": "preference",
+              "title": "工作汇报结论先行",
+              "content": "用户希望平时的工作汇报先给结论。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户希望平时的工作汇报先给结论。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工作汇报结论先行"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工作汇报结论先行（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m02",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "590f80c2efde014edf228e6a",
+              "kind": "preference",
+              "title": "页面视觉样式",
+              "content": "用户不喜欢页面左侧带竖向色条的样式，今后设计页面时应避免。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "revision": 0,
+                "kind": "preference",
+                "title": "页面视觉样式",
+                "content": "用户不喜欢页面左侧带竖向色条的样式，今后设计页面时应避免。"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：页面视觉样式（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m03",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "cb8d22d84ef005080493428e",
+              "kind": "preference",
+              "title": "工作沟通语言",
+              "content": "以后工作沟通都使用简体中文。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "以后工作沟通都使用简体中文。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工作沟通语言"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工作沟通语言（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m04",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "ddb17950a39cdf5bdf0bcece",
+              "kind": "identity",
+              "title": "部门职责",
+              "content": "用户所在部门长期负责声学产品的海外售后。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户所在部门长期负责声学产品的海外售后。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "部门职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：部门职责（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m05",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "4fbc0d6e3fa9f0dd602f75d1",
+              "kind": "identity",
+              "title": "麦克风阵列测试规范职责",
+              "content": "用户负责公司的麦克风阵列测试规范。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户负责公司的麦克风阵列测试规范。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "麦克风阵列测试规范职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：麦克风阵列测试规范职责（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m06",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "201c399d070888bcc52ec824",
+              "kind": "preference",
+              "title": "设计方案协作偏好",
+              "content": "做设计时喜欢先看几版方案，再确定方向。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "做设计时喜欢先看几版方案，再确定方向。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "设计方案协作偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：设计方案协作偏好（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m07",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "1dbaa4a837fdbed5e31259f5",
+              "kind": "preference",
+              "title": "周报格式偏好",
+              "content": "用户平时习惯用表格写周报。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户平时习惯用表格写周报。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "周报格式偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：周报格式偏好（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m08",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "8a60217548ec18c10efc5018",
+              "kind": "preference",
+              "title": "方案阅读顺序",
+              "content": "阅读方案时习惯先看风险，再看收益。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "阅读方案时习惯先看风险，再看收益。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "方案阅读顺序"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：方案阅读顺序（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m09",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "98ef8d4aa52eb053775f5ea9",
+              "kind": "project",
+              "title": "三年设备校准平台项目",
+              "content": "用户正在负责一个为期三年的设备校准平台项目。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户正在负责一个为期三年的设备校准平台项目。",
+                "kind": "project",
+                "revision": 0,
+                "title": "三年设备校准平台项目"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：三年设备校准平台项目（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m10",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "dc8ef6733bde631a2ce275c6",
+              "kind": "identity",
+              "title": "职业角色",
+              "content": "用户在公司担任现场应用工程师。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户在公司担任现场应用工程师。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "职业角色"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：职业角色（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m11",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "aac73a732779c9f1a5ae07b9",
+              "kind": "preference",
+              "title": "工程尺寸单位偏好",
+              "content": "用户处理工程数据时通常使用毫米，不习惯英寸，偏好以毫米描述工程尺寸。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户处理工程数据时通常使用毫米，不习惯英寸，偏好以毫米描述工程尺寸。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工程尺寸单位偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工程尺寸单位偏好（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m12",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "e9864ad488624cfb8cea090e",
+              "kind": "preference",
+              "title": "直说问题的沟通偏好",
+              "content": "用户希望指出问题时直接说，不要绕弯子。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "revision": 0,
+                "title": "直说问题的沟通偏好",
+                "kind": "preference",
+                "content": "用户希望指出问题时直接说，不要绕弯子。"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：直说问题的沟通偏好（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m13",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "c1dca64d4bce17063dcf582b",
+              "kind": "preference",
+              "title": "会前获取议程",
+              "content": "用户习惯每次开会前先拿到议程。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户习惯每次开会前先拿到议程。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "会前获取议程"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：会前获取议程（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m14",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "24d96c900a61da59da4bd424",
+              "kind": "identity",
+              "title": "部门与测试方向",
+              "content": "用户所在部门是产品验证团队，长期专做防水可靠性测试。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户所在部门是产品验证团队，长期专做防水可靠性测试。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "部门与测试方向"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：部门与测试方向（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m15",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "67cd867589bedb6d761a4e1a",
+              "kind": "identity",
+              "title": "新员工产品培训职责",
+              "content": "固定负责给新员工做产品培训。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "固定负责给新员工做产品培训。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "新员工产品培训职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：新员工产品培训职责（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m16",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "2497cda295403649973b1e33",
+              "kind": "preference",
+              "title": "回答使用编号清单",
+              "content": "用户平时喜欢编号清单，回答默认采用编号清单，避免长段落。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户平时喜欢编号清单，回答默认采用编号清单，避免长段落。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "回答使用编号清单"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：回答使用编号清单（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m17",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "aac9fcf720ad88e66fc4bbe1",
+              "kind": "project",
+              "title": "蓝鲸声学实验室建设项目",
+              "content": "用户有一个名为“蓝鲸”的长期项目，目标是建设声学实验室。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户有一个名为“蓝鲸”的长期项目，目标是建设声学实验室。",
+                "kind": "project",
+                "revision": 0,
+                "title": "蓝鲸声学实验室建设项目"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：蓝鲸声学实验室建设项目（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m18",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "97da75c6594e4e8222040e10",
+              "kind": "preference",
+              "title": "数据报告图表偏好",
+              "content": "做数据报告时偏好折线图，不喜欢饼图。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "做数据报告时偏好折线图，不喜欢饼图。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "数据报告图表偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：数据报告图表偏好（可在 设置 › 个人记忆 中查看或删除）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m19",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m20",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m21",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m22",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m23",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m24",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m25",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m26",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m27",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m28",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m29",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m30",
+          "status": "ok",
+          "promptHash": "62f46296f693c47897f8c49c3ce4dea542e9e606794bbf387236c6579d56e07c",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        }
+      ]
+    },
+    "candidate": {
+      "summary": {
+        "complete": true,
+        "extraction": {
+          "hit": 18,
+          "total": 18,
+          "rate": 1
+        },
+        "falseMemory": {
+          "hit": 0,
+          "total": 12,
+          "rate": 0
+        }
+      },
+      "cases": [
+        {
+          "id": "m01",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "96e21e6f7aebf22f02e87199",
+              "kind": "preference",
+              "title": "工作汇报先给结论",
+              "content": "用户偏好日常工作汇报先给结论。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户偏好日常工作汇报先给结论。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工作汇报先给结论"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工作汇报先给结论",
+                "saved": {
+                  "id": "96e21e6f7aebf22f02e87199",
+                  "title": "工作汇报先给结论"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m02",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "5360426a0a7673ed7082fc7a",
+              "kind": "preference",
+              "title": "页面样式偏好",
+              "content": "用户不喜欢页面左侧带竖向色条的样式。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户不喜欢页面左侧带竖向色条的样式。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "页面样式偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：页面样式偏好",
+                "saved": {
+                  "id": "5360426a0a7673ed7082fc7a",
+                  "title": "页面样式偏好"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m03",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "48ade57257cdb1785c4f6a8d",
+              "kind": "preference",
+              "title": "工作沟通语言",
+              "content": "用户希望今后的工作沟通都使用简体中文。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户希望今后的工作沟通都使用简体中文。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工作沟通语言"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工作沟通语言",
+                "saved": {
+                  "id": "48ade57257cdb1785c4f6a8d",
+                  "title": "工作沟通语言"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m04",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "f76aefec53cb76ecd85f754c",
+              "kind": "identity",
+              "title": "部门长期职责",
+              "content": "用户所在部门长期负责声学产品的海外售后。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "revision": 0,
+                "kind": "identity",
+                "title": "部门长期职责",
+                "content": "用户所在部门长期负责声学产品的海外售后。"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：部门长期职责",
+                "saved": {
+                  "id": "f76aefec53cb76ecd85f754c",
+                  "title": "部门长期职责"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m05",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "83df67446ae90f9b5a5f7174",
+              "kind": "identity",
+              "title": "麦克风阵列测试规范职责",
+              "content": "用户负责公司的麦克风阵列测试规范。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户负责公司的麦克风阵列测试规范。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "麦克风阵列测试规范职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：麦克风阵列测试规范职责",
+                "saved": {
+                  "id": "83df67446ae90f9b5a5f7174",
+                  "title": "麦克风阵列测试规范职责"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m06",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "108545c36c9593ec394cda83",
+              "kind": "preference",
+              "title": "设计方案选择偏好",
+              "content": "用户做设计时喜欢先看几版方案，再决定方向。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户做设计时喜欢先看几版方案，再决定方向。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "设计方案选择偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：设计方案选择偏好",
+                "saved": {
+                  "id": "108545c36c9593ec394cda83",
+                  "title": "设计方案选择偏好"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m07",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "2a47f8325a67cad024605838",
+              "kind": "preference",
+              "title": "周报格式",
+              "content": "用户平时习惯用表格写周报。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户平时习惯用表格写周报。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "周报格式"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：周报格式",
+                "saved": {
+                  "id": "2a47f8325a67cad024605838",
+                  "title": "周报格式"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m08",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "f3e9510738928bded7b45dc0",
+              "kind": "preference",
+              "title": "方案阅读顺序",
+              "content": "用户阅读方案时习惯先看风险，再看收益。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "revision": 0,
+                "kind": "preference",
+                "title": "方案阅读顺序",
+                "content": "用户阅读方案时习惯先看风险，再看收益。"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：方案阅读顺序",
+                "saved": {
+                  "id": "f3e9510738928bded7b45dc0",
+                  "title": "方案阅读顺序"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m09",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "27acd97cdeb8f4b46521865a",
+              "kind": "project",
+              "title": "三年设备校准平台项目",
+              "content": "用户正在负责一个为期三年的设备校准平台项目。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户正在负责一个为期三年的设备校准平台项目。",
+                "kind": "project",
+                "revision": 0,
+                "title": "三年设备校准平台项目"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：三年设备校准平台项目",
+                "saved": {
+                  "id": "27acd97cdeb8f4b46521865a",
+                  "title": "三年设备校准平台项目"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m10",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "a50144ff4d42e36097e9b3ba",
+              "kind": "identity",
+              "title": "职业职责",
+              "content": "用户在公司担任现场应用工程师。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户在公司担任现场应用工程师。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "职业职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：职业职责",
+                "saved": {
+                  "id": "a50144ff4d42e36097e9b3ba",
+                  "title": "职业职责"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m11",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "6bd96586f5c2f89899113e8d",
+              "kind": "preference",
+              "title": "工程尺寸单位偏好",
+              "content": "用户处理工程数据通常使用毫米，不习惯使用英寸。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户处理工程数据通常使用毫米，不习惯使用英寸。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "工程尺寸单位偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：工程尺寸单位偏好",
+                "saved": {
+                  "id": "6bd96586f5c2f89899113e8d",
+                  "title": "工程尺寸单位偏好"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m12",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "3688c064121ab65cdd670532",
+              "kind": "preference",
+              "title": "问题反馈直截了当",
+              "content": "用户希望指出问题时直接说，不绕弯子。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户希望指出问题时直接说，不绕弯子。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "问题反馈直截了当"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：问题反馈直截了当",
+                "saved": {
+                  "id": "3688c064121ab65cdd670532",
+                  "title": "问题反馈直截了当"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m13",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "c15277455ea1e10dfc1a4017",
+              "kind": "preference",
+              "title": "会前议程偏好",
+              "content": "用户习惯每次开会前先拿到议程。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户习惯每次开会前先拿到议程。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "会前议程偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：会前议程偏好",
+                "saved": {
+                  "id": "c15277455ea1e10dfc1a4017",
+                  "title": "会前议程偏好"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m14",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "518a8b62a1f970e727b6827e",
+              "kind": "identity",
+              "title": "部门与长期测试方向",
+              "content": "用户所在部门是产品验证团队，长期专做防水可靠性测试。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户所在部门是产品验证团队，长期专做防水可靠性测试。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "部门与长期测试方向"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：部门与长期测试方向",
+                "saved": {
+                  "id": "518a8b62a1f970e727b6827e",
+                  "title": "部门与长期测试方向"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m15",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "3972fba8d045ea09e02e7423",
+              "kind": "identity",
+              "title": "新员工产品培训职责",
+              "content": "用户的固定职责包括为新员工开展产品培训。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户的固定职责包括为新员工开展产品培训。",
+                "kind": "identity",
+                "revision": 0,
+                "title": "新员工产品培训职责"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：新员工产品培训职责",
+                "saved": {
+                  "id": "3972fba8d045ea09e02e7423",
+                  "title": "新员工产品培训职责"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m16",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "71937abd2344a54a5512a23e",
+              "kind": "preference",
+              "title": "回复采用简短编号清单",
+              "content": "用户平时喜欢编号清单，不喜欢长段文字，偏好每条简短、只讲一个重点。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户平时喜欢编号清单，不喜欢长段文字，偏好每条简短、只讲一个重点。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "回复采用简短编号清单"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：回复采用简短编号清单",
+                "saved": {
+                  "id": "71937abd2344a54a5512a23e",
+                  "title": "回复采用简短编号清单"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m17",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "6f1c0e05b9fa7c86f9b7921b",
+              "kind": "project",
+              "title": "蓝鲸声学实验室建设项目",
+              "content": "用户所在团队有一个名为“蓝鲸”的长期项目，目标是建设声学实验室。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户所在团队有一个名为“蓝鲸”的长期项目，目标是建设声学实验室。",
+                "kind": "project",
+                "revision": 0,
+                "title": "蓝鲸声学实验室建设项目"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：蓝鲸声学实验室建设项目",
+                "saved": {
+                  "id": "6f1c0e05b9fa7c86f9b7921b",
+                  "title": "蓝鲸声学实验室建设项目"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m18",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            },
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [
+            {
+              "id": "bbc1882497b0238a2d66461a",
+              "kind": "preference",
+              "title": "数据报告图表偏好",
+              "content": "用户做数据报告时偏好折线图，不喜欢饼图。"
+            }
+          ],
+          "calls": [
+            {
+              "name": "crysound_memory_list",
+              "arguments": {}
+            },
+            {
+              "name": "crysound_memory_save",
+              "arguments": {
+                "content": "用户做数据报告时偏好折线图，不喜欢饼图。",
+                "kind": "preference",
+                "revision": 0,
+                "title": "数据报告图表偏好"
+              }
+            }
+          ],
+          "resultMetadata": [
+            {
+              "memory": {
+                "ok": true,
+                "message": "个人记忆操作完成。"
+              }
+            },
+            {
+              "memory": {
+                "ok": true,
+                "message": "已记住：数据报告图表偏好",
+                "saved": {
+                  "id": "bbc1882497b0238a2d66461a",
+                  "title": "数据报告图表偏好"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "m19",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m20",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m21",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m22",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m23",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m24",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m25",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m26",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m27",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m28",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m29",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        },
+        {
+          "id": "m30",
+          "status": "ok",
+          "promptHash": "ca67ddbcd02fd0b6b803ccf3c11b2a3ea244065231898b98f8d33e0c76b60247",
+          "models": [
+            {
+              "provider": "magpie",
+              "model": "codex/gpt-6.1-sol"
+            }
+          ],
+          "facts": [],
+          "calls": [],
+          "resultMetadata": []
+        }
+      ]
+    }
+  }
+}

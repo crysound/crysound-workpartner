@@ -18,6 +18,8 @@ RUN node /opt/partner/plugin-artifacts.mjs download /opt/company-plugins \
 # 飞书命令放独立前缀，PATH 上只暴露公司用户身份包装器。
 RUN npm install -g --prefix /opt/partner-clis @larksuite/cli@1.0.99 @lark-project/meegle@1.0.27 && npm cache clean --force
 COPY feishu/ /opt/partner/feishu/
+COPY config/skills/workpartner-help/ /opt/partner/skills/workpartner-help/
+RUN chmod -R a+rX /opt/partner/skills
 RUN node /opt/partner/feishu/setup.mjs > /opt/partner/feishu-skills-path \
  && chmod a+r /opt/partner/feishu.json /opt/partner/feishu-skills-path \
  && chmod -R a+rX /opt/partner/feishu /opt/partner/company /opt/partner-clis

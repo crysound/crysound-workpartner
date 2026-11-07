@@ -6,8 +6,8 @@ export function authorizationPage({ local = false } = {}) {
   return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>飞书授权 · 兆华工作伙伴</title>
 <style>[hidden]{display:none!important}body{margin:0;background:#f6f5fb;color:#251d37;font:16px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:640px;margin:48px auto;padding:0 24px}h1{color:#170057;font-size:28px}section{background:white;padding:24px;border:1px solid #e5e1ed;border-radius:16px;margin:20px 0}h2{font-size:20px;margin:0 0 8px}p{color:#625a70}button,a.button{border:0;border-radius:8px;padding:10px 18px;background:#170057;color:white;font:inherit;cursor:pointer;display:inline-block;text-decoration:none;margin:4px 8px 4px 0}button.secondary{background:#eeebf4;color:#35244e}button:disabled{opacity:.5;cursor:wait}a{color:#170057}#error{color:#a32336;white-space:pre-wrap}#project-link{overflow-wrap:anywhere}button:focus-visible,a:focus-visible{outline:3px solid #2fb4c4;outline-offset:3px}</style>
 <main><h1>飞书授权</h1><p>连接后，工作伙伴可以使用你的身份处理飞书里的内容。发消息、发邮件、提交审批、删除和修改分享权限前，工作伙伴会先向你确认。</p>
-<section><h2>飞书</h2><p id="feishu-status" role="status">正在检查授权…</p><a class="button" href="connect" id="connect">连接飞书</a><button class="secondary" id="disconnect" hidden>断开连接</button></section>
-<section><h2>飞书项目</h2><p>${local ? "此处连接本机的飞书项目。云端模式请在网页版连接。" : "此处连接云端工作伙伴的飞书项目。本机运行模式请在桌面版连接。"}</p><p id="project-status" role="status">正在检查授权…</p><button id="project-connect">连接飞书项目</button><button class="secondary" id="project-disconnect" hidden>断开连接</button><p id="project-link"></p></section>
+<section><h2>飞书</h2><p id="feishu-status" role="status">正在检查授权…</p><a class="button" href="connect" id="connect">连接飞书</a><button class="secondary" id="disconnect" hidden>断开飞书</button></section>
+<section><h2>飞书项目</h2><p>${local ? "此处连接本机的飞书项目。云端模式请在网页版连接。" : "此处连接云端工作伙伴的飞书项目。本机运行模式请在桌面版连接。"}</p><p id="project-status" role="status">正在检查授权…</p><button id="project-connect">连接飞书项目</button><button class="secondary" id="project-disconnect" hidden>断开飞书项目</button><p id="project-link"></p></section>
 <p id="error" role="alert"></p><button class="secondary" id="refresh">刷新状态</button></main>
 <script>
 let pollTimer;
@@ -16,7 +16,7 @@ const showError = (error) => { byId('error').textContent = error.message; };
 async function api(route, method = 'GET') {
   const r = await fetch(route, { method, credentials:'same-origin', headers: method === 'POST' ? {'content-type':'application/json'} : {} });
   const data = await r.json();
-  if (!r.ok) throw new Error(data.message || '暂时无法处理授权，请稍后重试');
+  if (!r.ok) throw new Error(data.message || '这项授权未处理完成，请查看连接状态；仍无法处理请联系管理员。');
   return data;
 }
 async function status() {
