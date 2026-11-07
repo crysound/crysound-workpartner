@@ -1,4 +1,5 @@
 /** Company anonymous fetch adapter and bounded Chromium fallback. */
+import { toolTiming } from "./timing.mjs";
 import { publicRequest, USER_AGENT, LANGUAGE, webError } from "./network.mjs";
 
 /** Detect login destinations or forms. @param url Final destination. @param html Page HTML, absent before navigation. @returns Whether login is required. */
@@ -12,6 +13,9 @@ export function loginPage(url, html = "") {
 
 /** Identify a short script-driven shell. @param html Decoded HTML. @returns Whether one render should be attempted. */
 export function needsRendering(html) {
+  for (const [, , body] of compactHtml(html).matchAll(/<(article|main)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi)) {
+    if (body.replace(/<[^>]*>/g, "").replace(/&(?:nbsp|#160);|\s/g, "").length >= 80) return false;
+  }
   // Count text tokens only. This heuristic never produces HTML for display or execution.
   let length = 0, rawTag;
   for (const match of html.matchAll(/<!--[\s\S]*?-->|<(\/?)([a-z][\w:-]*)\b[^>]*>|([^<]+)/gi)) {
@@ -105,24 +109,39 @@ export function companyFetcher(Base, WebError, limits, {
   request = (url, signal) => publicRequest(url, signal, {}, undefined, undefined, limits.maxResponseBytes),
   loadRuntime = () => import(process.env.SLIDESTUDIO_PLAYWRIGHT_RUNTIME),
   maxConcurrent = 1,
-  renderTimeoutMs = 15_000,
+  renderTimeoutMs = 2_000,
 } = {}) {
   let rendering = 0;
   return new class extends Base {
 
     async followAndRead(initialUrl, signal) {
+      let downloaded = false;
       try {
+        toolTiming.fetch("download-start");
         const { response, url } = await followPublic(initialUrl, signal, request, Math.min(5, limits.maxRedirects), true);
         // The streaming byte cap yields a usable prefix even when the declared length exceeds it.
         response.headers.delete("content-length");
         const result = await super.readBody(response, new URL(url), signal);
-        if (loginPage(url, result.body.content)) throw new WebError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
-        if (result.body.kind !== "html" || result.statusCode >= 400 || result.truncated || !needsRendering(result.body.content)) return boundedBody(result, limits.maxBodyChars);
-        if (rendering >= maxConcurrent) throw new WebError("网页渲染正忙，请稍后重试", "WEB_PROVIDER_ERROR");
+        downloaded = true;
+        toolTiming.fetch("download-end", "success");
+        toolTiming.fetch("extract-start");
+        try {
+          if (loginPage(url, result.body.content)) throw new WebError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
+          if (result.body.kind !== "html" || result.statusCode >= 400 || result.truncated || !needsRendering(result.body.content)) { toolTiming.fetch("render-skip", "static"); return boundedBody(result, limits.maxBodyChars); }
+          if (rendering >= maxConcurrent) throw new WebError("网页渲染正忙，请稍后重试", "WEB_PROVIDER_ERROR");
+        } finally { toolTiming.fetch("extract-end"); }
         rendering++;
-        try { return await this.render(result, signal); }
-        finally { rendering--; }
+        toolTiming.fetch("render-start");
+        try {
+          const rendered = await this.render(result, signal);
+          toolTiming.fetch("render-end", "success");
+          return rendered;
+        } catch (error) {
+          toolTiming.fetch("render-end", signal.aborted ? "cancelled" : "error");
+          throw error;
+        } finally { rendering--; }
       } catch (error) {
+        if (!downloaded) toolTiming.fetch("download-end", signal.aborted ? "cancelled" : "error");
         if (signal.aborted) throw new WebError(
           signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "网页抓取超时，请稍后重试" : "网页抓取已取消",
           signal.reason?.code === "WEB_FETCH_TIMEOUT" ? "WEB_FETCH_TIMEOUT" : "WEB_ABORTED", { cause: error },
@@ -190,7 +209,14 @@ export function companyFetcher(Base, WebError, limits, {
           });
           const page = await context.newPage();
           try {
-            await page.goto(result.url, { waitUntil: "networkidle", timeout: renderTimeoutMs });
+            await page.goto(result.url, { waitUntil: "domcontentloaded", timeout: renderTimeoutMs });
+            // Analytics and persistent connections must not delay usable page text.
+            await page.waitForFunction(() => document.body && (
+              document.body.innerText.replace(/\s/g, "").length >= 240
+              || [...document.querySelectorAll("article,main")].some(element => element.innerText.replace(/\s/g, "").length >= 80)
+              || document.querySelector('input[type="password"]')
+              || /登录|登入|sign\s*in|log\s*in/i.test(document.title)
+            ), undefined, { timeout: renderTimeoutMs });
           } catch (error) {
             if (mainError) throw mainError;
             throw error;

@@ -53,8 +53,14 @@
     fetchSummary: true
     fetchSummaryModel: deepseek/deepseek-flash
     fetchSummaryBaseURL: !!js process.env.CRYSOUND_LLM_BASE || process.env.DEEPSEEK_BASE_URL
-    fetchSummaryTimeoutMs: 15000
+    fetchSummaryTimeoutMs: 2000
     fetchSummaryMaxTokens: 1600
+    fetchSummaryMinChars: 12000
+    fetchOpen: true
+    fetchOpenModel: codex/gpt-6-luna
+    fetchDirectTimeoutMs: 3000
+    fetchOpenTimeoutMs: 6000
+    fetchTotalTimeoutMs: 7500
 
 # 预览版说明窗口按已读处理：新人第一次进来直接到输入框，首次进入后的飞书接入引导才不会被挡住。
 - id: ui-settings-general

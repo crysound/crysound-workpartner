@@ -1,12 +1,17 @@
+import { toolTiming } from "./timing.mjs";
+
 /** Question-focused summaries of already fetched pages; failures preserve the original tool result. */
 
 /** Validate deployment settings before tools register. @param config Resolved tool config. @returns Nothing; invalid settings throw. */
 export function validateSummaryConfig(config) {
   if (typeof config.fetchSummary !== "boolean") throw new Error("tool-web: fetchSummary must be boolean");
   if (typeof config.fetchSummaryModel !== "string" || !config.fetchSummaryModel.trim()) throw new Error("tool-web: fetchSummaryModel must be non-empty");
-  for (const key of ["fetchSummaryTimeoutMs", "fetchSummaryMaxTokens"]) {
+  for (const key of ["fetchSummaryTimeoutMs", "fetchSummaryMaxTokens", "fetchSummaryMinChars", "fetchDirectTimeoutMs", "fetchOpenTimeoutMs", "fetchTotalTimeoutMs"]) {
     if (!Number.isInteger(config[key]) || config[key] < 1 || config[key] > 2_147_483_647) throw new Error(`tool-web: ${key} must be a positive integer within Node's timer range`);
   }
+  if (typeof config.fetchOpen !== "boolean" || typeof config.fetchOpenModel !== "string" || !config.fetchOpenModel.trim()) throw new Error("tool-web: invalid fetchOpen settings");
+  if (config.fetchOpen && (config.fetchTotalTimeoutMs + 500 > 2_147_483_647
+    || config.fetchDirectTimeoutMs + (config.fetchSummary ? config.fetchSummaryTimeoutMs : 0) > config.fetchTotalTimeoutMs)) throw new Error("tool-web: invalid combined fetch deadline");
   // Empty means resolve the company address from the launch environment at dispatch.
   if (config.fetchSummaryBaseURL !== "") {
     const url = new URL(config.fetchSummaryBaseURL);
@@ -24,7 +29,17 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
   credentialRef, launchEnvironmentOf, appendPluginRecord, request = globalThis.fetch,
 }) {
   parentSignal?.throwIfAborted();
-  if (!config.fetchSummary || !prompt?.trim() || result.statusCode >= 400 || !result.body.content.trim()) return result;
+  if (!config.fetchSummary || !prompt?.trim() || result.statusCode >= 400 || !result.body.content.trim()) {
+    toolTiming.fetch("summary-skip", "ineligible");
+    return result;
+  }
+  toolTiming.fetch("extract-start");
+  const rendered = render(result);
+  toolTiming.fetch("extract-end");
+  if (rendered.text.length <= config.fetchSummaryMinChars) {
+    toolTiming.fetch("summary-skip", "short");
+    return result;
+  }
   const stop = new AbortController();
   const signal = parentSignal ? AbortSignal.any([parentSignal, stop.signal]) : stop.signal;
   let abort;
@@ -35,16 +50,9 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
   const timer = setTimeout(() => stop.abort(new Error("Web summary timed out")), config.fetchSummaryTimeoutMs);
   try {
     return await Promise.race([cancelled, (async () => {
-      const environment = launchEnvironmentOf(ctx);
-      const base = config.fetchSummaryBaseURL || environment.get("CRYSOUND_LLM_BASE")?.value || environment.get("DEEPSEEK_BASE_URL")?.value;
-      if (!base) throw new Error("Company summary endpoint unavailable");
+      const { base, key } = await companyModelAccess(ctx, config, { credentialRef, launchEnvironmentOf });
       const endpoint = base.replace(/\/$/, "") + "/messages";
-      const ref = credentialRef("DEEPSEEK_API_KEY");
-      const credentials = ctx.get("credentials");
-      const key = credentials ? (await credentials.resolve(ref))?.value : environment.get(ref)?.value;
-      if (!key) throw new Error("Company summary credential unavailable");
       signal.throwIfAborted();
-      const rendered = render(result);
       const body = {
         model: config.fetchSummaryModel, max_tokens: config.fetchSummaryMaxTokens,
         thinking: { type: "disabled" },
@@ -57,6 +65,7 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
       };
       const session = ctx.get("agents")?.currentInitiator()?.session;
       if (session) appendPluginRecord(session, "plugin:crysound/web-summary-request", { endpoint, apiVersion: "2023-06-01", body });
+      toolTiming.fetch("summary-request-start");
       const response = await request(endpoint, { method: "POST", redirect: "error", signal,
         headers: { "content-type": "application/json", "anthropic-version": "2023-06-01", "x-api-key": key, authorization: `Bearer ${key}` },
         body: JSON.stringify(body),
@@ -69,9 +78,11 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
       if (!summary) throw new Error("Empty web summary response");
       const source = `Source: ${originalUrl}${result.url === originalUrl ? "" : `\nFinal URL: ${result.url}`}\n\n`;
       // Keep both URLs independent of the model's willingness to cite; the tool renderer applies the configured total output cap.
+      toolTiming.fetch("summary-request-end", "success");
       return { ...result, truncated: rendered.truncated, body: { kind: "text", content: source + "[Question-focused page summary]\n" + summary } };
     })()]);
   } catch (error) {
+    toolTiming.fetch("summary-request-end", parentSignal?.aborted ? "cancelled" : stop.signal.aborted ? "timeout" : "error");
     parentSignal?.throwIfAborted();
     // Auxiliary errors and their deadline are recoverable; the original bounded content remains usable.
     return result;
@@ -80,4 +91,18 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
     stop.abort();
     signal.removeEventListener("abort", abort);
   }
+}
+
+/** Resolve the existing company model endpoint and credential without exposing the key in records.
+ * @param ctx Plugin context. @param config Company settings. @param services Released environment and credential helpers. @returns Endpoint base and key.
+ */
+export async function companyModelAccess(ctx, config, { credentialRef, launchEnvironmentOf }) {
+  const environment = launchEnvironmentOf(ctx);
+  const base = config.fetchSummaryBaseURL || environment.get("CRYSOUND_LLM_BASE")?.value || environment.get("DEEPSEEK_BASE_URL")?.value;
+  if (!base) throw new Error("Company model endpoint unavailable");
+  const ref = credentialRef("DEEPSEEK_API_KEY");
+  const credentials = ctx.get("credentials");
+  const key = credentials ? (await credentials.resolve(ref))?.value : environment.get(ref)?.value;
+  if (!key) throw new Error("Company model credential unavailable");
+  return { base, key };
 }
