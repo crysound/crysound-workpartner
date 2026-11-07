@@ -62,7 +62,7 @@ test('设置入口注册原生页和图标，授权回跳打开同一原生设�
   assert.equal(storage.size,0);
 });
 
-function panelFixture(t, { saved, respond } = {}) {
+function panelFixture(t, { saved, respond, section = 'crysound-feishu', httpStatus = 200 } = {}) {
   let definition, active = 'zh', tick, clock = 1000, panel, slot, cursor = 0;
   const state = [], refs = [], effects = [], registrations = [], dictionaries = new Map(), events = new Map();
   const storage = new Map(saved ? [['zp-project-authorization', JSON.stringify(saved)]] : []);
@@ -90,17 +90,18 @@ function panelFixture(t, { saved, respond } = {}) {
     history:{replaceState(){}},AbortController,
     Date:class extends Date { static now(){return clock;} },
     setTimeout:fn=>{tick=fn;return fn;},clearTimeout:()=>{tick=null;},
+    setInterval:()=>1,clearInterval(){},
     fetch:async url=>{
       const route=url.replace('/_zp/feishu/','');requests.push(route);
       const value = respond ? await respond(route) : {connected:true,expiresInMinutes:4350,name:'Test',authorizedAt:'2026-11-07T00:00:00Z'};
-      return {ok:true,json:async()=>value};
+      return {ok:httpStatus < 400,json:async()=>value};
     },
   };
   vm.runInNewContext(fs.readFileSync(new URL('./native/client.js',import.meta.url),'utf8'),context);
   definition.factory(name=>name==='react'?react:{}).apply({
     effect:work=>{const stop=work();if(typeof stop==='function')disposers.push(stop);},
     locale:{register:(_ns,language,dict)=>{dictionaries.set(language,dict);return()=>dictionaries.delete(language);},bind:()=>translate,getSnapshot:()=>({active})},
-    slots:{inject:(_name,work)=>work(),register:(options,component)=>{registrations.push(options);if(options.name==='settings.section' && options.id==='crysound-feishu'){panel=component;slot=options;}},entries:()=>[],subscribe:()=>()=>{}},
+    slots:{inject:(_name,work)=>work(),register:(options,component)=>{registrations.push(options);if(options.id===section && options.name!=='settings.section.icon'){panel=component;slot=options;}},entries:()=>[],subscribe:()=>()=>{}},
   });
   function render(){cursor=0;return panel({t:translate,...slot.inject?.()});}
   render();
@@ -126,6 +127,37 @@ test('设置文案、导航和日期跟随语言切换，中文和英文字典�
   assert.equal(f.registrations[0].locale,'crysound.feishu');
   assert.deepEqual(Object.keys(f.dictionaries.get('zh')).sort(),Object.keys(f.dictionaries.get('en')).sort());
   f.locale('zh');assert.match(f.text(f.render()),/飞书授权/);
+});
+
+test('每日检查告知、控件、全部运行结果和未读入口跟随语言切换', async t => {
+  const records = ['quiet', 'failed', 'interrupted', 'pending', 'delivered', 'cancelled'].map((outcome, i) => ({
+    id: String(i), date: '2026-11-09', outcome, unread: true, ...(outcome === 'failed' ? { reason: 'read' } : {}),
+  }));
+  const respond = () => ({ enabled: false, available: false, connected: false, time: '09:00', records });
+  for (const section of ['crysound-daily-check', 'crysound-daily-unread']) {
+    const f = panelFixture(t, { section, respond }); await f.settle();
+    assert.match(f.text(f.render()), section === 'crysound-daily-check' ? /每天帮我查一次/ : /伙伴提醒/);
+    f.locale('en'); const english = f.text(f.render());
+    assert.doesNotMatch(english, /[\u4e00-\u9fff]/u);
+    const registration = f.registrations.find(item => item.id === section);
+    assert.equal(registration.locale, 'crysound.feishu');
+    if (section === 'crysound-daily-check') {
+      assert.match(english, /model credits/);
+      assert.match(english, /No new items/);
+      assert.match(english, /Check your Feishu authorization/);
+      assert.match(english, /Run history/);
+      assert.equal(registration.label(), 'Daily check');
+      records[1].reason = 'summary';
+      assert.match(f.text(f.render()), /model credits and connection/);
+      f.locale('zh'); assert.equal(registration.label(), '每天帮我查一次');
+    } else assert.match(english, /Partner reminder/);
+  }
+  const failed = panelFixture(t, { section: 'crysound-daily-check', httpStatus: 409,
+    respond: () => ({ code: 'already_attempted', message: '远端中文提示不直接显示' }) });
+  await failed.settle(); failed.locale('en');
+  assert.match(failed.text(failed.render()), /already attempted today/);
+  assert.doesNotMatch(failed.text(failed.render()), /[\u4e00-\u9fff]/u);
+  failed.locale('zh'); assert.match(failed.text(failed.render()), /今天已经查过/);
 });
 
 test('设备授权临时轮询失败后保留尝试和错误，恢复焦点后重试至成功', async t => {

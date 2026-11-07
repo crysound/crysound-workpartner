@@ -159,16 +159,20 @@ test('容器读取使用独立 socket、固定用户和 argv；非零退出与�
     const body = chunks.length ? JSON.parse(Buffer.concat(chunks)) : null;
     if (req.url.endsWith('/exec')) { command = body; res.end(JSON.stringify({ Id: 'fixed-exec' })); }
     else if (req.url.endsWith('/start')) {
-      const content = Buffer.from('{"ok":true,"identity":"user","data":{"items":[]}}');
-      const header = Buffer.alloc(8); header[0] = 1; header.writeUInt32BE(content.length, 4);
-      res.end(Buffer.concat([header, truncated ? content.subarray(1) : content]));
+      const content = Buffer.from('{"ok":true,"identity":"user","data":{"items":["会议 🐦"]}}');
+      const split = content.indexOf(Buffer.from('会')) + 1;
+      const frame = payload => {
+        const header = Buffer.alloc(8); header[0] = 1; header.writeUInt32BE(payload.length, 4);
+        return Buffer.concat([header, payload]);
+      };
+      res.end(Buffer.concat([frame(content.subarray(0, split)), frame(content.subarray(split)), ...(truncated ? [Buffer.from([1])] : [])]));
     } else res.end(JSON.stringify({ ExitCode: exitCode, Running: false }));
   });
   t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); fs.rmSync(directory, { recursive: true, force: true }); });
   server.listen(socketPath); await once(server, 'listening');
   const read = createContainerReader({ ensureRunning: async slug => { assert.equal(slug, 'alice'); started++; }, socketPath });
   const args = ['task', '+get-my-tasks', '--complete=false', '--as', 'user'];
-  assert.equal((await read(alice, args)).ok, true);
+  assert.deepEqual((await read(alice, args)).data.items, ['会议 🐦']);
   assert.equal(command.User, '1001:1001'); assert.deepEqual(command.Cmd, ['/usr/local/bin/lark-cli', ...args]);
   assert.ok(command.Env.includes('TZ=Asia/Shanghai')); assert.equal(started, 1);
   exitCode = 1; await assert.rejects(read(alice, args), /failed/);

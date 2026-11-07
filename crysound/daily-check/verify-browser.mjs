@@ -33,7 +33,10 @@ server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const backend = `http://127.0.0.1:${server.address().port}`;
 const output = fileURLToPath(new URL('./evidence/', import.meta.url));
 fs.mkdirSync(output, { recursive: true });
-const original = fs.readFileSync(new URL('../feishu/native/client.js', import.meta.url), 'utf8');
+const english = process.env.PREVIEW_LANGUAGE === 'en';
+// Only this tab's injected module uses the preview dictionary; saved app language is untouched.
+const original = fs.readFileSync(new URL('../feishu/native/client.js', import.meta.url), 'utf8')
+  .replace("ctx.locale.register(namespace, 'zh', zh)", english ? "ctx.locale.register(namespace, 'zh', en)" : "ctx.locale.register(namespace, 'zh', zh)");
 const errors = [], requests = [];
 page.on('pageerror', error => errors.push(error.message));
 await page.addInitScript(() => {
@@ -77,6 +80,23 @@ const panel = page.locator('[data-shortcut-modal="settings"]');
 try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(origin + '/?zp-settings=feishu', { waitUntil: 'domcontentloaded' });
+  if (english) {
+    await panel.getByRole('heading', { name: 'Feishu authorization', exact: true }).waitFor();
+    await panel.locator('nav button').filter({ hasText: /^Daily check$/ }).click();
+    const toggle = panel.getByRole('switch', { name: 'Daily check' });
+    await panel.getByText('Off by default', { exact: true }).waitFor();
+    await panel.getByText(/Summaries use your model credits/).waitFor();
+    assert.equal(await toggle.isChecked(), false);
+    await toggle.click(); await panel.getByText('On', { exact: true }).waitFor();
+    await panel.getByRole('button', { name: 'Check now', exact: true }).click();
+    await panel.getByText('2026-11-09 · No new items; no message sent', { exact: true }).waitFor();
+    await panel.getByRole('button', { name: 'Check now', exact: true }).click();
+    await panel.getByRole('alert').filter({ hasText: /already attempted today/ }).waitFor();
+    assert.doesNotMatch(await panel.locator('.zp-daily').innerText(), /[\u4e00-\u9fff]/u);
+    assert.equal(reads, 1); assert.equal(summaries, 0); assert.deepEqual(errors, []);
+    await panel.screenshot({ path: output + '/settings-english-quiet.png', animations: 'disabled' });
+    console.log('PASS: native English daily-check navigation, disclosure, controls, quiet outcome and duplicate-run error. Tab-local dictionary preview; saved language unchanged.');
+  } else {
   await panel.getByRole('heading', { name: '飞书授权', exact: true }).waitFor();
   await panel.locator('nav button').filter({ hasText: /^每天帮我查一次$/ }).click();
   const toggle = panel.getByRole('switch', { name: '每天帮我查一次' });
@@ -111,6 +131,7 @@ try {
   assert.deepEqual(errors, []);
   assert.ok(requests.some(route => route.endsWith('/run')));
   console.log('PASS: native settings, default-off disclosure, enable/disable, quiet run without model/message, duplicate suppression, time save, disconnected link, light/dark and narrow screenshots. Fixture backend; production account run and real Host delivery remain unverified.');
+  }
 } finally {
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   server.closeAllConnections(); await new Promise(resolve => server.close(resolve));

@@ -8,7 +8,7 @@ export function beijingDay(now) {
   const local = new Date(now + 8 * 3600000);
   return { date: local.toISOString().slice(0, 10), time: local.toISOString().slice(11, 16), weekday: local.getUTCDay() };
 }
-const fail = (status, message) => Object.assign(new Error(message), { status });
+const fail = (status, code, message) => Object.assign(new Error(message), { status, code });
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 export function createDailyCheck({ directory, users, connected, available, collect, summarize, now = Date.now }) {
@@ -36,9 +36,9 @@ export function createDailyCheck({ directory, users, connected, available, colle
       records: state.records.map(({ id, date, at, outcome, count, sessionId, unread, reason }) => ({ id, date, at, outcome, count, sessionId, unread, reason })) };
   }
   function configure(user, input) {
-    if (typeof input.enabled !== 'boolean' || typeof input.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time) || Object.keys(input).some(key => !['enabled', 'time'].includes(key))) throw fail(400, '请选择开关状态和有效的北京时间');
-    if (input.enabled && !available(user)) throw fail(403, '这项功能尚未向你开放试用');
-    if (input.enabled && !connected(user)) throw fail(409, '请先在飞书授权中连接本人账号');
+    if (typeof input.enabled !== 'boolean' || typeof input.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time) || Object.keys(input).some(key => !['enabled', 'time'].includes(key))) throw fail(400, 'invalid_settings', '请选择开关状态和有效的北京时间');
+    if (input.enabled && !available(user)) throw fail(403, 'not_available', '这项功能尚未向你开放试用');
+    if (input.enabled && !connected(user)) throw fail(409, 'needs_connection', '请先在飞书授权中连接本人账号');
     const state = load(user);
     Object.assign(state, input);
     if (!input.enabled) {
@@ -52,12 +52,12 @@ export function createDailyCheck({ directory, users, connected, available, colle
     let state = load(user);
     const day = beijingDay(now());
     if (!state.enabled || !available(user) || !connected(user)) {
-      if (manual) throw fail(409, '请先连接飞书并打开每天帮我查一次');
+      if (manual) throw fail(409, 'needs_enabled', '请先连接飞书并打开每天帮我查一次');
       return;
     }
     if (!manual && ([0, 6].includes(day.weekday) || day.time < state.time)) return;
     if (state.records.some(record => record.date === day.date)) {
-      if (manual) throw fail(409, '今天已经查过或尝试过了，明天再查，避免重复提醒');
+      if (manual) throw fail(409, 'already_attempted', '今天已经查过或尝试过了，明天再查，避免重复提醒');
       return;
     }
     const record = { id: crypto.randomUUID(), date: day.date, at: now(), outcome: 'interrupted', count: 0 };
@@ -92,12 +92,12 @@ export function createDailyCheck({ directory, users, connected, available, colle
     } catch (error) {
       state = load(user);
       const current = state.records.find(item => item.id === record.id);
-      if (current) { current.outcome = 'failed'; current.reason = phase === 'read' ? '飞书数据未能完整读取，请检查授权与连接' : '摘要未能生成，请检查模型额度与连接'; save(user, state); }
+      if (current) { current.outcome = 'failed'; current.reason = phase; save(user, state); }
       // Never persist or log raw upstream errors (may contain personal content).
     }
   }
   function run(user, manual = false) {
-    if (running.has(user.unionId)) return manual ? Promise.reject(fail(409, '正在检查，请稍后查看记录')) : running.get(user.unionId);
+    if (running.has(user.unionId)) return manual ? Promise.reject(fail(409, 'running', '正在检查，请稍后查看记录')) : running.get(user.unionId);
     const task = execute(user, manual).finally(() => running.delete(user.unionId));
     running.set(user.unionId, task);
     return task;
@@ -129,16 +129,16 @@ export function createDailyCheckHandler({ service, identify, origin, internal = 
     const reply = (code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)); };
     try {
       const user = identify(req);
-      if (!user) throw fail(401, '请先登录工作伙伴');
-      if (!(internal ? ['pending', 'delivered'] : ['status', 'settings', 'run', 'read']).includes(route)) throw fail(404, '页面不存在');
-      if (['status', 'pending'].includes(route) ? req.method !== 'GET' : req.method !== 'POST') throw fail(405, '请求方法不支持');
-      if (!internal && req.method === 'POST' && req.headers.origin !== origin) throw fail(403, '请从工作伙伴设置中操作');
+      if (!user) throw fail(401, 'login', '请先登录工作伙伴');
+      if (!(internal ? ['pending', 'delivered'] : ['status', 'settings', 'run', 'read']).includes(route)) throw fail(404, 'request', '页面不存在');
+      if (['status', 'pending'].includes(route) ? req.method !== 'GET' : req.method !== 'POST') throw fail(405, 'request', '请求方法不支持');
+      if (!internal && req.method === 'POST' && req.headers.origin !== origin) throw fail(403, 'request', '请从工作伙伴设置中操作');
       let input = {};
       if (req.method === 'POST') {
         let text = '';
-        for await (const chunk of req) { text += chunk; if (text.length > 2048) throw fail(413, '请求内容过多'); }
-        try { input = JSON.parse(text || '{}'); } catch { throw fail(400, '请求格式有误'); }
-        if (!input || typeof input !== 'object' || Array.isArray(input)) throw fail(400, '请求格式有误');
+        for await (const chunk of req) { text += chunk; if (text.length > 2048) throw fail(413, 'request', '请求内容过多'); }
+        try { input = JSON.parse(text || '{}'); } catch { throw fail(400, 'request', '请求格式有误'); }
+        if (!input || typeof input !== 'object' || Array.isArray(input)) throw fail(400, 'request', '请求格式有误');
       }
       if (route === 'status') reply(200, service.status(user));
       else if (route === 'settings') reply(200, service.configure(user, input));
@@ -146,7 +146,7 @@ export function createDailyCheckHandler({ service, identify, origin, internal = 
       else if (route === 'pending') reply(200, service.pending(user));
       else if (route === 'delivered') reply(200, service.delivered(user, input.id));
       else reply(200, service.read(user, input.id));
-    } catch (error) { reply(error.status || 503, { message: error.status ? error.message : '暂时无法检查，请查看运行记录；今天不会自动重试' }); }
+    } catch (error) { reply(error.status || 503, { code: error.code || 'unavailable', message: error.status ? error.message : '暂时无法检查，请查看运行记录；今天不会自动重试' }); }
     return true;
   };
 }

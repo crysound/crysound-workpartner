@@ -23,16 +23,17 @@ export function createContainerReader({ ensureRunning, socketPath = '/var/run/do
       User: '1001:1001', AttachStdout: true, AttachStderr: true, Cmd: ['/usr/local/bin/lark-cli', ...args], Env: ['HOME=/data', 'TZ=Asia/Shanghai'],
     }));
     const buffer = await docker('POST', `/exec/${created.Id}/start`, { Detach: false, Tty: false });
-    let out = '';
-    for (let offset = 0; offset + 8 <= buffer.length;) {
+    const stdout = [];
+    for (let offset = 0; offset < buffer.length;) {
+      if (offset + 8 > buffer.length) throw new Error('Truncated Docker output');
       const size = buffer.readUInt32BE(offset + 4);
       if (offset + 8 + size > buffer.length) throw new Error('Truncated Docker output');
-      if (buffer[offset] === 1) out += buffer.subarray(offset + 8, offset + 8 + size).toString();
+      if (buffer[offset] === 1) stdout.push(buffer.subarray(offset + 8, offset + 8 + size));
       offset += 8 + size;
     }
     const finished = JSON.parse(await docker('GET', `/exec/${created.Id}/json`));
     if (finished.Running || finished.ExitCode !== 0) throw new Error('Feishu read failed');
-    return JSON.parse(out);
+    return JSON.parse(Buffer.concat(stdout).toString('utf8'));
   };
 }
 
