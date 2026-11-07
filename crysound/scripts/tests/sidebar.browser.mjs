@@ -11,6 +11,7 @@ if (!tabId) throw new Error('Open a dedicated tab with the configured browser en
 const out = path.resolve(process.env.SIDEBAR_EVIDENCE_DIR ?? '.playwright-mcp/sidebar-a');
 fs.mkdirSync(out, { recursive: true });
 const brand = fileURLToPath(new URL('../../brand/brand.css', import.meta.url));
+const skin = fs.readFileSync(new URL('../../brand/skin.css', import.meta.url), 'utf8');
 const tabs = await (await fetch(endpoint + '/json/list')).json();
 const tab = tabs.find(item => item.id === tabId);
 if (!tab) throw new Error('Dedicated tab not found');
@@ -18,6 +19,7 @@ const ws = new WebSocket(tab.webSocketDebuggerUrl);
 await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
 let sequence = 0;
 const pending = new Map(), errors = [], patched = new Set(), checks = [];
+let previousSkin;
 const send = (method, params = {}) => new Promise((resolve, reject) => {
   const id = ++sequence;
   pending.set(id, { resolve, reject });
@@ -52,6 +54,13 @@ async function screenshot(name, clip) {
   await pause(100);
   const result = await send('Page.captureScreenshot', { format: 'png', ...(clip ? { clip: { ...clip, scale: 1 } } : {}) });
   fs.writeFileSync(path.join(out, name + '.png'), Buffer.from(result.data, 'base64'));
+}
+async function skinScreenshot(name, clip, newSessionHeight) {
+  await evaluate('document.documentElement.dataset.zpSkin="soft"');
+  await until(`Math.round(document.querySelector('[data-zp-sidebar] button[class*="_newSession"]').getBoundingClientRect().height)===${newSessionHeight}`, 'soft skin preserves new-conversation density: ' + name);
+  assert.equal(await evaluate('getComputedStyle(document.body).getPropertyValue("--dsw-specific-sidebar-fill").trim()'), name.includes('dark') || name.includes('collapsed') ? '#141414' : '#EEEEE9');
+  await screenshot(name, clip);
+  await evaluate('document.documentElement.dataset.zpSkin="default"');
 }
 ws.onmessage = async event => {
   const message = JSON.parse(event.data);
@@ -105,6 +114,8 @@ try {
   await send('Page.reload', { ignoreCache: true });
   await until('document.querySelectorAll("[data-zp-conversations] [data-row-key^=\\"session:\\"]").length > 0', 'published modules activate and load real session rows');
   assert.deepEqual([...patched].sort(), ['brand.css', 'ui-sidebar', 'ui-workspace']);
+  previousSkin = await evaluate('document.documentElement.getAttribute("data-zp-skin")');
+  await evaluate(`(()=>{const style=document.createElement('style');style.dataset.sidebarSkinPreview='true';style.textContent=${JSON.stringify(skin)};document.head.append(style);document.documentElement.dataset.zpSkin='default'})()`);
   assert.deepEqual(await evaluate('[...document.querySelectorAll("[data-zp-panel]")].map(row=>row.dataset.zpPanel).slice(0,3)'), ['baoyu-design.artifacts', 'schedules', 'plugins']);
   checks.push('fixed panel order and single-workspace flattening');
   assert.equal(await evaluate('!![...document.querySelectorAll("[data-zp-conversations] span")].find(x=>x.textContent==="未分组")'), false);
@@ -112,6 +123,7 @@ try {
   await evaluate(`(()=>{const style=document.createElement('style');style.dataset.sidebarEvidence='redacted';style.textContent='[data-zp-conversations] [class*="_title"]{visibility:hidden!important}[data-zp-conversations] [data-row-key^="session:"]{position:relative}[data-zp-conversations] [data-row-key^="session:"]::after{content:"示例对话";font-size:13px;position:absolute;inset:0 auto 0 30px;display:flex;align-items:center;color:var(--dsw-alias-label-primary);pointer-events:none}[data-zp-conversations] [class*="_tooltip"]{visibility:hidden!important}.zp-avatar{visibility:hidden!important}[data-zp-name] span{font-size:0!important}[data-zp-name] span::after{content:"示例用户";font-size:13px!important}';document.head.append(style)})()`);
   const visibleRows = await evaluate('(()=>{const bounds=document.querySelector("[data-zp-conversations]").getBoundingClientRect();return [...document.querySelectorAll("[data-zp-conversations] [data-row-key^=\\"session:\\"]")].filter(el=>{const r=el.getBoundingClientRect();return r.top>=bounds.top&&r.bottom<=Math.min(bounds.bottom,720)}).length})()');
   await screenshot('web-light', { x: 0, y: 0, width: 280, height: 720 });
+  await skinScreenshot('soft-light', { x: 0, y: 0, width: 280, height: 720 }, 32);
   await click('[data-zp-sidebar-search]');
   await until('document.querySelector("[data-zp-conversations]").dataset.searchExpanded==="true" && document.activeElement.tagName==="INPUT"', 'top search opens and focuses the existing search input');
   await send('Input.insertText', { text: '声学' });
@@ -129,9 +141,11 @@ try {
   // Theme and viewport changes below are local to this preview tab and restored in finally.
   await evaluate('document.body.setAttribute("data-ds-dark-theme","")');
   await screenshot('web-dark', { x: 0, y: 0, width: 280, height: 720 });
+  await skinScreenshot('soft-dark', { x: 0, y: 0, width: 280, height: 720 }, 32);
   await click('[data-sidebar-toggle]');
   await until('document.querySelector("[data-zp-sidebar]").className.includes("_collapsed")', 'collapsed rail settles');
   await screenshot('web-collapsed', { x: 0, y: 0, width: 56, height: 720 });
+  await skinScreenshot('soft-collapsed', { x: 0, y: 0, width: 56, height: 720 }, 36);
   await click('[data-zp-sidebar-search]');
   await until('document.querySelector("[data-zp-conversations]").dataset.searchExpanded==="true" && document.activeElement.tagName==="INPUT"', 'rail search expands and focuses search');
   await key('Escape');
@@ -141,16 +155,19 @@ try {
   await click('[data-sidebar-opener]');
   await until('document.querySelector("[data-zp-sidebar]")?.getAttribute("aria-modal")==="true"', 'phone drawer opens');
   await screenshot('web-mobile', { x: 0, y: 0, width: 280, height: 844 });
+  await skinScreenshot('soft-mobile', { x: 0, y: 0, width: 280, height: 844 }, 40);
   await key('Escape');
   await until('document.querySelector("[data-zp-sidebar]")?.getAttribute("aria-modal")!=="true"', 'Escape closes phone drawer');
   assert.deepEqual(errors, []);
-  const verification = { preview: 'Per-tab response substitution over the existing authenticated server. Not a deployed build or Electron.', redaction: 'Account names and real session titles visually masked; all behavior assertions use real application data.', viewport: '1440x720; phone 390x844', visibleRows, patched: [...patched], checks, errors, notVerified: ['Real Electron on macOS/Windows', 'Plugin install/update/disable/reinstall lifecycle on a scratch profile', 'Multiple workspace and unassigned-session lifecycle on a scratch profile', 'Rename/pin/archive/restore/drag mutations on scratch data', 'Skin #133 combined image', 'Real model round and built-server GIF'] };
+  const verification = { preview: 'Per-tab response substitution and local skin stylesheet over the existing authenticated server. Not a deployed build or Electron.', redaction: 'Account names and real session titles visually masked; all behavior assertions use real application data.', viewport: '1440x720; phone 390x844', visibleRows, patched: [...patched], checks, errors, notVerified: ['Real Electron on macOS/Windows', 'Plugin install/update/disable/reinstall lifecycle on a scratch profile', 'Multiple workspace and unassigned-session lifecycle on a scratch profile', 'Rename/pin/archive/restore/drag mutations on scratch data', 'Skin #133 combined image deployment', 'Real model round and built-server GIF'] };
   fs.writeFileSync(path.join(out, 'verification.json'), JSON.stringify(verification, null, 2) + '\n');
   console.log(JSON.stringify(verification));
 } finally {
   await send('Fetch.disable');
   await send('Network.setCacheDisabled', { cacheDisabled: false });
   await send('Emulation.clearDeviceMetricsOverride');
-  await evaluate('document.querySelector("style[data-sidebar-evidence]")?.remove();document.body.removeAttribute("data-ds-dark-theme")');
+  await evaluate(`document.querySelector("style[data-sidebar-evidence]")?.remove();document.querySelector("style[data-sidebar-skin-preview]")?.remove();document.body.removeAttribute("data-ds-dark-theme");${previousSkin === undefined ? '' : previousSkin === null ? 'document.documentElement.removeAttribute("data-zp-skin")' : `document.documentElement.setAttribute("data-zp-skin",${JSON.stringify(previousSkin)})`}`);
+  const closed = new Promise(resolve => ws.addEventListener('close', resolve, { once: true }));
   ws.close();
+  await closed;
 }

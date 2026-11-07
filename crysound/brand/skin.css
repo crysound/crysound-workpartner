@@ -213,6 +213,12 @@
   background: var(--dsw-alias-interactive-bg-hover);
   background-clip: padding-box;
 }
+/* Sidebar A owns density; retain the skin's capsule and horizontal inset. */
+:root[data-zp-skin="soft"] [data-zp-sidebar] button[class*="_newSession"]:not([data-sidebar-collapsed] *) {
+  height: 32px;
+  margin: 0;
+  padding-block: 0;
+}
 :root[data-zp-skin="soft"] button[class*="_newSession"]:not([data-sidebar-collapsed] *) [class*="_newSessionContent"] {
   justify-content: flex-start;
   gap: var(--dsh-sidebar-label-gap);

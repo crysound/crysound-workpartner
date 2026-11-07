@@ -1,5 +1,5 @@
 {
-  "preview": "Per-tab response substitution over the existing authenticated server. Not a deployed build or Electron.",
+  "preview": "Per-tab response substitution and local skin stylesheet over the existing authenticated server. Not a deployed build or Electron.",
   "redaction": "Account names and real session titles visually masked; all behavior assertions use real application data.",
   "viewport": "1440x720; phone 390x844",
   "visibleRows": 11,
@@ -12,6 +12,8 @@
     "published modules activate and load real session rows",
     "fixed panel order and single-workspace flattening",
     "finite sidebar animations settle: web-light",
+    "soft skin preserves new-conversation density: soft-light",
+    "finite sidebar animations settle: soft-light",
     "top search opens and focuses the existing search input",
     "real search returns results",
     "Escape closes search",
@@ -20,12 +22,18 @@
     "market opens through its original panel callback",
     "finite sidebar animations settle: web-market",
     "finite sidebar animations settle: web-dark",
+    "soft skin preserves new-conversation density: soft-dark",
+    "finite sidebar animations settle: soft-dark",
     "collapsed rail settles",
     "finite sidebar animations settle: web-collapsed",
+    "soft skin preserves new-conversation density: soft-collapsed",
+    "finite sidebar animations settle: soft-collapsed",
     "rail search expands and focuses search",
     "narrow viewport supplies the original drawer opener",
     "phone drawer opens",
     "finite sidebar animations settle: web-mobile",
+    "soft skin preserves new-conversation density: soft-mobile",
+    "finite sidebar animations settle: soft-mobile",
     "Escape closes phone drawer"
   ],
   "errors": [],
@@ -34,7 +42,7 @@
     "Plugin install/update/disable/reinstall lifecycle on a scratch profile",
     "Multiple workspace and unassigned-session lifecycle on a scratch profile",
     "Rename/pin/archive/restore/drag mutations on scratch data",
-    "Skin #133 combined image",
+    "Skin #133 combined image deployment",
     "Real model round and built-server GIF"
   ]
 }
