@@ -34,6 +34,27 @@ HTTP、保存请求、SSE 和 WebSocket 流式经过网关与转发器。浏览�
 
 当前桌面壳只启动本机 Host（见 `apps/desktop/src/main.ts` 的 `DesktopHostProcess`），本机模式继续直连 loopback。桌面云端连接入口属于另一项产品工作，不在本单范围；将来接远程 Host 时须按工作区来源注入适配器并单独验收。
 
+## 编辑器下载
+
+网页版网关在预览 HTML 的 `<head>` 开头设置 `window.__baoyuNativeDownloads=true`，让宝玉系列编辑器使用原生下载。注入支持 UTF-8 HTML（含 gzip、deflate、Brotli），移除失效的长度和校验头；附件、其他类型和非成功响应保持原样，SSE 与 WebSocket 继续流式转发。不会修改插件包、容器转发器或桌面版；桌面版仍按编辑器的 Electron 判断存入作品的 `exports/`。
+
+主站适配器只给 `src` 为配置的 HTTPS 预览来源的沙箱 iframe 补 `allow-downloads`。它保留其余限制，重新挂载同一个元素使策略生效；改到其他来源时撤回自己添加的许可。此改动涉及下载许可，合入前须按需求单流程经分诊确认。
+
+本次修复只需构建、重建网关，再刷新网页，无需重建用户容器：
+
+```sh
+docker compose -f crysound/web/compose.yml build gateway
+docker compose -f crysound/web/compose.yml up -d --force-recreate gateway
+```
+
+浏览器回归使用明确提供的持久浏览器 CDP 入口，单独开关自己的标签页，拦截测试域名响应，不修改线上页面和下载设置：
+
+```sh
+node crysound/web/preview/verify-downloads.mjs http://127.0.0.1:9222 /tmp/preview-download-evidence
+```
+
+脚本验证跨源 iframe 的启动前标记、侧栏和独立标签页点击后中文文件名与下载完成事件、外部 iframe 不受影响、切到外部来源撤回许可，并生成截图和记录。下载内容是 18 字节的中文文本，仅证明浏览器链路；不是实际 PPTX、PDF 或设计导出的文件有效性验收。实际编辑器和飞书内置浏览器仍须在上线后分别验收；若飞书仍拦截下载，再实现附件地址与新窗口兜底。
+
 ## 本地检查
 
 无需装依赖、构建或连接线上容器：

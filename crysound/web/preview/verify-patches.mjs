@@ -55,7 +55,7 @@ try {
       addEventListener(type, fn) { const values = listeners.get(type) || new Set(); values.add(fn); listeners.set(type, values); },
       removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
       dispatchEvent(event) { for (const fn of listeners.get(event.type) || []) fn(event); },
-      querySelector: () => ({}), getElementById: () => host,
+      querySelector: () => ({}), querySelectorAll: () => [], documentElement: {}, getElementById: () => host,
       createElement: (tag) => Object.assign(new Element(), { tag }), head: new Element(),
     };
     let api, body;
@@ -76,6 +76,7 @@ try {
       },
     };
     const sandbox = { document, Element, URL, AbortController, console,
+      MutationObserver: class { observe() {} },
       CustomEvent: class { constructor(type, { detail }) { this.type = type; this.detail = detail; } },
       window: { __ModuleLoader__: { load({ factory }) { api = factory((name) => name === "@deepseek-ai/dsh-client-store" ? store : {}); } } },
     };

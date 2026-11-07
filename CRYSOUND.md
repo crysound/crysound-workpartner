@@ -74,6 +74,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 ## 网页版（`crysound/web`）
 每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
+- `preview/`：网页版预览 HTML 注入编辑器原生下载标记，主站适配器给公司预览 iframe 单独添加下载许可；桌面版维持存入作品 `exports/` 的原逻辑。此项只需 `build gateway` 后重建网关并刷新网页，不重建用户容器；验证方法见 `preview/README.md`。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
 - `Dockerfile`：每人容器的镜像。dsh 版本固定；公司插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
 - `web/web-tools/`：镜像构建时给固定 dsh 发布产物装公司搜索、抓取适配。搜索按会话模型在 ChatGPT 与 DeepSeek 间选择、失败互相回退；抓取允许最多五跳，对公网地址检查并固定连接地址，短动态页复用镜像 Chromium。登录页明确报错，私网与本机地址不再由 `web_fetch` 读取。测试和回退见 `crysound/web/web-tools/README.md`。
