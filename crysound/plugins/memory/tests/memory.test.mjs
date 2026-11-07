@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
+import { DatabaseSync } from 'node:sqlite';
 import { MemoryStore, recallData } from '../store.mjs';
 import { registerPanel, trustedRequest } from '../panel.mjs';
 
@@ -144,6 +145,69 @@ test('real HTTP panel reads and deletes with revision checks, method and content
   const cleared = await (await action('clear', { revision: 5, confirmed: true })).json();
   assert.equal(cleared.facts.length, 0);
   assert.equal(cleared.enabled, false);
+  assert.equal(cleared.autoLearning, true);
+  const learningOff = await (await action('auto-learning', { revision: 6, autoLearning: false })).json();
+  assert.equal(learningOff.autoLearning, false);
+  assert.equal(learningOff.enabled, false);
+  assert.equal((await action('auto-learning', { revision: 6, autoLearning: true })).status, 409);
+  assert.equal((await action('auto-learning', { revision: 7, autoLearning: 'true' })).status, 409);
+  assert.equal(store.snapshot().autoLearning, false);
+});
+
+test('learning defaults on, persists independently of recall, and rejects stale writers', t => {
+  const { store, dir } = fixture(t);
+  assert.equal(store.snapshot().autoLearning, true);
+  const saved = store.save({ ...report, revision: 0 });
+  const recalled = recallData(saved);
+  const off = store.setAutoLearning({ autoLearning: false, revision: 1 });
+  assert.equal(off.enabled, true);
+  assert.deepEqual(off.facts, saved.facts);
+  assert.deepEqual(recallData(off), { ...recalled, revision: 2 });
+  const other = new MemoryStore(dir);
+  t.after(() => other.close());
+  assert.equal(other.snapshot().autoLearning, false);
+  assert.throws(() => other.setAutoLearning({ autoLearning: true, revision: 1 }), /已变化/u);
+  assert.throws(() => other.setAutoLearning({ autoLearning: 0, revision: 2 }), /开启或关闭自动学习/u);
+  assert.equal(other.snapshot().revision, 2);
+  store.setEnabled({ enabled: false, revision: 2 });
+  assert.equal(other.snapshot().autoLearning, false);
+  other.setEnabled({ enabled: true, revision: 3 });
+  const restored = store.setAutoLearning({ autoLearning: true, revision: 4 });
+  assert.equal(restored.autoLearning, true);
+  assert.deepEqual(restored.facts, saved.facts);
+});
+
+test('released format 1 upgrades once without changing facts, revision, or the disabled recall switch', t => {
+  const dir = mkdtempSync(join(tmpdir(), 'crysound-memory-v1-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const db = new DatabaseSync(join(dir, 'memory.sqlite'));
+  const fact = { id: 'a'.repeat(24), ...report, createdAt: '2026-11-06T00:00:00.000Z', updatedAt: '2026-11-07T00:00:00.000Z', source: 'manual' };
+  try {
+    db.exec(`CREATE TABLE meta (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)));
+      INSERT INTO meta VALUES (1, 17, 0);
+      CREATE TABLE facts (id TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, content TEXT NOT NULL,
+        createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, source TEXT NOT NULL);
+      PRAGMA user_version=1;`);
+    db.prepare('INSERT INTO facts VALUES (?,?,?,?,?,?,?)').run(fact.id, fact.kind, fact.title, fact.content, fact.createdAt, fact.updatedAt, fact.source);
+  } finally { db.close(); }
+  const first = new MemoryStore(dir);
+  try {
+    const upgraded = first.snapshot();
+    assert.equal(upgraded.revision, 17);
+    assert.equal(upgraded.enabled, false);
+    assert.equal(upgraded.autoLearning, true);
+    assert.deepEqual(upgraded.facts, [fact]);
+    assert.equal(first.db.prepare('PRAGMA user_version').get().user_version, 2);
+    first.setAutoLearning({ autoLearning: false, revision: 17 });
+  } finally { first.close(); }
+  const second = new MemoryStore(dir);
+  try {
+    assert.equal(second.snapshot().autoLearning, false);
+    assert.equal(second.snapshot().enabled, false);
+    assert.equal(second.snapshot().revision, 18);
+    assert.deepEqual(second.snapshot().facts, [fact]);
+    assert.equal(second.db.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
+  } finally { second.close(); }
 });
 
 test('random ids survive rename; creation and update metadata persist across hosts', t => {

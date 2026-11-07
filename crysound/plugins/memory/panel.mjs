@@ -51,6 +51,7 @@ export function registerPanel(ctx, store) {
     delete: input => store.remove(input),
     save: ({ id, revision, kind, title, content }) => store.save({ id, revision, kind, title, content }, { source: id === undefined ? 'manual' : 'edited', requireEnabled: false }),
     enabled: input => store.setEnabled(input),
+    'auto-learning': input => store.setAutoLearning(input),
     clear: input => store.clear(input),
   };
   for (const [path, method] of [['list', 'GET'], ...Object.keys(actions).map(path => [path, 'POST'])]) {

@@ -53,16 +53,21 @@ export class MemoryStore {
     this.recallChars = recallChars;
     try {
       this.db.exec('PRAGMA busy_timeout=3000; PRAGMA journal_mode=DELETE; PRAGMA secure_delete=ON;');
+      this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get().user_version;
-      if (version !== 0 && version !== 1) throw new Error('记忆数据库来自不支持的版本，请先升级插件。');
-      // Unreleased format 1: no migration of disposable trial databases.
-      this.db.exec(`BEGIN IMMEDIATE;
-        CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)));
-        INSERT OR IGNORE INTO meta VALUES (1, 0, 1);
+      if (![0, 1, 2].includes(version)) throw new Error('记忆数据库来自不支持的版本，请先升级插件。');
+      if (version === 1) {
+        this.db.exec('ALTER TABLE meta ADD COLUMN autoLearning INTEGER NOT NULL DEFAULT 1 CHECK(autoLearning IN (0,1))');
+      }
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
+          autoLearning INTEGER NOT NULL DEFAULT 1 CHECK(autoLearning IN (0,1)));
+        INSERT OR IGNORE INTO meta (id,revision,enabled,autoLearning) VALUES (1, 0, 1, 1);
         CREATE TABLE IF NOT EXISTS facts (id TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, content TEXT NOT NULL,
           createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, source TEXT NOT NULL);
-        PRAGMA user_version=1; COMMIT;`);
-      this.snapshot();
+        PRAGMA user_version=2;`);
+      this.read();
+      this.db.exec('COMMIT');
     } catch (error) {
       this.db.close();
       throw error;
@@ -84,7 +89,7 @@ export class MemoryStore {
 
   /** Read within the caller's transaction; validate disk data before model exposure. */
   read() {
-    const { revision, enabled } = this.db.prepare('SELECT revision,enabled FROM meta WHERE id=1').get();
+    const { revision, enabled, autoLearning } = this.db.prepare('SELECT revision,enabled,autoLearning FROM meta WHERE id=1').get();
     const facts = this.db.prepare('SELECT * FROM facts ORDER BY createdAt,id').all().map(row => {
       const fact = factInput(row);
       if (!idPattern.test(row.id) || !sources.has(row.source) || !datePattern.test(row.createdAt) || !datePattern.test(row.updatedAt)) {
@@ -92,8 +97,8 @@ export class MemoryStore {
       }
       return { id: row.id, ...fact, createdAt: row.createdAt, updatedAt: row.updatedAt, source: row.source };
     });
-    if (!Number.isSafeInteger(revision) || revision < 0 || ![0, 1].includes(enabled)) throw new Error('记忆版本或开关无效。');
-    const value = { revision, enabled: enabled === 1, facts };
+    if (!Number.isSafeInteger(revision) || revision < 0 || ![0, 1].includes(enabled) || ![0, 1].includes(autoLearning)) throw new Error('记忆版本或开关无效。');
+    const value = { revision, enabled: enabled === 1, autoLearning: autoLearning === 1, facts };
     // Count the full enabled recall JSON even when disabled, so toggling never hides an overrun.
     const chars = JSON.stringify(recallData({ ...value, enabled: true })).length;
     if (facts.length > this.maxMemories || chars > this.recallChars) {
@@ -175,6 +180,12 @@ export class MemoryStore {
   setEnabled({ enabled, revision }) {
     if (typeof enabled !== 'boolean') throw new Error('请选择开启或关闭个人记忆。');
     return this.change(revision, () => this.db.prepare('UPDATE meta SET enabled=? WHERE id=1').run(enabled ? 1 : 0));
+  }
+
+  /** Persist learning consent independently of recall; this method never reads conversations or calls a model. */
+  setAutoLearning({ autoLearning, revision }) {
+    if (typeof autoLearning !== 'boolean') throw new Error('请选择开启或关闭自动学习。');
+    return this.change(revision, () => this.db.prepare('UPDATE meta SET autoLearning=? WHERE id=1').run(autoLearning ? 1 : 0));
   }
 
   /** Securely clear every fact in one revision-checked transaction after confirmation. */
