@@ -6,17 +6,17 @@
 
 `/_zp/treg/` 只接受现有已开通用户的 zpd Bearer 通行证（容器的 `.zp-market-token` 或桌面通行证），不接受网页 Cookie。不提供 `/_zp/market/data.json` 或独立数据标签、分类卡片和市场目录缓存。
 
-受控调用按需读取公共 `https://treg.to/catalog/platforms` 校验平台白名单：15 秒超时、2 MiB 上限、不跟随重定向、不附凭据。只允许已知数据分类，AI generation 和未知分类仍被拒绝；这一服务端限制不依赖市场页面或技能。
+受控调用按需读取公共 `https://treg.to/catalog/platforms` 校验平台白名单：15 秒超时、2 MiB 上限、不跟随重定向、不附凭据。成功结果在网关进程内缓存五分钟，并发读取共用一次请求；到期读取失败直接报错，不使用过期白名单，后续请求可重新读取。只允许已知数据分类，AI generation 和未知分类仍被拒绝；这一服务端限制不依赖市场页面或技能。
 
 开放的 REST 路径：
 
 - `GET /_zp/treg/catalog/platforms`：已开放平台。
-- `GET /_zp/treg/catalog/search?q=...&limit=8`：搜索后逐项核对可调用目录，最多 25 条。
+- `GET /_zp/treg/catalog/search?q=...&limit=8`：搜索后逐项核对目录，最多 25 条；单项核对失败跳过该项，有结果但全部核对失败时报错，上游无匹配则返回空列表。
 - `GET /_zp/treg/catalog/endpoints/<id>`：目录详情。
 - `GET` 或 `POST /_zp/treg/call/<id>`：方法必须与目录一致，POST 仅 JSON 对象或数组。
 - `GET /_zp/treg/usage`：本人 UTC 今日、本月已用与限额。
 
-每个调用必须在公共目录存在、属于开放平台、`kind` 为 data 或 routed、支持 GET/POST 且可由平台付费执行。路由的全部子接口同样逐项验证；自定义工具、hub、管理功能、AI 生成和未知端点不开放。目录详情仅在当前进程缓存，不缓存用户查询结果。
+每个调用必须在公共目录存在、属于开放平台、`kind` 为 data 或 routed、支持 GET/POST 且可由平台付费执行。付费调用仍逐项严格验证路由的全部子接口；目录搜索和详情查询可跳过返回 `provider_paused` 或 HTTP 404 的子接口，但至少一个子接口须可用且通过白名单，其他核对错误仍拒绝该路由。目录可见不保证当次付费调用可执行。自定义工具、hub、管理功能、AI 生成和未知端点不开放。目录详情仅在当前进程缓存，不缓存用户查询结果。
 
 `POST /_zp/treg/mcp/` 提供无会话 MCP：initialize、ping、initialized 通知、tools/list、tools/call；工具仅 catalog_search、catalog_get、call。call 支持 endpoint_id、params 或 query/body、method 和 idempotency_key；不接受自定义请求头、凭据、上传或金额参数。MCP 请求不是原样透传上游：2026-11-07 核对上游源码，MCP call 会转交 X-Treg-Meta，但没有转交 transport 的 X-Treg-Route-Max-Cost。网关将 MCP 工具转换为同一 REST 调用，确保金额上限、归属、白名单与脱敏都经过同一边界。MCP 返回结构化结果和文本，业务失败标记 isError。其他协议方法、批量请求、资源与管理工具被拒绝。
 
