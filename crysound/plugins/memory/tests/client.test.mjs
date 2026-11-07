@@ -74,3 +74,44 @@ test('tail selection stays bound to the supplied Session source', () => {
   assert.equal(a.target, 'chat');
   assert.notEqual(a, b);
 });
+
+test('background receipts are scoped to the committed session and turn, share one poll and show the first-learning explanation', async () => {
+  const entries = new Map(), effects = [], states = [], timers = new Map();
+  let factory, hook = 0, interval = 0, calls = 0;
+  let rows = [
+    { sessionId: 'own', turn: 7, id: 'actual', title: '长期偏好', notice: true },
+    { sessionId: 'other', turn: 7, id: 'foreign', title: '其他会话', notice: true },
+    { sessionId: 'own', turn: 8, id: 'later', title: '下一轮', notice: false },
+  ];
+  const react = {
+    createElement: (type, props, ...children) => ({ type, props: props || {}, children }),
+    useState(initial) { const index = hook++; if (!(index in states)) states[index] = initial; return [states[index], value => { states[index] = value; }]; },
+    useEffect(effect) { effects.push(effect); }, useRef: () => ({ current: null }),
+  };
+  vm.runInNewContext(readFileSync(new URL('../client.js', import.meta.url), 'utf8'), {
+    window: { __ModuleLoader__: { load(module) { factory = module.factory; } } }, Intl, Date, Map, Set, JSON, AbortController,
+    setInterval(callback) { timers.set(++interval, callback); return interval; }, clearInterval(id) { timers.delete(id); },
+    async fetch(path) { assert.equal(path, '/crysound-memory/api/receipts'); calls++; return { ok: true, async json() { return { receipts: rows }; } }; },
+  });
+  factory(() => react).apply({ uiConversation: { binding() { return { target() {} }; } }, slots: {
+    inject(_slot, register) { const result = register(); if (result?.next) [...result]; },
+    register(options, component) { entries.set(options.key || options.name, component); return () => {}; },
+  } });
+  const component = entries.get('conversation.chat.turnTail');
+  const render = () => { hook = 0; return component({ sessionId: 'own', turn: { turn: 7, end: {} }, useMemoryChat: () => '' }); };
+  const textOf = node => !node ? '' : typeof node === 'string' ? node : Array.isArray(node) ? node.map(textOf).join(' ') : textOf(node.children);
+  assert.equal(render(), null);
+  const dispose = effects.shift()();
+  await new Promise(resolve => setImmediate(resolve));
+  const tree = render();
+  assert.match(textOf(tree), /已记住：长期偏好/u);
+  assert.match(textOf(tree), /我会自动记下你的长期偏好，可在设置里关闭/u);
+  assert.doesNotMatch(textOf(tree), /其他会话|下一轮/u);
+  assert.equal(timers.size, 1); assert.equal(calls, 1);
+  // A subsequent successful refresh reflects deletion; failures cannot fabricate receipts.
+  rows = [];
+  [...timers.values()][0]();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(render(), null);
+  dispose(); assert.equal(timers.size, 0);
+});

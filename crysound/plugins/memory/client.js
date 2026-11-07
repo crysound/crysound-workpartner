@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
       remove: '删除', confirm: '确认删除', cancel: '取消', saving: '正在保存…',
       note: '删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。',
       preference: '偏好', identity: '个人背景', project: '长期项目',
-      capacity: '个人记忆接近或已达上限。伙伴会先提出合并或删除方案，得到你同意后再整理并记下新内容。',
+      capacity: '个人记忆接近或已达上限。后台只整理，不再新增；对话中会先请你确认整理方案。',
       enabled: '使用记忆', disabled: '已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
       autoLearning: '自动学习', learningOff: '已关闭自动学习。后台不会读取对话或调用模型；对话中主动保存与已有记忆仍可使用。',
       learning: '学习记录', learningEmpty: '还没有学习记录。记录保留 30 天，可逐条撤销。',
@@ -19,7 +19,7 @@ window.__ModuleLoader__.load({
       learningNote: '撤销不会覆盖后来修改的记忆。删除记忆时，相关学习记录也会删除；原聊天和备份仍会保留。',
       addAction: '新记住', updateAction: '整理了', deleteAction: '删除了', mergeAction: '合并了',
       undo: '撤销这次改动', undoConfirm: '确认撤销这次改动', undone: '已撤销',
-      before: '改动前', after: '改动后', none: '无', learningSource: '后台学到',
+      before: '改动前', after: '改动后', none: '无',
       clear: '清空全部', clearConfirm: '确认清空全部个人记忆', clearNote: '全部条目会被删除，无法在这里恢复。',
       add: '添加一条', edit: '编辑', save: '保存', kind: '类别', factTitle: '标题', content: '内容',
       conversation: '对话中记下', manual: '手动添加', edited: '页面修改', created: '创建于', updated: '更新于',
@@ -114,7 +114,7 @@ window.__ModuleLoader__.load({
             h('ul', { style: { padding: 0, listStyle: 'none' } }, data.facts.map(fact =>
               h('li', { key: fact.id, tabIndex: -1, 'data-memory-id': fact.id, style: { outline: fact.id === focusId ? '2px solid var(--border, #8885)' : undefined, borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },
                 h('small', { title: `${copy.created} ${new Date(fact.createdAt).toLocaleString('zh-CN')}；${copy.updated} ${new Date(fact.updatedAt).toLocaleString('zh-CN')}` },
-                  `${copy[fact.kind]} · ${date(fact.updatedAt)} · ${fact.source === 'learning' ? copy.learningSource : copy[fact.source]}`),
+                  `${copy[fact.kind]} · ${date(fact.updatedAt)} · ${copy[fact.source]}`),
                 h('h3', { style: { margin: '4px 0' } }, fact.title), h('p', { style: { overflowWrap: 'anywhere' } }, fact.content),
                 action?.type === 'delete' && action.id === fact.id ? h('div', null,
                   h('p', null, copy.note), h('button', { style: buttonStyle, disabled: busy, onClick: () => change('delete', { id: fact.id }) }, copy.confirm),
@@ -166,14 +166,43 @@ window.__ModuleLoader__.load({
       }
       return saved.size ? JSON.stringify([...saved.values()]) : '';
     }
-    function MemoryReceipt({ turn, useMemoryChat }) {
+    const learningListeners = new Set();
+    let learningTimer = null, learningController = null;
+    function subscribeLearning(listener) {
+      learningListeners.add(listener);
+      if (!learningTimer) {
+        learningController = new AbortController();
+        const controller = learningController;
+        const refresh = () => request('receipts', { signal: controller.signal }).then(data => {
+          if (!controller.signal.aborted) for (const notify of learningListeners) notify(data.receipts);
+        }).catch(error => { /* A failed refresh never creates a success receipt. */ });
+        refresh();
+        learningTimer = setInterval(refresh, 15000);
+      }
+      return () => {
+        learningListeners.delete(listener);
+        if (!learningListeners.size) {
+          clearInterval(learningTimer); learningTimer = null;
+          learningController.abort(); learningController = null;
+        }
+      };
+    }
+    function MemoryReceipt({ turn, useMemoryChat, sessionId }) {
       const value = useMemoryChat(snapshot => receipts(snapshot, turn));
       const [focusId, setFocusId] = useState(null);
-      return value ? h('div', { style: { fontSize: '12px', color: 'var(--dsw-alias-label-tertiary, GrayText)', lineHeight: 1.6 } },
-        JSON.parse(value).map(saved => h('div', { key: saved.id },
+      const [learned, setLearned] = useState([]);
+      useEffect(() => {
+        if (!sessionId || !turn.end) return;
+        setLearned([]);
+        return subscribeLearning(entries => setLearned(entries.filter(entry => entry.sessionId === sessionId && entry.turn === turn.turn)));
+      }, [sessionId, turn.turn, Boolean(turn.end)]);
+      const savedEntries = new Map([...(value ? JSON.parse(value) : []), ...learned].map(entry => [entry.id, entry]));
+      return savedEntries.size ? h('div', { style: { fontSize: '12px', color: 'var(--dsw-alias-label-tertiary, GrayText)', lineHeight: 1.6 } },
+        [...savedEntries.values()].map(saved => h('div', { key: saved.id },
           h('button', { type: 'button', onClick: () => setFocusId(saved.id),
             style: { border: 0, padding: 0, font: 'inherit', color: 'inherit', background: 'transparent', cursor: 'pointer', textAlign: 'start' },
             'aria-label': '查看记忆：' + saved.title }, '已记住：' + saved.title))),
+        learned.some(entry => entry.notice) ? h('div', null, '我会自动记下你的长期偏好，可在设置里关闭。') : null,
         focusId ? h(MemoryDialog, { focusId, close: () => setFocusId(null) }) : null) : null;
     }
     // Render only persisted result metadata, never rejected raw arguments or credentials.

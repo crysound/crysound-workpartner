@@ -21,7 +21,7 @@ function fixture(t, limits) {
 test('learning writes facts and before/after records atomically; undo adds forgets originals', t => {
   const { store, directory, history, bytes } = fixture(t);
   const learned = store.applyLearning({ revision: 0, changes: [add(fact)] });
-  assert.equal(learned.facts[0].source, 'learning');
+  assert.equal(learned.facts[0].source, 'conversation');
   const [entry] = history();
   assert.equal(entry.action, 'add');
   assert.equal(entry.reason, reason);

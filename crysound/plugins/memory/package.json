@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./index.mjs",
   "exports": { ".": "./index.mjs", "./client": "./client.js", "./package.json": "./package.json" },
-  "files": ["index.mjs", "guidance.mjs", "store.mjs", "panel.mjs", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
+  "files": ["index.mjs", "guidance.mjs", "store.mjs", "learning.mjs", "panel.mjs", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
   "license": "MIT",
   "engines": { "node": ">=24.9.0", "dsh": ">=0.2.2-rc.1" },
   "peerDependencies": { "@deepseek-ai/cordis": ">=4.0.0", "@deepseek-ai/dsh-tools": "0.2.2-rc.1", "@deepseek-ai/schemastery": "*" },

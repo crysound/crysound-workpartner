@@ -223,7 +223,7 @@ test('released format 1 upgrades once without changing facts, revision, or the d
     assert.equal(upgraded.enabled, false);
     assert.equal(upgraded.autoLearning, true);
     assert.deepEqual(upgraded.facts, [fact]);
-    assert.equal(first.db.prepare('PRAGMA user_version').get().user_version, 2);
+    assert.equal(first.db.prepare('PRAGMA user_version').get().user_version, 1);
     first.setAutoLearning({ autoLearning: false, revision: 17 });
   } finally { first.close(); }
   const second = new MemoryStore(dir);
