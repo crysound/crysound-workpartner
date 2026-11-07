@@ -27,7 +27,8 @@ has "$res/icon.png"
 tpl="$res/crysound/plugin-template"
 has "$tpl/package.json"
 has "$tpl/pnpm-lock.yaml"
-for plugin in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).plugins) console.log(p.name)' "$res/crysound/config/plugins.json"); do has "$tpl/modules/$plugin/package.json"; done
+# Market plugins (@crysound/*) are installed after login, so only bundled plugins belong in the template.
+for plugin in $(node --input-type=module -e 'import { readFileSync } from "node:fs"; import { pathToFileURL } from "node:url"; const { isMarketPlugin } = await import(pathToFileURL(process.argv[1]).href); for (const p of JSON.parse(readFileSync(process.argv[2], "utf8")).plugins) if (!isMarketPlugin(p)) console.log(p.name)' "$res/crysound/plugin-artifacts.mjs" "$res/crysound/config/plugins.json"); do has "$tpl/modules/$plugin/package.json"; done
 echo "info  plugin template: $(du -sh "$tpl" | cut -f1), $(find "$tpl" -type f | wc -l | tr -d ' ') files, $(find "$tpl" -type f \( -name '*.node' -o -name '*.dylib' \) | wc -l | tr -d ' ') native libraries"
 has "$res/runtime/cli/bin/dsh"
 if [ -e "$res/app-update.yml" ]; then echo "FAIL  app-update.yml present (update feed configured)"; fail=1; else echo "ok    no app-update.yml (updates off)"; fi
