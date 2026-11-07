@@ -136,7 +136,36 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "agent-default-model").config.reasoningEffort, "max");
   await writeFile(file, "[]\n");
   refreshProfile(file, seed, yaml);
-  assert.deepEqual(load(await readFile(file, "utf8")).filter(row => !row.insert).map(row => row.id), ["llm-pi-ai", "web-search-deepseek", "ui-chat"]);
+  assert.deepEqual(load(await readFile(file, "utf8")).filter(row => !row.insert).map(row => row.id), ["llm-pi-ai", "web-search-deepseek", "tool-web", "ui-chat"]);
+});
+
+test("new and existing profiles refresh web limits, preserve unrelated options and repeat identically", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  const { Config, apply } = await import(createRequire(runtime).resolve("@deepseek-ai/dsh-tool-web"));
+  for (const [index, before] of [undefined, "[]\n", "- id: tool-web\n  config: {fetchMaxOutputChars: 200000, searchTimeoutMs: 65000, searchMaxResults: 6, fetchTimeoutMs: 12000}\n"].entries()) {
+    const file = join(root, `web-${index}.yml`);
+    if (before !== undefined) await writeFile(file, before);
+    refreshProfile(file, seed, yaml, before === undefined);
+    const after = await readFile(file, "utf8");
+    const config = load(after).findLast(row => row.id === "tool-web").config;
+    assert.equal(config.fetchMaxOutputChars, 40000);
+    assert.equal(config.searchTimeoutMs, 25000);
+    const tools = [];
+    apply({ tools: { register: tool => tools.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, Config(config));
+    assert.equal(tools.find(tool => tool.name === "web_search").timeoutMs, 25000);
+    const fetch = tools.find(tool => tool.name === "web_fetch");
+    const result = { url: "https://example.com/article", statusCode: 200, body: { kind: "text", content: "证据".repeat(30000) }, truncated: false };
+    const output = fetch.output.render({}, result)[0].text;
+    assert.equal(output.length, 40000);
+    assert.match(output, /Content truncated/);
+    assert.equal(fetch.output.presentationMeta({}, result).truncated, true);
+    if (index === 2) {
+      assert.equal(config.searchMaxResults, 6);
+      assert.equal(fetch.timeoutMs, 12000);
+    }
+    refreshProfile(file, seed, yaml);
+    assert.equal(await readFile(file, "utf8"), after);
+  }
 });
 
 test("new and existing profiles load one company guidance module, refresh its contents and retain other settings", async (t) => {
@@ -169,7 +198,7 @@ test("new and existing profiles load one company guidance module, refresh its co
 
 test("invalid personal configuration fails without changing the file", async (t) => {
   const root = await temp(t), file = join(root, "cordis.patch.yml");
-  for (const text of ["- id: [broken\n", "- id: llm-pi-ai\n  config:\n    providers: !!js process.env.PROVIDERS\n", "- id: web-search-deepseek\n  config: !!js process.env.SEARCH_CONFIG\n"]) {
+  for (const text of ["- id: [broken\n", "- id: llm-pi-ai\n  config:\n    providers: !!js process.env.PROVIDERS\n", "- id: web-search-deepseek\n  config: !!js process.env.SEARCH_CONFIG\n", "- id: tool-web\n  config: !!js process.env.TOOL_CONFIG\n"]) {
     await writeFile(file, text);
     assert.throws(() => refreshProfile(file, join(assets, "config/partner.patch.yml"), yaml));
     assert.equal(await readFile(file, "utf8"), text);

@@ -146,7 +146,7 @@ test("compressed responses decode before text extraction and unsupported encodin
 });
 
 test("search follows each session and falls back on HTTP, network, empty-tool and timeout failures", async t => {
-  for (const selected of ["codex/gpt-6.1-terra", "deepseek/chat", undefined]) for (const failure of ["http", "network", "missing", "timeout"]) {
+  for (const selected of ["codex/gpt-6.1-terra", "claude-sonnet-4-5", "anthropic/claude-opus-4-6", "deepseek/chat", undefined]) for (const failure of ["http", "network", "missing", "timeout"]) {
     const calls = [], logs = [];
     const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
       calls.push(JSON.parse(init.body).model);
@@ -161,11 +161,29 @@ test("search follows each session and falls back on HTTP, network, empty-tool an
     try {
       const result = await searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: entry => logs.push(entry) }, selected, { query: "新闻" }, undefined, 20);
       assert.equal(result.sources[0].title, "新闻");
-      const gptFirst = selected === undefined || selected.startsWith("codex/");
+      const gptFirst = selected !== "deepseek/chat";
       assert.deepEqual(calls, gptFirst ? ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"] : ["deepseek/deepseek-flash", "codex/gpt-6.1-sol"]);
       assert.deepEqual(logs.map(entry => entry.body.model), calls);
     } finally { clearInterval(keepAlive); }
   }
+});
+
+test("default search attempts stop at ten seconds before falling back", async t => {
+  const budgets = [], calls = [];
+  const timeout = AbortSignal.timeout.bind(AbortSignal);
+  t.mock.method(AbortSignal, "timeout", milliseconds => { budgets.push(milliseconds); return timeout(10); });
+  const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
+    calls.push(JSON.parse(init.body).model);
+    if (calls.length === 2) return Response.json(searchResult);
+    return new Promise((resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
+  } });
+  const keepAlive = setInterval(() => {}, 1000);
+  try {
+    const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, "codex/gpt-6.1-sol", { query: "新闻" });
+    assert.equal(result.sources.length, 1);
+    assert.deepEqual(calls, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
+    assert.deepEqual(budgets, [10000, 10000]);
+  } finally { clearInterval(keepAlive); }
 });
 
 test("search does not retry caller cancellation, missing credentials or a failed request log", async () => {
@@ -292,7 +310,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), before);
   const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => Response.json(searchResult) });
-  let provider, selected = "codex/gpt-6.1-terra";
+  let provider, selected = "claude-sonnet-4-5";
   const log = [];
   api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   await provider.search({ query: "q" });

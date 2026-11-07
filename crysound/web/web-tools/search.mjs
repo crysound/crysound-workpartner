@@ -2,11 +2,12 @@
  * @param Provider Released search class. @param WebError Released error class.
  * @param options Resolved options. @param selectedModel Omitted selects GPT first.
  * @param request Search query. @param signal Optional caller cancellation.
- * @param timeoutMs Per-attempt limit. @returns First successful native search result.
+ * @param timeoutMs Per-attempt limit, defaulting to ten seconds. @returns First successful native search result.
  */
-export async function searchWithFallback(Provider, WebError, options, selectedModel, request, signal, timeoutMs = 30_000) {
+export async function searchWithFallback(Provider, WebError, options, selectedModel, request, signal, timeoutMs = 10_000) {
   const gpt = "codex/gpt-6.1-sol", deepseek = "deepseek/deepseek-flash";
-  const models = selectedModel === undefined || selectedModel.startsWith("codex/") ? [gpt, deepseek] : [deepseek, gpt];
+  const gptFirst = selectedModel === undefined || selectedModel.startsWith("codex/") || /(?:^|\/)claude(?:[-/]|$)/i.test(selectedModel);
+  const models = gptFirst ? [gpt, deepseek] : [deepseek, gpt];
   const failures = [];
   for (const model of models) {
     signal?.throwIfAborted();
