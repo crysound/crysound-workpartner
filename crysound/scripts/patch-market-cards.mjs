@@ -39,7 +39,7 @@ function browserHelpers(React, { jsx, jsxs }, icons, locales) {
 
 /** Exactly two columns, with one column in narrow windows and narrow side panels. */
 export const marketCardCss = `
-[data-plugin-panel] { container-type: inline-size; }
+[data-plugin-panel] { container-type: inline-size; --plugin-page-top-inset:16px; }
 .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:20px!important; list-style:none; padding:0; margin:0; }
 .zp-market-card { position:relative; box-sizing:border-box; min-width:0; padding:20px!important; border:1px solid var(--dsw-alias-border-l3,#dedee2)!important; border-radius:18px!important; background:var(--dsw-alias-bg-module-platform,#fafafa)!important; display:grid!important; grid-template-columns:64px minmax(0,1fr) auto; gap:0 16px!important; align-content:start; cursor:pointer; }
 .zp-market-card:hover { border-color:var(--dsw-alias-label-tertiary,#a0a0a8)!important; }
@@ -62,7 +62,7 @@ export const marketCardCss = `
 .zp-market-segments [aria-pressed=true] { background:var(--dsw-alias-interactive-bg-hover,#eee); }
 .zp-market-card:focus-within { outline:2px solid var(--dsw-alias-label-secondary,#666); outline-offset:2px; }
 [data-company-market-toolbar], [data-discover-toolbar] { flex-wrap:wrap; }
-[data-plugin-bar] > header { padding-top:16px!important; gap:8px!important; }
+[data-plugin-bar] > header { gap:8px!important; }
 [data-plugin-tab=discover] { gap:12px!important; }
 @media(max-width:899px) { .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { grid-template-columns:minmax(0,1fr)!important; } }
 @container (max-width:650px) { .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { grid-template-columns:minmax(0,1fr)!important; } }

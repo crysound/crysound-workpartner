@@ -19,4 +19,10 @@ CDP_TAB=<dedicated-tab> MARKET_RUNTIME_MODULES=<writable-module-copy> THIRD_PART
 
 The gateway check uses Node 24 and an existing semver dependency. The browser check requires the skill-configured persistent CDP browser. Add `--english` for the isolated English pass.
 
+Header clearance regression: `verify-header.mjs` combines the pinned published plugin-manager stylesheet with the current company CSS in a dedicated blank persistent-browser tab. It checks Web, Windows and macOS with expanded/collapsed sidebars and resting/compact/natural headers (18 combinations). Before the fix, the macOS resting header computed 16px instead of 48px with a supplied 32px frame clearance. The fix sets the native page-inset variable, preserving native compact-header overrides; all combinations pass in [header.json](header.json). This checks browser CSS computation under platform attributes, not a packaged Electron window.
+
+```sh
+CDP_TAB=<dedicated-blank-tab> CDP_ENTRY=<configured-cdp.mjs> MARKET_RUNTIME_MODULES=<original-five-modules> node crysound/web/market/verify-header.mjs
+```
+
 Pending: Jason’s final review of the revised glyphs and screenshots; gateway and image deployment; actual installation completion and Use workflows; packaged Electron acceptance. The counter measures completed package transfers (including updates and repeats), not unique people or confirmed installation success. Counts start at rollout. Native installed metadata does not supply authors/counts, so absent counts are omitted and absent authors are labeled. Third-party counts remain downloads with the native statistic available in details. No GIF is embedded: static wide/narrow screenshots document this layout change; a fresh full build is outside the permitted lightweight validation scope.
