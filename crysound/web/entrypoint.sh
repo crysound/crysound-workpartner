@@ -44,6 +44,7 @@ node "$CONFIG/profile-upgrades.mjs" "$DSH_HOME/profiles/web/cordis.patch.yml" \
 touch "$SEED_MARK"
 mkdir -p "$DSH_HOME/skills"
 cp -R "$CONFIG/skills/publish-zhaohua-market" "$DSH_HOME/skills/" || echo "警告：市场发布技能复制失败，继续启动" >&2
+cp -R /opt/partner/skills/workpartner-help "$DSH_HOME/skills/" || echo "警告：工作伙伴使用说明技能复制失败，继续启动" >&2
 node "$CONFIG/market-profile.mjs" "$DSH_HOME/profiles/web/cordis.patch.yml" "$DSH_HOME/profiles/web/package.json" "${CRYSOUND_MARKET_ORIGIN:-http://zhaohua-partner-gateway:3090}/_zp/market/index.json" || echo "警告：市场 profile 配置失败，继续启动" >&2
 export CRYSOUND_COMPANY_SKILLS="$(cat /opt/partner/feishu-skills-path)"
 node /opt/partner/feishu/container-setup.mjs || echo "警告：飞书命令或技能准备失败，请联系管理员" >&2
