@@ -4,6 +4,9 @@
 
 ## 改了什么
 
+### 网页版默认自动审查
+- `crysound/scripts/patch-web-auto-review.mjs` 只在网页镜像构建时修补固定版本的权限 Host、权限界面和自动审查退出路径，不改上游源码或桌面运行时。未设置个人默认权限时用自动审查，显式选择继续优先；插件不可用时新会话退回工作区内修改，停用插件也不升级为完全权限。部署、额外请求消耗和回退见 [网页说明](crysound/web/README.md#默认自动审查)。
+
 ### 工作区本地服务预览
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
