@@ -10,7 +10,7 @@ window.__ModuleLoader__.load({
     const base = '/_zp/feishu/';
     const namespace = 'crysound.feishu';
     const en = {
-      skinTitle: "Interface style", skinDefault: "Default", skinSoft: "Zhaohua soft", skinSaveError: "Unable to save on this device. Check browser storage and try again.",
+      skinTitle: "Interface style", skinDefault: "Classic", skinSoft: "Zhaohua soft (default)", skinSaveError: "Unable to save on this device. Check browser storage and try again.",
       dailyTitle: "Daily check",
       dailyIntro: "On weekdays, this uses your Feishu identity to read unread @mentions, today’s and tomorrow’s calendar events, and Feishu tasks. Summaries use your model credits. Reminders are only for you; nothing is replied to or changed for you. You can turn this off at any time.",
       dailyQuietIntro: "No new items means no interruptions. At most one attempt per day, with no repeated failure reminders.",
@@ -67,7 +67,7 @@ window.__ModuleLoader__.load({
     };
     /** @type {Record<keyof typeof en, string>} */
     const zh = {
-      skinTitle: "界面风格", skinDefault: "默认", skinSoft: "兆华柔和", skinSaveError: "无法在此设备保存，请检查浏览器存储后重试。",
+      skinTitle: "界面风格", skinDefault: "经典", skinSoft: "兆华柔和（默认）", skinSaveError: "无法在此设备保存，请检查浏览器存储后重试。",
       dailyTitle: "每天帮我查一次",
       dailyIntro: "打开后，工作日会用你本人的飞书身份读取未读 @、今天和明天的日程、飞书任务。生成摘要会使用模型额度。只提醒你本人，不替你回复或操作，可以随时关闭。",
       dailyQuietIntro: "没有新事不打扰；同一天最多尝试一次，失败不反复提醒。",
@@ -447,7 +447,7 @@ window.__ModuleLoader__.load({
         h('div', { className: 'zp-skin-setting-row' },
           h('span', { id: 'zp-skin-label' }, t('skinTitle')),
           h('div', { role: 'group', 'aria-labelledby': 'zp-skin-label', className: 'zp-skin-choices' },
-            ...['default', 'soft'].map(id => h(Button, { key: id, size: 'sm', variant: 'outline',
+            ...['soft', 'default'].map(id => h(Button, { key: id, size: 'sm', variant: 'outline',
               'aria-pressed': value === id,
               onClick: () => setFailed(!window.zpSkin?.set(id)),
             }, t(id === 'soft' ? 'skinSoft' : 'skinDefault'))))),

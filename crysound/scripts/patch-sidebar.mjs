@@ -16,7 +16,7 @@ function editor(text, kind, version = 1) {
 }
 
 /** Patch navigation while retaining the original panel, command and drawer owners. */
-export function patchSidebarModule(text) {
+function patchSidebarNavigationV1(text) {
   const edit = editor(text, 'navigation');
   if (edit.done) return text;
   const { replace } = edit;
@@ -92,7 +92,7 @@ const panelPins = createPanelPins();`);
 }
 
 /** Patch browsing and its existing device-local preference; never change workspace records. */
-export function patchWorkspaceModule(text) {
+function patchWorkspaceV2(text) {
   const edit = editor(text, 'workspace', 2);
   if (edit.done) return text;
   const { replace } = edit;
@@ -135,6 +135,63 @@ export function patchWorkspaceModule(text) {
   // Optional boolean in dsh.workspace.view.v5: true = manual, false = reset to auto.
   // Missing preserves legacy flat/tree; ambiguous legacy workspace uses automatic projection.
   replace('d.groupBy = mode;', 'd.groupBy = mode; d.groupByExplicit = true;');
+  return edit.finish();
+}
+
+/** Put the search destination after New conversation, retaining the rail command. */
+export function patchSidebarModule(text) {
+  const edit = editor(patchSidebarNavigationV1(text), 'navigation', 2);
+  if (edit.done) return text;
+  const { replace } = edit;
+  replace('const panels = usePanels((snapshot) => snapshot); const company = sidebarPanels(panels);',
+    'const [searchHost, setSearchHost] = (0, react.useState)(null); const panels = usePanels((snapshot) => snapshot); const company = sidebarPanels(panels);');
+  replace(`})(), (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+    label: t("zp.search"), shortcutKeys: searchShortcut?.keys, portal: drawer,
+    children: (0, react_jsx_runtime.jsx)("button", { type: "button", className: SidebarRoot_module_css_default.iconButton,
+      "data-zp-sidebar-search": true, "aria-label": t("zp.search"), "aria-keyshortcuts": searchShortcut?.aria,
+      onClick: searchSessions, children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular, { size: 18 }) })
+  }), !darwinDesktop && toggle]`, '})(), !darwinDesktop && toggle]');
+  replace('panels.length > 0 && (0, react_jsx_runtime.jsxs)("nav", {', `(0, react_jsx_runtime.jsx)("div", { ref: setSearchHost, hidden: !wide, "data-zp-search-host": true }),
+    !wide && (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+      label: t("zp.search"), shortcutKeys: searchShortcut?.keys, portal: drawer,
+      children: (0, react_jsx_runtime.jsx)("button", { type: "button", className: SidebarRoot_module_css_default.panelRow,
+        "data-zp-sidebar-search": true, "aria-label": t("zp.search"), "aria-keyshortcuts": searchShortcut?.aria,
+        onClick: searchSessions, children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular, { size: 18 }) })
+    }), panels.length > 0 && (0, react_jsx_runtime.jsxs)("nav", {`);
+  replace('renderSlot("sidebar.workspaces", {', 'renderSlot("sidebar.workspaces", { searchHost,');
+  replace('"zp.search": "搜索对话"', '"zp.search": "搜索"');
+  return edit.finish();
+}
+
+/** Portal the existing input into the navigation row; keep search and result ownership intact. */
+export function patchWorkspaceModule(text) {
+  text = patchWorkspaceV2(text);
+  const edit = editor(text, 'workspace', 3);
+  if (edit.done) return text;
+  const { replace } = edit;
+  replace('let react = require("react");', 'let react = require("react"); const { createPortal } = require("react-dom");');
+  replace('function WorkspaceBrowser({ wide,', 'function WorkspaceBrowser({ searchHost, wide,');
+  const start = text.indexOf('wide && (0, react_jsx_runtime.jsx)("div", {\n\t\t\t\t\t\t\t\tclassName: clsx(WorkspaceBrowser_module_css_default.searchSlot,');
+  const end = text.indexOf('(0, react_jsx_runtime.jsxs)("div", {\n\t\t\t\t\t\t\t\tclassName: clsx(WorkspaceBrowser_module_css_default.headerActions,', start);
+  if (start < 0 || end < 0) throw new Error('Sidebar search: missing pinned search slot');
+  const oldSearch = text.slice(start, end);
+  let search = oldSearch.replace('wide && (0, react_jsx_runtime.jsx)("div", {', 'wide && searchHost && createPortal((0, react_jsx_runtime.jsx)("div", {');
+  const tail = search.lastIndexOf('}),');
+  search = search.slice(0, tail) + '}), searchHost),' + search.slice(tail + 3);
+  replace(oldSearch, search);
+  replace('ref: searchRoot,', 'ref: searchRoot, "data-zp-inline-search": true, "data-expanded": searchExpanded,');
+  replace('className: WorkspaceBrowser_module_css_default.searchButton,\n\t\t\t\t\t\t\t\t\t\t\t\t"aria-label":',
+    'className: WorkspaceBrowser_module_css_default.searchButton, onFocus: () => { if (!searchExpanded) requestSearch(); },\n\t\t\t\t\t\t\t\t\t\t\t\t"aria-label":');
+  replace('children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular, { size: searchExpanded ? 11 : 14 })',
+    'children: [(0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular, { size: 16 }), !searchExpanded && (0, react_jsx_runtime.jsx)("span", { children: t("zp.searchRow") })]');
+  replace('placeholder: t("search.placeholder"),', '"aria-label": t("search.sessions.aria"), placeholder: t("search.placeholder"),');
+  replace('setQuery(sanitizeSearchQuery(e.target.value));', 'setQuery(sanitizeSearchQuery(e.target.value)); if (e.target.value === "") { changeSearchExpanded(false); e.target.blur(); }');
+  replace('if (e.key !== "Escape") return;', 'if (e.key !== "Escape" || e.nativeEvent.isComposing) return; e.stopPropagation(); e.preventDefault(); e.currentTarget.blur();');
+  replace('e.stopPropagation();\n\t\t\t\t\t\t\t\t\t\t\t\tsetQuery("");', 'e.stopPropagation(); searchInput.current?.blur(); e.currentTarget.blur();\n\t\t\t\t\t\t\t\t\t\t\t\tsetQuery("");');
+  replace('WorkspaceBrowser_module_css_default.wide, searchExpanded && WorkspaceBrowser_module_css_default.sectionLabelHidden', 'WorkspaceBrowser_module_css_default.wide');
+  replace('WorkspaceBrowser_module_css_default.headerActions, wide && searchExpanded && WorkspaceBrowser_module_css_default.headerActionsHidden', 'WorkspaceBrowser_module_css_default.headerActions');
+  replace('const zh = {', 'const zh = { "zp.searchRow": "搜索",');
+  replace('const en = {', 'const en = { "zp.searchRow": "Search",');
   return edit.finish();
 }
 

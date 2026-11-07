@@ -2,7 +2,7 @@
  * 兆华柔和皮肤（适配 dsh 0.2.2-rc.1）
  *
  * 用法：整份放进 <style> 或 <link rel="stylesheet">，网页版和桌面版都可直接注入，不依赖构建。
- * 开启：仅 <html data-zp-skin="soft"> 生效；无偏好或 default 时保持原样。
+ * 开启：仅 <html data-zp-skin="soft"> 生效；无偏好时由 skin.js 选中；明确 default 时保持经典外观。
  *
  * 选择器只用三类钩子：
  *   1. dsh 的 --dsw-* 变量（主题正式接口）；
@@ -72,6 +72,8 @@
   /* 按钮：主按钮、开关、勾选用中性色；其余中性 */
   --dsw-alias-brand-primary: #3C3F43; /* 【取值】 */
   --dsw-alias-button-primary-fill: #3C3F43; /* 【取值】 */
+  --dsw-alias-button-info-fill: #3C3F43;
+  --dsw-alias-button-info-hover: #2E3237;
   --dsw-alias-button-primary-hover: #2E3237; /* 【取值】 */
   --dsw-alias-button-elevated-fill: #FDFDF8; /* 【取值】 */
   --dsw-alias-button-floating-fill: #FDFDF8; /* 【取值】 */
@@ -79,8 +81,8 @@
   --dsw-alias-button-ghost-active-fill: rgb(0 0 0 / 0.06);
   --dsw-alias-button-ghost-active-hover: rgb(0 0 0 / 0.09);
 
-  /* 强调色：焦点环用原始蓝色；链接、徽标底为中性色 */
-  --dsw-alias-state-business-primary: #417CDD; /* 【取值】 */
+  /* 强调色：焦点环、选中态、链接和信息按钮统一用中性色 */
+  --dsw-alias-state-business-primary: #3C3F43; /* 【取值】 */
   --dsw-alias-state-business-tertiary: #EDEDE8;
   --dsw-alias-link: #1D1D1C; /* 【取值】 */
 
@@ -146,6 +148,8 @@
 
   --dsw-alias-brand-primary: #EEEEEE; /* 【取值】 */
   --dsw-alias-button-primary-fill: #EEEEEE; /* 【取值】 */
+  --dsw-alias-button-info-fill: #EEEEEE;
+  --dsw-alias-button-info-hover: #FCFCFC;
   --dsw-alias-button-primary-hover: #FCFCFC; /* 【取值】 */
   --dsw-alias-button-elevated-fill: #262626;
   --dsw-alias-button-floating-fill: #1F1F1F;
@@ -153,7 +157,7 @@
   --dsw-alias-button-ghost-active-fill: rgb(255 255 255 / 0.08);
   --dsw-alias-button-ghost-active-hover: rgb(255 255 255 / 0.12);
 
-  --dsw-alias-state-business-primary: #417CDD; /* 【取值】 */
+  --dsw-alias-state-business-primary: #EEEEEE; /* 【取值】 */
   --dsw-alias-state-business-tertiary: #292929;
   --dsw-alias-link: #D5D5D5;
 
