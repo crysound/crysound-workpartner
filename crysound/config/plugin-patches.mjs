@@ -31,6 +31,23 @@ const PREVIEW_CLICKS = `
   }, "crysound.preview-links");
 `;
 
+/**
+ * Replace dshmarket 1.73.12's DOM/CSS icon adapter with the native settings slot.
+ * @param {string} text Released client module, including previously patched copies.
+ * @returns {string} Idempotently patched module; rejects an unsupported layout.
+ */
+export function patchMarketSettingsIcon(text) {
+  const marker = '/* CRYSOUND market settings icon v1 */';
+  if (text.includes(marker)) return text;
+  const call = 'installSettingsNavIcon(ctx, () => t("nav"));';
+  const region = /\/\/#region src\/client\/settings-nav-icon\.ts[\s\S]*?\/\/#endregion/g;
+  if (text.split(call).length !== 2 || [...text.matchAll(region)].length !== 1 || !text.includes('function MarketLogo(')) {
+    throw new Error('市场设置图标补丁未唯一命中，请核对 dshmarket 版本');
+  }
+  return marker + '\n' + text.replace(region, '').replace(call,
+    'ctx.slots.inject("settings.section.icon", () => ctx.slots.register({ name: "settings.section.icon", id: "market" }, MarketLogo));');
+}
+
 const PATCHES = [
   // Company artifacts 1.0.0: change page copy only; market metadata and storage paths stay intact.
   {
@@ -39,11 +56,10 @@ const PATCHES = [
     replace: "作品",
     all: true,
   },
-  // dshmarket hides only a direct SVG, but the settings shell now wraps its glyph.
+  // Use the released market glyph in the shell-owned icon wrapper; remove its CSS adapter.
   {
     file: "dshmarket/lib/client.js",
-    find: '[${NAV_ICON_MARKER}] > svg',
-    replace: '[${NAV_ICON_MARKER}] > svg, [${NAV_ICON_MARKER}] > [aria-hidden="true"]',
+    patch: patchMarketSettingsIcon,
   },
   // An explicit settings return owns the viewport until it closes; first-run onboarding resumes afterwards.
   {
@@ -101,6 +117,14 @@ for (const root of roots) for (const p of PATCHES) {
   const file = path.join(root, p.file);
   if (!fs.existsSync(file)) continue;
   const text = fs.readFileSync(file, "utf8");
+  if (p.patch) {
+    const next = p.patch(text);
+    if (next !== text) {
+      fs.unlinkSync(file);
+      fs.writeFileSync(file, next);
+    }
+    continue;
+  }
   if (!p.all && text.includes(p.replace)) continue;
   if (!text.includes(p.find)) {
     if (!text.includes(p.replace)) console.log(`插件修补未命中，可能插件已升级：${p.file}`);
