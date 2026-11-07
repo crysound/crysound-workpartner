@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-cer
 # 公司市场标签在打包时修补；运行中的普通用户不写全局运行时。
 COPY scripts/patch-official-plugins.mjs /opt/partner/scripts/
 COPY scripts/patch-market-*.mjs /opt/partner/scripts/
+COPY config/plugins.json /opt/partner/config/plugins.json
 COPY brand/market-locales.mjs /opt/partner/brand/market-locales.mjs
 RUN node /opt/partner/scripts/patch-official-plugins.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 RUN node /opt/partner/scripts/patch-market-ui.mjs --runtime "$(npm root -g)/@deepseek-ai/dsh/node_modules"

@@ -1,0 +1,89 @@
+{
+  "method": "Real native page; tab-local response substitution of pinned released modules; real server data; no product writes",
+  "locale": "zh",
+  "checks": [
+    {
+      "name": "wide",
+      "width": 1600,
+      "overflow": false,
+      "cards": 9,
+      "columns": 2,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "narrow",
+      "width": 820,
+      "overflow": false,
+      "cards": 9,
+      "columns": 1,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "phone",
+      "width": 520,
+      "overflow": false,
+      "cards": 9,
+      "columns": 1,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "dark",
+      "width": 1600,
+      "overflow": false,
+      "cards": 9,
+      "columns": 2,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "chevron opens native details",
+      "hasVersion": true,
+      "hasCategory": true
+    },
+    {
+      "name": "native controlled search and clearing",
+      "passed": true
+    },
+    {
+      "name": "installed",
+      "width": 1600,
+      "overflow": false,
+      "cards": 20,
+      "columns": 2,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "installed-narrow",
+      "width": 820,
+      "overflow": false,
+      "cards": 20,
+      "columns": 1,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "third-party",
+      "width": 1600,
+      "overflow": false,
+      "cards": 24,
+      "columns": 2,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "third-party-narrow",
+      "width": 820,
+      "overflow": false,
+      "cards": 24,
+      "columns": 1,
+      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+    },
+    {
+      "name": "third-party details preserve native controls",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "pending": [
+    "packaged Electron build",
+    "deployment",
+    "real installation completion and plugin Use workflow"
+  ]
+}
