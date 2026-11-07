@@ -7,7 +7,8 @@ import { createRequire } from "node:module";
 const TOOL_EFFICIENCY_GUIDANCE = `Use tools efficiently while preserving correctness and the user's permission boundaries. The following company deployment exceptions replace the single-file read/search tool preferences above for multi-file inspection and small scripts; all permission and sandbox rules still apply.
 - When inspecting several text files in the shell's workspace, prefer one bounded shell command or an available batch-read tool over separate read calls for every file. A single command can discover paths, read relevant content and calculate an aggregate. Use rg with context or combine bounded file ranges with path headings; cap total output. Do not first list paths and then read every file separately. If grep already returned sufficient evidence, use it without rereading every match. If truncated or ambiguous, fetch the missing relevant portions before drawing conclusions. Use the original readers when shell access is unavailable, the files belong to a different execution environment, or a specialized reader is needed (such as images); never bypass access restrictions.
 - For a small script whose contents and execution are already authorized, prefer one shell call that writes the script and then runs it only if writing succeeds (for example, a quoted heredoc followed by && python3 script.py). Do not split a new script into a write tool call and a later execution call. Inspect input when needed, then combine writing and running. Check the actual output in that call. Quote paths and heredoc delimiters so user data is not expanded as shell code. Keep separate steps when intermediate inspection, approval, or a previous result is required; inspect existing files before changing them and prefer targeted edits.
-- If you intend to call multiple tools and their inputs do not depend on each other's results, make those independent calls in the same response so they can run in parallel. Do not serialize independent work or combine operations that depend on each other, race on shared state, or require separate approval.`;
+- If you intend to call multiple tools and their inputs do not depend on each other's results, make those independent calls in the same response so they can run in parallel. Do not serialize independent work or combine operations that depend on each other, race on shared state, or require separate approval.
+- For web research, stop searching and fetching once the evidence is sufficient to answer the user's question; fetch only pages needed to fill a specific evidence gap and meet any requested source count.`;
 
 export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enableWebBrowser = false) {
   const parse = (text) => {
@@ -58,6 +59,23 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
     if (config === undefined) mine.setIn(path, mine.createNode({}));
     else if (!yaml.isMap(config)) throw new Error("个人网页搜索配置使用了动态表达式，无法安全刷新公司地址和模型；请把 config 改为映射");
     for (const key of ["baseURL", "model"]) mine.setIn([...path, key], searchConfig.get(key, true).clone());
+  }
+
+  // Refresh company web-tool limits for existing profiles while retaining other tool options.
+  const toolIndex = find(seed, "tool-web");
+  const toolConfig = seed.getIn([toolIndex, "config"], true);
+  if (!yaml.isMap(toolConfig)) throw new Error("公司配置缺少网页工具上限");
+  let personalToolIndex = find(mine, "tool-web");
+  if (personalToolIndex < 0) {
+    mine.add(seed.contents.items[toolIndex].clone());
+    personalToolIndex = mine.contents.items.length - 1;
+  }
+  const toolPath = [personalToolIndex, "config"];
+  const personalToolConfig = mine.getIn(toolPath, true);
+  if (personalToolConfig === undefined) mine.setIn(toolPath, mine.createNode({}));
+  else if (!yaml.isMap(personalToolConfig)) throw new Error("个人网页工具配置使用了动态表达式，无法安全刷新公司上限；请把 config 改为映射");
+  for (const key of ["searchTimeoutMs", "fetchMaxOutputChars"]) {
+    mine.setIn([...toolPath, key], toolConfig.get(key, true).clone());
   }
 
   // Existing Web profiles need the same Browser opt-in; desktop choices stay personal.

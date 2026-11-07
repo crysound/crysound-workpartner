@@ -19,7 +19,8 @@ const patches = [
     import: 'import { searchWithFallback } from "./crysound-search.mjs";\n',
     edits: [{
       from: 'search: (request, signal) => provider.search(request, signal)',
-      to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
+      previous: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)',
+      to: 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), request, signal)',
     }],
     files: { "search.mjs": "crysound-search.mjs" },
   },
@@ -47,8 +48,12 @@ export function patchWebTools(root) {
     const before = fs.readFileSync(file, "utf8");
     let after = before;
     const alreadyPatched = before.startsWith(patch.import);
-    for (const { from, to } of patch.edits) {
+    for (const { from, previous, to } of patch.edits) {
       if (alreadyPatched && after.split(to).length === 2 && !after.includes(from)) continue;
+      if (alreadyPatched && previous && after.split(previous).length === 2 && !after.includes(from) && !after.includes(to)) {
+        after = after.replace(previous, to);
+        continue;
+      }
       if (alreadyPatched || after.split(from).length !== 2 || after.includes(to)) throw new Error(`Web tools patch did not match exactly once: ${patch.package}`);
       after = after.replace(from, to);
     }

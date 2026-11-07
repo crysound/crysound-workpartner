@@ -145,8 +145,8 @@ test("compressed responses decode before text extraction and unsupported encodin
   await assert.rejects(wireCap.fetch({ url: "https://public.example/gzip" }), { code: "WEB_FETCH_TOO_LARGE" });
 });
 
-test("search follows each session and falls back on HTTP, network, empty-tool and timeout failures", async t => {
-  for (const selected of ["codex/gpt-6.1-terra", "deepseek/chat", undefined]) for (const failure of ["http", "network", "missing", "timeout"]) {
+test("fallback always tries GPT then DeepSeek on HTTP, network, empty-tool and timeout failures", async t => {
+  for (const failure of ["http", "network", "missing", "timeout"]) {
     const calls = [], logs = [];
     const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
       calls.push(JSON.parse(init.body).model);
@@ -159,29 +159,46 @@ test("search follows each session and falls back on HTTP, network, empty-tool an
     // Keep Node alive while the timeout under test fires (AbortSignal timers are unref'ed).
     const keepAlive = setInterval(() => {}, 1000);
     try {
-      const result = await searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: entry => logs.push(entry) }, selected, { query: "新闻" }, undefined, 20);
+      const result = await searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: entry => logs.push(entry) }, { query: "新闻" }, undefined, 20);
       assert.equal(result.sources[0].title, "新闻");
-      const gptFirst = selected === undefined || selected.startsWith("codex/");
-      assert.deepEqual(calls, gptFirst ? ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"] : ["deepseek/deepseek-flash", "codex/gpt-6.1-sol"]);
+      assert.deepEqual(calls, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
       assert.deepEqual(logs.map(entry => entry.body.model), calls);
     } finally { clearInterval(keepAlive); }
   }
+});
+
+test("default search attempts stop at ten seconds before falling back", async t => {
+  const budgets = [], calls = [];
+  const timeout = AbortSignal.timeout.bind(AbortSignal);
+  t.mock.method(AbortSignal, "timeout", milliseconds => { budgets.push(milliseconds); return timeout(10); });
+  const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async (_url, init) => {
+    calls.push(JSON.parse(init.body).model);
+    if (calls.length === 2) return Response.json(searchResult);
+    return new Promise((resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
+  } });
+  const keepAlive = setInterval(() => {}, 1000);
+  try {
+    const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "新闻" });
+    assert.equal(result.sources.length, 1);
+    assert.deepEqual(calls, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
+    assert.deepEqual(budgets, [10000, 10000]);
+  } finally { clearInterval(keepAlive); }
 });
 
 test("search does not retry caller cancellation, missing credentials or a failed request log", async () => {
   let calls = 0;
   const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async () => { calls++; return Response.json(searchResult); } });
   const signal = AbortSignal.abort(new Error("user stopped"));
-  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, options, "codex/test", { query: "q" }, signal));
-  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, apiKey: undefined }, "codex/test", { query: "q" }), { code: "WEB_PROVIDER_CREDENTIAL_MISSING" });
-  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: () => { throw new Error("log unavailable"); } }, "codex/test", { query: "q" }), /log unavailable/);
+  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "q" }, signal));
+  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, apiKey: undefined }, { query: "q" }), { code: "WEB_PROVIDER_CREDENTIAL_MISSING" });
+  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, { ...options, recordRequest: () => { throw new Error("log unavailable"); } }, { query: "q" }), /log unavailable/);
   assert.equal(calls, 0);
 });
 
 test("both failed searches produce one structured error after exactly two attempts", async () => {
   let calls = 0;
   const { DeepSeekSearchProvider } = await released("dsh-web-search-deepseek", { fetch: async () => { calls++; return new Response(null, { status: 503 }); } });
-  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, options, "codex/test", { query: "q" }), error => error.code === "WEB_PROVIDER_ERROR" && error.cause.errors.length === 2);
+  await assert.rejects(searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "q" }), error => error.code === "WEB_PROVIDER_ERROR" && error.cause.errors.length === 2);
   assert.equal(calls, 2);
 });
 
@@ -281,24 +298,36 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
     await cp(join(source, "package.json"), join(target, "package.json"), { dereference: true });
     await cp(join(source, "lib/index.js"), join(target, "lib/index.js"), { dereference: true });
   }
+  const file = join(root, "@deepseek-ai/dsh-web-search-deepseek/lib/index.js");
+  const predecessor = await readFile(file, "utf8");
+  const oldCall = 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), ctx.get("agents")?.currentInitiator()?.model.current()?.model, request, signal)';
+  const originalCall = 'search: (request, signal) => provider.search(request, signal)';
+  const currentCall = 'search: (request, signal) => searchWithFallback(DeepSeekSearchProvider, WebError, options(), request, signal)';
+  const importLine = 'import { searchWithFallback } from "./crysound-search.mjs";\n';
+  assert.equal([originalCall, oldCall, currentCall].filter(call => predecessor.includes(call)).length, 1);
+  const native = predecessor.replace(importLine, '').replace(oldCall, originalCall).replace(currentCall, originalCall);
+  await writeFile(file, native);
   patchWebTools(root);
+  const fromNative = await readFile(file, "utf8");
+  await writeFile(file, importLine + native.replace(originalCall, oldCall));
+  patchWebTools(root);
+  assert.equal(await readFile(file, "utf8"), fromNative, "native and previous company artifacts converge");
   const tools = await released("dsh-tool-web", { root });
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
   assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 65000, "two 30-second attempts fit in the real tool deadline");
   assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 30000);
-  const file = join(root, "@deepseek-ai/dsh-web-search-deepseek/lib/index.js");
   const before = await readFile(file, "utf8");
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), before);
   const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => Response.json(searchResult) });
-  let provider, selected = "codex/gpt-6.1-terra";
+  let provider, selected = "claude-sonnet-4-5";
   const log = [];
   api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   await provider.search({ query: "q" });
   selected = "deepseek/chat";
   await provider.search({ query: "q" });
-  assert.deepEqual(log, ["codex/gpt-6.1-sol", "deepseek/deepseek-flash"]);
+  assert.deepEqual(log, ["codex/gpt-6.1-sol", "codex/gpt-6.1-sol"]);
   const fetchApi = await released("dsh-web-fetch-http", { root });
   let fetcher;
   const context = { web: { registerFetchProvider: value => { fetcher = value; } } };

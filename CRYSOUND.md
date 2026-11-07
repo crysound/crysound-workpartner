@@ -83,7 +83,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - `preview/`：网页版预览 HTML 注入编辑器原生下载标记，主站适配器给公司预览 iframe 单独添加下载许可；桌面版维持存入作品 `exports/` 的原逻辑。此项只需 `build gateway` 后重建网关并刷新网页，不重建用户容器；验证方法见 `preview/README.md`。
 - `gateway/onboard.mjs`：飞书群“AI工作台”的成员首次登录时自助开通：建模型网关钥匙、建本人容器、写名单。
 - `Dockerfile`：每人容器的镜像。dsh 版本固定；公司插件每次启动按挂载的 `plugins.json` 核对版本；语音识别模型、SlideStudio 渲染浏览器、ffmpeg 装进镜像共用；注入 `crysound/brand`；公司配置从服务器目录只读挂载，模型地址从启动环境注入。
-- `web/web-tools/`：镜像构建时给固定 dsh 发布产物装公司搜索、抓取适配。搜索按会话模型在 ChatGPT 与 DeepSeek 间选择、失败互相回退；抓取允许最多五跳，对公网地址检查并固定连接地址，短动态页复用镜像 Chromium。登录页明确报错，私网与本机地址不再由 `web_fetch` 读取。测试和回退见 `crysound/web/web-tools/README.md`。
+- `web/web-tools/`：镜像构建时给固定 dsh 发布产物装公司搜索、抓取适配。所有会话的公司搜索退路优先 GPT，每次最多 10 秒，失败回退 DeepSeek 一次；Claude 原生服务端搜索因固定版运行时丢失服务端工具块与引用尚未启用，能力核对和网关只读探针见 `crysound/tests/evidence/issue-137/README.md`。共享公司配置限制抓取输出并提示证据足够时停止。抓取允许最多五跳，对公网地址检查并固定连接地址，短动态页复用镜像 Chromium。登录页明确报错，私网与本机地址不再由 `web_fetch` 读取。测试和回退见 `crysound/web/web-tools/README.md`。
 - `entrypoint.sh`：每次启动安装或核对插件、打修补；第一次启动开实验插件、写默认配置；每次刷新公司模型清单，个人其他提供方保留（之后本人可在设置页改）。
 - `bin/partner-user`：给群外的人手工开通、列名单、用新镜像重建；`bin/upgrade-when-idle.sh <代号>` 等本人 10 分钟没操作再重建；`bin/upgrade-and-check.sh`、`bin/try-fresh.sh` 用于核对。
 - 部署参数（域名、飞书应用、试点群、数据目录）写在 `crysound/web/.env`，照 `.env.example` 填，不进仓库。名单、每人数据、网关状态、下载文件在 `PARTNER_DATA`，钥匙在 `PARTNER_SECURE`。
