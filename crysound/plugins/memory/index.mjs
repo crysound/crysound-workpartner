@@ -6,19 +6,32 @@ import { defineTool } from '@deepseek-ai/dsh-tools';
 import { MemoryStore, recallData } from './store.mjs';
 import { registerPanel } from './panel.mjs';
 import { guidance } from './guidance.mjs';
+import { registerLearning } from './learning.mjs';
 
 /** Cordis plugin name. */
 export const name = 'crysound-memory';
 /** Headless also supports memory; web services are optional scoped injections. */
-export const inject = ['tools', 'systemPrompt'];
+export const inject = ['tools', 'systemPrompt', 'sessionQuery', 'llm'];
 /** Deployment limits; storage is confined to the personal persistent home. */
 export const Config = Schema.object({
+  learningProvider: Schema.string().default('magpie').description('后台学习使用的既有公司模型提供方。'),
+  learningModel: Schema.string().default('deepseek/deepseek-flash').description('后台学习的便宜档模型。'),
+  learningIdleMs: Schema.number().min(1).default(900000).description('会话空闲多久后补记，毫秒。'),
+  learningRetryMs: Schema.number().min(1000).default(900000).description('单个会话失败后的重试间隔，毫秒。'),
+  learningPollMs: Schema.number().min(1000).default(60000).description('后台复查间隔，毫秒。'),
+  learningTimeoutMs: Schema.number().min(1000).max(120000).default(60000).description('辅助请求超时，毫秒。'),
+  learningDailyHour: Schema.number().min(0).max(23).step(1).default(2).description('每日整理的本地小时。'),
+  learningTimeZone: Schema.string().default('Asia/Shanghai').description('每日整理时区。'),
+  learningDailyCalls: Schema.number().min(1).max(100).step(1).default(20).description('每人每日后台模型调用上限，失败也计数。'),
+  learningInputBytes: Schema.number().min(1024).max(65536).default(48000).description('辅助请求输入字节上限。'),
+  learningOutputTokens: Schema.number().min(128).max(4096).default(1200).description('辅助请求输出令牌上限。'),
   maxMemories: Schema.number().default(50).description('最多保存的记忆条数（1–200）。'),
   recallChars: Schema.number().default(6000).description('全部记忆、日期及版本编号的召回字符上限（512–24000）。'),
 });
 
 /** Register scoped contributions and share one store between tools and the panel. */
 export function apply(ctx, config) {
+  new Intl.DateTimeFormat('en', { timeZone: config.learningTimeZone });
   const store = new MemoryStore(join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'crysound-memory'), config);
   ctx.effect(() => () => store.close());
   ctx.effect(() => ctx.systemPrompt.section({
@@ -87,5 +100,7 @@ export function apply(ctx, config) {
       presentResult: (_args, result) => ({ card: 'generic', title: result.meta?.memory?.message || '个人记忆操作完成。' }),
     })));
   }
+  // Bind scheduler effects to the lifetime of the two host services.
+  ctx.inject(['sessionQuery', 'llm'], learning => registerLearning(learning, store, config));
   ctx.inject(['webServer', 'webStartup'], web => registerPanel(web, store));
 }

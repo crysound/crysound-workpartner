@@ -1,0 +1,4135 @@
+{
+  "datasetHash": "39d440b06effcb8984ea85cfc731ded88bc32faae8c83703277a2dd4b6372c03",
+  "sourceCommit": "fd201be78d",
+  "regression": [
+    {
+      "id": "m01",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "688ea88a9267bdf1a3881b4d",
+          "kind": "preference",
+          "title": "汇报开头方式",
+          "content": "他希望平时的工作汇报都先给结论，再展开细节。",
+          "createdAt": "2026-11-07T04:37:38.614Z",
+          "updatedAt": "2026-11-07T04:37:38.614Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "688ea88a9267bdf1a3881b4d",
+          "kind": "preference",
+          "title": "汇报开头方式",
+          "content": "他希望平时的工作汇报都先给结论，再展开细节。",
+          "createdAt": "2026-11-07T04:37:38.614Z",
+          "updatedAt": "2026-11-07T04:37:38.614Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m01/evidence.json",
+      "evidenceHash": "19dc4ab90dc717fcbc2e7c7a1d93caa784382a3e70c4b45200d1e7003a881349",
+      "beforeBudget": {
+        "calls_used": 2,
+        "calls_cap": 1500,
+        "usd_used": 0.001079,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 6835,
+        "tokens_out": 89,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 2
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 6,
+        "calls_cap": 1500,
+        "usd_used": 0.002423,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 21083,
+        "tokens_out": 523,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 6
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m02",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "e95f35e42043411a02d9e332",
+          "kind": "preference",
+          "title": "页面左边竖色条",
+          "content": "他不喜欢带左边竖色条的页面样式。",
+          "createdAt": "2026-11-07T04:37:49.527Z",
+          "updatedAt": "2026-11-07T04:37:49.527Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "e95f35e42043411a02d9e332",
+          "kind": "preference",
+          "title": "页面左边竖色条",
+          "content": "他不喜欢带左边竖色条的页面样式。",
+          "createdAt": "2026-11-07T04:37:49.527Z",
+          "updatedAt": "2026-11-07T04:37:49.527Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m02/evidence.json",
+      "evidenceHash": "805d19aee4ffbe7daf16ede166a2236f96c54b1dc11069fdad04c412388f36ed",
+      "beforeBudget": {
+        "calls_used": 6,
+        "calls_cap": 1500,
+        "usd_used": 0.002423,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 21083,
+        "tokens_out": 523,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 6
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 10,
+        "calls_cap": 1500,
+        "usd_used": 0.003787,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 35387,
+        "tokens_out": 1009,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 10
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m03",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "95b097c2822fa459199efd22",
+          "kind": "preference",
+          "title": "工作沟通语言",
+          "content": "他要求以后工作沟通都使用简体中文。",
+          "createdAt": "2026-11-07T04:38:02.297Z",
+          "updatedAt": "2026-11-07T04:38:02.297Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "95b097c2822fa459199efd22",
+          "kind": "preference",
+          "title": "工作沟通语言",
+          "content": "他要求以后工作沟通都使用简体中文。",
+          "createdAt": "2026-11-07T04:38:02.297Z",
+          "updatedAt": "2026-11-07T04:38:02.297Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m03/evidence.json",
+      "evidenceHash": "130c662831f2547518582950c836fb16cc9bd2db8a5185a69f18700b6e5b261f",
+      "beforeBudget": {
+        "calls_used": 10,
+        "calls_cap": 1500,
+        "usd_used": 0.003787,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 35387,
+        "tokens_out": 1009,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 10
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 15,
+        "calls_cap": 1500,
+        "usd_used": 0.005199,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 56559,
+        "tokens_out": 1487,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 15
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m04",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "45ab8a6fa8ce270cfc782261",
+          "kind": "identity",
+          "title": "部门职责",
+          "content": "用户所在部门长期负责声学产品的海外售后。",
+          "createdAt": "2026-11-07T04:38:16.050Z",
+          "updatedAt": "2026-11-07T04:38:16.050Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "45ab8a6fa8ce270cfc782261",
+          "kind": "identity",
+          "title": "部门职责",
+          "content": "用户所在部门长期负责声学产品的海外售后。",
+          "createdAt": "2026-11-07T04:38:16.050Z",
+          "updatedAt": "2026-11-07T04:38:16.050Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m04/evidence.json",
+      "evidenceHash": "12d403d45a8e6a1b255299a62fff8255038e00c017ce56d3a35ad99adfda951f",
+      "beforeBudget": {
+        "calls_used": 15,
+        "calls_cap": 1500,
+        "usd_used": 0.005199,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 56559,
+        "tokens_out": 1487,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 15
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 19,
+        "calls_cap": 1500,
+        "usd_used": 0.007217,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 77753,
+        "tokens_out": 2970,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 19
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m05",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "80d1131c413fbbd5fabaa6a9",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "他负责公司的麦克风阵列测试规范。",
+          "createdAt": "2026-11-07T04:38:48.499Z",
+          "updatedAt": "2026-11-07T04:38:48.499Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "80d1131c413fbbd5fabaa6a9",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "他负责公司的麦克风阵列测试规范。",
+          "createdAt": "2026-11-07T04:38:48.499Z",
+          "updatedAt": "2026-11-07T04:38:48.499Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m05/evidence.json",
+      "evidenceHash": "172f6fab4fd7c08321af1b38f31ec2aafa159f135f9cf243eefde30829c0d27d",
+      "beforeBudget": {
+        "calls_used": 19,
+        "calls_cap": 1500,
+        "usd_used": 0.007217,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 77753,
+        "tokens_out": 2970,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 19
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 23,
+        "calls_cap": 1500,
+        "usd_used": 0.01079,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 93847,
+        "tokens_out": 6689,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 23
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m06",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "5ce61f78f33c72e014f07adc",
+          "kind": "preference",
+          "title": "设计习惯",
+          "content": "他做设计时喜欢先看几版再定，倾向先对比多个方案再收敛到一版。",
+          "createdAt": "2026-11-07T04:39:08.954Z",
+          "updatedAt": "2026-11-07T04:39:08.954Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "5ce61f78f33c72e014f07adc",
+          "kind": "preference",
+          "title": "设计习惯",
+          "content": "他做设计时喜欢先看几版再定，倾向先对比多个方案再收敛到一版。",
+          "createdAt": "2026-11-07T04:39:08.954Z",
+          "updatedAt": "2026-11-07T04:39:08.954Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m06/evidence.json",
+      "evidenceHash": "95e7b0bc150d4a1f70c68284993c0e31da147c8c516713cd47287c59c8ba3db0",
+      "beforeBudget": {
+        "calls_used": 23,
+        "calls_cap": 1500,
+        "usd_used": 0.01079,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 93847,
+        "tokens_out": 6689,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 23
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 26,
+        "calls_cap": 1500,
+        "usd_used": 0.01226,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 107887,
+        "tokens_out": 7386,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 26
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m07",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "d25d9e594be401f2d6ed5fc5",
+          "kind": "preference",
+          "title": "周报格式",
+          "content": "他习惯用表格形式写周报。",
+          "createdAt": "2026-11-07T04:39:21.226Z",
+          "updatedAt": "2026-11-07T04:39:21.226Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "d25d9e594be401f2d6ed5fc5",
+          "kind": "preference",
+          "title": "周报格式",
+          "content": "他习惯用表格形式写周报。",
+          "createdAt": "2026-11-07T04:39:21.226Z",
+          "updatedAt": "2026-11-07T04:39:21.226Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m07/evidence.json",
+      "evidenceHash": "bfb18c37167fc2db3ba5cb3f462e66501c898191252c57bac9583a6765fad955",
+      "beforeBudget": {
+        "calls_used": 26,
+        "calls_cap": 1500,
+        "usd_used": 0.01226,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 107887,
+        "tokens_out": 7386,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 26
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 30,
+        "calls_cap": 1500,
+        "usd_used": 0.01367,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 122123,
+        "tokens_out": 7964,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 30
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m08",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "4b9380367bbb57aadb677e06",
+          "kind": "preference",
+          "title": "看方案的顺序",
+          "content": "他看方案时习惯先看风险，再看收益。",
+          "createdAt": "2026-11-07T04:39:33.921Z",
+          "updatedAt": "2026-11-07T04:39:33.921Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "4b9380367bbb57aadb677e06",
+          "kind": "preference",
+          "title": "看方案的顺序",
+          "content": "他看方案时习惯先看风险，再看收益。",
+          "createdAt": "2026-11-07T04:39:33.921Z",
+          "updatedAt": "2026-11-07T04:39:33.921Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m08/evidence.json",
+      "evidenceHash": "3edd00e42e53fcbdb8daf6f8201627f01d93298738f7201972506860b6e61894",
+      "beforeBudget": {
+        "calls_used": 30,
+        "calls_cap": 1500,
+        "usd_used": 0.01367,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 122123,
+        "tokens_out": 7964,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 30
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 33,
+        "calls_cap": 1500,
+        "usd_used": 0.014944,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 136123,
+        "tokens_out": 8344,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 33
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m09",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "61346ba63455ae5cec4e7408",
+          "kind": "project",
+          "title": "设备校准平台项目",
+          "content": "他负责一个为期三年的设备校准平台项目。",
+          "createdAt": "2026-11-07T04:39:44.496Z",
+          "updatedAt": "2026-11-07T04:39:44.496Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "61346ba63455ae5cec4e7408",
+          "kind": "project",
+          "title": "设备校准平台项目",
+          "content": "他负责一个为期三年的设备校准平台项目。",
+          "createdAt": "2026-11-07T04:39:44.496Z",
+          "updatedAt": "2026-11-07T04:39:44.496Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m09/evidence.json",
+      "evidenceHash": "d8ef43d8449ef1b465652d6caf747c4c5ca8d02ccf7570f9921b3784f6a398cc",
+      "beforeBudget": {
+        "calls_used": 33,
+        "calls_cap": 1500,
+        "usd_used": 0.014944,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 136123,
+        "tokens_out": 8344,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 33
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 37,
+        "calls_cap": 1500,
+        "usd_used": 0.016345,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 156997,
+        "tokens_out": 8847,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 37
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m10",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "0c491674a4936748a3b0103e",
+          "kind": "identity",
+          "title": "职业角色",
+          "content": "他在公司担任现场应用工程师。",
+          "createdAt": "2026-11-07T04:39:55.208Z",
+          "updatedAt": "2026-11-07T04:39:55.208Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "0c491674a4936748a3b0103e",
+          "kind": "identity",
+          "title": "职业角色",
+          "content": "他在公司担任现场应用工程师。",
+          "createdAt": "2026-11-07T04:39:55.208Z",
+          "updatedAt": "2026-11-07T04:39:55.208Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m10/evidence.json",
+      "evidenceHash": "16a2539e2fa0f4140031600b1bb2c44045b58f923e34f673488be8fc87ba17fb",
+      "beforeBudget": {
+        "calls_used": 37,
+        "calls_cap": 1500,
+        "usd_used": 0.016345,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 156997,
+        "tokens_out": 8847,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 37
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 42,
+        "calls_cap": 1500,
+        "usd_used": 0.017677,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 178041,
+        "tokens_out": 9192,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 42
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m11",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "b98f32af2d399bc2b474e076",
+          "kind": "preference",
+          "title": "工程数据单位",
+          "content": "他处理工程数据通常使用毫米，不习惯使用英寸。",
+          "createdAt": "2026-11-07T04:40:10.263Z",
+          "updatedAt": "2026-11-07T04:40:10.263Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "b98f32af2d399bc2b474e076",
+          "kind": "preference",
+          "title": "工程数据单位",
+          "content": "他处理工程数据通常使用毫米，不习惯使用英寸。",
+          "createdAt": "2026-11-07T04:40:10.263Z",
+          "updatedAt": "2026-11-07T04:40:10.263Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m11/evidence.json",
+      "evidenceHash": "66400834f1fe73cfb440c972d899f939f3f32f9403134b5ef2cb1dccfc4e6197",
+      "beforeBudget": {
+        "calls_used": 42,
+        "calls_cap": 1500,
+        "usd_used": 0.017677,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 178041,
+        "tokens_out": 9192,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 42
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 47,
+        "calls_cap": 1500,
+        "usd_used": 0.019514,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 199642,
+        "tokens_out": 10304,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 47
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m12",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "8fe55ff37fbf226b149c806f",
+          "kind": "preference",
+          "title": "沟通方式",
+          "content": "他希望别人指出问题时直接说，不要绕弯子。",
+          "createdAt": "2026-11-07T04:40:25.808Z",
+          "updatedAt": "2026-11-07T04:40:25.808Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "8fe55ff37fbf226b149c806f",
+          "kind": "preference",
+          "title": "沟通方式",
+          "content": "他希望别人指出问题时直接说，不要绕弯子。",
+          "createdAt": "2026-11-07T04:40:25.808Z",
+          "updatedAt": "2026-11-07T04:40:25.808Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m12/evidence.json",
+      "evidenceHash": "6ec782985fea51ef5fd5eb6ed89889c5c6f847114a83addbbe5df0214d21bf19",
+      "beforeBudget": {
+        "calls_used": 47,
+        "calls_cap": 1500,
+        "usd_used": 0.019514,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 199642,
+        "tokens_out": 10304,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 47
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 51,
+        "calls_cap": 1500,
+        "usd_used": 0.021092,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 213929,
+        "tokens_out": 11149,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 51
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m13",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "9462264c7e1b552e261b1daf",
+          "kind": "preference",
+          "title": "开会前先看议程",
+          "content": "他习惯每次开会前先拿到议程。",
+          "createdAt": "2026-11-07T04:40:40.285Z",
+          "updatedAt": "2026-11-07T04:40:40.285Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "9462264c7e1b552e261b1daf",
+          "kind": "preference",
+          "title": "开会前先看议程",
+          "content": "他习惯每次开会前先拿到议程。",
+          "createdAt": "2026-11-07T04:40:40.285Z",
+          "updatedAt": "2026-11-07T04:40:40.285Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m13/evidence.json",
+      "evidenceHash": "082e5169d9e4ba1494de5ef14d60e0b6b81c16aa5c060ef1e055a9ec038f5c9e",
+      "beforeBudget": {
+        "calls_used": 51,
+        "calls_cap": 1500,
+        "usd_used": 0.021092,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 213929,
+        "tokens_out": 11149,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 51
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 55,
+        "calls_cap": 1500,
+        "usd_used": 0.022444,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 228180,
+        "tokens_out": 11628,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 55
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m14",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "4b4a13a76c5530416505f2cc",
+          "kind": "identity",
+          "title": "部门与业务方向",
+          "content": "他所在部门是产品验证团队，长期专做防水可靠性测试。",
+          "createdAt": "2026-11-07T04:40:55.648Z",
+          "updatedAt": "2026-11-07T04:40:55.648Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "4b4a13a76c5530416505f2cc",
+          "kind": "identity",
+          "title": "部门与业务方向",
+          "content": "他所在部门是产品验证团队，长期专做防水可靠性测试。",
+          "createdAt": "2026-11-07T04:40:55.648Z",
+          "updatedAt": "2026-11-07T04:40:55.648Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m14/evidence.json",
+      "evidenceHash": "b6f6c097287003067cb91c62e83c4fa3674efc8d4055c0bb201b0a4ce980741f",
+      "beforeBudget": {
+        "calls_used": 55,
+        "calls_cap": 1500,
+        "usd_used": 0.022444,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 228180,
+        "tokens_out": 11628,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 55
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 59,
+        "calls_cap": 1500,
+        "usd_used": 0.024287,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 249445,
+        "tokens_out": 12802,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 59
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m15",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "f60990e9cb3e54b3470abfac",
+          "kind": "identity",
+          "title": "培训职责",
+          "content": "他负责给新员工做产品培训，这是他的固定职责。",
+          "createdAt": "2026-11-07T04:41:10.563Z",
+          "updatedAt": "2026-11-07T04:41:10.563Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "f60990e9cb3e54b3470abfac",
+          "kind": "identity",
+          "title": "培训职责",
+          "content": "他负责给新员工做产品培训，这是他的固定职责。",
+          "createdAt": "2026-11-07T04:41:10.563Z",
+          "updatedAt": "2026-11-07T04:41:10.563Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m15/evidence.json",
+      "evidenceHash": "1df3ffe81a94b05e8cf1e8777484843878a5bfd7398a0225eb51265363a21c8a",
+      "beforeBudget": {
+        "calls_used": 63,
+        "calls_cap": 1500,
+        "usd_used": 0.025742,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 270254,
+        "tokens_out": 13411,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 63
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 64,
+        "calls_cap": 1500,
+        "usd_used": 0.025846,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 270634,
+        "tokens_out": 13521,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 64
+        },
+        "state": "open"
+      },
+      "interruption": {
+        "reason": "test container restarted between completed main turn and first database read",
+        "originalError": "Isolated container restarted after completed main turn and before database read.",
+        "noMainTurnRepeated": true
+      }
+    },
+    {
+      "id": "m16",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "92b5150785e4ad59421db5fb",
+          "kind": "preference",
+          "title": "回答格式偏好",
+          "content": "他平时喜欢编号清单式的回答，不喜欢长段落。",
+          "createdAt": "2026-11-07T04:42:48.966Z",
+          "updatedAt": "2026-11-07T04:42:48.966Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "92b5150785e4ad59421db5fb",
+          "kind": "preference",
+          "title": "回答格式偏好",
+          "content": "他平时喜欢编号清单式的回答，不喜欢长段落。",
+          "createdAt": "2026-11-07T04:42:48.966Z",
+          "updatedAt": "2026-11-07T04:42:48.966Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m16/evidence.json",
+      "evidenceHash": "a76c2f6c73d292e8ca914ac7cf1ea60bfff03354a4d9a3dfa968ddfbcb978056",
+      "beforeBudget": {
+        "calls_used": 64,
+        "calls_cap": 1500,
+        "usd_used": 0.025846,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 270634,
+        "tokens_out": 13521,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 64
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 68,
+        "calls_cap": 1500,
+        "usd_used": 0.027248,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 284887,
+        "tokens_out": 14082,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 68
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m17",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "09aeb90a8ec1760685dc8e47",
+          "kind": "project",
+          "title": "长期项目“蓝鲸”",
+          "content": "他有一个长期项目叫“蓝鲸”，目标是建设声学实验室。",
+          "createdAt": "2026-11-07T04:43:02.629Z",
+          "updatedAt": "2026-11-07T04:43:02.629Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "09aeb90a8ec1760685dc8e47",
+          "kind": "project",
+          "title": "长期项目“蓝鲸”",
+          "content": "他有一个长期项目叫“蓝鲸”，目标是建设声学实验室。",
+          "createdAt": "2026-11-07T04:43:02.629Z",
+          "updatedAt": "2026-11-07T04:43:02.629Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m17/evidence.json",
+      "evidenceHash": "36d149fe203f655f8c60f40f5816d51db91521e94bd600a246cb82dad196f75a",
+      "beforeBudget": {
+        "calls_used": 68,
+        "calls_cap": 1500,
+        "usd_used": 0.027248,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 284887,
+        "tokens_out": 14082,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 68
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 72,
+        "calls_cap": 1500,
+        "usd_used": 0.029056,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 299469,
+        "tokens_out": 15237,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 72
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m18",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "5d7022ebfc903b1f22973257",
+          "kind": "preference",
+          "title": "数据报告图表偏好",
+          "content": "他做数据报告一向更喜欢折线图，不喜欢饼图。",
+          "createdAt": "2026-11-07T04:43:16.997Z",
+          "updatedAt": "2026-11-07T04:43:16.997Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "5d7022ebfc903b1f22973257",
+          "kind": "preference",
+          "title": "数据报告图表偏好",
+          "content": "他做数据报告一向更喜欢折线图，不喜欢饼图。",
+          "createdAt": "2026-11-07T04:43:16.997Z",
+          "updatedAt": "2026-11-07T04:43:16.997Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m18/evidence.json",
+      "evidenceHash": "aaed68854beb01549ecc9cfd0b95bf8627a42bd334fc2a7cef347eeb3ae9a355",
+      "beforeBudget": {
+        "calls_used": 72,
+        "calls_cap": 1500,
+        "usd_used": 0.029056,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 299469,
+        "tokens_out": 15237,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 72
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 76,
+        "calls_cap": 1500,
+        "usd_used": 0.030704,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 320398,
+        "tokens_out": 16138,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 76
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m19",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m19/evidence.json",
+      "evidenceHash": "a9100dd1f025d9411b2c297f5d6e4c4e6b506a637eaa4df3286b3eabd98d3ecd",
+      "beforeBudget": {
+        "calls_used": 76,
+        "calls_cap": 1500,
+        "usd_used": 0.030704,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 320398,
+        "tokens_out": 16138,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 76
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 78,
+        "calls_cap": 1500,
+        "usd_used": 0.030895,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 327234,
+        "tokens_out": 16316,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 78
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m20",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m20/evidence.json",
+      "evidenceHash": "8ad2c3441899dd09c6ad42954388262df391b639e985e449a88d9ed40a3c7540",
+      "beforeBudget": {
+        "calls_used": 78,
+        "calls_cap": 1500,
+        "usd_used": 0.030895,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 327234,
+        "tokens_out": 16316,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 78
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 80,
+        "calls_cap": 1500,
+        "usd_used": 0.031085,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 334074,
+        "tokens_out": 16490,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 80
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m21",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m21/evidence.json",
+      "evidenceHash": "bd92819356cd913b999bd4790c3e817190e62944dbaf15035551905adacfbf42",
+      "beforeBudget": {
+        "calls_used": 80,
+        "calls_cap": 1500,
+        "usd_used": 0.031085,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 334074,
+        "tokens_out": 16490,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 80
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 82,
+        "calls_cap": 1500,
+        "usd_used": 0.031283,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 340916,
+        "tokens_out": 16677,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 82
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m22",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m22/evidence.json",
+      "evidenceHash": "620eea05f553a1c9a1af8506e307a73f2acffa9eb2ea3beac1926969c48dff28",
+      "beforeBudget": {
+        "calls_used": 82,
+        "calls_cap": 1500,
+        "usd_used": 0.031283,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 340916,
+        "tokens_out": 16677,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 82
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 86,
+        "calls_cap": 1500,
+        "usd_used": 0.032066,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 354979,
+        "tokens_out": 17697,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 86
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m23",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m23/evidence.json",
+      "evidenceHash": "d23da7fbfde6feadb3e2bc2f2fe30b6eb1e81bf27227a3caf9d02b8bd3a0ae4a",
+      "beforeBudget": {
+        "calls_used": 86,
+        "calls_cap": 1500,
+        "usd_used": 0.032066,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 354979,
+        "tokens_out": 17697,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 86
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 88,
+        "calls_cap": 1500,
+        "usd_used": 0.032245,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 361815,
+        "tokens_out": 17854,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 88
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m24",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m24/evidence.json",
+      "evidenceHash": "98c3a1cc32b90e82545557a6a8f2131337dcde538c1a5b512f0092cb1bb88654",
+      "beforeBudget": {
+        "calls_used": 88,
+        "calls_cap": 1500,
+        "usd_used": 0.032245,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 361815,
+        "tokens_out": 17854,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 88
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 90,
+        "calls_cap": 1500,
+        "usd_used": 0.032417,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 368659,
+        "tokens_out": 17998,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 90
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m25",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m25/evidence.json",
+      "evidenceHash": "447698235ddd94efc1802ff8cecb03ece6c6e6536dfe1782686a439c090419d0",
+      "beforeBudget": {
+        "calls_used": 90,
+        "calls_cap": 1500,
+        "usd_used": 0.032417,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 368659,
+        "tokens_out": 17998,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 90
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 92,
+        "calls_cap": 1500,
+        "usd_used": 0.032639,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 375509,
+        "tokens_out": 18224,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 92
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m26",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m26/evidence.json",
+      "evidenceHash": "e9bdd0c09d00687129c436f96c8958f8aff2dbace0e24bbca542482defe8b557",
+      "beforeBudget": {
+        "calls_used": 92,
+        "calls_cap": 1500,
+        "usd_used": 0.032639,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 375509,
+        "tokens_out": 18224,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 92
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 94,
+        "calls_cap": 1500,
+        "usd_used": 0.032889,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 382347,
+        "tokens_out": 18499,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 94
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m27",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m27/evidence.json",
+      "evidenceHash": "0ff0756708b26ba3c13dc1edb67fd4d11a027dbf224add3cb5722fdbb17770ea",
+      "beforeBudget": {
+        "calls_used": 94,
+        "calls_cap": 1500,
+        "usd_used": 0.032889,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 382347,
+        "tokens_out": 18499,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 94
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 96,
+        "calls_cap": 1500,
+        "usd_used": 0.03309,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 389203,
+        "tokens_out": 18687,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 96
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m28",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m28/evidence.json",
+      "evidenceHash": "7bea97288b4d7257156713c6d0fffa2ba0e7113f0b1c090d2bfefaada1c410fe",
+      "beforeBudget": {
+        "calls_used": 96,
+        "calls_cap": 1500,
+        "usd_used": 0.03309,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 389203,
+        "tokens_out": 18687,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 96
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 98,
+        "calls_cap": 1500,
+        "usd_used": 0.033339,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 396057,
+        "tokens_out": 18957,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 98
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m29",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m29/evidence.json",
+      "evidenceHash": "abf860f3070581438a51c570c0978a524affc2e548d646b502f9cc597655c4c4",
+      "beforeBudget": {
+        "calls_used": 98,
+        "calls_cap": 1500,
+        "usd_used": 0.033339,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 396057,
+        "tokens_out": 18957,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 98
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 101,
+        "calls_cap": 1500,
+        "usd_used": 0.034063,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 409946,
+        "tokens_out": 19921,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 101
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "m30",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "regression-m30/evidence.json",
+      "evidenceHash": "24a7cc86e24401ab6e74b88c47fe5fa3b729f8b095e2130d481a04411d0e1aa7",
+      "beforeBudget": {
+        "calls_used": 101,
+        "calls_cap": 1500,
+        "usd_used": 0.034063,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 409946,
+        "tokens_out": 19921,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 101
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 103,
+        "calls_cap": 1500,
+        "usd_used": 0.034283,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 416790,
+        "tokens_out": 20146,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 103
+        },
+        "state": "open"
+      }
+    }
+  ],
+  "hard": [
+    {
+      "id": "h01",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "5ce769df0d408c98420d69a1",
+          "kind": "preference",
+          "title": "工作汇报先给结论",
+          "content": "他喜欢工作汇报先给结论。",
+          "createdAt": "2026-11-07T04:45:22.075Z",
+          "updatedAt": "2026-11-07T04:45:22.075Z",
+          "source": "conversation"
+        },
+        {
+          "id": "86b35d25654957a083496977",
+          "kind": "preference",
+          "title": "材料尽量用表格展示",
+          "content": "他喜欢汇报材料尽量用表格展示。",
+          "createdAt": "2026-11-07T04:45:23.678Z",
+          "updatedAt": "2026-11-07T04:45:23.678Z",
+          "source": "conversation"
+        },
+        {
+          "id": "f8f567c9b2619874d770e83a",
+          "kind": "project",
+          "title": "每周整理海外售后趋势",
+          "content": "他每周负责整理海外售后的问题趋势。",
+          "createdAt": "2026-11-07T04:45:40.247Z",
+          "updatedAt": "2026-11-07T04:45:40.247Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "5ce769df0d408c98420d69a1",
+          "kind": "preference",
+          "title": "工作汇报先给结论",
+          "content": "他喜欢工作汇报先给结论。",
+          "createdAt": "2026-11-07T04:45:22.075Z",
+          "updatedAt": "2026-11-07T04:45:22.075Z",
+          "source": "conversation"
+        },
+        {
+          "id": "86b35d25654957a083496977",
+          "kind": "preference",
+          "title": "材料尽量用表格展示",
+          "content": "他喜欢汇报材料尽量用表格展示。",
+          "createdAt": "2026-11-07T04:45:23.678Z",
+          "updatedAt": "2026-11-07T04:45:23.678Z",
+          "source": "conversation"
+        },
+        {
+          "id": "f8f567c9b2619874d770e83a",
+          "kind": "project",
+          "title": "每周整理海外售后趋势",
+          "content": "他每周负责整理海外售后的问题趋势。",
+          "createdAt": "2026-11-07T04:45:40.247Z",
+          "updatedAt": "2026-11-07T04:45:40.247Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h01/evidence.json",
+      "evidenceHash": "ea28b743b52edfa67e9d910536ee2505557fc9a8d1ca7603e23d07122e0d9571",
+      "beforeBudget": {
+        "calls_used": 103,
+        "calls_cap": 1500,
+        "usd_used": 0.034283,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 416790,
+        "tokens_out": 20146,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 103
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 112,
+        "calls_cap": 1500,
+        "usd_used": 0.04083,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 472760,
+        "tokens_out": 24998,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 112
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h02",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "bebbc72a2836be07de44d970",
+          "kind": "identity",
+          "title": "声学校准实验室负责人",
+          "content": "他长期负责公司的声学校准实验室。",
+          "createdAt": "2026-11-07T04:46:27.487Z",
+          "updatedAt": "2026-11-07T04:46:27.487Z",
+          "source": "conversation"
+        },
+        {
+          "id": "cac7dfe1e4e6ddf65125d33e",
+          "kind": "preference",
+          "title": "报告使用国际单位制",
+          "content": "他的日常报告都使用国际单位制（SI）。",
+          "createdAt": "2026-11-07T04:46:28.793Z",
+          "updatedAt": "2026-11-07T04:46:28.793Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "bebbc72a2836be07de44d970",
+          "kind": "identity",
+          "title": "声学校准实验室负责人",
+          "content": "他长期负责公司的声学校准实验室。",
+          "createdAt": "2026-11-07T04:46:27.487Z",
+          "updatedAt": "2026-11-07T04:46:27.487Z",
+          "source": "conversation"
+        },
+        {
+          "id": "cac7dfe1e4e6ddf65125d33e",
+          "kind": "preference",
+          "title": "报告使用国际单位制",
+          "content": "他的日常报告都使用国际单位制（SI）。",
+          "createdAt": "2026-11-07T04:46:28.793Z",
+          "updatedAt": "2026-11-07T04:46:28.793Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h02/evidence.json",
+      "evidenceHash": "51545bb4c39d399b18102d6594342df75132899a3a0f9bf48720d7dcdb388318",
+      "beforeBudget": {
+        "calls_used": 112,
+        "calls_cap": 1500,
+        "usd_used": 0.04083,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 472760,
+        "tokens_out": 24998,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 112
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 122,
+        "calls_cap": 1500,
+        "usd_used": 0.045443,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 539755,
+        "tokens_out": 27416,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 122
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h03",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "565f5699f712f749de6264de",
+          "kind": "preference",
+          "title": "培训材料风格",
+          "content": "他做培训材料喜欢图多字少。",
+          "createdAt": "2026-11-07T04:46:46.022Z",
+          "updatedAt": "2026-11-07T04:46:46.022Z",
+          "source": "conversation"
+        },
+        {
+          "id": "e537ddf170980e9249e74cfd",
+          "kind": "project",
+          "title": "工作内容",
+          "content": "他平时给销售团队做产品培训。",
+          "createdAt": "2026-11-07T04:46:44.588Z",
+          "updatedAt": "2026-11-07T04:46:44.588Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "e537ddf170980e9249e74cfd",
+          "kind": "project",
+          "title": "工作内容",
+          "content": "他平时给销售团队做产品培训。",
+          "createdAt": "2026-11-07T04:46:44.588Z",
+          "updatedAt": "2026-11-07T04:46:44.588Z",
+          "source": "conversation"
+        },
+        {
+          "id": "565f5699f712f749de6264de",
+          "kind": "preference",
+          "title": "培训材料风格",
+          "content": "他做培训材料喜欢图多字少。",
+          "createdAt": "2026-11-07T04:46:46.022Z",
+          "updatedAt": "2026-11-07T04:46:46.022Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h03/evidence.json",
+      "evidenceHash": "b59c0bbf022d19a72dec0e1b05779f451835c0b6dc2faa57567b4d150ecc9c9e",
+      "beforeBudget": {
+        "calls_used": 122,
+        "calls_cap": 1500,
+        "usd_used": 0.045443,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 539755,
+        "tokens_out": 27416,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 122
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 128,
+        "calls_cap": 1500,
+        "usd_used": 0.048404,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 569583,
+        "tokens_out": 28751,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 128
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h04",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "f33cbfe499bba1153ef36ff3",
+          "kind": "preference",
+          "title": "周报语言",
+          "content": "他希望以后所有周报都使用简体中文，之前的英文要求已作废。",
+          "createdAt": "2026-11-07T04:47:07.341Z",
+          "updatedAt": "2026-11-07T04:47:15.466Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "f33cbfe499bba1153ef36ff3",
+          "kind": "preference",
+          "title": "周报语言",
+          "content": "他希望以后所有周报都使用简体中文，之前的英文要求已作废。",
+          "createdAt": "2026-11-07T04:47:07.341Z",
+          "updatedAt": "2026-11-07T04:47:15.466Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h04/evidence.json",
+      "evidenceHash": "c657d05eb22735a24f5a25568265e0fb2e7ec0ca2b4c74991cac5e178122c7b3",
+      "beforeBudget": {
+        "calls_used": 128,
+        "calls_cap": 1500,
+        "usd_used": 0.048404,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 569583,
+        "tokens_out": 28751,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 128
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 136,
+        "calls_cap": 1500,
+        "usd_used": 0.051306,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 613682,
+        "tokens_out": 29714,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 136
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h05",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "6a478c917858c6a9b3b570ee",
+          "kind": "identity",
+          "title": "职责：海外经销商培训",
+          "content": "他长期负责海外经销商培训，不再负责国内经销商培训。",
+          "createdAt": "2026-11-07T04:47:26.847Z",
+          "updatedAt": "2026-11-07T04:47:32.913Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "6a478c917858c6a9b3b570ee",
+          "kind": "identity",
+          "title": "职责：海外经销商培训",
+          "content": "他长期负责海外经销商培训，不再负责国内经销商培训。",
+          "createdAt": "2026-11-07T04:47:26.847Z",
+          "updatedAt": "2026-11-07T04:47:32.913Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h05/evidence.json",
+      "evidenceHash": "43670c0e28a90aabb17038f1a49bfb7a48c8cc571da869b843ec046694b2e8cd",
+      "beforeBudget": {
+        "calls_used": 136,
+        "calls_cap": 1500,
+        "usd_used": 0.051306,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 613682,
+        "tokens_out": 29714,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 136
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 142,
+        "calls_cap": 1500,
+        "usd_used": 0.054058,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 642815,
+        "tokens_out": 30717,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 142
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h06",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "025423e2f8c4b62d0c39085c",
+          "kind": "preference",
+          "title": "季度复盘顺序偏好",
+          "content": "他做季度项目复盘时，习惯先看风险清单，再看进展。",
+          "createdAt": "2026-11-07T04:47:52.365Z",
+          "updatedAt": "2026-11-07T04:47:52.365Z",
+          "source": "conversation"
+        },
+        {
+          "id": "9a39c5fbb78ada9e6c7efd1c",
+          "kind": "project",
+          "title": "设备校准平台项目",
+          "content": "他长期推进设备校准平台项目，计划按季度复盘。",
+          "createdAt": "2026-11-07T04:47:45.612Z",
+          "updatedAt": "2026-11-07T04:47:45.612Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "9a39c5fbb78ada9e6c7efd1c",
+          "kind": "project",
+          "title": "设备校准平台项目",
+          "content": "他长期推进设备校准平台项目，计划按季度复盘。",
+          "createdAt": "2026-11-07T04:47:45.612Z",
+          "updatedAt": "2026-11-07T04:47:45.612Z",
+          "source": "conversation"
+        },
+        {
+          "id": "025423e2f8c4b62d0c39085c",
+          "kind": "preference",
+          "title": "季度复盘顺序偏好",
+          "content": "他做季度项目复盘时，习惯先看风险清单，再看进展。",
+          "createdAt": "2026-11-07T04:47:52.365Z",
+          "updatedAt": "2026-11-07T04:47:52.365Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h06/evidence.json",
+      "evidenceHash": "ff5aa5df940c5a3593a053c43eaf58340e8a3376df999d971c58567e46963bff",
+      "beforeBudget": {
+        "calls_used": 142,
+        "calls_cap": 1500,
+        "usd_used": 0.054058,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 642815,
+        "tokens_out": 30717,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 142
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 148,
+        "calls_cap": 1500,
+        "usd_used": 0.057099,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 672394,
+        "tokens_out": 32123,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 148
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h07",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "3123a9c039875fbdc78ffc30",
+          "kind": "preference",
+          "title": "测量误差的写法",
+          "content": "他习惯把测量误差写成带单位的数值，例如 ±0.5 mm。",
+          "createdAt": "2026-11-07T04:48:17.636Z",
+          "updatedAt": "2026-11-07T04:48:17.636Z",
+          "source": "conversation"
+        },
+        {
+          "id": "50329ac66d2096c5b13de346",
+          "kind": "preference",
+          "title": "技术说明的语言风格",
+          "content": "他平时写技术说明使用简体中文，产品型号保留英文。",
+          "createdAt": "2026-11-07T04:48:08.472Z",
+          "updatedAt": "2026-11-07T04:48:08.472Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "50329ac66d2096c5b13de346",
+          "kind": "preference",
+          "title": "技术说明的语言风格",
+          "content": "他平时写技术说明使用简体中文，产品型号保留英文。",
+          "createdAt": "2026-11-07T04:48:08.472Z",
+          "updatedAt": "2026-11-07T04:48:08.472Z",
+          "source": "conversation"
+        },
+        {
+          "id": "3123a9c039875fbdc78ffc30",
+          "kind": "preference",
+          "title": "测量误差的写法",
+          "content": "他习惯把测量误差写成带单位的数值，例如 ±0.5 mm。",
+          "createdAt": "2026-11-07T04:48:17.636Z",
+          "updatedAt": "2026-11-07T04:48:17.636Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h07/evidence.json",
+      "evidenceHash": "23cb3b42c14fdd15c69144ab0ccb15057ebfba7c3543a977396d9565d3a7fc1e",
+      "beforeBudget": {
+        "calls_used": 148,
+        "calls_cap": 1500,
+        "usd_used": 0.057099,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 672394,
+        "tokens_out": 32123,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 148
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 155,
+        "calls_cap": 1500,
+        "usd_used": 0.060125,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 709841,
+        "tokens_out": 33355,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 155
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h08",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "b8e4730b58896e80a73724fa",
+          "kind": "project",
+          "title": "声学知识库维护",
+          "content": "他长期维护公司的声学知识库，知识条目习惯按应用场景分类。",
+          "createdAt": "2026-11-07T04:48:30.351Z",
+          "updatedAt": "2026-11-07T04:48:30.351Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "b8e4730b58896e80a73724fa",
+          "kind": "project",
+          "title": "声学知识库维护",
+          "content": "他长期维护公司的声学知识库，知识条目习惯按应用场景分类。",
+          "createdAt": "2026-11-07T04:48:30.351Z",
+          "updatedAt": "2026-11-07T04:48:30.351Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h08/evidence.json",
+      "evidenceHash": "2ac6431f46f9ffcfefaaae9e384eb0476259da6193516e6e04834fb3d56deafb",
+      "beforeBudget": {
+        "calls_used": 155,
+        "calls_cap": 1500,
+        "usd_used": 0.060125,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 709841,
+        "tokens_out": 33355,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 155
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 162,
+        "calls_cap": 1500,
+        "usd_used": 0.065467,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 760280,
+        "tokens_out": 40122,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 162
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h09",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "2cf58977c94c2192cd3bb119",
+          "kind": "identity",
+          "title": "可靠性验证职责",
+          "content": "他负责公司产品的长期可靠性验证，日常实验记录使用表格。",
+          "createdAt": "2026-11-07T04:49:32.844Z",
+          "updatedAt": "2026-11-07T04:49:32.844Z",
+          "source": "conversation"
+        },
+        {
+          "id": "8a10c9143e4ef8229da41353",
+          "kind": "preference",
+          "title": "汇总中写明样本量",
+          "content": "他要求汇总中明确写出样本量。",
+          "createdAt": "2026-11-07T04:49:31.136Z",
+          "updatedAt": "2026-11-07T04:49:31.136Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "8a10c9143e4ef8229da41353",
+          "kind": "preference",
+          "title": "汇总中写明样本量",
+          "content": "他要求汇总中明确写出样本量。",
+          "createdAt": "2026-11-07T04:49:31.136Z",
+          "updatedAt": "2026-11-07T04:49:31.136Z",
+          "source": "conversation"
+        },
+        {
+          "id": "2cf58977c94c2192cd3bb119",
+          "kind": "identity",
+          "title": "可靠性验证职责",
+          "content": "他负责公司产品的长期可靠性验证，日常实验记录使用表格。",
+          "createdAt": "2026-11-07T04:49:32.844Z",
+          "updatedAt": "2026-11-07T04:49:32.844Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h09/evidence.json",
+      "evidenceHash": "8698455c6999ed7513d15aad630e7991cec1355cbaf7a5ee1bf196059748ac4a",
+      "beforeBudget": {
+        "calls_used": 162,
+        "calls_cap": 1500,
+        "usd_used": 0.065467,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 760280,
+        "tokens_out": 40122,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 162
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 169,
+        "calls_cap": 1500,
+        "usd_used": 0.06875,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 798676,
+        "tokens_out": 41923,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 169
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h10",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "1e23ecfe39c848a7dc3b2093",
+          "kind": "preference",
+          "title": "工作对话语言",
+          "content": "他所有工作对话都使用简体中文。",
+          "createdAt": "2026-11-07T04:49:52.746Z",
+          "updatedAt": "2026-11-07T04:49:52.746Z",
+          "source": "conversation"
+        },
+        {
+          "id": "2ce0119e1bc59b99535dc7b4",
+          "kind": "preference",
+          "title": "纪要按决定与行动项分开",
+          "content": "他的会议纪要长期按“决定”和“行动项”分开记录。",
+          "createdAt": "2026-11-07T04:50:00.516Z",
+          "updatedAt": "2026-11-07T04:50:00.516Z",
+          "source": "conversation"
+        },
+        {
+          "id": "4fd446050c2af06a048ba91e",
+          "kind": "project",
+          "title": "每周团队复盘",
+          "content": "他每周固定主持团队复盘会。",
+          "createdAt": "2026-11-07T04:49:58.939Z",
+          "updatedAt": "2026-11-07T04:49:58.939Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "1e23ecfe39c848a7dc3b2093",
+          "kind": "preference",
+          "title": "工作对话语言",
+          "content": "他所有工作对话都使用简体中文。",
+          "createdAt": "2026-11-07T04:49:52.746Z",
+          "updatedAt": "2026-11-07T04:49:52.746Z",
+          "source": "conversation"
+        },
+        {
+          "id": "4fd446050c2af06a048ba91e",
+          "kind": "project",
+          "title": "每周团队复盘",
+          "content": "他每周固定主持团队复盘会。",
+          "createdAt": "2026-11-07T04:49:58.939Z",
+          "updatedAt": "2026-11-07T04:49:58.939Z",
+          "source": "conversation"
+        },
+        {
+          "id": "2ce0119e1bc59b99535dc7b4",
+          "kind": "preference",
+          "title": "纪要按决定与行动项分开",
+          "content": "他的会议纪要长期按“决定”和“行动项”分开记录。",
+          "createdAt": "2026-11-07T04:50:00.516Z",
+          "updatedAt": "2026-11-07T04:50:00.516Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h10/evidence.json",
+      "evidenceHash": "ce8a6846f4f635c11f79fcd77816c6c4f5a85f4beb26b281c928231aa19be471",
+      "beforeBudget": {
+        "calls_used": 169,
+        "calls_cap": 1500,
+        "usd_used": 0.06875,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 798676,
+        "tokens_out": 41923,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 169
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 176,
+        "calls_cap": 1500,
+        "usd_used": 0.072625,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 835695,
+        "tokens_out": 43015,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 176
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h11",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "e893399149e7971ea6fd0d5e",
+          "kind": "preference",
+          "title": "月度趋势图表偏好",
+          "content": "他月度趋势统一用折线图展示，不再使用柱状图。",
+          "createdAt": "2026-11-07T04:50:17.398Z",
+          "updatedAt": "2026-11-07T04:50:29.382Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "e893399149e7971ea6fd0d5e",
+          "kind": "preference",
+          "title": "月度趋势图表偏好",
+          "content": "他月度趋势统一用折线图展示，不再使用柱状图。",
+          "createdAt": "2026-11-07T04:50:17.398Z",
+          "updatedAt": "2026-11-07T04:50:29.382Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h11/evidence.json",
+      "evidenceHash": "8ab6874eeea8b2acf4f9e5e2f9ddeb1fc44e15c39dddb581aa07ba5859fdcbff",
+      "beforeBudget": {
+        "calls_used": 176,
+        "calls_cap": 1500,
+        "usd_used": 0.072625,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 835695,
+        "tokens_out": 43015,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 176
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 184,
+        "calls_cap": 1500,
+        "usd_used": 0.076065,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 882384,
+        "tokens_out": 44664,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 184
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h12",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "429296acc1fbb7e547391e44",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "他长期负责海外客户的技术支持工作。",
+          "createdAt": "2026-11-07T04:50:40.476Z",
+          "updatedAt": "2026-11-07T04:50:40.476Z",
+          "source": "conversation"
+        },
+        {
+          "id": "7f9825575b330e94ee762968",
+          "kind": "preference",
+          "title": "沟通习惯",
+          "content": "他沟通时希望先说明适用条件。",
+          "createdAt": "2026-11-07T04:50:43.457Z",
+          "updatedAt": "2026-11-07T04:50:43.457Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "429296acc1fbb7e547391e44",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "他长期负责海外客户的技术支持工作。",
+          "createdAt": "2026-11-07T04:50:40.476Z",
+          "updatedAt": "2026-11-07T04:50:40.476Z",
+          "source": "conversation"
+        },
+        {
+          "id": "7f9825575b330e94ee762968",
+          "kind": "preference",
+          "title": "沟通习惯",
+          "content": "他沟通时希望先说明适用条件。",
+          "createdAt": "2026-11-07T04:50:43.457Z",
+          "updatedAt": "2026-11-07T04:50:43.457Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h12/evidence.json",
+      "evidenceHash": "e2e212dbec8440e45381999959742f1bf193b10d76f7000130538a93ce39544c",
+      "beforeBudget": {
+        "calls_used": 184,
+        "calls_cap": 1500,
+        "usd_used": 0.076065,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 882384,
+        "tokens_out": 44664,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 184
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 190,
+        "calls_cap": 1500,
+        "usd_used": 0.078636,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 911902,
+        "tokens_out": 45334,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 190
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h13",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "60f321f3179ffc4d394621d5",
+          "kind": "preference",
+          "title": "技术方案假设呈现",
+          "content": "他喜欢在技术方案中把假设单独列出。",
+          "createdAt": "2026-11-07T04:50:57.947Z",
+          "updatedAt": "2026-11-07T04:50:57.947Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b75ec4e30e77413aa2962a3c",
+          "kind": "preference",
+          "title": "方案比较习惯",
+          "content": "他做技术方案时通常先比较两种可行方案。",
+          "createdAt": "2026-11-07T04:50:59.353Z",
+          "updatedAt": "2026-11-07T04:50:59.353Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "60f321f3179ffc4d394621d5",
+          "kind": "preference",
+          "title": "技术方案假设呈现",
+          "content": "他喜欢在技术方案中把假设单独列出。",
+          "createdAt": "2026-11-07T04:50:57.947Z",
+          "updatedAt": "2026-11-07T04:50:57.947Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b75ec4e30e77413aa2962a3c",
+          "kind": "preference",
+          "title": "方案比较习惯",
+          "content": "他做技术方案时通常先比较两种可行方案。",
+          "createdAt": "2026-11-07T04:50:59.353Z",
+          "updatedAt": "2026-11-07T04:50:59.353Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h13/evidence.json",
+      "evidenceHash": "9d2d8b83193b4648b24578ef7d30cdd1cf194e8b44c592c90ecda206b026ff63",
+      "beforeBudget": {
+        "calls_used": 190,
+        "calls_cap": 1500,
+        "usd_used": 0.078636,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 911902,
+        "tokens_out": 45334,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 190
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 195,
+        "calls_cap": 1500,
+        "usd_used": 0.081387,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 941264,
+        "tokens_out": 46215,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 195
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h14",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "98eb84f9178ccbf2fedf10e6",
+          "kind": "preference",
+          "title": "演示材料中英双语",
+          "content": "他的演示材料习惯中英双语呈现。",
+          "createdAt": "2026-11-07T04:51:20.036Z",
+          "updatedAt": "2026-11-07T04:51:20.036Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b746bc8d7d151029de658e21",
+          "kind": "project",
+          "title": "声学产品展会演示",
+          "content": "他长期为声学产品准备展会演示材料。",
+          "createdAt": "2026-11-07T04:51:17.138Z",
+          "updatedAt": "2026-11-07T04:51:17.138Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "b746bc8d7d151029de658e21",
+          "kind": "project",
+          "title": "声学产品展会演示",
+          "content": "他长期为声学产品准备展会演示材料。",
+          "createdAt": "2026-11-07T04:51:17.138Z",
+          "updatedAt": "2026-11-07T04:51:17.138Z",
+          "source": "conversation"
+        },
+        {
+          "id": "98eb84f9178ccbf2fedf10e6",
+          "kind": "preference",
+          "title": "演示材料中英双语",
+          "content": "他的演示材料习惯中英双语呈现。",
+          "createdAt": "2026-11-07T04:51:20.036Z",
+          "updatedAt": "2026-11-07T04:51:20.036Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h14/evidence.json",
+      "evidenceHash": "b8746894e61ade980db0a76f0a839e428508874dea818e0db8f029d2f2893cb8",
+      "beforeBudget": {
+        "calls_used": 195,
+        "calls_cap": 1500,
+        "usd_used": 0.081387,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 941264,
+        "tokens_out": 46215,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 195
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 203,
+        "calls_cap": 1500,
+        "usd_used": 0.084644,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 986283,
+        "tokens_out": 47634,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 203
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h15",
+      "status": "error",
+      "baseline": [
+        {
+          "id": "d5e1fbb078a6dc4dffcd9779",
+          "kind": "project",
+          "title": "远山测试平台",
+          "content": "他长期维护名为“远山”的测试平台项目；旧名“星河”已停用，不再使用。",
+          "createdAt": "2026-11-07T04:51:35.650Z",
+          "updatedAt": "2026-11-07T04:51:42.571Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "d5e1fbb078a6dc4dffcd9779",
+          "kind": "project",
+          "title": "远山测试平台",
+          "content": "他长期维护名为“远山”的测试平台项目；旧名“星河”已停用，不再使用。",
+          "createdAt": "2026-11-07T04:51:35.650Z",
+          "updatedAt": "2026-11-07T04:51:42.571Z",
+          "source": "conversation"
+        }
+      ],
+      "error": "Real-host learner exited with failure.\n标题不在原话中。\n",
+      "beforeBudget": {
+        "calls_used": 203,
+        "calls_cap": 1500,
+        "usd_used": 0.084644,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 986283,
+        "tokens_out": 47634,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 203
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 211,
+        "calls_cap": 1500,
+        "usd_used": 0.087922,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1030170,
+        "tokens_out": 49275,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 211
+        },
+        "state": "open"
+      },
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "sessionEvidence": "hard-h15/evidence.json",
+      "evidenceHash": "c446a0ad1744a377a13162a20c44f6ce256542ef1b8b019f0fda1860da818919",
+      "captureNote": "Read-only recovery after rejected proposal; no model call repeated. Original status error preserved."
+    },
+    {
+      "id": "h16",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "9873fafadf60c09e3a492e68",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "用户平时负责硬件测试。",
+          "createdAt": "2026-11-07T04:53:53.379Z",
+          "updatedAt": "2026-11-07T04:53:53.379Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b130c8264bfa1241b8fad8f2",
+          "kind": "project",
+          "title": "环境噪声测量关注",
+          "content": "用户长期关注环境噪声测量。",
+          "createdAt": "2026-11-07T04:53:54.942Z",
+          "updatedAt": "2026-11-07T04:53:54.942Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b2402dbc8d448911c2da5300",
+          "kind": "preference",
+          "title": "工作清单格式",
+          "content": "用户喜欢工作清单使用编号列表。",
+          "createdAt": "2026-11-07T04:53:56.221Z",
+          "updatedAt": "2026-11-07T04:53:56.221Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "9873fafadf60c09e3a492e68",
+          "kind": "identity",
+          "title": "工作职责",
+          "content": "用户平时负责硬件测试。",
+          "createdAt": "2026-11-07T04:53:53.379Z",
+          "updatedAt": "2026-11-07T04:53:53.379Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b130c8264bfa1241b8fad8f2",
+          "kind": "project",
+          "title": "环境噪声测量关注",
+          "content": "用户长期关注环境噪声测量。",
+          "createdAt": "2026-11-07T04:53:54.942Z",
+          "updatedAt": "2026-11-07T04:53:54.942Z",
+          "source": "conversation"
+        },
+        {
+          "id": "b2402dbc8d448911c2da5300",
+          "kind": "preference",
+          "title": "工作清单格式",
+          "content": "用户喜欢工作清单使用编号列表。",
+          "createdAt": "2026-11-07T04:53:56.221Z",
+          "updatedAt": "2026-11-07T04:53:56.221Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h16/evidence.json",
+      "evidenceHash": "705fb8e0ab4212ec3386f1032db7fe38925999e4a12443434901296e5fcb529e",
+      "beforeBudget": {
+        "calls_used": 211,
+        "calls_cap": 1500,
+        "usd_used": 0.087922,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1030170,
+        "tokens_out": 49275,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 211
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 218,
+        "calls_cap": 1500,
+        "usd_used": 0.09269,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1069121,
+        "tokens_out": 51435,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 218
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h17",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "d8db18e96509e1389db47070",
+          "kind": "preference",
+          "title": "周报使用简体中文",
+          "content": "他本人一直喜欢自己的周报使用简体中文。",
+          "createdAt": "2026-11-07T04:54:32.516Z",
+          "updatedAt": "2026-11-07T04:54:32.516Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "d8db18e96509e1389db47070",
+          "kind": "preference",
+          "title": "周报使用简体中文",
+          "content": "他本人一直喜欢自己的周报使用简体中文。",
+          "createdAt": "2026-11-07T04:54:32.516Z",
+          "updatedAt": "2026-11-07T04:54:32.516Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h17/evidence.json",
+      "evidenceHash": "b0fdd54e5833f9906ff9acd2952b6a60d8453afa8c94819dee5da233a08f6ce1",
+      "beforeBudget": {
+        "calls_used": 218,
+        "calls_cap": 1500,
+        "usd_used": 0.09269,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1069121,
+        "tokens_out": 51435,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 218
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 224,
+        "calls_cap": 1500,
+        "usd_used": 0.095383,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1101235,
+        "tokens_out": 53540,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 224
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h18",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "00e908d3a2f1a758b31ddbb2",
+          "kind": "identity",
+          "title": "工作职责：声学校准实验室设备维护",
+          "content": "他长期负责声学校准实验室的设备维护。",
+          "createdAt": "2026-11-07T04:54:48.358Z",
+          "updatedAt": "2026-11-07T04:54:48.358Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "00e908d3a2f1a758b31ddbb2",
+          "kind": "identity",
+          "title": "工作职责：声学校准实验室设备维护",
+          "content": "他长期负责声学校准实验室的设备维护。",
+          "createdAt": "2026-11-07T04:54:48.358Z",
+          "updatedAt": "2026-11-07T04:54:48.358Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 3,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h18/evidence.json",
+      "evidenceHash": "05e1221f034c8a4f21d228b9a2577056452d1c166cef48bf03b28e1ea95c8023",
+      "beforeBudget": {
+        "calls_used": 224,
+        "calls_cap": 1500,
+        "usd_used": 0.095383,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1101235,
+        "tokens_out": 53540,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 224
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 231,
+        "calls_cap": 1500,
+        "usd_used": 0.097239,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1137619,
+        "tokens_out": 54530,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 231
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h19",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "3aef33f077c3505ca6e8ae25",
+          "kind": "identity",
+          "title": "每月质量报告职责",
+          "content": "他负责整理每月质量报告。",
+          "createdAt": "2026-11-07T04:55:24.150Z",
+          "updatedAt": "2026-11-07T04:55:24.150Z",
+          "source": "conversation"
+        },
+        {
+          "id": "47425f9577127359b08c1cbc",
+          "kind": "preference",
+          "title": "图表灰度偏好",
+          "content": "他做图表长期只使用灰度配色。",
+          "createdAt": "2026-11-07T04:55:26.372Z",
+          "updatedAt": "2026-11-07T04:55:26.372Z",
+          "source": "conversation"
+        },
+        {
+          "id": "fe0d99b941b0bb39a588401d",
+          "kind": "preference",
+          "title": "报告结构偏好",
+          "content": "他写报告时希望先说明限制，再给出结论。",
+          "createdAt": "2026-11-07T04:55:12.102Z",
+          "updatedAt": "2026-11-07T04:55:12.102Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "fe0d99b941b0bb39a588401d",
+          "kind": "preference",
+          "title": "报告结构偏好",
+          "content": "他写报告时希望先说明限制，再给出结论。",
+          "createdAt": "2026-11-07T04:55:12.102Z",
+          "updatedAt": "2026-11-07T04:55:12.102Z",
+          "source": "conversation"
+        },
+        {
+          "id": "3aef33f077c3505ca6e8ae25",
+          "kind": "identity",
+          "title": "每月质量报告职责",
+          "content": "他负责整理每月质量报告。",
+          "createdAt": "2026-11-07T04:55:24.150Z",
+          "updatedAt": "2026-11-07T04:55:24.150Z",
+          "source": "conversation"
+        },
+        {
+          "id": "47425f9577127359b08c1cbc",
+          "kind": "preference",
+          "title": "图表灰度偏好",
+          "content": "他做图表长期只使用灰度配色。",
+          "createdAt": "2026-11-07T04:55:26.372Z",
+          "updatedAt": "2026-11-07T04:55:26.372Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 3,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h19/evidence.json",
+      "evidenceHash": "1f88ee891e13ecc607cca38dcd566ab670c615dba753fc0ffdfa29f7897016d4",
+      "beforeBudget": {
+        "calls_used": 231,
+        "calls_cap": 1500,
+        "usd_used": 0.097239,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1137619,
+        "tokens_out": 54530,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 231
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 240,
+        "calls_cap": 1500,
+        "usd_used": 0.101637,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1191363,
+        "tokens_out": 56045,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 240
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h20",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "f256be9649aab80368339690",
+          "kind": "preference",
+          "title": "沟通风格",
+          "content": "他喜欢日常沟通直接给结论，并保持简洁。",
+          "createdAt": "2026-11-07T04:55:40.449Z",
+          "updatedAt": "2026-11-07T04:55:40.449Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "f256be9649aab80368339690",
+          "kind": "preference",
+          "title": "沟通风格",
+          "content": "他喜欢日常沟通直接给结论，并保持简洁。",
+          "createdAt": "2026-11-07T04:55:40.449Z",
+          "updatedAt": "2026-11-07T04:55:40.449Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 1,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h20/evidence.json",
+      "evidenceHash": "38bf78d9e22ce4d6295cb2cff0065f2db7b5b183a39ac98f0a5e5bfe6d1d658e",
+      "beforeBudget": {
+        "calls_used": 240,
+        "calls_cap": 1500,
+        "usd_used": 0.101637,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1191363,
+        "tokens_out": 56045,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 240
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 246,
+        "calls_cap": 1500,
+        "usd_used": 0.104168,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1219830,
+        "tokens_out": 58289,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 246
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h21",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h21/evidence.json",
+      "evidenceHash": "065121588f4273b2864a071480cf24e0f1161954f5ef7fce8b9ce6883545f4f7",
+      "beforeBudget": {
+        "calls_used": 246,
+        "calls_cap": 1500,
+        "usd_used": 0.104168,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1219830,
+        "tokens_out": 58289,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 246
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 248,
+        "calls_cap": 1500,
+        "usd_used": 0.104585,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1226690,
+        "tokens_out": 58837,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 248
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h22",
+      "status": "ok",
+      "baseline": [
+        {
+          "id": "5b8ad43e4174559a91a43e38",
+          "kind": "preference",
+          "title": "汇报分类方式",
+          "content": "他希望汇报按地区分类。",
+          "createdAt": "2026-11-07T04:56:20.442Z",
+          "updatedAt": "2026-11-07T04:56:20.442Z",
+          "source": "conversation"
+        }
+      ],
+      "candidate": [
+        {
+          "id": "5b8ad43e4174559a91a43e38",
+          "kind": "preference",
+          "title": "汇报分类方式",
+          "content": "他希望汇报按地区分类。",
+          "createdAt": "2026-11-07T04:56:20.442Z",
+          "updatedAt": "2026-11-07T04:56:20.442Z",
+          "source": "conversation"
+        }
+      ],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h22/evidence.json",
+      "evidenceHash": "02f743e13e90797a3bc74a83ff37a48fad7fe53ca0647dd39944ea7557e9edcd",
+      "beforeBudget": {
+        "calls_used": 248,
+        "calls_cap": 1500,
+        "usd_used": 0.104585,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1226690,
+        "tokens_out": 58837,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 248
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 251,
+        "calls_cap": 1500,
+        "usd_used": 0.105913,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1240674,
+        "tokens_out": 59312,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 251
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h23",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h23/evidence.json",
+      "evidenceHash": "daae19cebfd5069d0d3d9b9b6632c3bc110336b5269033bfe604a28e3d356667",
+      "beforeBudget": {
+        "calls_used": 251,
+        "calls_cap": 1500,
+        "usd_used": 0.105913,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1240674,
+        "tokens_out": 59312,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 251
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 253,
+        "calls_cap": 1500,
+        "usd_used": 0.106268,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1247522,
+        "tokens_out": 59759,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 253
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h24",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h24/evidence.json",
+      "evidenceHash": "224df00f396b8c83dbddf1cb8c1757e4529a7089ce9e4c5bd2f81efa1a0c1fe6",
+      "beforeBudget": {
+        "calls_used": 253,
+        "calls_cap": 1500,
+        "usd_used": 0.106268,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1247522,
+        "tokens_out": 59759,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 253
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 255,
+        "calls_cap": 1500,
+        "usd_used": 0.106903,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1254380,
+        "tokens_out": 60671,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 255
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h25",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h25/evidence.json",
+      "evidenceHash": "c4467beadd1ce55c518b69c2a2f22a7b29bc019b6f425c016b3e47f5db34299d",
+      "beforeBudget": {
+        "calls_used": 255,
+        "calls_cap": 1500,
+        "usd_used": 0.106903,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1254380,
+        "tokens_out": 60671,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 255
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 257,
+        "calls_cap": 1500,
+        "usd_used": 0.107168,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1261226,
+        "tokens_out": 60969,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 257
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h26",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        },
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 2,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h26/evidence.json",
+      "evidenceHash": "81a011d835fcfc0b329ae618e3c94346106ad654c61a8c606b300bc0e057dc8e",
+      "beforeBudget": {
+        "calls_used": 257,
+        "calls_cap": 1500,
+        "usd_used": 0.107168,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1261226,
+        "tokens_out": 60969,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 257
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 260,
+        "calls_cap": 1500,
+        "usd_used": 0.107572,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1274810,
+        "tokens_out": 61414,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 260
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h27",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h27/evidence.json",
+      "evidenceHash": "d4531d12149de4911c6fedfe5f5b997cc2541a9d2567c6ec2da4ba39c809dd04",
+      "beforeBudget": {
+        "calls_used": 260,
+        "calls_cap": 1500,
+        "usd_used": 0.107572,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1274810,
+        "tokens_out": 61414,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 260
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 262,
+        "calls_cap": 1500,
+        "usd_used": 0.107822,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1281674,
+        "tokens_out": 61682,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 262
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h28",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h28/evidence.json",
+      "evidenceHash": "b3033f15537038ca51c1922bed0aec19d7e061b085881927c6d4d5bb2788f747",
+      "beforeBudget": {
+        "calls_used": 262,
+        "calls_cap": 1500,
+        "usd_used": 0.107822,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1281674,
+        "tokens_out": 61682,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 262
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 264,
+        "calls_cap": 1500,
+        "usd_used": 0.108185,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1288530,
+        "tokens_out": 62142,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 264
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h29",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h29/evidence.json",
+      "evidenceHash": "b0f4d41b6a09a9cc1d32d9cdd0fc9b6b2ba506c03ffa8702009c23a1d38394c6",
+      "beforeBudget": {
+        "calls_used": 264,
+        "calls_cap": 1500,
+        "usd_used": 0.108185,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1288530,
+        "tokens_out": 62142,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 264
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 266,
+        "calls_cap": 1500,
+        "usd_used": 0.10887,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1295384,
+        "tokens_out": 63138,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 266
+        },
+        "state": "open"
+      }
+    },
+    {
+      "id": "h30",
+      "status": "ok",
+      "baseline": [],
+      "candidate": [],
+      "modelRoutes": [
+        {
+          "provider": "magpie",
+          "model": "deepseek/deepseek-flash"
+        }
+      ],
+      "mainTurns": 1,
+      "learningRequests": 0,
+      "learningChanges": [],
+      "sessionEvidence": "hard-h30/evidence.json",
+      "evidenceHash": "ac23cfedd8be79ba12d12fdf021d08dd4a7085d97a90001356d13a5b66a7b62b",
+      "beforeBudget": {
+        "calls_used": 266,
+        "calls_cap": 1500,
+        "usd_used": 0.10887,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1295384,
+        "tokens_out": 63138,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 266
+        },
+        "state": "open"
+      },
+      "afterBudget": {
+        "calls_used": 268,
+        "calls_cap": 1500,
+        "usd_used": 0.109195,
+        "usd_reserved_unreconciled": 0,
+        "usd_cap": 5,
+        "tokens_in": 1302234,
+        "tokens_out": 63535,
+        "routing": {
+          "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 268
+        },
+        "state": "open"
+      }
+    }
+  ],
+  "budget": {
+    "complete": true,
+    "costUsd": 0.109195,
+    "calls": 268,
+    "calls_used": 268,
+    "calls_cap": 1500,
+    "usd_used": 0.109195,
+    "usd_reserved_unreconciled": 0,
+    "usd_cap": 5,
+    "tokens_in": 1302234,
+    "tokens_out": 63535,
+    "routing": {
+      "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 268
+    },
+    "state": "open"
+  }
+}

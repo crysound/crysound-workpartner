@@ -1,0 +1,636 @@
+[
+  {
+    "id": "h01",
+    "name": "多轮汇报双偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+      },
+      {
+        "role": "user",
+        "content": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "结论"
+      },
+      {
+        "key": "2",
+        "pattern": "表格"
+      },
+      {
+        "key": "3",
+        "pattern": "海外.*售后|售后.*海外"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h02",
+    "name": "先做任务后提背景",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "帮我把故障排查步骤概括为三点。"
+      },
+      {
+        "role": "user",
+        "content": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "校准.*实验室"
+      },
+      {
+        "key": "2",
+        "pattern": "国际单位制"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h03",
+    "name": "自然多句中的格式偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+      },
+      {
+        "role": "user",
+        "content": "这份培训先从常见问题开始。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "销售.*培训|培训.*销售"
+      },
+      {
+        "key": "2",
+        "pattern": "图多字少"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h04",
+    "name": "纠正汇报语言",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我以后希望每周报告使用英文。给我一个标题。"
+      },
+      {
+        "role": "user",
+        "content": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "简体中文"
+      }
+    ],
+    "forbidden": [
+      "周报.*(?:用|使用)英文"
+    ]
+  },
+  {
+    "id": "h05",
+    "name": "纠正角色",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期负责国内经销商培训。列一个开场问题。"
+      },
+      {
+        "role": "user",
+        "content": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "海外.*培训"
+      }
+    ],
+    "forbidden": [
+      "负责国内.*培训"
+    ]
+  },
+  {
+    "id": "h06",
+    "name": "跨轮长期项目",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+      },
+      {
+        "role": "user",
+        "content": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "校准平台"
+      },
+      {
+        "key": "2",
+        "pattern": "季度"
+      },
+      {
+        "key": "3",
+        "pattern": "风险.*进展"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h07",
+    "name": "两个独立长期习惯",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+      },
+      {
+        "role": "user",
+        "content": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "简体中文"
+      },
+      {
+        "key": "2",
+        "pattern": "型号.*英文|英文.*型号"
+      },
+      {
+        "key": "3",
+        "pattern": "误差.*单位"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h08",
+    "name": "新项目和临时任务混合",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+      },
+      {
+        "role": "user",
+        "content": "今天只需要先处理会议提纲。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "声学知识库"
+      },
+      {
+        "key": "2",
+        "pattern": "应用场景"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h09",
+    "name": "多句职责与输出要求",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "可靠性"
+      },
+      {
+        "key": "2",
+        "pattern": "表格"
+      },
+      {
+        "key": "3",
+        "pattern": "样本量"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h10",
+    "name": "个人语言与会议习惯",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我以后所有工作对话都用简体中文。先打个招呼。"
+      },
+      {
+        "role": "user",
+        "content": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "简体中文"
+      },
+      {
+        "key": "2",
+        "pattern": "团队复盘"
+      },
+      {
+        "key": "3",
+        "pattern": "决定.*行动项"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h11",
+    "name": "纠正图表格式",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我一直喜欢柱状图展示月度趋势。给我一个建议。"
+      },
+      {
+        "role": "user",
+        "content": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "折线图"
+      }
+    ],
+    "forbidden": [
+      "喜欢.*柱状图|统一.*柱状图"
+    ]
+  },
+  {
+    "id": "h12",
+    "name": "任务干扰下背景",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "海外.*技术支持"
+      },
+      {
+        "key": "2",
+        "pattern": "适用条件"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h13",
+    "name": "问题夹带稳定偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "假设"
+      },
+      {
+        "key": "2",
+        "pattern": "两种.*方案"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h14",
+    "name": "会话后段补充职责",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "请给我一个产品展示标题。"
+      },
+      {
+        "role": "user",
+        "content": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "展会演示"
+      },
+      {
+        "key": "2",
+        "pattern": "中英双语"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h15",
+    "name": "纠正长期项目名称",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期维护名为星河的测试平台项目。给我一句介绍。"
+      },
+      {
+        "role": "user",
+        "content": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "远山"
+      }
+    ],
+    "forbidden": [
+      "维护.*星河"
+    ]
+  },
+  {
+    "id": "h16",
+    "name": "一次出现三个概念",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "硬件测试"
+      },
+      {
+        "key": "2",
+        "pattern": "环境噪声"
+      },
+      {
+        "key": "3",
+        "pattern": "编号"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h17",
+    "name": "引用排除后个人补充",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "以下是同事说的话：“我以后都用英文做周报”。请帮我分析这句话。"
+      },
+      {
+        "role": "user",
+        "content": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "简体中文"
+      }
+    ],
+    "forbidden": [
+      "周报.*英文"
+    ]
+  },
+  {
+    "id": "h18",
+    "name": "停止前的事实可留",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+      },
+      {
+        "role": "user",
+        "content": "这次别记，接下来只是练习。"
+      },
+      {
+        "role": "user",
+        "content": "我以后负责所有客户的银行账户。请写一句角色介绍。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "校准.*维护|维护.*校准"
+      }
+    ],
+    "forbidden": [
+      "银行账户"
+    ]
+  },
+  {
+    "id": "h19",
+    "name": "短任务夹在多轮中",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我一直希望报告先说限制，再说结论。给我一个句式。"
+      },
+      {
+        "role": "user",
+        "content": "算出七加九。"
+      },
+      {
+        "role": "user",
+        "content": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "限制.*结论"
+      },
+      {
+        "key": "2",
+        "pattern": "质量报告"
+      },
+      {
+        "key": "3",
+        "pattern": "灰度"
+      }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "h20",
+    "name": "全局偏好后临时例外",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+      },
+      {
+        "role": "user",
+        "content": "仅这次请写一段详细的故事，不需要长期记住这个要求。"
+      }
+    ],
+    "targets": [
+      {
+        "key": "1",
+        "pattern": "结论"
+      },
+      {
+        "key": "2",
+        "pattern": "简洁"
+      }
+    ],
+    "forbidden": [
+      "喜欢.*详细.*故事"
+    ]
+  },
+  {
+    "id": "h21",
+    "name": "转发中第一人称",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "转发同事的飞书消息：“我长期负责财务，每次周报使用英文”。请只总结这条消息。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h22",
+    "name": "粘贴文档",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "下面是粘贴文档正文：我一直希望汇报按地区分类。请为文档拟标题。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h23",
+    "name": "工具或邮件引用",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "邮件正文：“我负责北美销售，我一直喜欢绿色封面”。请翻译成英文。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h24",
+    "name": "假设角色",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "假设我长期负责全球渠道，我以后每次都用法语汇报。请为这个假设角色写一句台词。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h25",
+    "name": "临时偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "仅这次我希望回答使用英文并且不需要长期记住。帮我写个会议标题。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h26",
+    "name": "先停记后事实",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "这次别记，接下来只是演练。"
+      },
+      {
+        "role": "user",
+        "content": "我长期负责欧洲客户支持，我一直喜欢表格汇报。给我一条建议。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h27",
+    "name": "敏感凭据描述",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我长期使用的密码是这个合成测试口令 SYNTHETIC-ONLY。先告诉我是否收到了，不要保存凭据。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h28",
+    "name": "身份号码",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我希望以后用这个合成身份证号作为报表编号：11010519491231002X。只说收到。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h29",
+    "name": "第三人称长期事实",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我的同事长期负责海外培训，她一直喜欢用英文做报告。请为她拟一个标题。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  },
+  {
+    "id": "h30",
+    "name": "短期安排",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "明天我负责一次展会接待，只在这次任务使用日语问候。请给我一句问候。"
+      }
+    ],
+    "targets": [],
+    "forbidden": []
+  }
+]

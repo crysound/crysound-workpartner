@@ -1,0 +1,56 @@
+{
+  "commit": "5a121a3faf",
+  "driverCommit": "ea5fbc0d34",
+  "cases": [
+    "s01",
+    "s04",
+    "s07",
+    "s10",
+    "s13",
+    "s16",
+    "s19",
+    "s02",
+    "s05",
+    "s08",
+    "s11",
+    "s14",
+    "s17",
+    "s20",
+    "s03",
+    "s06",
+    "s09",
+    "s12",
+    "s15",
+    "s18"
+  ],
+  "files": [
+    {
+      "file": "learning.mjs",
+      "sha256": "0e343c3d6372062589f46205927df3531d7ee93a4d5c2af27ee3de0bb7dbfec0"
+    },
+    {
+      "file": "store.mjs",
+      "sha256": "7428770c30b3600dac3e7ba1989db59d763b991d4857672d6250e50cc4845c8d"
+    },
+    {
+      "file": "index.mjs",
+      "sha256": "f791d2ffbb7909c0dda91e145ea43909acbe2786d5cee155d936c5951171b51d"
+    },
+    {
+      "file": "panel.mjs",
+      "sha256": "5436ed8b4ac09d77185ed411f6c63adeef277249111d1f46c2f38ea45041f990"
+    },
+    {
+      "file": "client.js",
+      "sha256": "9482c4ebc26bf0e37725dd2f0866980198ec95cb4c80a04a10ce4eb8c78597b4"
+    },
+    {
+      "file": "guidance.mjs",
+      "sha256": "8363dd8f3755092e8deef664bd7d564e52fb4b4e89f45b2835e08b2a5416818b"
+    }
+  ],
+  "host": {
+    "node": "24.22.2",
+    "dsh": "0.2.2-rc.1"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "commit": "74c0d39125",
+  "verifiedCases": [
+    "s01",
+    "s02"
+  ],
+  "files": [
+    {
+      "file": "learning.mjs",
+      "sha256": "80a8360ca4f1aa6ae4bf63af67e6edf7607a041d32d15b526373d2ce02262721"
+    },
+    {
+      "file": "store.mjs",
+      "sha256": "7428770c30b3600dac3e7ba1989db59d763b991d4857672d6250e50cc4845c8d"
+    },
+    {
+      "file": "index.mjs",
+      "sha256": "f791d2ffbb7909c0dda91e145ea43909acbe2786d5cee155d936c5951171b51d"
+    },
+    {
+      "file": "client.js",
+      "sha256": "9482c4ebc26bf0e37725dd2f0866980198ec95cb4c80a04a10ce4eb8c78597b4"
+    },
+    {
+      "file": "panel.mjs",
+      "sha256": "5436ed8b4ac09d77185ed411f6c63adeef277249111d1f46c2f38ea45041f990"
+    },
+    {
+      "file": "guidance.mjs",
+      "sha256": "8363dd8f3755092e8deef664bd7d564e52fb4b4e89f45b2835e08b2a5416818b"
+    }
+  ]
+}

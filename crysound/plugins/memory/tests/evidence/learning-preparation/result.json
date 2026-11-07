@@ -1,0 +1,22 @@
+{
+  "scope": "Dedicated synthetic fixture; real installed dsh UI and branch plugin; no learning or conversation model run",
+  "checks": [
+    "Four operation types, both switches on",
+    "Learning off persists after reopening; recall stays on",
+    "Undo through UI restores a learned deletion and marks its record undone",
+    "Stale and subsequent-edit undo refuse to overwrite the newer fact",
+    "Manual deletion removes all three related history entries",
+    "Clear through UI removes facts and learning records"
+  ],
+  "shots": [
+    "light-controls.png",
+    "light-history.png",
+    "dark-controls.png",
+    "dark-history.png",
+    "dark-learning-off.png",
+    "dark-undo-delete.png",
+    "dark-undo-conflict.png",
+    "dark-empty.png",
+    "light-empty.png"
+  ]
+}

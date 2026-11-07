@@ -51,16 +51,19 @@ export function registerPanel(ctx, store) {
     delete: input => store.remove(input),
     save: ({ id, revision, kind, title, content }) => store.save({ id, revision, kind, title, content }, { source: id === undefined ? 'manual' : 'edited', requireEnabled: false }),
     enabled: input => store.setEnabled(input),
+    'auto-learning': input => store.setAutoLearning(input),
+    'undo-learning': input => store.undoLearning(input),
     clear: input => store.clear(input),
   };
-  for (const [path, method] of [['list', 'GET'], ...Object.keys(actions).map(path => [path, 'POST'])]) {
+  for (const [path, method] of [['list', 'GET'], ['learning', 'GET'], ['receipts', 'GET'], ...Object.keys(actions).map(path => [path, 'POST'])]) {
     ctx.effect(() => ctx.webServer.register({
       kind: 'exact', path: '/crysound-memory/api/' + path,
       async handler(request, response) {
         if (!trustedRequest(request, ctx.webStartup, ctx.webServer.host)) return reply(response, 403, { error: '请从本人的工作伙伴页面访问。' });
         if (request.method !== method) return reply(response, 405, { error: '请求方式不支持。' });
         try {
-          if (method === 'GET') return reply(response, 200, { ...store.snapshot(), limits });
+          if (path === 'receipts') return reply(response, 200, { receipts: store.learningReceipts() });
+          if (method === 'GET') return reply(response, 200, { ...store.snapshot({ includeLearning: path === 'learning' }), limits });
           if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') {
             return reply(response, 415, { error: '请使用个人记忆页面上的按钮。' });
           }
