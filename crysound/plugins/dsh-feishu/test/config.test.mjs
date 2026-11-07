@@ -140,3 +140,9 @@ test('resolveConfig swaps invalid ref names (host credentials grammar) for the d
   assert.equal(resolved.appIdRef, 'DSH_FEISHU_APP_ID')
   assert.equal(resolved.appSecretRef, 'DSH_FEISHU_APP_SECRET')
 })
+
+test('CardKit interval defaults to 250ms, accepts deployment pacing, and rejects invalid values', () => {
+  assert.equal(resolveConfig({}, {}).previewIntervalMs, 250)
+  for (const value of [200, 300, 5000]) assert.equal(resolveConfig({ previewIntervalMs: value }, {}).previewIntervalMs, value)
+  for (const value of [0, 199, 5001, 250.5, NaN]) assert.throws(() => resolveConfig({ previewIntervalMs: value }, {}), /previewIntervalMs/)
+})

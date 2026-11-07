@@ -21,7 +21,7 @@ function harness(options = {}) {
     async sendCard(chatId, card) { calls.push(['command', chatId, card]); return 'command' },
     async updatePreview(id, card) { calls.push(['patch', id, card]); return 'ok' },
     async patchCard(id, card) { calls.push(['fallback', id, card]); return true },
-    async deleteMessage(id) { calls.push(['delete', id]); return true },
+    async createStreamingCard() { return undefined },
     async downloadImage(id, key) { calls.push(['download-image', id, key]); return png },
     async downloadFile(id, key) { calls.push(['download-file', id, key]); return new Uint8Array([1]) },
     async getMessages() { return undefined },
@@ -71,7 +71,7 @@ test('acknowledgement starts even while a previous download blocks the drain', a
   release(); await tick(); await tick()
 })
 
-test('normal turn: placeholder, latest patch, retract, segmented final, clear reaction; tool text stays intermediate', async t => {
+test('normal turn: placeholder, latest patch, completion status, segmented final, clear reaction; tool text stays intermediate', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const h = harness()
   await h.bot.handlePrompt(message('origin', { threadId: 'thread' }), 'hello')
@@ -89,13 +89,13 @@ test('normal turn: placeholder, latest patch, retract, segmented final, clear re
   h.assistant('x'.repeat(4500))
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   await h.end()
-  assert.deepEqual(h.calls.map(c => c[0]), ['react', 'inject', 'send', 'patch', 'delete', 'send', 'send', 'unreact'])
+  assert.deepEqual(h.calls.map(c => c[0]), ['react', 'inject', 'send', 'patch', 'fallback', 'send', 'send', 'unreact'])
   for (const send of h.calls.filter(c => c[0] === 'send')) assert.equal(send[1].threadId, 'thread')
   assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'x'.repeat(500))
   assert.ok(!JSON.stringify(h.calls).includes('secret reasoning'))
 })
 
-test('finish waits for an in-flight PATCH before retracting or sending final', async t => {
+test('finish waits for an in-flight PATCH before settling or sending final', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   let resolvePatch
   const h = harness({ lark: { updatePreview: () => new Promise(resolve => { resolvePatch = resolve }) } })
@@ -104,9 +104,9 @@ test('finish waits for an in-flight PATCH before retracting or sending final', a
   await tick(); h.clock(700); t.mock.timers.tick(700); await tick()
   h.assistant('done')
   const finishing = h.end()
-  await tick(); assert.ok(!h.calls.some(c => c[0] === 'delete'))
+  await tick(); assert.ok(!h.calls.some(c => c[0] === 'fallback' || (c[0] === 'send' && c[3].body?.elements[0].content === 'done')))
   resolvePatch('ok'); await finishing
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['delete', 'send', 'unreact'])
+  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
   t.mock.timers.tick(2000); await tick()
   assert.equal(h.calls.at(-1)[0], 'unreact')
 })
@@ -147,7 +147,7 @@ test('stop cancels immediately including children/btw; end sends only stop text 
   assert.ok(!h.calls.some(c => c[0] === 'command'))
   await h.end('aborted')
   assert.equal(h.calls.filter(c => c[0] === 'send').at(-1)[3].body.elements[0].content, '⏹ 执行已停止。')
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['delete', 'send', 'unreact'])
+  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
 })
 
 for (const [reason, expected] of [['error', '❌ 错误: model failed'], ['aborted', '⏹ 执行已停止。'],
@@ -165,13 +165,14 @@ test('expired-session error, empty response, web-originated turn and final fallb
   assert.ok(h.calls.every(c => c[0] === 'send'))
 })
 
-test('retraction refusal updates preview with first final segment; card send failure retries then uses text', async () => {
-  const h = harness({ lark: { async deleteMessage(id) { h.calls.push(['delete', id]); return false } } })
+test('retained preview contains only completion status; final answer is a new message with send fallback', async () => {
+  const h = harness()
   await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
   h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'writing' } }); await tick()
   h.assistant('answer'); await h.end()
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['delete', 'fallback', 'unreact'])
-  assert.equal(h.calls.at(-2)[2].body.elements[0].content, 'answer')
+  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
+  assert.equal(h.calls.at(-3)[2].body.elements[0].content, '已完成 · 用时 0 秒')
+  assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'answer')
   const failures = harness({ lark: { async sendMessage(target, type, content) { failures.calls.push(['attempt', type, content]); return type === 'text' ? 'ok' : undefined } } })
   await failures.bot.sendFinal({ chatId: 'chat' }, 'x'.repeat(4500))
   assert.deepEqual(failures.calls.map(c => c[1]), ['interactive', 'interactive', 'text', 'text'])
@@ -242,7 +243,7 @@ test('progress summaries filter secret labels, basenames, commands, hosts, and a
   assert.equal(toolProgress('edit', { description: '修改配置\n完成' }), '修改配置 完成')
 })
 
-test('preview bounds and fence marker; substantive content survives retraction', () => {
+test('preview bounds and fence marker; substantive content remains in final reply', () => {
   assert.equal(previewBody([], 'code```js\nx '), 'code```js\nx\n```\n\n...')
   assert.match(previewBody(['x'.repeat(2000), 'y'.repeat(2000), 'z'.repeat(2000), 'w'.repeat(2000)], ''), /^…（前 1 条已折叠）/)
   assert.equal(previewBody([], 'x'.repeat(8001)), undefined)
@@ -342,4 +343,92 @@ test('rich post at nodes use mention keys so the bot mention disappears but coll
     content: JSON.stringify({ content: [[{ tag: 'at', user_id: 'bot' }, { tag: 'text', text: ' ask ' }, { tag: 'at', user_id: '@_peer' }]] }),
   } })
   assert.equal(mentionText(parsed.text, parsed.mentions, 'bot'), 'ask @同事')
+})
+
+for (const [kind, status] of [['completed', '已完成'], ['error', '失败：model failed'], ['aborted', '已停止'], ['max-tokens', '已达到长度上限'], ['blocked', '已被拦截']]) {
+  test(`preview is retained on ${kind}, while final reply and reaction cleanup survive failed status patch`, async () => {
+    for (const patchOk of [true, false]) {
+      const h = harness({ lark: { async patchCard(id, card) { h.calls.push(['status', id, card]); return patchOk } } })
+      await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
+      h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'partial answer' } }); await tick()
+      h.assistant('answer'); h.clock(2300); await h.end(kind, { error: { message: 'model failed' } })
+      const terminal = h.calls.find(c => c[0] === 'status')[2]
+      assert.equal(terminal.body.elements[0].content, `${status} · 用时 2 秒`)
+      assert.equal(terminal.config.summary.content, `${status} · 用时 2 秒`)
+      assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
+      assert.equal(h.calls.at(-1)[0], 'unreact')
+    }
+  })
+}
+
+test('CardKit cumulative code text keeps prefixes, emits at 250ms, and drains before closing', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  let now = 0, release
+  const calls = []
+  const h = harness({ lark: {
+    async createStreamingCard(element) { calls.push(['create', element]); return 'card' },
+    async streamCardContent(card, element, text, sequence) {
+      calls.push(['stream', card, element, text, sequence])
+      if (sequence === 2) await new Promise(resolve => { release = resolve })
+      return true
+    },
+    async settleStreamingCard(card, sequence, content) { calls.push(['settle', card, sequence, content]); return true },
+  } })
+  const preview = new Preview(h.lark, { chatId: 'chat' }, () => now)
+  preview.delta('```js\nconst x = '); await tick()
+  now = 250; t.mock.timers.tick(250); await tick()
+  preview.delta('1;'); now = 500; t.mock.timers.tick(250); await tick()
+  const frames = calls.filter(c => c[0] === 'stream')
+  assert.equal(frames.length, 2)
+  assert.equal(frames[1][3], frames[0][3] + '1;')
+  assert.equal(frames[0][3], '```js\nconst x = ')
+  assert.deepEqual(frames.map(c => c[4]), [1, 2])
+  const finish = preview.finish(); await tick()
+  assert.ok(!calls.some(c => c[0] === 'settle'))
+  release(); await finish
+  assert.equal(calls.at(-1)[2], 3)
+  assert.match(calls.at(-1)[3].body.elements[0].content, /^已完成/)
+  now = 2000; t.mock.timers.tick(1500); await tick()
+  assert.equal(calls.filter(c => c[0] === 'stream').length, 2)
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+  assert.deepEqual(h.calls.find(c => c[0] === 'send')[3], { type: 'card', data: { card_id: 'card' } })
+})
+
+test('CardKit refusal switches to whole-card patches of the same message, final answer stays new', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const calls = []
+  const h = harness({ lark: {
+    async createStreamingCard() { return 'card' },
+    async streamCardContent(...args) { calls.push(['stream', ...args]); return false },
+    async settleStreamingCard(...args) { calls.push(['settle', ...args]); return false },
+  } })
+  await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
+  h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'first' } }); await tick()
+  h.clock(250); t.mock.timers.tick(250); await tick()
+  h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'next' } })
+  h.clock(950); t.mock.timers.tick(700); await tick()
+  assert.equal(calls.filter(c => c[0] === 'stream').length, 1)
+  assert.equal(h.calls.filter(c => c[0] === 'patch').length, 2)
+  h.assistant('answer'); await h.end()
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
+  assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'answer')
+  assert.equal(h.calls.at(-1)[0], 'unreact')
+})
+
+for (const scenario of [
+  { chatType: 'p2p' }, { chatType: 'group' }, { chatType: 'group', threadId: 'thread' },
+  { parentId: 'quote' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
+]) test(`retained progress and a single new final reply route correctly: ${JSON.stringify(scenario)}`, async () => {
+  const h = harness()
+  const incoming = message('origin', scenario)
+  if (scenario.messageType === 'file') await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
+  h.event('turn/start'); h.consume()
+  h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'partial' } }); await tick()
+  h.assistant('final'); await h.end()
+  const sends = h.calls.filter(c => c[0] === 'send')
+  assert.equal(sends.length, 2)
+  assert.equal(sends[1][3].body.elements[0].content, 'final')
+  assert.equal(sends[1][1].chatId, 'chat')
+  assert.equal(sends[1][1].threadId, scenario.threadId)
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^已完成/)
 })

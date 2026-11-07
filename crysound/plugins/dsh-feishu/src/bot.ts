@@ -14,8 +14,8 @@
  * - prompts inject via `agent.steer` while a turn runs (join the CURRENT
  *   turn's next round — the operator's mid-course corrections land
  *   immediately) and `agent.followup` when idle (open the next turn);
- * - OnIt precedes session work; one temporary preview spans the whole turn;
- * - turn/end drains/retracts the preview, sends a new final reply, then clears OnIt;
+ * - OnIt precedes session work; one retained preview spans the whole turn;
+ * - turn/end settles the preview in place, sends a new final reply, then clears OnIt;
  * - card operations serialize final replies in turn order;
  * - no replay of session history on bind (live events from bind time on).
  */
@@ -1765,7 +1765,7 @@ export class FeishuBot {
         const waiting = [...this.pendingPrompts.values()].find(pending => pending.sessionId === sessionId)
         this.turnMessages = waiting?.messages ?? []
         const target = waiting ? this.target(waiting.messages.at(-1)!) : undefined
-        this.turnOutput = new TurnOutput(target ? new Preview(this.lark, target, this.now) : undefined, target)
+        this.turnOutput = new TurnOutput(target ? new Preview(this.lark, target, this.now, this.config.previewIntervalMs) : undefined, target)
         this.turnHasUser = false
       } else if (event.type === 'user/message') {
         const pending = this.pendingPrompts.get(event.data.id)
@@ -1779,7 +1779,7 @@ export class FeishuBot {
           if (!this.turnHasUser) {
             this.turnMessages = pending.messages
             const target = this.target(pending.messages.at(-1)!)
-            this.turnOutput = new TurnOutput(new Preview(this.lark, target, this.now), target)
+            this.turnOutput = new TurnOutput(new Preview(this.lark, target, this.now, this.config.previewIntervalMs), target)
           } else void this.clearAcknowledgements(pending.messages, true)
         }
         this.turnHasUser = true
@@ -1950,13 +1950,12 @@ export class FeishuBot {
     }
   }
 
-  private async sendFinal(target: MessageTarget, text: string, retainedCard?: string): Promise<void> {
+  private async sendFinal(target: MessageTarget, text: string): Promise<void> {
     const post = markdownTableCount(text) > 5
     const segments = segmentText(text, this.config.bodySegmentChars ?? 4000)
     let plain = false
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i]!
-      if (i === 0 && retainedCard && await this.lark.patchCard(retainedCard, buildBodyCard(segment))) continue
       const type = plain ? 'text' : post ? 'post' : 'interactive'
       const content = type === 'text' ? { text: segment } : post
         ? { zh_cn: { content: [[{ tag: 'md', text: segment }]] } } : buildBodyCard(segment)
@@ -1977,15 +1976,18 @@ export class FeishuBot {
     let body = output.body(override)
     if (reason === 'max-tokens') body += '\n⚠️ 达到长度上限'
     if (reason === 'blocked') body += '\n🚫 被拦截'
-    const retained = await output.preview?.finish()
+    const status = reason === 'error' ? `失败：${error || '本轮执行失败'}`
+      : reason === 'aborted' || reason === 'stopped' ? '已停止'
+      : reason === 'max-tokens' ? '已达到长度上限'
+      : reason === 'blocked' ? '已被拦截' : '已完成'
+    await output.preview?.finish(status.slice(0, 500))
     const target = output.target ?? fallbackTarget
-    if (target) await this.sendFinal(target, body, retained)
+    if (target) await this.sendFinal(target, body)
     await this.clearAcknowledgements(messages)
   }
 
   private async closeCardAsDetached(): Promise<void> {
-    const retained = await this.turnOutput?.preview?.finish()
-    if (retained) await this.lark.patchCard(retained, buildBodyCard('⏏️ 会话已解绑（/resume 可重新进入）'))
+    await this.turnOutput?.preview?.finish('会话已解绑（/resume 可重新进入）')
     await this.clearAcknowledgements(this.turnMessages)
     await this.clearAcknowledgements(this.queuedMessages)
     this.queuedMessages = []

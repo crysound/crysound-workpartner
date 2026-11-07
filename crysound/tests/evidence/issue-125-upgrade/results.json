@@ -1,0 +1,73 @@
+{
+  "image": "zhaohua-partner:0.2.2-rc.1",
+  "cpuLimit": 1,
+  "archiveIntegrity": "sha512-9z1cXWPXBHK18ar+f3gUWoVR+Zk54z/3t3l7XYUi8T4NeExoapZkqhHl9YmaI/uaCYx5QhY13y/OsSQ71GEV9A==",
+  "tests": {
+    "total": 552,
+    "passed": 550,
+    "skipped": 2,
+    "failed": 0,
+    "skipReason": "zstd binary unavailable"
+  },
+  "cases": [
+    {
+      "case": "web-file",
+      "seedVersion": "0.17.0-crysound.2",
+      "installedVersion": "0.17.0-crysound.3",
+      "enabled": true,
+      "fiberPhase": "active",
+      "oldArchiveAbsent": true,
+      "repeatedInstall": 2,
+      "configurationAndOtherPluginRetained": true,
+      "bothLocksUpdated": true,
+      "authenticatedHomeHttp": 200,
+      "subsequentPluginAddRemove": "passed"
+    },
+    {
+      "case": "web-remote-integrity",
+      "seedVersion": "0.17.0-crysound.2",
+      "installedVersion": "0.17.0-crysound.3",
+      "enabled": true,
+      "fiberPhase": "active",
+      "oldArchiveAbsent": true,
+      "repeatedInstall": 2,
+      "configurationAndOtherPluginRetained": true,
+      "bothLocksUpdated": true,
+      "authenticatedHomeHttp": 200,
+      "subsequentPluginAddRemove": "passed"
+    },
+    {
+      "case": "web-remote-no-integrity",
+      "seedVersion": "0.17.0-crysound.2",
+      "installedVersion": "0.17.0-crysound.3",
+      "enabled": true,
+      "fiberPhase": "active",
+      "oldArchiveAbsent": true,
+      "repeatedInstall": 2,
+      "configurationAndOtherPluginRetained": true,
+      "bothLocksUpdated": true,
+      "authenticatedHomeHttp": 200,
+      "subsequentPluginAddRemove": "passed"
+    },
+    {
+      "case": "desktop-file",
+      "seedVersion": "0.17.0-crysound.2",
+      "installedVersion": "0.17.0-crysound.3",
+      "enabled": true,
+      "fiberPhase": "active",
+      "oldArchiveAbsent": true,
+      "repeatedInstall": 2,
+      "configurationAndOtherPluginRetained": true,
+      "bothLocksUpdated": true,
+      "authenticatedHomeHttp": 200,
+      "subsequentPluginAddRemove": "passed"
+    }
+  ],
+  "notValidated": [
+    "real Feishu notification and duplicate/deletion behavior",
+    "real-client typewriter smoothness",
+    "production app CardKit permission",
+    "complete candidate image",
+    "Mac/Windows installer upgrades"
+  ]
+}

@@ -3,6 +3,14 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.3] - 2026-11-07
+
+### Changed (CRYSOUND)
+- Retain turn previews and settle them in place with completion/stop/error/limit status and elapsed seconds. Always send final answers as new messages; remove preview-deletion code entirely.
+- Use CardKit streaming entities with cumulative text, unique markdown element IDs, strictly increasing sequences, an explicit list summary and the documented print settings. Close streaming before replacing the card; fall back to whole-card patches on CardKit failures, including closed streams.
+- Add `previewIntervalMs` (default 250 ms, range 200–5000); whole-card fallback keeps a minimum 700 ms interval. Preserve streamed whitespace and open fences to keep cumulative frames as prefixes.
+- Preserve acknowledgements, final segmentation, quote/file/media routing and thread destinations. Document the required `cardkit:card:write` scope and the remaining real-client release acceptance.
+
 ## [0.17.0-crysound.2] - 2026-11-07
 
 ### Changed (CRYSOUND)
