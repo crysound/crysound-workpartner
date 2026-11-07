@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
     const namespace = 'crysound.feishu';
     const en = {
       skinTitle: "Interface style", skinDefault: "Classic", skinSoft: "Zhaohua soft (default)", skinSaveError: "Unable to save on this device. Check browser storage and try again.",
-      dailyTitle: "Daily check",
+      dailyTitle: "Proactive reminders",
       dailyIntro: "On weekdays, this uses your Feishu identity to read unread @mentions, today’s and tomorrow’s calendar events, and Feishu tasks. Summaries use your model credits. Reminders are only for you; nothing is replied to or changed for you. You can turn this off at any time.",
       dailyQuietIntro: "No new items means no interruptions. At most one attempt per day, with no repeated failure reminders.",
       dailyTrial: "This feature is being tried gradually and is not available to you yet.",
@@ -34,15 +34,15 @@ window.__ModuleLoader__.load({
       dailyCancelled: "Turned off; reminder cancelled",
       dailyNew: "● View new reminder",
       dailyView: "View conversation",
-      dailyUnreadLabel: "View new partner reminder",
-      dailyUnread: "● Partner reminder",
+      dailyUnreadLabel: "View new proactive reminder",
+      dailyUnread: "● Proactive reminders",
       dailyReadFailure: "Feishu data could not be read completely. Check your Feishu authorization and connection.",
       dailySummaryFailure: "Summary unavailable. Check your model credits and connection.",
       dailyUnavailable: "Unable to check right now. Check the run history; there is no automatic retry today.",
       dailyInvalidSettings: "Choose an on/off state and a valid Beijing time.",
       dailyNotAvailable: "This feature is not available to you yet.",
       dailyNeedsConnection: "Connect your Feishu account in authorization settings first.",
-      dailyNeedsEnabled: "Connect Feishu and turn on daily checks first.",
+      dailyNeedsEnabled: "Connect Feishu and turn on proactive reminders first.",
       dailyAlreadyAttempted: "A check was already attempted today. Try tomorrow to avoid repeated reminders.",
       dailyRunning: "A check is running. View the history shortly.",
       dailyLogin: "Sign in to your work partner first.",
@@ -68,7 +68,7 @@ window.__ModuleLoader__.load({
     /** @type {Record<keyof typeof en, string>} */
     const zh = {
       skinTitle: "界面风格", skinDefault: "经典", skinSoft: "兆华柔和（默认）", skinSaveError: "无法在此设备保存，请检查浏览器存储后重试。",
-      dailyTitle: "每天帮我查一次",
+      dailyTitle: "主动提醒",
       dailyIntro: "打开后，工作日会用你本人的飞书身份读取未读 @、今天和明天的日程、飞书任务。生成摘要会使用模型额度。只提醒你本人，不替你回复或操作，可以随时关闭。",
       dailyQuietIntro: "没有新事不打扰；同一天最多尝试一次，失败不反复提醒。",
       dailyTrial: "正在分批试用，暂未向你开放。",
@@ -91,15 +91,15 @@ window.__ModuleLoader__.load({
       dailyCancelled: "已关闭，取消本次提醒",
       dailyNew: "● 查看新提醒",
       dailyView: "查看对话",
-      dailyUnreadLabel: "查看新的伙伴提醒",
-      dailyUnread: "● 伙伴提醒",
+      dailyUnreadLabel: "查看新的主动提醒",
+      dailyUnread: "● 主动提醒",
       dailyReadFailure: "飞书数据未能完整读取，请检查授权与连接",
       dailySummaryFailure: "摘要未能生成，请检查模型额度与连接",
       dailyUnavailable: "暂时无法检查，请查看运行记录；今天不会自动重试",
       dailyInvalidSettings: "请选择开关状态和有效的北京时间",
       dailyNotAvailable: "这项功能尚未向你开放试用",
       dailyNeedsConnection: "请先在飞书授权中连接本人账号",
-      dailyNeedsEnabled: "请先连接飞书并打开每天帮我查一次",
+      dailyNeedsEnabled: "请先连接飞书并打开主动提醒",
       dailyAlreadyAttempted: "今天已经查过或尝试过了，明天再查，避免重复提醒",
       dailyRunning: "正在检查，请稍后查看记录",
       dailyLogin: "请先登录工作伙伴",
@@ -455,6 +455,10 @@ window.__ModuleLoader__.load({
     }
 
     function Banner(props) { return h(Panel, { ...props, banner: true }); }
+    function DailyIcon({ size = 16 }) {
+      return h('svg', { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.3, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, 'data-icon': 'crysound-reminder-bell' },
+        h('path', { d: 'M6.5 13a1.5 1.5 0 0 0 3 0M3 11.5h10l-1.5-2V6a3.5 3.5 0 0 0-7 0v3.5zM8 1.5v1' }));
+    }
     function Icon({ size }) { return h(IconLinkOutlineMedium, { size }); }
     return { name: '@crysound/feishu-settings', inject: ['slots', 'locale', 'uiWorkspace'], apply(ctx) {
       ctx.effect(() => ctx.locale.register(namespace, 'en', en));
@@ -472,7 +476,7 @@ window.__ModuleLoader__.load({
           shell?.create().actions.close();
         } });
         ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'crysound-daily-check', order: 66, label: () => t('dailyTitle'), locale: namespace, inject: injectDaily }, DailyPanel));
-        ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: 'crysound-daily-check' }, Icon));
+        ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: 'crysound-daily-check' }, DailyIcon));
         ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({ name: 'sidebar.footer.action', id: 'crysound-daily-unread', locale: namespace, inject: injectDaily }, DailyUnread));
       }
       ctx.effect(() => {

@@ -18,7 +18,7 @@ function harness() {
     window: { __ModuleLoader__: { load(module) { factory = module.factory; } } },
     Intl, Date, Map, JSON,
   });
-  const plugin = factory(name => { assert.equal(name, 'react'); return react; });
+  const plugin = factory(name => name === 'react' ? react : { Button: 'Button', Switch: 'Switch' });
   plugin.apply({
     uiConversation: { binding(id) { return { target: target => ({ session: id, target }) }; } },
     slots: {
