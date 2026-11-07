@@ -324,4 +324,4 @@ The [shared runtime lock](scripts/primary-runtime/lock.json) records each distri
 
 ## Cindy visual tokens
 
-`crysound/brand/skin.css` 中部分颜色与尺寸数值取自 [Cindy](https://github.com/makecindy/cindy)（提交 `d920573a`），Copyright 2026 XD Inc.，Apache License 2.0（[许可证](https://github.com/makecindy/cindy/blob/d920573a/LICENSE)）。直接取用的颜色、透明度、尺寸及中性反相按钮和焦点颜色在文件内以【取值】标注；文字色的折算值以【取值·折算】标注。选择器、接入与开关实现为本项目编写，未使用 Cindy 名称、标志或图片作为产品素材。
+`crysound/brand/skin.css` 中部分颜色与尺寸数值取自 [Cindy](https://github.com/makecindy/cindy)（提交 `d920573a`），Copyright 2026 XD Inc.，Apache License 2.0（[许可证](https://github.com/makecindy/cindy/blob/d920573a/LICENSE)）。直接取用的颜色、透明度、尺寸及中性反相按钮和焦点颜色在文件内以【取值】标注；文字色的折算值以【取值·折算】标注。侧栏搜索交互参考同提交的 `SidebarTopNav.tsx` 与 `SidebarInlineSearch.tsx` 设计说明，仅借设计、未移植组件代码。选择器、接入与开关实现为本项目编写，未使用 Cindy 名称、标志或图片作为产品素材。

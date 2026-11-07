@@ -4,8 +4,8 @@
   const root = document.documentElement;
   let saved;
   try { saved = localStorage.getItem(key); }
-  catch (error) { /* Storage can be unavailable; retain the default appearance. */ }
-  root.dataset.zpSkin = saved === 'soft' ? 'soft' : 'default';
+  catch (error) { /* Storage can be unavailable; use the soft appearance. */ }
+  root.dataset.zpSkin = saved === 'default' ? 'default' : 'soft';
   window.zpSkin = {
     get: () => root.dataset.zpSkin,
     set(value) {
@@ -19,7 +19,7 @@
   };
   window.addEventListener('storage', event => {
     if (event.key !== key && event.key !== null) return;
-    root.dataset.zpSkin = event.newValue === 'soft' ? 'soft' : 'default';
+    root.dataset.zpSkin = event.newValue === 'default' ? 'default' : 'soft';
     window.dispatchEvent(new Event('zp-skin-change'));
   });
 })();

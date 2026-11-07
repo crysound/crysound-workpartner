@@ -56,6 +56,7 @@ function workspaceHarness(text) {
   const modules = {
     '@deepseek-ai/cordis': { Service: class {} },
     '@deepseek-ai/dsh-client-ui-primitives': {},
+    'react-dom': { createPortal: tree => tree },
     react: { useMemo: fn => fn(), useState(value) {
       const index = hookIndex++;
       if (!(index in hookState)) hookState[index] = value;
@@ -224,6 +225,14 @@ test('published sidebar activates with declared dependencies, resolves inventory
   invoked = undefined; headerSearch.props.onClick(); assert.equal(invoked, 'session.search');
   const props = { ...injected, collapsed: false, width: 280, drawer: false, useRemoteAccess: () => true, usePanels: pick => pick(injected.hooks.panels.getSnapshot()), useEntryPins: pick => pick([]), useEntryActions: pick => pick(false), useShortcuts: pick => pick([]), usePanelInfo: pick => pick({ activePanelId: 'p2' }), t: key => dictionaries.sidebar[key] ?? key, renderSlot: () => null };
   const nodes = allNodes(component(props));
+  const logo = nodes.find(n => n.props.className?.includes('_logoRow'));
+  assert.ok(!allNodes(logo).some(n => n.props['data-zp-sidebar-search']), 'logo row has no search control');
+  assert.equal(nodes.find(n => n.props['data-zp-search-host']).props.hidden, false);
+  const rail = allNodes(component({ ...props, collapsed: true, width: 56 }));
+  assert.equal(rail.find(n => n.props['data-zp-search-host']).props.hidden, true);
+  invoked = undefined;
+  rail.find(n => n.type === 'button' && n.props['data-zp-sidebar-search']).props.onClick();
+  assert.equal(invoked, 'session.search');
   const rows = nodes.filter(n => n.type?.name === 'PanelRow');
   assert.deepEqual(rows.map(n => n.props.id), ['baoyu-design.artifacts', 'schedules', 'plugins']);
   assert.equal(rows[1].props.label, '自动化');

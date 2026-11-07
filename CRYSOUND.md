@@ -20,6 +20,7 @@
 - 图标由品牌源稿生成：`apps/desktop/resources/icon-macos.svg` 按 macOS 图标网格（824/1024 留边）排版，导出 1024×1024 透明 PNG；`icon-windows.*` 用满版标志。
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
+- 共用 `skin.js` 首屏选择“兆华柔和”；明确保存为 `default` 的设备保留经典外观。柔和交互使用中性色，设置可切换；侧栏搜索在新对话下一行就地展开，固定版运行时补丁与验收见 `crysound/sidebar-a/README.md`。
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
 - 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。

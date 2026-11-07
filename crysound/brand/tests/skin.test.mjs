@@ -14,8 +14,9 @@ function device(initial, blocked = false) {
   vm.runInNewContext(source, context);
   return { root, api: events.zpSkin, context, events, stored: () => value };
 }
-test('first screen stays default for new or unrecognized preferences', () => {
-  for (const initial of [null, '', 'purple', 'default']) assert.equal(device(initial).root.dataset.zpSkin, 'default');
+test('new devices use soft while explicit classic choices survive reload', () => {
+  for (const initial of [null, '', 'purple', 'soft']) assert.equal(device(initial).root.dataset.zpSkin, 'soft');
+  assert.equal(device('default').root.dataset.zpSkin, 'default');
 });
 test('switch applies immediately, persists across reload, and returns to default', () => {
   const d = device(null);
@@ -28,10 +29,10 @@ test('switch applies immediately, persists across reload, and returns to default
   assert.equal(device(d.stored()).root.dataset.zpSkin, 'default');
   assert.equal(changes, 2);
 });
-test('blocked storage retains default and reports an unsuccessful save', () => {
+test('blocked storage retains soft and reports an unsuccessful save', () => {
   const d = device(null, true);
   assert.equal(d.api.set('soft'), false);
-  assert.equal(d.root.dataset.zpSkin, 'default');
+  assert.equal(d.root.dataset.zpSkin, 'soft');
 });
 test('other tabs and clearing preferences update the active appearance', () => {
   const d = device('soft');
@@ -47,5 +48,8 @@ test('other tabs and clearing preferences update the active appearance', () => {
   send('zp-interface-style', 'soft');
   assert.equal(d.api.get(), 'soft');
   send(null, null);
-  assert.equal(d.api.get(), 'default');
+  assert.equal(d.api.get(), 'soft');
+  send('zp-interface-style', 'default');
+  send('zp-interface-style', null);
+  assert.equal(d.api.get(), 'soft');
 });
