@@ -376,7 +376,7 @@ test("web.search 固定 Exa 且关闭瀑布，上限不超过个人设置和一�
   assert.equal(blocked.calls.filter(r => r.url.includes("/call/")).length, 0);
 });
 
-test("目录搜索隔离单行失败，暂停或下架的路由子接口不挡住其余结果", async t => {
+test("目录搜索隔离单行失败，暂停或下架的路由子接口不挡住目录和调用", async t => {
   const f = await fixture(t);
   f.setSearch([ep("provider.broken.search"), ep("treg.people.find"), ep()]);
   f.lookup(id => {
@@ -394,26 +394,62 @@ test("目录搜索隔离单行失败，暂停或下架的路由子接口不挡�
   assert.deepEqual(mcp.body.result.structuredContent, rest.body);
   assert.equal((await f.mcp("catalog_get", { endpoint_id: "treg.people.find" })).body.result.isError, false);
   assert.equal((await f.request("/catalog/endpoints/treg.people.find")).status, 200);
-  assert.equal((await f.request("/call/treg.people.find", { method: "POST", body: "{}" })).status, 502);
-  assert.equal((await f.mcp("call", { endpoint_id: "treg.people.find", params: {} })).body.result.isError, true);
-  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 0);
+  const called = await f.request("/call/treg.people.find", { method: "POST", body: '{"name":"company"}' });
+  assert.equal(called.status, 200);
+  assert.deepEqual(called.body, { results: ["ok"] });
+  assert.equal(called.headers.get("x-treg-cost-micro"), "1000");
+  const tool = await f.mcp("call", { endpoint_id: "treg.people.find", params: { name: "company" } });
+  assert.equal(tool.body.result.isError, false);
+  assert.equal(tool.body.result.structuredContent.cost_usd, .001);
+  const forwarded = f.calls.filter(row => row.url.includes("/call/"));
+  assert.equal(forwarded.length, 2);
+  for (const row of forwarded) {
+    assert.equal(row.url, "https://treg.to/call/treg.people.find");
+    assert.equal(row.headers["x-treg-meta"], "user=alice");
+    assert.equal(row.headers["x-treg-route-max-cost"], "0.1");
+    assert.deepEqual(JSON.parse(row.body), { name: "company" });
+  }
   assert.doesNotMatch(rest.text, /private-error|private-provider/);
 });
 
-test("路由目录仍拒绝受限分类、未知错误和没有可用子接口的路由", async t => {
-  for (const children of [["provider.paused.find"], ["provider.missing.find"],
-    ["provider.active.find", "provider.ai.find"], ["provider.active.find", "provider.broken.find"]]) {
+test("路由目录和调用仍拒绝受限分类、未知错误和没有可用子接口的路由", async t => {
+  for (const [children, status] of [
+    [["provider.paused.find"], 403], [["provider.missing.find"], 403],
+    [["provider.active.find", "provider.paused.find", "provider.ai.find"], 403],
+    [["provider.active.find", "provider.broken.find"], 502],
+    [["provider.active.find", "provider.failed.find"], 502],
+    [["provider.active.find", "provider.timeout.find"], 503],
+    [["provider.active.find", "provider.invalid.find"], 503],
+  ]) {
     const f = await fixture(t);
     f.lookup(id => {
       if (id === "treg.people.find") return ep(id, { kind: "routed", routed_children: children });
       if (id.includes("paused")) return Response.json({ error: "provider_paused" }, { status: 503 });
       if (id.includes("missing")) return new Response(null, { status: 404 });
       if (id.includes("broken")) return Response.json({ error: "other" }, { status: 503 });
+      if (id.includes("failed")) return Response.json({ error: "other" }, { status: 500 });
+      if (id.includes("timeout")) throw new DOMException("private-timeout", "TimeoutError");
+      if (id.includes("invalid")) return new Response("invalid-json");
       return ep(id, { platform: id.includes("ai") ? "ai" : "web" });
     });
     assert.equal((await f.mcp("catalog_get", { endpoint_id: "treg.people.find" })).body.result.isError, true);
     assert.ok((await f.request("/catalog/endpoints/treg.people.find")).status >= 400);
+    const denied = await f.request("/call/treg.people.find", { method: "POST", body: "{}" });
+    assert.equal(denied.status, status);
+    assert.equal((await f.mcp("call", { endpoint_id: "treg.people.find", params: {} })).body.result.isError, true);
+    assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 0);
+    assert.equal(f.calls.filter(row => row.url.includes("/budgets/")).length, 0);
   }
+});
+
+test("直接调用暂停或下架接口仍失败，不能当作可用路由转发", async t => {
+  const f = await fixture(t);
+  f.lookup(id => id.includes("paused") ? Response.json({ error: "provider_paused" }, { status: 503 }) : new Response(null, { status: 404 }));
+  for (const id of ["provider.paused.find", "provider.missing.find"]) {
+    assert.equal((await f.request(`/call/${id}`, { method: "POST", body: "{}" })).status, 502);
+    assert.equal((await f.mcp("call", { endpoint_id: id, params: {} })).body.result.isError, true);
+  }
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 0);
 });
 
 test("搜索无匹配返回空列表，全部核对失败报错，网络或解析失败只跳过该行", async t => {
