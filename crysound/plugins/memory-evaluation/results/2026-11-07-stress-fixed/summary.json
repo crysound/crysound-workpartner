@@ -1,0 +1,113 @@
+{
+  "complete": true,
+  "datasetHash": "2054d926a0e9535a6398983030c04ea9a9dc65f741c22b86c2aa811ee68697de",
+  "budget": {
+    "complete": true,
+    "costUsd": 0.346912116,
+    "calls": 478,
+    "method": "All pages of the original capped entry billing endpoint; exact response-id match to every append-only ledger row",
+    "pages": [
+      {
+        "offset": 0,
+        "rows": 500,
+        "total": 1175
+      },
+      {
+        "offset": 500,
+        "rows": 500,
+        "total": 1175
+      },
+      {
+        "offset": 1000,
+        "rows": 175,
+        "total": 1175
+      }
+    ],
+    "ledgerHash": "0d06ef9ee1fb13f0d039be5a8f3d530073e48e831b6665bd9f04541db7a8012d",
+    "matchedCalls": 478,
+    "calls_used": 478,
+    "calls_cap": 1500,
+    "usd_used": 0.346912116,
+    "usd_reserved_unreconciled": 0,
+    "usd_cap": 5,
+    "routing": {
+      "deepseek/deepseek-flash -> deepseek/deepseek-flash (deepseek) HTTP 200": 478
+    },
+    "state": "open"
+  },
+  "regression": {
+    "baseline": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46,
+        "oldValueAlerts": 0
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46,
+        "oldValueAlerts": 0
+      }
+    },
+    "gainPoints": 0
+  },
+  "hard": {
+    "baseline": {
+      "extraction": {
+        "hit": 29,
+        "total": 29,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 8,
+        "rate": 0.125
+      },
+      "unsupported": {
+        "count": 6,
+        "reviewedClaims": 63,
+        "oldValueAlerts": 0
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 29,
+        "total": 29,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 8,
+        "rate": 0.125
+      },
+      "unsupported": {
+        "count": 6,
+        "reviewedClaims": 63,
+        "oldValueAlerts": 0
+      }
+    },
+    "gainPoints": 0
+  },
+  "passed": false
+}
