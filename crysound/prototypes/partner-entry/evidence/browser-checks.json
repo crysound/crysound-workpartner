@@ -1,0 +1,41 @@
+{
+  "screenshots": [
+    {
+      "file": "light.png",
+      "viewport": 1280,
+      "document": 1280,
+      "pet": 32,
+      "partner": 223
+    },
+    {
+      "file": "dark.png",
+      "viewport": 1280,
+      "document": 1280,
+      "pet": 32,
+      "partner": 223
+    },
+    {
+      "file": "collapsed.png",
+      "viewport": 1280,
+      "document": 1280,
+      "pet": 32,
+      "partner": 55
+    },
+    {
+      "file": "narrow.png",
+      "viewport": 390,
+      "document": 390,
+      "pet": 32,
+      "partner": 49
+    }
+  ],
+  "checks": [
+    "Task navigation returns to the same main conversation",
+    "Five states reach the production animated logo; only waiting shows confirmation",
+    "Send → think → work → confirm → done; text stays literal",
+    "Reload restores local prototype conversation (not cross-device sync)",
+    "Collapsed avatar opens the main conversation without expanding the sidebar",
+    "Narrow screen supports expansion, task switch, return and collapse without horizontal overflow",
+    "Reduced motion retains the text status; no uncaught browser errors"
+  ]
+}
