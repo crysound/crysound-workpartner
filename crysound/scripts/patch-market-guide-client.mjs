@@ -32,9 +32,10 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
   }
   async function active(guide) {
     const [bundles, plugins] = await Promise.all([ctx.remote.pluginManager.listBundles(), ctx.remote.pluginManager.listPlugins()]);
-    const bundle = bundles.find(row => row.name === guide.name);
+    if (!bundles.ok || !plugins.ok) return false;
+    const bundle = bundles.value.find(row => row.name === guide.name);
     return bundle?.enabled && !bundle.error && bundle.version === guide.version && bundle.rows.some(row =>
-      row.moduleName === guide.name && plugins.some(plugin => plugin.entryId === row.entryId && plugin.enabled && plugin.fiberPhase === "active"));
+      row.moduleName === guide.name && plugins.value.some(plugin => plugin.entryId === row.entryId && plugin.enabled && plugin.fiberPhase === "active"));
   }
   function claim(guide) {
     return {
@@ -53,7 +54,7 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
   function select(sessionId, guide) {
     const scope = ctx.sessions.scope(sessionId);
     if (!scope) throw new Error(text("failed"));
-    const input = scope.conversation.input.for(scope), state = input.state.getSnapshot();
+    const input = scope.get("conversation").input.for(scope), state = input.state.getSnapshot();
     if (state.draft.trim() || state.attachmentIds.length || state.phase !== "plain") throw new Error(text("draft"));
     if (!input.beginCommand(claim(guide), { start: 0, end: 0, draftRev: state.draftRev })) throw new Error(text("draft"));
     input.focus();
@@ -72,7 +73,7 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
     guideLanguage: language,
     browse: () => ctx.get("pluginNavigation")?.openList(),
     choose: name => { void open(name, () => ctx.get("pluginNavigation")?.openBundle(name)).catch(() => {
-      const scope = ctx.sessions.scope(sessionId); scope?.conversation.input.for(scope).notify("error", text("draft"));
+      const scope = ctx.sessions.scope(sessionId); scope?.get("conversation").input.for(scope).notify("error", text("draft"));
     }); },
     cancel: state => {
       const scope = ctx.sessions.scope(sessionId);
@@ -81,7 +82,7 @@ export function installCompanyGuides(ctx, createSnapshotStore, jsx, jsxs) {
     example: (guide, example) => {
       const scope = ctx.sessions.scope(sessionId);
       if (!scope) return;
-      const input = scope.conversation.input.for(scope);
+      const input = scope.get("conversation").input.for(scope);
       const state = input.state.getSnapshot();
       if (state.phase !== "claimed" || state.claim?.name !== `zp-guide:${guide.name}` || state.attachmentIds.length || state.draft.slice(token(guide).length).trim()) return;
       const end = state.draft.length - token(guide).trimEnd().length + 1;
