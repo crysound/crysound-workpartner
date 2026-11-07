@@ -32,6 +32,14 @@ async function fixture(t) {
   let clock = Date.now(), requests = [];
   const editor = own(http.createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers });
+    if (req.url.startsWith("/slides/selection.html")) {
+      const html = '<section data-slide="9"><h1>选型逻辑</h1><p>中文与字节保持原样</p></section>\r\n';
+      const encoding = new URL(req.url, "http://editor").searchParams.get("encoding");
+      const bytes = encoding === "gzip" ? gzipSync(html) : encoding === "deflate" ? deflateSync(html) : encoding === "br" ? brotliCompressSync(html) : Buffer.from(html);
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": bytes.length,
+        ...(encoding ? { "content-encoding": encoding } : {}) });
+      return res.end(bytes);
+    }
     if (req.url.startsWith("/html")) {
       const html = '<!doctype html><html><head data-editor="slides"><SCRIPT>window.editorSawNativeDownloads=window.__baoyuNativeDownloads;</SCRIPT></head><body>中文导出</body></html>';
       const encoding = req.url.split("/")[2];
@@ -90,7 +98,7 @@ async function fixture(t) {
         jar.set(at.host, [...saved].map(([name, value]) => `${name}=${value}`).join("; "));
       }
       const chunks = []; res.on("data", (chunk) => chunks.push(chunk));
-      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, text: Buffer.concat(chunks).toString(), jar }));
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, bytes: Buffer.concat(chunks), text: Buffer.concat(chunks).toString(), jar }));
     });
     req.on("error", reject); req.end(body);
   });
@@ -124,6 +132,16 @@ test("web preview enables native downloads before editor startup, including comp
     "x-zp-preview-port": String(f.port), "x-zp-relay-key": relayKey(f.key, "alice"),
   } });
   assert(!direct.text.includes("<script>window.__baoyuNativeDownloads=true;"), "container relay must not change desktop behavior");
+});
+
+test("slide HTML fragments stay byte-for-byte unchanged through the authenticated preview gateway", async (t) => {
+  const f = await fixture(t), b = await f.bootstrap();
+  const expected = Buffer.from('<section data-slide="9"><h1>选型逻辑</h1><p>中文与字节保持原样</p></section>\r\n');
+  for (const encoding of ["", "gzip", "deflate", "br"]) {
+    const page = await f.request(`${b.origin}/slides/selection.html?encoding=${encoding}`, { jar: b.jar });
+    assert.equal(page.status, 200);
+    assert.deepEqual(page.bytes, expected, encoding || "identity");
+  }
 });
 
 test("port and path inputs reject the workspace control plane and non-local targets", () => {

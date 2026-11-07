@@ -19,10 +19,15 @@ test("HTML head split across chunks preserves UTF-8 and streams before EOF", asy
   assert((await done).includes(bytes));
 });
 
-test("headless HTML and a long preamble still get a bounded prefix injection", async () => {
-  for (const html of ["<p>导出</p>", " ".repeat(65536)]) {
-    const output = await collect(Readable.from([Buffer.from(html)]).pipe(nativeDownloadHtml()));
-    assert.equal(output.toString(), "<script>window.__baoyuNativeDownloads=true;</script>" + html);
+test("HTML without a head and documents beyond the prefix limit remain byte-for-byte unchanged", async () => {
+  for (const html of [
+    '<section data-slide="9"><h1>选型逻辑</h1></section>\r\n',
+    '<!doctype html><html><body>没有 head</body></html>',
+    " ".repeat(65536) + "<head></head><body>late head</body>",
+  ]) {
+    const bytes = Buffer.from(html);
+    const output = await collect(Readable.from([bytes.subarray(0, 65536), bytes.subarray(65536)]).pipe(nativeDownloadHtml()));
+    assert.deepEqual(output, bytes);
   }
 });
 
