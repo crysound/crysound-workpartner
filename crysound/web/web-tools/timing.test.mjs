@@ -71,6 +71,7 @@ function agentHarness(runtime, { session = "fixture", stream, beforeAppend = () 
           const result = await searchWithFallback(runtime.Provider, WebError, {
             baseURL: "https://fixture.example/v1", apiKey: "SECRET_KEY", apiVersion: "fixture", maxTokens: 10, maxUses: 1,
             recordRequest: value => agent.session.append("web/deepseek-search-llm-request", value),
+            recordSearch: (stage, extra) => toolTiming.search(stage, extra),
           }, { query: "SECRET_PROMPT" }, exec.signal);
           return { kind: "post-result", result: { content: [{ type: "text", text: result.content }], isError: false } };
         },

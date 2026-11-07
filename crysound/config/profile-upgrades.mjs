@@ -1,4 +1,4 @@
-// Refresh company model, search, tool guidance, Sidebar Browser and work-step display settings while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
+// Refresh company model, search, tool guidance and display defaults while the Host is stopped. Other providers and !!js expressions stay in the YAML document.
 // node profile-upgrades.mjs <profile patch> <company patch> <dsh CLI entry> [--seed] [--web-preview]
 import fs from "node:fs";
 import path from "node:path";
@@ -108,6 +108,21 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
   const chat = mine.getIn([chatIndex, "config"], true);
   if (chat === undefined) mine.setIn([chatIndex, "config"], mine.createNode({ transcriptView: "standard" }));
   else if (yaml.isMap(chat) && !chat.has("transcriptView")) chat.set("transcriptView", "standard");
+  // Only the Web entrypoint passes --web-preview. Settings writes use the same
+  // profile fields, so absence (not equality to an old default) controls seeding.
+  if (enableWebBrowser) {
+    for (const [id, field, value] of [["ui-conversation", "busyEnter", "steer"], ["ui-chat", "performanceUsage", "compact"]]) {
+      let index = find(mine, id);
+      if (index < 0) {
+        mine.add(mine.createNode({ id, name: `@deepseek-ai/dsh-client-${id}`, config: {} }));
+        index = mine.contents.items.length - 1;
+      }
+      const configPath = [index, "config"];
+      if (mine.getIn(configPath, true) === undefined) mine.setIn(configPath, mine.createNode({}));
+      const config = mine.getIn(configPath, true);
+      if (yaml.isMap(config) && !config.has(field)) config.set(field, value);
+    }
+  }
   // Generate a self-contained module from the existing config download: older desktop
   // clients do not know about extra configuration files. A distinct section survives
   // standard preset persona replacement; complete-prompt presets keep their own prompt.

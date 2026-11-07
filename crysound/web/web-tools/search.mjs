@@ -1,21 +1,23 @@
 import { readFile } from "node:fs/promises";
 
-/** Search through the released credential, wire mapping and request log paths.
+/** Search via the internal Search API, Flash and Luna, with parallel English Exa sources.
  * @param Provider Released search class. @param WebError Released error class.
- * @param options Resolved options.
+ * @param options Resolved options and optional search/Exa diagnostic callbacks.
  * @param request Search query. @param signal Optional caller cancellation.
- * @param timeoutMs Primary attempt limit, defaulting to twelve seconds; fallback uses at most four seconds.
- * @param exa Optional test services; production uses the existing container gateway and identity file.
+ * @param timeoutMs Optional caller Flash ceiling; absent uses the validated provider configuration.
+ * @param services Optional offline transports; production uses existing gateway identity files.
  * @returns Primary answer with optional Exa sources; auxiliary work shares one five-second deadline.
  */
-export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs = 12_000, exa = {}) {
+export async function searchWithFallback(Provider, WebError, options, request, signal, timeoutMs, services = {}) {
   signal?.throwIfAborted();
+  const budget = options.searchBudget ?? resolveSearchBudget();
+  const deadline = performance.now() + budget.searchTotalTimeoutMs;
   const stop = new AbortController();
   const extra = mostlyEnglish(request.query)
-    ? exaSearch(request.query, AbortSignal.any([stop.signal, ...(signal ? [signal] : [])]), options.recordExa, exa)
+    ? exaSearch(request.query, AbortSignal.any([stop.signal, ...(signal ? [signal] : [])]), options.recordExa, services, budget.searchTotalTimeoutMs)
     : Promise.resolve([]);
   try {
-    const result = await primarySearch(Provider, WebError, options, request, signal, timeoutMs);
+    const result = await primarySearch(Provider, WebError, options, request, signal, timeoutMs ?? budget.searchFlashTimeoutMs, services, deadline, budget);
     const sources = await extra;
     signal?.throwIfAborted();
     if (!sources.length) return result;
@@ -25,26 +27,108 @@ export async function searchWithFallback(Provider, WebError, options, request, s
   } finally { stop.abort(); }
 }
 
-async function primarySearch(Provider, WebError, options, request, signal, timeoutMs) {
-  const gpt = "codex/gpt-6-luna", deepseek = "deepseek/deepseek-flash";
-  const models = [deepseek, gpt];
+/** Resolve provider timeout settings before registration or a settings refresh.
+ * @param values Optional configuration overrides; omitted fields use the shipped defaults.
+ * @returns Validated millisecond budgets; incompatible or non-integer values throw.
+ */
+export function resolveSearchBudget(values = {}) {
+  const budget = { searchTotalTimeoutMs: 18_000, searchApiTimeoutMs: 4_000,
+    searchFlashTimeoutMs: 12_000, searchLunaReserveMs: 6_000, ...values };
+  for (const [key, value] of Object.entries(budget)) {
+    if (!Number.isInteger(value) || value <= 0 || value > 2_147_483_647) throw new Error(`${key} must be a positive timer-safe integer`);
+  }
+  if (budget.searchApiTimeoutMs > budget.searchTotalTimeoutMs || budget.searchFlashTimeoutMs > budget.searchTotalTimeoutMs
+    || budget.searchLunaReserveMs >= budget.searchTotalTimeoutMs) throw new Error("Search budgets must fit within searchTotalTimeoutMs");
+  return budget;
+}
+
+async function primarySearch(Provider, WebError, options, request, signal, timeoutMs, services, deadline, limits) {
+  signal?.throwIfAborted();
   const failures = [];
-  for (const [index, model] of models.entries()) {
+  const env = services.env ?? process.env;
+  const phases = [
+    ...(env.CRYSOUND_DS_TOOLS_BASE ? ["search-api"] : []),
+    "flash", "luna",
+  ];
+  for (const provider of phases) {
     signal?.throwIfAborted();
-    const attempt = AbortSignal.timeout(index === 0 ? timeoutMs : Math.min(timeoutMs, 4_000));
-    let recorded = false;
-    const recordRequest = (entry) => { options.recordRequest?.(entry); recorded = true; };
+    const remaining = Math.max(0, Math.floor(deadline - performance.now()));
+    if (!remaining) break;
+    // A short remainder is split evenly so the fallback remains usable.
+    const budget = provider === "search-api" ? Math.min(limits.searchApiTimeoutMs, remaining)
+      : provider === "flash" ? Math.min(timeoutMs, remaining - Math.min(limits.searchLunaReserveMs, Math.floor(remaining / 2))) : remaining;
+    const stop = new AbortController();
+    const attempt = AbortSignal.any([stop.signal, AbortSignal.timeout(budget), ...(signal ? [signal] : [])]);
+    const started = performance.now();
+    let recorded = false, status = "failed";
+    const recordRequest = entry => { options.recordRequest?.(entry); recorded = true; };
+    options.recordSearch?.("search-phase-start", { provider, budgetMs: budget });
     try {
-      return await new Provider(() => ({ ...options, model, recordRequest })).search(request,
-        signal ? AbortSignal.any([signal, attempt]) : attempt);
+      const result = await abortable(async () => {
+        if (provider === "search-api") return gatewaySearch(env, request, attempt, services, options.recordSearch);
+        return new Provider(() => ({ ...options, model: provider === "flash" ? "deepseek/deepseek-flash" : "codex/gpt-6-luna", recordRequest }))
+          .search(request, attempt);
+      }, attempt);
+      attempt.throwIfAborted();
+      status = "success";
+      return result;
     } catch (error) {
+      status = signal?.aborted ? "cancelled" : attempt.aborted ? "timeout" : "failed";
       if (signal?.aborted) throw error;
-      // Do not fall back after credential/logging errors before an HTTP request exists.
-      if (!recorded || error.code === "WEB_PROVIDER_CREDENTIAL_MISSING") throw error;
+      // Credential/logging failures before a model HTTP request are not provider failures.
+      if (provider !== "search-api" && (!recorded || error.code === "WEB_PROVIDER_CREDENTIAL_MISSING")) throw error;
       failures.push(error);
+    } finally {
+      stop.abort();
+      options.recordSearch?.("search-phase-end", { provider, status, won: status === "success", durationMs: performance.now() - started });
     }
   }
-  throw new WebError("网页搜索的两个服务均失败，请稍后重试", "WEB_PROVIDER_ERROR", { cause: new AggregateError(failures) });
+  throw new WebError("网页搜索的所有服务均失败，请稍后重试", "WEB_PROVIDER_ERROR", { cause: new AggregateError(failures) });
+}
+
+// A deadline also bounds credential reads and parsing when a transport ignores AbortSignal.
+async function abortable(operation, signal) {
+  signal.throwIfAborted();
+  let onAbort;
+  const aborted = new Promise((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try { return await Promise.race([aborted, operation()]); }
+  finally { signal.removeEventListener("abort", onAbort); }
+}
+
+async function gatewaySearch(env, request, signal, services, record) {
+  const endpoint = new URL(env.CRYSOUND_DS_TOOLS_BASE);
+  if (endpoint.protocol !== "http:" || endpoint.hostname !== "zhaohua-partner-gateway" || endpoint.port !== "3091"
+    || endpoint.pathname !== "/_zp/ds-tools/" || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error("Invalid internal search gateway");
+  const token = (await (services.readToken ?? readFile)(env.CRYSOUND_DS_TOOLS_TOKEN_FILE || "/data/.zp-market-token", "utf8")).trim();
+  signal.throwIfAborted();
+  if (!/^zpd\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(token)) throw new Error("Container identity unavailable");
+  const query = [...request.query].slice(0, 128).join("");
+  record?.("search-api-request-dispatch");
+  const response = await (services.fetcher ?? fetch)(new URL("search", endpoint).href, {
+    method: "POST", redirect: "error", signal,
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query, count: 10 }),
+  });
+  signal.throwIfAborted();
+  if (!response.ok) { await response.body?.cancel(); throw new Error("Search gateway unavailable"); }
+  const data = await response.json();
+  signal.throwIfAborted();
+  if (!Array.isArray(data?.results) || !data.results.length || data.results.length > 10) throw new Error("Invalid search results");
+  const seen = new Set();
+  const sources = data.results.flatMap(row => {
+    if (typeof row?.url !== "string" || typeof row.title !== "string" || typeof row.summary !== "string") throw new Error("Invalid search result");
+    const url = new URL(row.url);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Invalid search URL");
+    if (seen.has(url.href)) return [];
+    seen.add(url.href);
+    return [{ url: row.url, title: row.title, summary: boundedText(row.summary),
+      ...(typeof row.snippet === "string" ? { snippet: row.snippet } : {}),
+      ...(typeof row.date === "string" && row.date.trim() ? { publishedAt: row.date } : {}) }];
+  });
+  return { sources, content: "", truncated: false };
 }
 
 /** Keep an answer and its URL-specific excerpts within the tool's 800-character budget.
@@ -78,17 +162,16 @@ function boundedText(text) {
   return normalized.slice(0, end) + "…";
 }
 
-
 // Count non-whitespace Unicode characters so mixed Chinese queries keep their original path.
 function mostlyEnglish(query) {
   const compact = [...query.replace(/\s/gu, "")];
   return compact.length > 0 && compact.filter(char => /[A-Za-z]/u.test(char)).length > compact.length / 2;
 }
 
-async function exaSearch(query, parent, record, services) {
+async function exaSearch(query, parent, record, services, totalTimeoutMs) {
   const env = services.env ?? process.env;
   if (!env.CRYSOUND_MARKET_ORIGIN || !env.CRYSOUND_MARKET_TOKEN_FILE) return [];
-  const signal = AbortSignal.any([parent, AbortSignal.timeout(5_000)]);
+  const signal = AbortSignal.any([parent, AbortSignal.timeout(Math.min(5_000, totalTimeoutMs))]);
   const started = performance.now();
   let dispatched = false, status = "failed";
   let onAbort;

@@ -90,11 +90,11 @@ class ToolTiming {
     context.mark(stage, context.callId, extra);
   }
 
-  search(stage) {
+  search(stage, extra = {}) {
     const context = this.context.getStore();
     if (context?.callId === undefined) return;
     if (stage === "search-request-record") context.searchAttempt++;
-    context.mark(stage, context.callId, { searchAttempt: context.searchAttempt });
+    context.mark(stage, context.callId, { searchAttempt: context.searchAttempt, ...extra });
   }
 }
 

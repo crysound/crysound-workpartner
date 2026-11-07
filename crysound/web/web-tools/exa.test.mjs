@@ -165,7 +165,7 @@ test("actual patched release registration merges Exa with DeepSeek, preserves fa
   } });
   let provider;
   api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: () => undefined },
-    Object.fromEntries(Object.entries({ ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+    Object.fromEntries(Object.entries({ ...api.Config({}), ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   const attempt = toolTiming.attempt("exa", 1, 1, "a");
   attempt.chunk({ type: "block-end", block: { type: "tool-call", id: "search", name: "web_search" } });
   const outcome = await attempt.execute(() => toolTiming.dispatch({ callId: "search" }, async () => ({ result: await provider.search(query) })));

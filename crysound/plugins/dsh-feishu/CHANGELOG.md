@@ -3,6 +3,13 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.7] - 2026-11-07
+
+### Fixed (CRYSOUND fork)
+- Automatically replace missing, archived, deleted or unrestorable bindings for text, images, files and session passthrough commands; clear invalid stored bindings before creation.
+- Use the default workspace/model, falling back to the process directory when no workspace is registered. Keep read-only queuing and explicit /new and /resume unchanged.
+- Keep a small “已新开会话” note in the original reply card; creation errors include their cause and /new retry guidance.
+
 ## [0.17.0-crysound.6] - 2026-11-07
 
 ### Changed (CRYSOUND fork)

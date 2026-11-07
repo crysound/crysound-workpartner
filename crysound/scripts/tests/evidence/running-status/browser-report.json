@@ -1,0 +1,184 @@
+{
+  "results": [
+    {
+      "phase": "before",
+      "skin": "default",
+      "theme": "light",
+      "labels": [
+        "深度求索中，用时 16秒 ···",
+        "深度求索中",
+        "Deep diving for 16s ···"
+      ],
+      "announcements": [
+        "深度求索中",
+        "深度求索中",
+        "Deep diving"
+      ],
+      "color": "color(srgb 0.20549 0.367451 0.730196)",
+      "secondary": "rgb(97, 102, 107)",
+      "shimmer": "color-mix(in srgb, #4176e6 30%, #172554)",
+      "iconColor": "color(srgb 0.20549 0.367451 0.730196)",
+      "svg": 1,
+      "animation": "none",
+      "mask": "none"
+    },
+    {
+      "phase": "before",
+      "skin": "default",
+      "theme": "dark",
+      "labels": [
+        "深度求索中，用时 16秒 ···",
+        "深度求索中",
+        "Deep diving for 16s ···"
+      ],
+      "announcements": [
+        "深度求索中",
+        "深度求索中",
+        "Deep diving"
+      ],
+      "color": "color(srgb 0.490784 0.603137 0.872549)",
+      "secondary": "rgb(207, 211, 214)",
+      "shimmer": "color-mix(in srgb, #93c5fd 65%, #7aaaff)",
+      "iconColor": "color(srgb 0.490784 0.603137 0.872549)",
+      "svg": 1,
+      "animation": "none",
+      "mask": "none"
+    },
+    {
+      "phase": "before",
+      "skin": "soft",
+      "theme": "light",
+      "labels": [
+        "深度求索中，用时 16秒 ···",
+        "深度求索中",
+        "Deep diving for 16s ···"
+      ],
+      "announcements": [
+        "深度求索中",
+        "深度求索中",
+        "Deep diving"
+      ],
+      "color": "color(srgb 0.20549 0.367451 0.730196)",
+      "secondary": "rgba(0, 0, 0, 0.56)",
+      "shimmer": "color-mix(in srgb, #4176e6 30%, #172554)",
+      "iconColor": "color(srgb 0.20549 0.367451 0.730196)",
+      "svg": 1,
+      "animation": "none",
+      "mask": "none"
+    },
+    {
+      "phase": "before",
+      "skin": "soft",
+      "theme": "dark",
+      "labels": [
+        "深度求索中，用时 16秒 ···",
+        "深度求索中",
+        "Deep diving for 16s ···"
+      ],
+      "announcements": [
+        "深度求索中",
+        "深度求索中",
+        "Deep diving"
+      ],
+      "color": "color(srgb 0.490784 0.603137 0.872549)",
+      "secondary": "rgba(255, 255, 255, 0.55)",
+      "shimmer": "color-mix(in srgb, #93c5fd 65%, #7aaaff)",
+      "iconColor": "color(srgb 0.490784 0.603137 0.872549)",
+      "svg": 1,
+      "animation": "none",
+      "mask": "none"
+    },
+    {
+      "phase": "after",
+      "skin": "default",
+      "theme": "light",
+      "labels": [
+        "处理中，用时 16秒 ···",
+        "处理中",
+        "Working for 16s ···"
+      ],
+      "announcements": [
+        "处理中",
+        "处理中",
+        "Working"
+      ],
+      "color": "rgb(97, 102, 107)",
+      "secondary": "rgb(97, 102, 107)",
+      "shimmer": "#0f1115",
+      "iconColor": "rgb(97, 102, 107)",
+      "svg": 0,
+      "animation": "zp-running-spin",
+      "mask": "none"
+    },
+    {
+      "phase": "after",
+      "skin": "default",
+      "theme": "dark",
+      "labels": [
+        "处理中，用时 16秒 ···",
+        "处理中",
+        "Working for 16s ···"
+      ],
+      "announcements": [
+        "处理中",
+        "处理中",
+        "Working"
+      ],
+      "color": "rgb(207, 211, 214)",
+      "secondary": "rgb(207, 211, 214)",
+      "shimmer": "#f9fafb",
+      "iconColor": "rgb(207, 211, 214)",
+      "svg": 0,
+      "animation": "zp-running-spin",
+      "mask": "none"
+    },
+    {
+      "phase": "after",
+      "skin": "soft",
+      "theme": "light",
+      "labels": [
+        "处理中，用时 16秒 ···",
+        "处理中",
+        "Working for 16s ···"
+      ],
+      "announcements": [
+        "处理中",
+        "处理中",
+        "Working"
+      ],
+      "color": "rgba(0, 0, 0, 0.56)",
+      "secondary": "rgba(0, 0, 0, 0.56)",
+      "shimmer": "rgba(0, 0, 0, 0.88)",
+      "iconColor": "rgba(0, 0, 0, 0.56)",
+      "svg": 0,
+      "animation": "zp-running-spin",
+      "mask": "none"
+    },
+    {
+      "phase": "after",
+      "skin": "soft",
+      "theme": "dark",
+      "labels": [
+        "处理中，用时 16秒 ···",
+        "处理中",
+        "Working for 16s ···"
+      ],
+      "announcements": [
+        "处理中",
+        "处理中",
+        "Working"
+      ],
+      "color": "rgba(255, 255, 255, 0.55)",
+      "secondary": "rgba(255, 255, 255, 0.55)",
+      "shimmer": "rgba(255, 255, 255, 0.82)",
+      "iconColor": "rgba(255, 255, 255, 0.55)",
+      "svg": 0,
+      "animation": "zp-running-spin",
+      "mask": "none"
+    }
+  ],
+  "reducedMotion": "passed",
+  "forcedColors": "passed",
+  "holding": "passed",
+  "errors": []
+}

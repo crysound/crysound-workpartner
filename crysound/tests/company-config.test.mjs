@@ -103,6 +103,59 @@ test("shared refresh preserves an existing desktop Browser choice", async (t) =>
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "ui-sidebar-browser").disabled, true);
 });
 
+test("Web defaults fill only missing send and usage preferences, including existing profiles", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  const scenarios = [
+    undefined,
+    "[]\n",
+    "- id: ui-chat\n  config: {transcriptView: standard}\n",
+    "- id: ui-conversation\n- id: ui-chat\n",
+    "- id: ui-conversation\n  config: {busyEnter: queue}\n- id: ui-chat\n  config: {performanceUsage: detailed, transcriptView: compact}\n",
+    "- id: ui-conversation\n  config: {busyEnter: steer}\n- id: ui-chat\n  config: {performanceUsage: compact}\n",
+    "- id: ui-conversation\n  config: {busyEnter: queue}\n",
+    "- id: ui-chat\n  config: {performanceUsage: detailed}\n",
+  ];
+  for (const [index, before] of scenarios.entries()) {
+    const file = join(root, `preferences-${index}.yml`);
+    if (before !== undefined) await writeFile(file, before);
+    refreshProfile(file, seed, yaml, before === undefined, true);
+    const after = await readFile(file, "utf8"), rows = load(after);
+    const original = before ? load(before) : [];
+    for (const [id, field, fallback] of [["ui-conversation", "busyEnter", "steer"], ["ui-chat", "performanceUsage", "compact"]]) {
+      assert.equal(rows.findLast(row => row.id === id).config[field],
+        original.findLast(row => row.id === id)?.config?.[field] ?? fallback, `scenario ${index}: ${field}`);
+    }
+    if (index === 4) assert.equal(rows.findLast(row => row.id === "ui-chat").config.transcriptView, "compact");
+    refreshProfile(file, seed, yaml, false, true);
+    assert.equal(await readFile(file, "utf8"), after, "second refresh is byte-identical");
+  }
+});
+
+test("desktop refresh does not seed Web send or usage defaults", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  for (const seedDefaults of [true, false]) {
+    const file = join(root, `desktop-${seedDefaults}.yml`);
+    refreshProfile(file, seed, yaml, seedDefaults);
+    const rows = load(await readFile(file, "utf8"));
+    assert.equal(rows.findLast(row => row.id === "ui-conversation")?.config?.busyEnter, undefined);
+    assert.equal(rows.findLast(row => row.id === "ui-chat")?.config?.performanceUsage, undefined);
+  }
+});
+
+test("Web defaults preserve dynamic personal preference expressions", async (t) => {
+  const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
+  for (const config of ["!!js process.env.PREFERENCES", "{busyEnter: !!js process.env.SEND_MODE}"]) {
+    const file = join(root, "dynamic.yml");
+    await writeFile(file, `- id: ui-conversation\n  config: ${config}\n- id: ui-chat\n  config: {performanceUsage: !!js process.env.USAGE_MODE}\n`);
+    refreshProfile(file, seed, yaml, false, true);
+    const after = await readFile(file, "utf8");
+    assert.match(after, /!!js process.env.(PREFERENCES|SEND_MODE)/);
+    assert.match(after, /!!js process.env.USAGE_MODE/);
+    refreshProfile(file, seed, yaml, false, true);
+    assert.equal(await readFile(file, "utf8"), after);
+  }
+});
+
 test("refresh replaces the whole company provider and keeps personal providers, comments, expressions and chosen default", async (t) => {
   const root = await temp(t), file = join(root, "cordis.patch.yml"), seed = join(assets, "config/partner.patch.yml");
   await writeFile(file, `# personal configuration\n- id: "llm-pi-ai"\n  config:\n    providers:\n      magpie: {models: [{id: retired-model}], stale: true}\n      mine: {baseURL: 'https://personal.example/v1', models: [{id: personal}]}\n- id: agent-default-model\n  config: {provider: mine, model: personal, reasoningEffort: high}\n- id: expression\n  config:\n    value: !!js process.env.TEST_VALUE\n`);
