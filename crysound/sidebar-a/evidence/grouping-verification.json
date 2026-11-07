@@ -1,0 +1,39 @@
+{
+  "preview": "Per-tab response substitution and local skin stylesheet over the existing authenticated server. Not a deployed build or Electron.",
+  "screenshots": "Skipped for the grouping regression run",
+  "preferenceIsolation": "Only dsh.workspace.view.v5 is redirected into dedicated-tab sessionStorage; the real device preference is untouched.",
+  "redaction": "No screenshots or user text recorded",
+  "viewport": "1440x720",
+  "patched": [
+    "brand.css",
+    "ui-sidebar",
+    "ui-workspace"
+  ],
+  "checks": [
+    "published modules activate and load real session rows",
+    "single-workspace automatic projection after reload",
+    "view menu opens",
+    "manual choice writes the explicit marker in isolated preference",
+    "manually selected tree survives a real page reload",
+    "view menu opens",
+    "legacy/reset grouping reload: workspace/undefined",
+    "view menu opens",
+    "legacy/reset grouping reload: workspace-tree/undefined",
+    "view menu opens",
+    "legacy/reset grouping reload: flat/undefined",
+    "view menu opens",
+    "legacy/reset grouping reload: workspace-tree/false",
+    "view menu opens",
+    "real browser reload preserves manual tree, reads legacy flat/tree, treats legacy workspace as automatic, and resets manual intent"
+  ],
+  "errors": [],
+  "notVerified": [
+    "Real Electron on macOS/Windows",
+    "Plugin install/update/disable/reinstall lifecycle on a scratch profile",
+    "Multiple workspace and unassigned-session lifecycle on a scratch profile",
+    "Rename/pin/archive/restore/drag mutations on scratch data",
+    "Skin #133 combined image deployment",
+    "Real model round and built-server GIF"
+  ],
+  "recordedAt": "2026-11-07T07:51:25.638838+00:00"
+}

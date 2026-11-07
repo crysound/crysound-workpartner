@@ -6,8 +6,8 @@ import { sidebarPanels, sidebarGrouping } from './sidebar-policy.mjs';
 
 const VERSION = '0.2.2-rc.1';
 
-function editor(text, kind) {
-  const marker = `/* CRYSOUND sidebar A ${kind} v1 */`;
+function editor(text, kind, version = 1) {
+  const marker = `/* CRYSOUND sidebar A ${kind} v${version} */`;
   const replace = (needle, next) => {
     if (text.split(needle).length !== 2) throw new Error(`Sidebar A ${kind}: expected one match for ${needle.slice(0, 90)}`);
     text = text.replace(needle, () => next);
@@ -91,38 +91,50 @@ const panelPins = createPanelPins();`);
   return edit.finish();
 }
 
-/** Patch only the browsing projection; existing records and saved view choices remain unchanged. */
+/** Patch browsing and its existing device-local preference; never change workspace records. */
 export function patchWorkspaceModule(text) {
-  const edit = editor(text, 'workspace');
+  const edit = editor(text, 'workspace', 2);
   if (edit.done) return text;
   const { replace } = edit;
-  replace('const SESSION_WATERMARK_BASE = 5;', 'const SESSION_WATERMARK_BASE = 12;');
-  replace('const shortcutControls = createWorkspaceShortcutControls();', 'const shortcutControls = createWorkspaceShortcutControls(); uiWorkspace.requestSearch = shortcutControls.search;');
-  replace('searchRoot.current?.contains(event.target) === true', 'searchRoot.current?.contains(event.target) === true || event.target instanceof Element && event.target.closest("[data-zp-sidebar-search]") !== null');
-  replace('function WorkspaceBrowser({ wide,', `${sidebarGrouping.toString()}\nfunction WorkspaceBrowser({ wide,`);
-  replace('const groupBy = useStore((s) => s.groupBy);', 'const canCreateWorkspace = useRemoteAccess("workspace/create"); const savedGroupBy = useStore((s) => s.groupBy); const [viewChoice, setViewChoice] = (0, react.useState)(null); const groupBy = viewChoice?.count === workspaces.length ? viewChoice.mode : sidebarGrouping(workspaces.length, savedGroupBy);');
-  replace('children: groupBy === "flat" ? t("section.sessions") : t("section.workspaces")', 'children: t("zp.recent")');
-  replace('className: clsx(WorkspaceBrowser_module_css_default.root, !wide && WorkspaceBrowser_module_css_default.rail),',
-    '"data-zp-conversations": true, "data-search-expanded": searchExpanded, className: clsx(WorkspaceBrowser_module_css_default.root, !wide && WorkspaceBrowser_module_css_default.rail),');
-  // Use the view-options anchor for the existing directory picker as well.
-  replace('function ViewOptionsMenu({ groupBy,', 'function ViewOptionsMenu({ addWorkspace, manageWorkspace, anchorRef, groupBy,');
-  replace('items: [\n\t\t\t\t\t{\n\t\t\t\t\t\ttype: "label",',
-    'items: [...(addWorkspace ? [{ id: "zp-add", label: t("workspace.add") }] : []), ...(manageWorkspace ? [{ id: "zp-manage", label: t("zp.manage") }] : []),\n\t\t\t\t\t{\n\t\t\t\t\t\ttype: "label",');
-  replace('if (id === "workspace" || id === "workspace-tree" || id === "flat") onGroupPick(id);',
-    'if (id === "zp-add") addWorkspace(); else if (id === "zp-manage") manageWorkspace(); else if (id === "workspace" || id === "workspace-tree" || id === "flat") onGroupPick(id);');
-  replace('className: clsx(WorkspaceBrowser_module_css_default.iconButton, WorkspaceBrowser_module_css_default.wide),',
-    'ref: anchorRef, className: clsx(WorkspaceBrowser_module_css_default.iconButton, WorkspaceBrowser_module_css_default.wide),');
-  replace('children: [wide && (0, react_jsx_runtime.jsx)(ViewOptionsMenu, {\n\t\t\t\t\t\t\t\t\tgroupBy,',
-    `children: [wide && (0, react_jsx_runtime.jsx)(ViewOptionsMenu, {
+  const oldChoice = 'const canCreateWorkspace = useRemoteAccess("workspace/create"); const savedGroupBy = useStore((s) => s.groupBy); const [viewChoice, setViewChoice] = (0, react.useState)(null); const groupBy = viewChoice?.count === workspaces.length ? viewChoice.mode : sidebarGrouping(workspaces.length, savedGroupBy);';
+  const newChoice = 'const canCreateWorkspace = useRemoteAccess("workspace/create"); const savedGroupBy = useStore((s) => s.groupBy); const explicitGroupBy = useStore((s) => s.groupByExplicit); const groupBy = sidebarGrouping(workspaces.length, savedGroupBy, explicitGroupBy);';
+  // Accept the exact deployed v1 predecessor as well as the pinned original artifact.
+  if (text.includes('/* CRYSOUND sidebar A workspace v1 */')) {
+    replace('/* CRYSOUND sidebar A workspace v1 */\n', '');
+    replace(oldChoice, newChoice);
+    replace('onGroupPick: mode => { setViewChoice({ count: workspaces.length, mode }); actions.setGroupBy(mode); },', 'onGroupPick: actions.setGroupBy,');
+    replace("function sidebarGrouping(workspaceCount, saved) {\n  return workspaceCount <= 1 ? 'flat' : saved === 'workspace-tree' ? saved : 'workspace';\n}", sidebarGrouping.toString());
+  } else {
+    replace('const SESSION_WATERMARK_BASE = 5;', 'const SESSION_WATERMARK_BASE = 12;');
+    replace('const shortcutControls = createWorkspaceShortcutControls();', 'const shortcutControls = createWorkspaceShortcutControls(); uiWorkspace.requestSearch = shortcutControls.search;');
+    replace('searchRoot.current?.contains(event.target) === true', 'searchRoot.current?.contains(event.target) === true || event.target instanceof Element && event.target.closest("[data-zp-sidebar-search]") !== null');
+    replace('function WorkspaceBrowser({ wide,', `${sidebarGrouping.toString()}\nfunction WorkspaceBrowser({ wide,`);
+    replace('const groupBy = useStore((s) => s.groupBy);', newChoice);
+    replace('children: groupBy === "flat" ? t("section.sessions") : t("section.workspaces")', 'children: t("zp.recent")');
+    replace('className: clsx(WorkspaceBrowser_module_css_default.root, !wide && WorkspaceBrowser_module_css_default.rail),',
+      '"data-zp-conversations": true, "data-search-expanded": searchExpanded, className: clsx(WorkspaceBrowser_module_css_default.root, !wide && WorkspaceBrowser_module_css_default.rail),');
+    // Use the view-options anchor for the existing directory picker as well.
+    replace('function ViewOptionsMenu({ groupBy,', 'function ViewOptionsMenu({ addWorkspace, manageWorkspace, anchorRef, groupBy,');
+    replace('items: [\n\t\t\t\t\t{\n\t\t\t\t\t\ttype: "label",',
+      'items: [...(addWorkspace ? [{ id: "zp-add", label: t("workspace.add") }] : []), ...(manageWorkspace ? [{ id: "zp-manage", label: t("zp.manage") }] : []),\n\t\t\t\t\t{\n\t\t\t\t\t\ttype: "label",');
+    replace('if (id === "workspace" || id === "workspace-tree" || id === "flat") onGroupPick(id);',
+      'if (id === "zp-add") addWorkspace(); else if (id === "zp-manage") manageWorkspace(); else if (id === "workspace" || id === "workspace-tree" || id === "flat") onGroupPick(id);');
+    replace('className: clsx(WorkspaceBrowser_module_css_default.iconButton, WorkspaceBrowser_module_css_default.wide),',
+      'ref: anchorRef, className: clsx(WorkspaceBrowser_module_css_default.iconButton, WorkspaceBrowser_module_css_default.wide),');
+    replace('children: [wide && (0, react_jsx_runtime.jsx)(ViewOptionsMenu, {\n\t\t\t\t\t\t\t\t\tgroupBy,',
+      `children: [wide && (0, react_jsx_runtime.jsx)(ViewOptionsMenu, {
       anchorRef: wsPlusRef, addWorkspace: directoryFlowAvailable && canCreateWorkspace ? requestAddWorkspace : undefined,
       manageWorkspace: workspaces.length === 1 ? () => { const w = workspaces[0]; const rect = wsPlusRef.current.getBoundingClientRect(); openWorkspaceMenu(w.workspaceId, w.path, w.title, { x: rect.left, y: rect.bottom }); } : undefined,
       groupBy,`);
-  // Keep the rail's native add button; expanded creation lives in display options.
-  replace('}), directoryFlowAvailable && (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {',
-    '}), !wide && directoryFlowAvailable && (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {');
-  replace('const zh = {', 'const zh = { "zp.recent": "最近对话", "zp.manage": "管理工作区",');
-  replace('onGroupPick: actions.setGroupBy,', 'onGroupPick: mode => { setViewChoice({ count: workspaces.length, mode }); actions.setGroupBy(mode); },');
-  replace('const en = {', 'const en = { "zp.recent": "Recent conversations", "zp.manage": "Manage workspace",');
+    // Keep the rail's native add button; expanded creation lives in display options.
+    replace('}), directoryFlowAvailable && (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {',
+      '}), !wide && directoryFlowAvailable && (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {');
+    replace('const zh = {', 'const zh = { "zp.recent": "最近对话", "zp.manage": "管理工作区",');
+    replace('const en = {', 'const en = { "zp.recent": "Recent conversations", "zp.manage": "Manage workspace",');
+  }
+  // Optional boolean in dsh.workspace.view.v5: true = manual, false = reset to auto.
+  // Missing preserves legacy flat/tree; ambiguous legacy workspace uses automatic projection.
+  replace('d.groupBy = mode;', 'd.groupBy = mode; d.groupByExplicit = true;');
   return edit.finish();
 }
 
