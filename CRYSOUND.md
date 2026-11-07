@@ -33,6 +33,8 @@
 
 - 飞书原生模块通过主界面插槽提醒未连接主飞书授权的人；未连接者每天首次打开再弹原生说明框，按本机日期在本机去重并避让首次引导；连接成功同时隐藏，飞书项目未连接不提醒。共用设置页授权动作和网关状态，不新增凭据记录（`crysound/feishu/native`）。
 
+- 对话运行状态由公司构建补丁 `crysound/scripts/patch-running-status.mjs` 改为“处理中”/“Working”、中性圆环和次要文字色；网页镜像和下个桌面包共用，不改上游源码。检查、四组外观对比与未验收项见 [运行状态验证](crysound/scripts/tests/evidence/running-status/README.md)。
+
 ### 断开 DeepSeek 服务
 - 自动更新：已签名 Mac 正式包使用公司 generic 更新目录与 `latest` 通道，启动及每六小时检查并后台下载，中文提示可选重启，保留上游任务保护；未签名包与开发版不开启。主入口的公司接入均标注 `CRYSOUND`，更新源仅由签名步骤注入，菜单里的“检查更新”换成“退出登录”。构建、发布与待验证项见 `crysound/scripts/mac-auto-update.md`。
 - 强制更新：不读取清单与环境里的 `dshMandatoryUpdatePolicy`。
