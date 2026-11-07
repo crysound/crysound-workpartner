@@ -3,6 +3,14 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.4] - 2026-11-07
+
+### Changed (CRYSOUND fork)
+- Keep the final answer in the original card, with a small status/elapsed-time footer; do not send a duplicate answer. Flush the same final text before closing CardKit streaming.
+- Add `completionReminderSeconds` (default 60; 0 disables). Longer turns send one short text reminder using the original quoted-message/topic target.
+- Reserve space below the card size limit. Oversized answers keep a prefix plus “全文见下条” and send the full segmented answer separately. Failed final CardKit and message-card updates retain the standalone reply fallback.
+- Preserve thought placeholders, CardKit identifiers, attachment/tool sends, status outcomes and reaction cleanup.
+
 ## [0.17.0-crysound.3] - 2026-11-07
 
 ### Changed (CRYSOUND)

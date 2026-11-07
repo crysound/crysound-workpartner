@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { sidebarPanels, sidebarGrouping } from '../sidebar-policy.mjs';
-import { patchCompanySidebarRuntime, patchSidebarModule } from '../patch-sidebar.mjs';
+import { patchCompanySidebarRuntime, patchSidebarModule, patchWorkspaceModule } from '../patch-sidebar.mjs';
 import { patchMarketSidebar } from '../patch-market-ui.mjs';
 
 const source = process.env.SIDEBAR_RUNTIME_MODULES;
@@ -35,11 +35,89 @@ test('plugin names own the primary sort; same plugin uses order then registratio
 });
 
 test('workspace counts select a projection without mutating saved grouping or workspace records', () => {
-  for (const saved of ['flat', 'workspace', 'workspace-tree']) {
-    assert.equal(sidebarGrouping(0, saved), 'flat');
-    assert.equal(sidebarGrouping(1, saved), 'flat');
-    assert.equal(sidebarGrouping(2, saved), saved === 'workspace-tree' ? saved : 'workspace');
-    assert.equal(sidebarGrouping(1, saved), 'flat');
+  for (const count of [0, 1, 2]) {
+    assert.equal(sidebarGrouping(count, 'workspace'), count <= 1 ? 'flat' : 'workspace');
+    for (const saved of ['flat', 'workspace', 'workspace-tree']) {
+      assert.equal(sidebarGrouping(count, saved, true), saved);
+      assert.equal(sidebarGrouping(count, saved, false), count <= 1 ? 'flat' : 'workspace');
+    }
+    assert.equal(sidebarGrouping(count, 'flat'), 'flat');
+    assert.equal(sidebarGrouping(count, 'workspace-tree'), 'workspace-tree');
+  }
+});
+
+// Run the published component and its real preference actions with only framework services stubbed.
+function workspaceHarness(text) {
+  let registration, saved;
+  let hookState, hookIndex;
+  const document = { querySelector: () => null, head: { appendChild() {} }, createElement: () => ({ dataset: {}, setAttribute() {} }) };
+  new vm.Script(text.replace('return module.exports;', 'return { createWorkspaceViewStore, WorkspaceBrowser };')).runInNewContext({ window: { __ModuleLoader__: { load: value => { registration = value; } } }, document, console });
+  const jsx = (type, props) => ({ type, props: props ?? {} });
+  const modules = {
+    '@deepseek-ai/cordis': { Service: class {} },
+    '@deepseek-ai/dsh-client-ui-primitives': {},
+    react: { useMemo: fn => fn(), useState(value) {
+      const index = hookIndex++;
+      if (!(index in hookState)) hookState[index] = value;
+      const state = hookState;
+      return [state[index], next => { state[index] = typeof next === 'function' ? next(state[index]) : next; }];
+    }, useRef: value => ({ current: value }), useEffect() {} },
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    '@deepseek-ai/dsh-client-store': { defineStore(spec) { return { create() {
+      const state = saved === undefined ? spec.init() : JSON.parse(saved);
+      return { getSnapshot: () => state, actions: Object.fromEntries(Object.entries(spec.actions).map(([key, action]) => [key, (...args) => { action(state, ...args); saved = JSON.stringify(state); }])) };
+    } }; } },
+  };
+  const module = registration.factory(name => { assert.ok(name in modules, name); return modules[name]; });
+  return {
+    seed(mode, explicit) { saved = JSON.stringify({ groupBy: mode, groupByExplicit: explicit, orderBy: 'updated', groupExpansion: {}, sessionOrderByAccount: {} }); },
+    // false explicitly clears manual intent while retaining the last selected value.
+    clear() { saved = JSON.stringify({ ...JSON.parse(saved), groupByExplicit: false }); },
+    mount(count) {
+      const mountedHooks = [];
+      const store = module.createWorkspaceViewStore().create();
+      const state = { items: Array.from({ length: count }, (_, i) => ({ workspaceId: String(i), title: 'Example', path: '/example', sessionIds: [] })), phase: 'ready', state: 'ready', archivedSessionIds: [], pinnedSessionIds: [] };
+      const render = () => {
+        hookState = mountedHooks;
+        hookIndex = 0;
+        const nodes = allNodes(module.WorkspaceBrowser({
+          wide: true, useHostInfo: pick => pick({ home: '/example' }), useShortcuts: pick => pick([]),
+          useWorkspaceShortcuts: pick => pick({ searchRequest: 0, addRequested: false }),
+          useSessions: pick => pick({ ids: [], byId: {}, phase: 'ready' }), useWorkspaces: pick => pick(state),
+          useDirectoryFlow: () => false, useRemoteAccess: () => true, useWorkspaceActionRequest: () => null,
+          useStore: pick => pick(store.getSnapshot()), actions: store.actions, t: key => key, renderSlot: () => null,
+        }));
+        const menu = nodes.find(node => node.type?.name === 'ViewOptionsMenu');
+        const list = nodes.find(node => ['FlatList', 'SessionTree'].includes(node.type?.name));
+        assert.ok(menu && list);
+        assert.equal(list.type.name, menu.props.groupBy === 'flat' ? 'FlatList' : 'SessionTree');
+        if (list.type.name === 'SessionTree') assert.equal(list.props.nestWorkspaces, menu.props.groupBy === 'workspace-tree');
+        return menu.props;
+      };
+      return { render, pick: mode => render().onGroupPick(mode) };
+    },
+  };
+}
+
+test('manual grouping survives fresh mounts, legacy preferences work, and clearing intent restores auto', () => {
+  const original = fs.readFileSync(path.join(source, '@deepseek-ai/dsh-client-ui-workspace/lib/client.js'), 'utf8');
+  const ui = workspaceHarness(patchWorkspaceModule(original));
+  for (const count of [2, 1, 0]) {
+    for (const choice of ['flat', 'workspace', 'workspace-tree']) {
+      ui.seed('workspace');
+      const first = ui.mount(count);
+      assert.equal(first.render().groupBy, count <= 1 ? 'flat' : 'workspace');
+      first.pick(choice);
+      assert.equal(first.render().groupBy, choice);
+      assert.equal(ui.mount(count).render().groupBy, choice);
+      assert.equal(ui.mount(count === 2 ? 1 : 2).render().groupBy, choice);
+      ui.clear();
+      assert.equal(ui.mount(count).render().groupBy, count <= 1 ? 'flat' : 'workspace');
+    }
+    for (const legacy of ['flat', 'workspace-tree']) {
+      ui.seed(legacy);
+      assert.equal(ui.mount(count).render().groupBy, legacy);
+    }
   }
 });
 
@@ -54,7 +132,7 @@ function fixture(t) {
   return { root, files };
 }
 
-test('pinned browser modules parse, preserve source store bytes and mode, and are idempotent after market patch', t => {
+test('pinned browser modules parse, preserve hard links and mode, and are idempotent after market patch', t => {
   const { root, files } = fixture(t);
   fs.writeFileSync(files[0], patchMarketSidebar(fs.readFileSync(files[0], 'utf8')));
   const original = fs.readFileSync(files[0], 'utf8');

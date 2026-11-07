@@ -35,7 +35,7 @@ function harness(options = {}) {
     async createNew() { calls.push(['create']); bound = 'session'; return { sessionId: bound, agent } }, ...options.binder }
   const bot = new FeishuBot({ ctx: { logger: { info() {}, debug() {}, error() {}, warn(...args) { warnings.push(args) } },
     get: key => key === 'attachments' ? attachments : undefined },
-    config: { bodySegmentChars: 4000, statusIntervalMs: 30000, backgroundPush: 'off' }, lark, binder,
+    config: { bodySegmentChars: 4000, statusIntervalMs: 30000, backgroundPush: 'off', ...options.config }, lark, binder,
     store: { get: () => state, async update(patch) { Object.assign(state, patch) } }, allowlist: new Set(['operator']), now: () => now })
   const event = (type, data = {}) => bot.onSessionEvent({ id: 'session' }, { type, data, time: now })
   const consume = (index = prompts.length - 1) => event('user/message', prompts[index])
@@ -71,7 +71,7 @@ test('acknowledgement starts even while a previous download blocks the drain', a
   release(); await tick(); await tick()
 })
 
-test('normal turn: placeholder, latest patch, completion status, segmented final, clear reaction; tool text stays intermediate', async t => {
+test('normal turn retains the full answer and footer in the original card without another body', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const h = harness()
   await h.bot.handlePrompt(message('origin', { threadId: 'thread' }), 'hello')
@@ -89,9 +89,9 @@ test('normal turn: placeholder, latest patch, completion status, segmented final
   h.assistant('x'.repeat(4500))
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   await h.end()
-  assert.deepEqual(h.calls.map(c => c[0]), ['react', 'inject', 'send', 'patch', 'fallback', 'send', 'send', 'unreact'])
+  assert.deepEqual(h.calls.map(c => c[0]), ['react', 'inject', 'send', 'patch', 'fallback', 'unreact'])
   for (const send of h.calls.filter(c => c[0] === 'send')) assert.equal(send[1].threadId, 'thread')
-  assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'x'.repeat(500))
+  assert.equal(h.calls.at(-2)[2].body.elements[0].content, 'x'.repeat(4500))
   assert.ok(!JSON.stringify(h.calls).includes('secret reasoning'))
 })
 
@@ -106,7 +106,7 @@ test('finish waits for an in-flight PATCH before settling or sending final', asy
   const finishing = h.end()
   await tick(); assert.ok(!h.calls.some(c => c[0] === 'fallback' || (c[0] === 'send' && c[3].body?.elements[0].content === 'done')))
   resolvePatch('ok'); await finishing
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
+  assert.deepEqual(h.calls.slice(-2).map(c => c[0]), ['fallback', 'unreact'])
   t.mock.timers.tick(2000); await tick()
   assert.equal(h.calls.at(-1)[0], 'unreact')
 })
@@ -146,8 +146,8 @@ test('stop cancels immediately including children/btw; end sends only stop text 
   assert.equal(children, 1); assert.equal(btw, 1)
   assert.ok(!h.calls.some(c => c[0] === 'command'))
   await h.end('aborted')
-  assert.equal(h.calls.filter(c => c[0] === 'send').at(-1)[3].body.elements[0].content, '⏹ 执行已停止。')
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
+  assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, '⏹ 执行已停止。')
+  assert.deepEqual(h.calls.slice(-2).map(c => c[0]), ['fallback', 'unreact'])
 })
 
 for (const [reason, expected] of [['error', '❌ 错误: model failed'], ['aborted', '⏹ 执行已停止。'],
@@ -165,14 +165,14 @@ test('expired-session error, empty response, web-originated turn and final fallb
   assert.ok(h.calls.every(c => c[0] === 'send'))
 })
 
-test('retained preview contains only completion status; final answer is a new message with send fallback', async () => {
+test('retained preview contains answer and small footer; separate replies keep their send fallback', async () => {
   const h = harness()
   await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
   h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'writing' } }); await tick()
   h.assistant('answer'); await h.end()
-  assert.deepEqual(h.calls.slice(-3).map(c => c[0]), ['fallback', 'send', 'unreact'])
-  assert.equal(h.calls.at(-3)[2].body.elements[0].content, '已完成 · 用时 0 秒')
-  assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'answer')
+  assert.deepEqual(h.calls.slice(-2).map(c => c[0]), ['fallback', 'unreact'])
+  assert.equal(h.calls.at(-2)[2].body.elements.at(-1).content, '已完成 · 用时 0 秒')
+  assert.equal(h.calls.at(-2)[2].body.elements[0].content, 'answer')
   const failures = harness({ lark: { async sendMessage(target, type, content) { failures.calls.push(['attempt', type, content]); return type === 'text' ? 'ok' : undefined } } })
   await failures.bot.sendFinal({ chatId: 'chat' }, 'x'.repeat(4500))
   assert.deepEqual(failures.calls.map(c => c[1]), ['interactive', 'interactive', 'text', 'text'])
@@ -267,7 +267,7 @@ test('Markdown preprocessing and table post fallback ignore fenced tables', asyn
 test('failure before user/message commit still clears the triggering OnIt', async () => {
   const h = harness(); await h.bot.handlePrompt(message(), 'hello')
   h.event('turn/start'); await h.end('error', { error: { message: 'prepare failed' } })
-  assert.equal(h.calls.at(-2)[3].body.elements[0].content, '❌ 错误: prepare failed')
+  assert.equal(h.calls.at(-2)[2].body.elements[0].content, '❌ 错误: prepare failed')
   assert.deepEqual(h.calls.at(-1), ['unreact', 'trigger', 'r-trigger'])
   assert.equal(h.bot.pendingPrompts.size, 0)
 })
@@ -346,16 +346,16 @@ test('rich post at nodes use mention keys so the bot mention disappears but coll
 })
 
 for (const [kind, status] of [['completed', '已完成'], ['error', '失败：model failed'], ['aborted', '已停止'], ['max-tokens', '已达到长度上限'], ['blocked', '已被拦截']]) {
-  test(`preview is retained on ${kind}, while final reply and reaction cleanup survive failed status patch`, async () => {
+  test(`answer and status stay on ${kind}; failed final patch uses a separate body and still clears reactions`, async () => {
     for (const patchOk of [true, false]) {
       const h = harness({ lark: { async patchCard(id, card) { h.calls.push(['status', id, card]); return patchOk } } })
       await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
       h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'partial answer' } }); await tick()
       h.assistant('answer'); h.clock(2300); await h.end(kind, { error: { message: 'model failed' } })
       const terminal = h.calls.find(c => c[0] === 'status')[2]
-      assert.equal(terminal.body.elements[0].content, `${status} · 用时 2 秒`)
-      assert.equal(terminal.config.summary.content, `${status} · 用时 2 秒`)
-      assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
+      assert.equal(terminal.body.elements.at(-1).content, `${status} · 用时 2 秒`)
+      assert.equal(terminal.body.elements.at(-1).text_size, 'notation')
+      assert.equal(h.calls.filter(c => c[0] === 'send').length, patchOk ? 1 : 2)
       assert.equal(h.calls.at(-1)[0], 'unreact')
     }
   })
@@ -386,15 +386,15 @@ test('CardKit cumulative code text keeps prefixes, emits at 250ms, and drains be
   const finish = preview.finish(); await tick()
   assert.ok(!calls.some(c => c[0] === 'settle'))
   release(); await finish
-  assert.equal(calls.at(-1)[2], 3)
-  assert.match(calls.at(-1)[3].body.elements[0].content, /^已完成/)
+  assert.equal(calls.at(-1)[2], 4)
+  assert.match(calls.at(-1)[3].body.elements.at(-1).content, /^已完成/)
   now = 2000; t.mock.timers.tick(1500); await tick()
-  assert.equal(calls.filter(c => c[0] === 'stream').length, 2)
+  assert.equal(calls.filter(c => c[0] === 'stream').length, 3)
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.deepEqual(h.calls.find(c => c[0] === 'send')[3], { type: 'card', data: { card_id: 'card' } })
 })
 
-test('CardKit refusal switches to whole-card patches of the same message, final answer stays new', async t => {
+test('CardKit refusal switches to whole-card patches and retains the final answer', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const calls = []
   const h = harness({ lark: {
@@ -410,27 +410,28 @@ test('CardKit refusal switches to whole-card patches of the same message, final 
   assert.equal(calls.filter(c => c[0] === 'stream').length, 1)
   assert.equal(h.calls.filter(c => c[0] === 'patch').length, 2)
   h.assistant('answer'); await h.end()
-  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
-  assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'answer')
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+  assert.equal(h.calls.at(-2)[2].body.elements[0].content, 'answer')
   assert.equal(h.calls.at(-1)[0], 'unreact')
 })
 
 for (const scenario of [
   { chatType: 'p2p' }, { chatType: 'group' }, { chatType: 'group', threadId: 'thread' },
-  { parentId: 'quote' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
-]) test(`retained progress and a single new final reply route correctly: ${JSON.stringify(scenario)}`, async () => {
+  { parentId: 'quote' }, { messageType: 'image', imageKey: 'key' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
+]) test(`retained answer and optional reminder route correctly: ${JSON.stringify(scenario)}`, async () => {
   const h = harness()
   const incoming = message('origin', scenario)
-  if (scenario.messageType === 'file') await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
+  if (['image', 'file'].includes(scenario.messageType)) await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
   h.event('turn/start'); h.consume()
   h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: 'partial' } }); await tick()
   h.assistant('final'); await h.end()
   const sends = h.calls.filter(c => c[0] === 'send')
-  assert.equal(sends.length, 2)
-  assert.equal(sends[1][3].body.elements[0].content, 'final')
-  assert.equal(sends[1][1].chatId, 'chat')
-  assert.equal(sends[1][1].threadId, scenario.threadId)
-  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^已完成/)
+  assert.equal(sends.length, 1)
+  assert.equal(sends[0][1].chatId, 'chat')
+  assert.equal(sends[0][1].messageId, 'origin')
+  assert.equal(sends[0][1].threadId, scenario.threadId)
+  assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, 'final')
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements.at(-1).content, /^已完成/)
 })
 
 test('generated CardKit element identifiers meet the JSON 2.0 format and stay distinct across turns', async t => {
@@ -453,19 +454,19 @@ test('generated CardKit element identifiers meet the JSON 2.0 format and stay di
 
 for (const scenario of [
   { chatType: 'p2p' }, { chatType: 'group' }, { chatType: 'group', threadId: 'thread' },
-  { parentId: 'quote' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
+  { parentId: 'quote' }, { messageType: 'image', imageKey: 'key' }, { messageType: 'file', fileKey: 'key', fileName: 'file.pdf' },
 ]) test(`thought placeholder appears before any model output and is reused: ${JSON.stringify(scenario)}`, async () => {
   const h = harness()
   const incoming = message('origin', scenario)
-  if (scenario.messageType === 'file') await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
+  if (['image', 'file'].includes(scenario.messageType)) await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
   h.event('turn/start'); h.consume(); await tick()
   const sends = h.calls.filter(c => c[0] === 'send')
   assert.equal(sends.length, 1)
   assert.equal(sends[0][3].body.elements[0].content, '思考中…')
   assert.equal(sends[0][3].config.summary.content, '思考中…')
   h.assistant('final'); await h.end()
-  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
-  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^已完成/)
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements.at(-1).content, /^已完成/)
 })
 
 for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progress content retains one thought card on ${reason}`, async () => {
@@ -473,9 +474,9 @@ for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progr
   await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
   await h.end(reason, { error: { message: 'preparation failed' } })
   const sends = h.calls.filter(c => c[0] === 'send')
-  assert.equal(sends.length, 2)
+  assert.equal(sends.length, 1)
   assert.equal(sends[0][3].body.elements[0].content, '思考中…')
-  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content,
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements.at(-1).content,
     reason === 'completed' ? /^已完成/ : reason === 'error' ? /^失败：preparation failed/ : /^已停止/)
 })
 
@@ -485,8 +486,8 @@ test('turn/start publishes immediately before the first user event; preparation 
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.equal(h.calls.at(-1)[3].body.elements[0].content, '思考中…')
   await h.end('error', { error: { message: 'preparation failed' } })
-  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
-  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements[0].content, /^失败/)
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+  assert.match(h.calls.find(c => c[0] === 'fallback')[2].body.elements.at(-1).content, /^失败/)
   assert.equal(h.calls.at(-1)[0], 'unreact')
 })
 
@@ -499,7 +500,7 @@ test('a queued phone prompt keeps its one placeholder while an earlier web messa
   h.event('turn/start'); h.consume(); await tick()
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 2) // one thought card and the web reply
   h.assistant('phone answer'); await h.end()
-  assert.equal(h.calls.filter(c => c[0] === 'send').length, 3)
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 2)
   assert.equal(h.calls.filter(c => c[0] === 'fallback').length, 1)
   assert.equal(h.calls.at(-1)[0], 'unreact')
 })
@@ -514,5 +515,102 @@ test('fast completion and repeated finish wait for the same in-flight card creat
   assert.equal(h.calls.length, 0)
   release(undefined); await second
   assert.deepEqual(h.calls.map(c => c[0]), ['send', 'fallback'])
-  assert.match(h.calls[1][2].body.elements[0].content, /^已完成/)
+  assert.match(h.calls[1][2].body.elements.at(-1).content, /^已完成/)
 })
+
+for (const [seconds, threshold, reminder] of [[59, 60, false], [60, 60, false], [61, 60, true], [100, 0, false], [3, 2, true]]) {
+  test(`completion reminder after ${seconds}s with threshold ${threshold}`, async () => {
+    const h = harness({ config: { completionReminderSeconds: threshold } })
+    await h.bot.handlePrompt(message('origin', { chatType: 'group', threadId: 'thread' }), 'hello')
+    h.event('turn/start'); h.consume(); h.assistant('answer'); h.clock(seconds * 1000)
+    await h.end()
+    const sends = h.calls.filter(c => c[0] === 'send')
+    assert.equal(sends.length, reminder ? 2 : 1)
+    assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements.at(-1).content, `已完成 · 用时 ${seconds} 秒`)
+    if (reminder) {
+      assert.deepEqual(sends[1].slice(1), [{ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'text', { text: '做完了，结果在上面。' }])
+    }
+  })
+}
+
+for (const body of ['a'.repeat(8100), '汉'.repeat(10000), '\\'.repeat(7999), '😀'.repeat(4500)]) {
+  test(`oversized final is clipped with a full separate reply (${body.codePointAt(0)})`, async () => {
+    const h = harness()
+    await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume(); h.assistant(body)
+    h.clock(61000); await h.end()
+    const card = h.calls.find(c => c[0] === 'fallback')[2]
+    assert.match(card.body.elements[0].content, /全文见下条$/)
+    assert.ok(Buffer.byteLength(JSON.stringify(JSON.stringify(card))) <= 28000)
+    const replies = h.calls.filter(c => c[0] === 'send').slice(1)
+    assert.equal(replies.map(c => c[3].body.elements[0].content).join(''), body)
+    assert.ok(replies.every(c => c[2] !== 'text')) // no redundant completion reminder
+  })
+}
+
+test('failed CardKit settlement and message patch send the body once; a successful patch suppresses it', async () => {
+  for (const patchOk of [false, true]) {
+    const h = harness({ lark: {
+      async createStreamingCard() { return 'card' },
+      async streamCardContent() { return false },
+      async settleStreamingCard() { return false },
+      async patchCard(id, card) { h.calls.push(['fallback', id, card]); return patchOk },
+    } })
+    await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume(); h.assistant('answer')
+    await h.end()
+    assert.equal(h.calls.filter(c => c[0] === 'send').length, patchOk ? 1 : 2)
+    if (!patchOk) assert.equal(h.calls.at(-2)[3].body.elements[0].content, 'answer')
+    assert.equal(h.calls.at(-1)[0], 'unreact')
+  }
+})
+
+for (const multipart of [false, true]) test(`final CardKit content equals the final card body, including Markdown and trailing whitespace, multipart=${multipart}`, async () => {
+  const frames = [], cards = []
+  const h = harness({ lark: {
+    async createStreamingCard() { return 'card' },
+    async streamCardContent(card, element, text) { frames.push(text); return true },
+    async settleStreamingCard(card, sequence, content) { cards.push(content); return true },
+  } })
+  await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume()
+  const body = '  # Title\n```js\nconst x = 1;\n```\n  '
+  h.bot.onStreamFrame({ id: 'session' }, { type: 'chunk', chunk: { type: 'text-delta', text: body } })
+  await tick()
+  if (multipart) h.event('assistant/message', { message: { content: [
+    { type: 'text', text: body.slice(0, 14) },
+    { type: 'reasoning', text: 'private reasoning must stay hidden' },
+    { type: 'text', text: body.slice(14) },
+  ] } })
+  else h.assistant(body)
+  await h.end()
+  assert.equal(frames.at(-1), cards[0].body.elements[0].content)
+  assert.equal(frames.at(-1), body)
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+})
+
+test('queued card delivery time does not trigger a long-task reminder', async () => {
+  let release
+  const h = harness()
+  h.bot.cardChain = new Promise(resolve => { release = resolve })
+  await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); h.consume(); h.assistant('answer')
+  h.clock(18000)
+  const ended = h.end()
+  h.clock(90000); release(); await ended
+  const card = h.calls.find(c => c[0] === 'fallback')[2]
+  assert.equal(card.body.elements.at(-1).content, '已完成 · 用时 18 秒')
+  assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+})
+
+for (const scenario of [{ chatType: 'p2p' }, { parentId: 'quote' }, { messageType: 'file', fileKey: 'key' }, { chatType: 'group' }, { chatType: 'group', threadId: 'thread' }]) {
+  test(`long-task reminder quotes the origin on the same route: ${JSON.stringify(scenario)}`, async () => {
+    const h = harness()
+    const incoming = message('origin', scenario)
+    if (scenario.messageType === 'file') await h.bot.handleMedia(incoming, []); else await h.bot.handlePrompt(incoming, 'hello')
+    h.event('turn/start'); h.consume(); h.assistant('answer'); h.clock(61000); await h.end()
+    const sends = h.calls.filter(c => c[0] === 'send')
+    assert.equal(sends.length, 2)
+    assert.deepEqual(sends[1][1], sends[0][1])
+    assert.equal(sends[1][1].messageId, 'origin')
+    assert.equal(sends[1][1].threadId, scenario.threadId)
+    assert.equal(sends[1][2], 'text')
+    assert.deepEqual(sends[1][3], { text: '做完了，结果在上面。' })
+  })
+}

@@ -27,13 +27,16 @@ async function gateway(t) {
   const end = source.indexOf("\n});", start) + "\n});".length;
   assert.ok(policyStart >= 0 && policyEnd > policyStart && start >= 0 && end > start);
   const server = new Function("dependencies", `
-    const { http, PUBLIC_HOST, OLD_HOSTS, redirect, feishu, feishuSettings, market, serveMacUpdate, desktopUser } = dependencies;
+    const { http, PUBLIC_HOST, OLD_HOSTS, redirect, page, preview, userFor, dailyPublic, treg, feishu, feishuSettings, market, serveMacUpdate, desktopUser } = dependencies;
     ${source.slice(policyStart, policyEnd)}
     ${source.slice(start, end)}
     return server;
   `)({
     http, PUBLIC_HOST: "gateway.example.test", OLD_HOSTS: ["old.example.test"],
     redirect: (res, location) => { res.writeHead(302, { location }); res.end(); },
+    page: (res, status, title) => { res.writeHead(status, { "content-type": "text/plain; charset=utf-8" }); res.end(title); },
+    preview: { handle: async () => false, isPreviewHost: () => false },
+    userFor: () => ({}), dailyPublic: async () => false, treg: async () => false,
     feishu: { handle: async () => false }, feishuSettings: async () => false, market: async () => false,
     serveMacUpdate: (req, res, pathname, authenticate) => serveMacUpdate(req, res, pathname, authenticate, directory),
     desktopUser: req => tokenUser(req, key, [user]),

@@ -19,7 +19,8 @@ export function sidebarPanels(panels) {
   return { fixed, extras, visible: [...fixed, ...(extras.length <= 2 ? extras : [])] };
 }
 
-/** Single-workspace presentation is flat; the saved grouping choice stays intact. */
-export function sidebarGrouping(workspaceCount, saved) {
-  return workspaceCount <= 1 ? 'flat' : saved === 'workspace-tree' ? saved : 'workspace';
+/** Legacy non-default values were manual; legacy workspace cannot be disambiguated. */
+export function sidebarGrouping(workspaceCount, saved, explicit) {
+  if (explicit === true || explicit === undefined && saved !== 'workspace') return saved;
+  return workspaceCount <= 1 ? 'flat' : 'workspace';
 }

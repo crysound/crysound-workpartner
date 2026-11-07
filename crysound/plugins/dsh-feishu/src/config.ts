@@ -37,11 +37,8 @@ export interface Config {
   statusIntervalMs?: number
   /** CardKit update interval in ms (default 250; legacy fallback stays at least 700). */
   previewIntervalMs?: number
-  /**
-   * Minimum interval between mid-turn progress-card pushes in ms
-   * (default 180000 = 3 min; clamped to [30000, 3600000]). Output produced
-   * inside the window merges into the next push.
-   */
+  /** Send a short reminder after this many seconds; default 60, 0 disables it. */
+  completionReminderSeconds?: number
   /** Long assistant bodies are segmented for Feishu at this size (default 4000). */
   bodySegmentChars?: number
   /**
@@ -92,6 +89,7 @@ export const Config = z.object({
   appSecretRef: z.string().default('DSH_FEISHU_APP_SECRET'),
   statusIntervalMs: z.number().min(5000).max(600000).step(1).default(5000),
   previewIntervalMs: z.number().min(200).max(5000).step(1).default(250),
+  completionReminderSeconds: z.number().min(0).max(86400).step(1).default(60),
   bodySegmentChars: z.number().min(500).max(30000).step(1).default(4000),
   resumeListStyle: z.union([z.const('auto'), z.const('table'), z.const('list')]).default('auto'),
   btwContextMessages: z.number().min(0).max(50).step(1).default(6),
@@ -111,6 +109,7 @@ export interface ResolvedConfig {
   readonly appSecretRef: string
   readonly statusIntervalMs: number
   readonly previewIntervalMs: number
+  readonly completionReminderSeconds: number
   readonly bodySegmentChars: number
   readonly resumeListStyle: 'auto' | 'table' | 'list'
   readonly btwContextMessages: number
@@ -121,7 +120,7 @@ export interface ResolvedConfig {
 
 const CONFIG_KEYS: ReadonlySet<string> = new Set([
   'mode', 'domain', 'operators', 'appId', 'appSecret', 'appIdRef', 'appSecretRef',
-  'statusIntervalMs', 'previewIntervalMs', 'bodySegmentChars', 'resumeListStyle', 'btwContextMessages',
+  'statusIntervalMs', 'previewIntervalMs', 'completionReminderSeconds', 'bodySegmentChars', 'resumeListStyle', 'btwContextMessages',
   'backgroundPush', 'roundButtons', 'toolDetail',
 ])
 
@@ -150,6 +149,10 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
   const previewIntervalMs = config?.previewIntervalMs ?? 250
   if (!Number.isSafeInteger(previewIntervalMs) || previewIntervalMs < 200 || previewIntervalMs > 5000) {
     throw new Error('dsh-feishu: previewIntervalMs must be an integer in [200, 5000]')
+  }
+  const completionReminderSeconds = config?.completionReminderSeconds ?? 60
+  if (!Number.isSafeInteger(completionReminderSeconds) || completionReminderSeconds < 0 || completionReminderSeconds > 86400) {
+    throw new Error('dsh-feishu: completionReminderSeconds must be an integer in [0, 86400]')
   }
   const bodySegmentChars = config?.bodySegmentChars ?? 4000
   if (!Number.isSafeInteger(bodySegmentChars) || bodySegmentChars < 500 || bodySegmentChars > 30000) {
@@ -209,6 +212,7 @@ export function resolveConfig(config: Config | undefined, env: NodeJS.ProcessEnv
     appSecretRef,
     statusIntervalMs,
     previewIntervalMs,
+    completionReminderSeconds,
     bodySegmentChars,
     resumeListStyle,
     btwContextMessages: btwConfigValue ?? 6,
