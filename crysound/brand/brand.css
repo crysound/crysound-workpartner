@@ -36,6 +36,11 @@ a.zp-download > svg { flex: none; }
 [data-slot="sidebar.settings"]:has(button[data-collapsed="true"]) a.zp-download > svg { width: 18px; height: 18px; }
 .zp-account-item[disabled] { opacity: 1; cursor: default; color: inherit; }
 
+/* Account-menu key hints are visual only; keep aria-keyshortcuts and bindings. */
+[role="menu"]:has([data-icon="dsw-icon-settings-outline-medium"]) [role="menuitem"] > [aria-hidden="true"]:has(kbd) {
+  display: none;
+}
+
 /* Sidebar A: geometry only. The optional skin owns colors and surfaces. */
 [data-zp-sidebar] [class*="_logoRow"] { height: 44px; padding: 4px 0 4px 8px; gap: 2px; }
 [data-zp-sidebar] button[class*="_newSession"] {
