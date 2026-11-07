@@ -82,6 +82,8 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
 ## 网页版（`crysound/web`）
+
+网页工具的[分段计时](crysound/web/web-tools/TIMING.md)默认关闭；测试进程显式设置 `CRYSOUND_TOOL_TIMING_LOG` 才在内存中给固定发布产物插桩，记录流结束、消息追加、工具调度与搜索发出的时间，不改上游源码。
 每位同事一个 dsh 网页版容器，前面是一个网关，公网入口 `https://workpartner.corp.crysound.com`。
 - `gateway/gateway.mjs`：飞书登录与会话；按飞书身份把请求转到本人容器；`/_zp/me`（姓名与头像）、`/_zp/download`（客户端下载页，文件放数据目录的 `downloads/`，按 `mac-arm64`、`mac-x64`、`win-x64` 命名）；桌面版登录 `/_zp/desktop-login` → `/_zp/desktop-done`，签发 180 天的桌面令牌；`/_zp/llm/v1/*` 校验桌面令牌后换成本人的模型网关钥匙转发。
 - `preview/`：网页版预览 HTML 注入编辑器原生下载标记，主站适配器给公司预览 iframe 单独添加下载许可；桌面版维持存入作品 `exports/` 的原逻辑。此项只需 `build gateway` 后重建网关并刷新网页，不重建用户容器；验证方法见 `preview/README.md`。
