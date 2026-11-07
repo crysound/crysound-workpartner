@@ -58,13 +58,23 @@ docker compose -f crysound/web/compose.yml up -d --force-recreate verdaccio gate
 
 索引为 format 1，结合 Verdaccio 包数据与审批记录。`package.json` 可写 1 到 80 字的 `displayName`（优先）或 `title`，索引使用原生 `title` 字段；安装仍使用 npm 包名，未填写显示名时仍显示包名。`plugins.json` 的 `officialPlugins` 按包名配置 `{displayName, maintainers}`，显示名以“兆华”开头，维护人使用部署名单代号。网关据此指定官方身份、中文名和作者“兆华工作伙伴”；普通包不能用包名、`displayName` 或 `title` 冒用“兆华”前缀。官方包首次发布仅允许公司发布账号或维护人，现有包的所有者及指定维护人可以续发，但每版仍需审批。`MARKET_OFFICIAL_PUBLISHERS` 指定公司发布账号；旧 `MARKET_OFFICIAL_PACKAGES` 与发布账号同时命中的显示规则继续兼容。其余作者使用 `users.json` 中发布者的姓名，没有姓名时使用 slug；无论包内自行声明什么，都不带官方标识。按 SemVer 降序列出仍存在的全部 approved 版本及 `engines.dsh`，不写 registry，依靠 `@crysound:registry` 映射。注册表无法核对时返回错误，不能伪装成空索引。dsh 会缓存索引十分钟，可在兆华市场刷新。第一期不提供私有包 README 的公共 CDN 镜像；详细介绍可能不可用。
 
-插件页三个标签为“兆华市场 / CRYSOUND market → 第三方 / Third-party → 已安装”，公司市场默认打开。共用构建期脚本 `crysound/scripts/patch-market-ui.mjs --runtime <node_modules>` 一次检查四个固定版本浏览器模块，再应用补丁；版本变化时明确失败。侧栏依次显示新对话、市场、自动化任务，再显示已安装插件的页面，没有市场灰字。移除 `entry-customization` 的侧栏菜单注册后，空“更多”自然消失；市场右上角“做一个插件 / Create plugin”复用同一 `agentPreset: cordis`、侧栏提示和 `whenDraftExists: append` 动作。第三方正文和已安装列表保持原生实现。公司卡片分官方大卡片与全部插件列表，使用原生搜索、分类筛选、安装确认与分页；索引默认顺序为官方在前，其余按最近批准版本的发布时间降序。已安装按钮显示“使用”，本阶段仍打开原生插件设置，后续首页引导交付才扩展为引导对话。网页镜像和下个桌面包发布这些界面变化；桌面准备阶段在生成校验记录、签名和冒烟验证之前应用补丁。首页快捷入口由后续交付接入。
+插件页三个标签为“兆华市场 / CRYSOUND market → 第三方 / Third-party → 已安装”，公司市场默认打开。共用构建期脚本 `crysound/scripts/patch-market-ui.mjs --runtime <node_modules>` 一次检查五个固定版本浏览器模块，再应用补丁；版本变化时明确失败。侧栏依次显示新对话、市场、自动化任务，再显示已安装插件的页面，没有市场灰字。移除 `entry-customization` 的侧栏菜单注册后，空“更多”自然消失；市场右上角“做一个插件 / Create plugin”复用同一 `agentPreset: cordis`、侧栏提示和 `whenDraftExists: append` 动作。第三方正文和已安装列表保持原生实现。公司卡片分官方大卡片与全部插件列表，使用原生搜索、分类筛选、安装确认与分页；索引默认顺序为官方在前，其余按最近批准版本的发布时间降序。已安装按钮显示“使用”，已启用且版本与获批引导一致的官方包打开引导对话，其他包保留原生设置。网页镜像和下个桌面包发布这些界面变化；桌面准备阶段在生成校验记录、签名和冒烟验证之前应用补丁。首页快捷入口使用同一份包内引导。
 
 `MARKET_OFFICIAL_MAINTAINERS` 是 JSON 对象，可按包覆盖 `officialPlugins` 的维护人列表，例如 `{"@crysound/design":["maintainer-slug"]}`；这同时授予该官方包的续发权限，请管理员核对后配置。姓名从 `users.json` 读取，无指定维护人时尝试包所有者姓名，缺姓名时不显示代号。`@crysound/data` 使用“兆华数据”及 `data` 分类，不增加标签页；维护信息由原生标签传递，显示为“维护：姓名 / Maintained by name”。
 
 分类取包内 `labels` 或 `keywords`，可使用设计、视频、文档与报告、数据、研发、销售与市场、其他，或相应 id：`design`、`video`、`documents`、`data`、`development`、`sales`、`other`；没有匹配时为其他。可选 `dsh.market.preview` 是包作者将包内样例图片编码得到的内联 PNG、JPEG 或 WebP data URL，解码后不超过 32 KiB，映射到原生索引 `icon` 字段；没有有效图片时不显示样例图，不向私有注册表或任意 URL 发图片请求。
 
 上传前先原子保存 publishing；连接中断、5xx 或后续保存失败时可能已经上传成功，不自动重试或放开所有权。由管理员停止网关，备份并核对 Verdaccio 对应版本与 `market.json`：确认存在且内容正确才把 publishing 改成 pending；确认未写入才撤销该版本预留（无其他版本时可移除包记录）；不能确认则保持 publishing。修改后重启网关再审批，勿删除已发布 tarball。损坏状态不会重置为空；恢复成对备份。此阶段恢复仅由运维完成。
+
+## 首页快捷入口与引导
+
+`officialPlugins.<name>.home: true` 启用首页快捷入口，随包配置选择设计和动效。仅无草稿、无附件的空白新对话显示入口，按官方清单排序，最多四个，另有“去市场看看”。首页输入框使用本地化例句。选择能力打开空白对话但不发送，加入可取消的标签，显示一句话说明和三个示例。示例走原生输入框提交，取消标签保留草稿和附件，已有草稿不会被替换。
+
+维护人在 `package.json` 的可选字段 `dsh.market.guide` 中维护 `zh` 和 `en`。每种语言包含 `summary`（1–200 字符）、`prompt`（1–500 字符），以及恰好三个 `examples`（每个 1–300 字符），仅空白内容无效。prompt 指示模型使用包的能力，与用户文字和附件一起进入有日志记录的会话提示。内容仅为纯文本，示例见[发布技能](../../config/skills/publish-zhaohua-market/SKILL.md)。包不能自行开启首页入口。
+
+`GET /_zp/market/guides.json` 接受已开通用户的浏览器登录或现有市场 Bearer 身份，返回每个官方包最新获批稳定版本的引导，没有稳定版本时取最新获批预发布版本。待审批、被拒绝及非官方版本均排除。客户端要求组合包已启用、处于活动状态且版本完全一致，缺引导或版本不符时进入原生设置。桌面只用当前登录代理这一固定路径，不向网页暴露凭据或转发上游头。读取失败提供重试并保留市场入口，不编造包内引导。
+
+部署需重建网关和用户镜像，下个桌面包在生成完整性记录前应用共用补丁。维护人需发布引导字段、按原流程批准并对齐已安装版本，才能验收两个首页入口。[组件预览证据](evidence/issue-61-c/evidence.md) 使用测试包与假会话，不证明完整原生输入框、真实模型请求、线上包内容或 Electron 导航。真实产品仍需验收两个入口、已有草稿、带附件取消、示例只提交一次、语言与主题切换及窄屏。
 
 ## 预装与更新
 
