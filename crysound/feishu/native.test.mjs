@@ -31,6 +31,24 @@ test('原生模块从个人 profile 可解析，重复准备不改个人设置�
   assert.ok(pkg.dsh.client.external.includes('react'));
 });
 
+test('已有飞书档案升级成插入项，保留个人条目和公司行配置，重复升级不改文件', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zp-native-upgrade-'));
+  t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
+  const patch = path.join(dir, 'cordis.patch.yml');
+  const personal = '- id: mine\n  config:\n    keep: true\n';
+  fs.writeFileSync(patch, personal + "- id: 'company-feishu-settings'\n  name: '@crysound/feishu-settings'\n  config:\n    keep: true\n- id: company-feishu-skills\n  name: '@deepseek-ai/dsh-skill-filesystem'\n  config:\n    providerName: company-feishu\n    watch: false\n");
+  const manifest = {dependencies: {mine: '1.2.3', '@crysound/feishu-settings': 'file:company-plugins/feishu-settings'}, dsh: {profile: {bundles: ['mine']}}, keep: true};
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(manifest));
+  prepareSkillProfile(patch);
+  const first = fs.readFileSync(patch, 'utf8');
+  assert.ok(first.startsWith(personal));
+  assert.match(first, /- insert:\n    - id: 'company-feishu-settings'\n      name: '@crysound\/feishu-settings'\n      config:\n        keep: true/);
+  assert.match(first, /- insert:\n    - id: company-feishu-skills\n      name: '@deepseek-ai\/dsh-skill-filesystem'\n      config:\n        providerName: company-feishu\n        watch: false/);
+  prepareSkillProfile(patch);
+  assert.equal(fs.readFileSync(patch, 'utf8'), first);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')), manifest);
+});
+
 test('设置入口注册原生页和图标，授权回跳打开同一原生设置页并清理标记', () => {
   let definition;
   const actions = [];

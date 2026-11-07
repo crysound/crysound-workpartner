@@ -2,6 +2,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** Insert a company-owned plugin, upgrading the old override-only row in place. */
+export function prepareProfilePlugin(patch, id, row) {
+  const initial = fs.existsSync(patch) ? fs.readFileSync(patch, 'utf8') : '[]\n';
+  const lines = initial.replace(/^\[\]\s*$/m, '').split('\n');
+  const rootRow = new RegExp(`^- id: ['"]?${id}['"]?\\s*$`);
+  const start = lines.findIndex(line => rootRow.test(line));
+  if (start >= 0) {
+    let end = start + 1;
+    while (end < lines.length && !lines[end].startsWith('- ')) end++;
+    // Preserve any configuration on the old managed row while making it an insertion.
+    lines.splice(start, end - start, '- insert:', ...lines.slice(start, end).map(line => line ? `    ${line}` : line));
+  } else {
+    if (new RegExp(`^ +- id: ['"]?${id}['"]?\\s*$`, 'm').test(initial)) return;
+    lines.push('- insert:', ...row.trimEnd().split('\n').map(line => `    ${line}`));
+  }
+  const next = lines.join('\n').replace(/\n*$/, '\n');
+  fs.writeFileSync(`${patch}.feishu.tmp`, next, { mode: 0o600 });
+  fs.renameSync(`${patch}.feishu.tmp`, patch);
+}
+
 /** Install the bundled, dependency-free settings module after managed plugin installs.
  * @param patch Personal profile patch; preserves all unrelated dependencies and rows.
  */
@@ -28,7 +48,5 @@ export function prepareNativeProfile(patch) {
     (pkg.dependencies ??= {})['@crysound/feishu-settings'] = 'file:company-plugins/feishu-settings';
     fs.writeFileSync(manifest, JSON.stringify(pkg, null, 2) + '\n');
   }
-  const initial = fs.existsSync(patch) ? fs.readFileSync(patch, 'utf8') : '[]\n';
-  if (/^- id: ['"]?company-feishu-settings['"]?\s*$/m.test(initial)) return;
-  fs.writeFileSync(patch, initial.replace(/^\[\]\s*$/m, '').replace(/\n*$/, '\n') + "\n- id: company-feishu-settings\n  name: '@crysound/feishu-settings'\n", { mode: 0o600 });
+  prepareProfilePlugin(patch, 'company-feishu-settings', "- id: company-feishu-settings\n  name: '@crysound/feishu-settings'\n");
 }

@@ -4,6 +4,10 @@
 
 `prepareSkillProfile` 在网页版和桌面版的既有启动准备流程中安装随包模块，不联网下载。模块副本及 `file:company-plugins/feishu-settings` 依赖属于个人 profile，已有个人配置和依赖保留。重复启动会修复被依赖安装移除的模块副本。模块使用设置壳公开 ledger 中的共享 store 打开指定页，升级 dsh 时应复核 `sidebar.settings` 的 `store.create().actions.openSection`。
 
+公司设置模块和技能提供方用 profile 的 `insert` 补丁注册。已有档案启动时会将旧的顶层 `id` 行原地转成插入项，保留行配置和其他个人条目；重复启动不再改写。dsh 的 `id` 补丁只能覆盖已有条目，不会创建条目（见 `vendor/include/src/patch.ts`）；`packages/client/modules/src/index.ts` 从实际 Loader 条目的包声明读取 `dsh.client`，因此不需要加入 `dsh.profile.bundles`。本包没有 `dsh.bundle.patch`，直接加入 bundles 会被运行时跳过。此修复同时恢复飞书设置、首页连接提醒、网页每日检查设置与未读提醒入口；桌面本机模式按原设计不注册每日检查入口。
+
+部署需重建用户镜像并执行现有容器启动准备，已有档案会自动迁移；桌面随下次正常安装包执行同一准备逻辑。无需改网关、授权或凭据，也无需额外触发桌面构建。
+
 网页版在点击时预开小窗，避免等待网络后被拦截；主飞书授权被拦截后走同页回跳，飞书项目仍尝试新标签页并提供可手动点击的链接。飞书内置浏览器直接走同页授权，OAuth state 只记录 popup / redirect 两种固定回跳模式，不接受外部回跳地址。小窗成功回调仅通知同源 opener，随后关闭；无 opener 时回到应用并打开设置。设备码授权保存未完成的轮询时间，回到应用或重新打开设置时继续。临时轮询失败时保留本次尝试，按提供方轮询间隔重试，并保留重试提示；成功或本次尝试到期后停止，获得焦点不会清除重试提示；飞书项目的外部授权站没有应用回跳地址，需要完成后手动返回。
 
 桌面版设置通过既有 `dsh-app://app` 协议调用主进程。主进程沿用 `desktop-status`、`desktop-disconnect`，飞书项目沿用本机 CLI 和 `desktop-config` 生成的配置。授权使用隔离子窗口和现有登录分区；主页面打开时、获得焦点时、授权小窗关闭时及授权期间自动刷新。旧的本机独立页面继续可用。
@@ -29,6 +33,8 @@ node --test crysound/feishu/native.test.mjs crysound/feishu/tests.mjs crysound/w
 ```
 
 覆盖运行时修补前后行为和重复运行、本地模块重复准备、原生导航和图标、固定回跳与旧链接、桌面跨源拒绝、主进程开窗，语言切换、项目临时轮询失败后的恢复及到期停止，以及原有身份绑定、刷新、撤销和用户隔离。无需安装依赖、构建或真实凭据。
+
+`node crysound/feishu/verify-profile-loading.mjs <已安装的 dsh/package.json>` 使用现有发布版的真实 profile 合成器，复现旧条目被忽略，并断言新建和升级档案均只注册一次设置模块和技能提供方，重复准备不变；全程只操作临时目录，无需联网或凭据。
 
 运行 `verify-browser.mjs` 时指定 `CDP_TAB`（本任务新开的标签页）、`CDP_ENDPOINT`、`APP_ORIGIN` 与现有 `PLAYWRIGHT_MODULE` 的位置；它使用手册配置的持久浏览器入口，不新建登录、不改变真实授权。
 
