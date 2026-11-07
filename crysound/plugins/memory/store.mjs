@@ -120,9 +120,10 @@ export class MemoryStore {
     }
   }
 
-  /** Save by random id; approved merges, removals and the target write share one transaction. */
+  /** Save atomically and return the committed savedId alongside the snapshot; savedId is not persisted. */
   save(input, { source = 'conversation', requireEnabled = true } = {}) {
-    return this.change(input.revision, before => {
+    let savedId;
+    const data = this.change(input.revision, before => {
       if (requireEnabled && !before.enabled) throw new Error('个人记忆已关闭');
       const fact = factInput(input);
       const id = input.id === undefined ? randomBytes(12).toString('hex') : factId(input.id);
@@ -146,7 +147,9 @@ export class MemoryStore {
         this.writeFact(update.id, factInput(update), source, true);
       }
       this.writeFact(id, fact, source, input.id !== undefined);
+      savedId = id;
     });
+    return { ...data, savedId };
   }
 
   /** Write one validated fact and retain its creation timestamp on updates. */

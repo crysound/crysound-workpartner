@@ -118,6 +118,8 @@ done
 - `config/patch-data-use.mjs` 为原生卡片增加“使用”：已启用时打开分类引导草稿、保留已有草稿、不自动发送；停用时进入原生设置。网页镜像与桌面打包共用幂等补丁，无额外桌面目录代理。部署配置、回退与待验收项见 `crysound/web/treg/README.md`。
 
 ## 公司维护的插件（`crysound/plugins/`）
+- `memory`：兆华记忆首次陈述提取指引、成功写入后的回复末尾回执与条目定位；合成对话评估和后台学习可行性验证在 `crysound/plugins/memory-evaluation/`。本单不改 dsh 本体；点击回执的管理弹窗替代方案须分诊确认。
+
 
 - `memory`（`@crysound/memory`，个人记忆）：独立最小实现，主对话模型主动保存稳定的个人事实，在新会话中按总预算召回；中文设置页支持个人开关、添加、编辑、确认删除和清空，显示来源及时间；随机编号支持原条目更新，满额经用户同意原子合并再新增，拒存证件和银行卡号。数据仅在个人 DSH home 的插件专属 SQLite 文件，使用 DELETE 日志模式，不接新模型或服务，不加入预装。中文页和存储方案已获分诊确认，交伙伴助理测试账号验收；正式网关、桌面版、备份恢复、长期并发及提取率仍未验收。评估见 `crysound/plugins/memory-evaluation/`；Node 实验性 SQLite 的升级复查、镜像版本和备份恢复步骤见插件 README，验收后征得负责人同意才预装。
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。

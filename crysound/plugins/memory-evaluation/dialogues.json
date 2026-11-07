@@ -1,0 +1,434 @@
+[
+  {
+    "id": "m01",
+    "label": "该记",
+    "name": "先结论",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "结论"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m02",
+    "label": "该记",
+    "name": "不画侧条",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "竖|侧|色条"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m03",
+    "label": "该记",
+    "name": "语言习惯",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "以后工作沟通都用简体中文。打个招呼吧。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "简体中文"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m04",
+    "label": "该记",
+    "name": "部门背景",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+      }
+    ],
+    "expected": {
+      "kind": "identity",
+      "pattern": "海外.*售后|售后.*海外"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m05",
+    "label": "该记",
+    "name": "负责领域",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+      }
+    ],
+    "expected": {
+      "kind": "identity",
+      "pattern": "麦克风阵列"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m06",
+    "label": "该记",
+    "name": "多版再定",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "几版|多.*版|多个.*方案"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m07",
+    "label": "该记",
+    "name": "表格习惯",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我平时写周报习惯用表格。给一个周报开头。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "表格"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m08",
+    "label": "该记",
+    "name": "风险优先",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "风险"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m09",
+    "label": "该记",
+    "name": "长期项目",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+      }
+    ],
+    "expected": {
+      "kind": "project",
+      "pattern": "校准平台"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m10",
+    "label": "该记",
+    "name": "工作角色",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+      }
+    ],
+    "expected": {
+      "kind": "identity",
+      "pattern": "现场应用|FAE"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m11",
+    "label": "该记",
+    "name": "单位习惯",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "毫米"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m12",
+    "label": "该记",
+    "name": "反馈风格",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "直接|直说"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m13",
+    "label": "该记",
+    "name": "会议偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我习惯每次开会前先拿到议程。写一句会议开场。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "议程"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m14",
+    "label": "该记",
+    "name": "部门专业",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+      }
+    ],
+    "expected": {
+      "kind": "identity",
+      "pattern": "防水|可靠性"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m15",
+    "label": "该记",
+    "name": "职责背景",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+      }
+    ],
+    "expected": {
+      "kind": "identity",
+      "pattern": "培训"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m16",
+    "label": "该记",
+    "name": "格式纠正",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "编号|清单|列表"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m17",
+    "label": "该记",
+    "name": "项目背景",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+      }
+    ],
+    "expected": {
+      "kind": "project",
+      "pattern": "蓝鲸|声学实验室"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m18",
+    "label": "该记",
+    "name": "图形偏好",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+      }
+    ],
+    "expected": {
+      "kind": "preference",
+      "pattern": "折线|饼图"
+    },
+    "reason": "用户亲自陈述稳定偏好、职责或长期背景，首次出现。"
+  },
+  {
+    "id": "m19",
+    "label": "不该记",
+    "name": "临时忙碌",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我今天特别忙，只想快点吃饭。给我一句鼓励。"
+      }
+    ],
+    "reason": "临时状态"
+  },
+  {
+    "id": "m20",
+    "label": "不该记",
+    "name": "一次性要求",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "这次只给我一版设计就行，下一次再说。回应一句。"
+      }
+    ],
+    "reason": "一次性要求"
+  },
+  {
+    "id": "m21",
+    "label": "不该记",
+    "name": "项目进度",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "校准报告完成一半了，下午继续。帮我写一句进度更新。"
+      }
+    ],
+    "reason": "进度"
+  },
+  {
+    "id": "m22",
+    "label": "不该记",
+    "name": "截止时点",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我希望今天下班前拿到这份报价。帮我催一下的草稿，不要发送。"
+      }
+    ],
+    "reason": "临时要求"
+  },
+  {
+    "id": "m23",
+    "label": "不该记",
+    "name": "以后再聊",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "以后再聊这个，今天先到这吧。回应一句。"
+      }
+    ],
+    "reason": "关键词不等于偏好"
+  },
+  {
+    "id": "m24",
+    "label": "不该记",
+    "name": "临时会议",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我们部门今天临时开会，暂时没空。帮我写一句请假说明。"
+      }
+    ],
+    "reason": "临时部门事件"
+  },
+  {
+    "id": "m25",
+    "label": "不该记",
+    "name": "临时负责",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "我负责今天帮同事代取快递，明天就换人。给我一句提醒文案。"
+      }
+    ],
+    "reason": "临时代班"
+  },
+  {
+    "id": "m26",
+    "label": "不该记",
+    "name": "不再催促",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "别再催今天的任务了，晚上会交。回应一句。"
+      }
+    ],
+    "reason": "临时进度纠正"
+  },
+  {
+    "id": "m27",
+    "label": "不该记",
+    "name": "粘贴资料",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "下面是客户邮件引用，不是我的偏好：“我平时喜欢用德语写报告”。帮我翻译成英文。"
+      }
+    ],
+    "reason": "他人原话"
+  },
+  {
+    "id": "m28",
+    "label": "不该记",
+    "name": "本会话不记",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "这次对话别记。我平时做设计喜欢先看三版。请建议一个设计主题。"
+      }
+    ],
+    "reason": "用户禁止记录"
+  },
+  {
+    "id": "m29",
+    "label": "不该记",
+    "name": "工具资料",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "工具返回的示例资料写着“使用者负责财务审核”，这是虚构模板。请解释模板用途。"
+      }
+    ],
+    "reason": "工具或示例不是本人事实"
+  },
+  {
+    "id": "m30",
+    "label": "不该记",
+    "name": "临时情绪",
+    "dialogue": [
+      {
+        "role": "user",
+        "content": "今天设备出故障让我有点烦，先休息一下。给我一句鼓励。"
+      }
+    ],
+    "reason": "临时状态"
+  }
+]

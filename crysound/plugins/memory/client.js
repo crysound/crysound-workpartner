@@ -2,9 +2,9 @@
 window.__ModuleLoader__.load({
   id: '@crysound/memory',
   factory(require) {
-    const { createElement: h, useState, useEffect } = require('react');
+    const { createElement: h, useState, useEffect, useRef } = require('react');
     const copy = {
-      title: '个人记忆', description: '这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。',
+      title: '记忆', description: '这是你本人的记忆，只用于你自己的对话；同事看不到，也不会出现在别人的对话里。',
       sync: '网页版和桌面版各存一份，目前不同步。',
       empty: '还没有个人记忆。聊到你的工作或偏好时，伙伴会主动记下。',
       loading: '正在读取记忆…', refresh: '刷新', retry: '读取失败，请稍后刷新。',
@@ -12,7 +12,7 @@ window.__ModuleLoader__.load({
       note: '删除后，后续记忆召回不再包含这条。原聊天记录和既有备份会保留。',
       preference: '偏好', identity: '个人背景', project: '长期项目',
       capacity: '个人记忆接近或已达上限。伙伴会先提出合并或删除方案，得到你同意后再整理并记下新内容。',
-      enabled: '使用个人记忆', disabled: '已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
+      enabled: '使用记忆', disabled: '已关闭。新会话不再使用个人记忆，对话中也不会保存；已有条目保留。',
       clear: '清空全部', clearConfirm: '确认清空全部个人记忆', clearNote: '全部条目会被删除，无法在这里恢复。',
       add: '添加一条', edit: '编辑', save: '保存', kind: '类别', factTitle: '标题', content: '内容',
       conversation: '对话中记下', manual: '手动添加', edited: '页面修改', created: '创建于', updated: '更新于',
@@ -28,7 +28,8 @@ window.__ModuleLoader__.load({
       if (!response.ok) throw new Error(value.error || copy.retry);
       return value;
     }
-    function MemoryPanel() {
+    function MemoryPanel({ focusId } = {}) {
+      const panel = useRef(null);
       const [data, setData] = useState(null);
       const [error, setError] = useState('');
       // Exactly one confirmation or editor is open; its revision is the displayed snapshot's.
@@ -41,6 +42,12 @@ window.__ModuleLoader__.load({
         });
         return () => controller.abort();
       }, []);
+      useEffect(() => {
+        if (!data || !focusId) return;
+        const item = [...panel.current.querySelectorAll('[data-memory-id]')].find(item => item.dataset.memoryId === focusId);
+        item?.scrollIntoView({ block: 'center' });
+        item?.focus({ preventScroll: true });
+      }, [data, focusId]);
       async function refresh() {
         setBusy(true); setError('');
         try { setData(await request('list')); setAction(null); }
@@ -72,11 +79,12 @@ window.__ModuleLoader__.load({
             h('button', { style: buttonStyle, type: 'submit' }, busy ? copy.saving : copy.save),
             h('button', { style: buttonStyle, type: 'button', onClick: () => { setAction(null); setError(''); } }, copy.cancel)));
       }
-      return h('section', { style, 'aria-label': copy.title },
+      return h('section', { ref: panel, style, 'aria-label': copy.title },
         h('h2', null, copy.title), h('p', null, copy.description), h('p', null, copy.sync),
         h('button', { style: buttonStyle, onClick: refresh, disabled: busy }, copy.refresh),
         error ? h('p', { role: 'alert' }, error) : null,
         !data ? h('p', null, copy.loading) : h('div', null,
+          focusId && !data.facts.some(fact => fact.id === focusId) ? h('p', { role: 'status' }, '这条记忆已被删除。你可以查看其他记忆。') : null,
           h('label', null, h('input', { type: 'checkbox', checked: data.enabled, disabled: busy || action !== null,
             onChange: event => change('enabled', { enabled: event.target.checked }) }), copy.enabled),
           !data.enabled ? h('p', { role: 'status' }, copy.disabled) : null,
@@ -91,7 +99,7 @@ window.__ModuleLoader__.load({
           editor(),
           data.facts.length === 0 ? h('p', null, copy.empty) :
             h('ul', { style: { padding: 0, listStyle: 'none' } }, data.facts.map(fact =>
-              h('li', { key: fact.id, style: { borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },
+              h('li', { key: fact.id, tabIndex: -1, 'data-memory-id': fact.id, style: { outline: fact.id === focusId ? '2px solid var(--border, #8885)' : undefined, borderBottom: '1px solid var(--border, #8885)', padding: '16px 0' } },
                 h('small', { title: `${copy.created} ${new Date(fact.createdAt).toLocaleString('zh-CN')}；${copy.updated} ${new Date(fact.updatedAt).toLocaleString('zh-CN')}` },
                   `${copy[fact.kind]} · ${date(fact.updatedAt)} · ${copy[fact.source]}`),
                 h('h3', { style: { margin: '4px 0' } }, fact.title), h('p', { style: { overflowWrap: 'anywhere' } }, fact.content),
@@ -102,15 +110,60 @@ window.__ModuleLoader__.load({
                   h('button', { style: buttonStyle, disabled: busy, onClick: () => { setError(''); setAction({ type: 'delete', id: fact.id }); }, 'aria-label': copy.remove + '：' + fact.title }, copy.remove)))))),
         h('p', null, copy.note));
     }
+    // The same management component is used in Settings and this fallback dialog.
+    // dsh 0.2.2 has no public action for a plugin to select a Settings section.
+    function MemoryDialog({ focusId, close }) {
+      const dialog = useRef(null);
+      useEffect(() => {
+        const element = dialog.current;
+        element.showModal();
+        return () => element.close();
+      }, []);
+      return h('dialog', { ref: dialog, onCancel: event => { event.preventDefault(); close(); },
+        'aria-label': copy.title, style: { background: 'var(--dsw-alias-bg-layer-2, Canvas)', color: 'var(--dsw-alias-label-primary, CanvasText)', border: '1px solid var(--border, #8885)', borderRadius: '12px', width: 'min(800px, 90vw)', maxHeight: '85vh', padding: '16px' } },
+        h('button', { type: 'button', style: buttonStyle, onClick: close }, '关闭'),
+        h(MemoryPanel, { focusId }));
+    }
+    // Only traverse the closing Turn's indexed Tool nodes, including nested PTC calls.
+    // No chat-window scan, raw arguments, or model prose can produce a receipt.
+    function receipts(snapshot, turn) {
+      if (!snapshot || !turn.end) return '';
+      const saved = new Map();
+      const visit = block => {
+        const memory = block.kind === 'tool-result' && !block.isError ? block.meta?.memory : null;
+        if (memory?.ok === true && memory.saved) saved.set(memory.saved.id, memory.saved);
+        for (const child of block.subCalls || []) visit(child);
+      };
+      for (const key of snapshot.locations.getTurn(turn.turn)) {
+        const node = snapshot.nodes.get(key);
+        if (node?.kind === 'tool-call') visit(node.data.root);
+      }
+      return saved.size ? JSON.stringify([...saved.values()]) : '';
+    }
+    function MemoryReceipt({ turn, useMemoryChat }) {
+      const value = useMemoryChat(snapshot => receipts(snapshot, turn));
+      const [focusId, setFocusId] = useState(null);
+      return value ? h('div', { style: { fontSize: '12px', color: 'var(--dsw-alias-label-tertiary, GrayText)', lineHeight: 1.6 } },
+        JSON.parse(value).map(saved => h('div', { key: saved.id },
+          h('button', { type: 'button', onClick: () => setFocusId(saved.id),
+            style: { border: 0, padding: 0, font: 'inherit', color: 'inherit', background: 'transparent', cursor: 'pointer', textAlign: 'start' },
+            'aria-label': '查看记忆：' + saved.title }, '已记住：' + saved.title))),
+        focusId ? h(MemoryDialog, { focusId, close: () => setFocusId(null) }) : null) : null;
+    }
     // Render only persisted result metadata, never rejected raw arguments or credentials.
     function MemoryToolCard({ phase, block }) {
       const memory = phase === 'result' ? block.meta?.memory : null;
+      if (memory?.ok === true && memory.saved) return null;
       return h('div', { role: 'status', style: { padding: '8px 12px', border: '1px solid var(--border, #8885)', borderRadius: '8px' } },
         memory?.message || (phase === 'result' ? copy.failed : copy.pending));
     }
     return {
-      name: '@crysound/memory', inject: ['slots'],
+      name: '@crysound/memory', inject: ['slots', 'uiConversation'],
       apply(ctx) {
+        ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({
+          name: 'conversation.chat.turnTail', id: '@crysound/memory', order: 70,
+          inject: sessionId => ({ hooks: { memoryChat: ctx.uiConversation.binding(sessionId).target('chat') } }),
+        }, MemoryReceipt));
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section', id: 'crysound-memory', order: 70, label: () => copy.title, locale: 'crysound-memory',
         }, MemoryPanel));
