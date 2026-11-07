@@ -68,6 +68,38 @@ export function renderOptions(config) {
   return { maxConcurrent: config.renderConcurrency, renderTimeoutMs: config.renderTimeoutMs };
 }
 
+// Skip raw HTML blocks that the tool's Markdown converter omits, before applying character caps.
+function compactHtml(html) {
+  const tags = /<!--[\s\S]*?(?:-->|$)|<(script|style|noscript|textarea)\b((?:[^"'<>]|"[^"]*"|'[^']*')*)>/gi;
+  const parts = [];
+  let offset = 0;
+  for (let match; (match = tags.exec(html));) {
+    parts.push(html.slice(offset, match.index));
+    offset = tags.lastIndex;
+    if (!match[1]) continue;
+    const closing = new RegExp(`</${match[1]}\\s*>`, "gi");
+    closing.lastIndex = offset;
+    offset = closing.exec(html) ? closing.lastIndex : html.length;
+    if (match[1].toLowerCase() === "textarea" && !hiddenTextarea(match[2])) parts.push(html.slice(match.index, offset));
+    tags.lastIndex = offset;
+  }
+  return parts.join("") + html.slice(offset);
+}
+
+function hiddenTextarea(attributes) {
+  for (const [, name, double, single, unquoted] of attributes.matchAll(/([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>]+)))?/g)) {
+    const value = double ?? single ?? unquoted ?? "";
+    if (name.toLowerCase() === "hidden" || (name.toLowerCase() === "aria-hidden" && value.toLowerCase() === "true")) return true;
+    if (name.toLowerCase() === "style" && /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse))\s*(?:!important\s*)?(?:;|$)/i.test(value)) return true;
+  }
+  return false;
+}
+
+function boundedBody(result, maxChars) {
+  const content = result.body.kind === "html" ? compactHtml(result.body.content) : result.body.content;
+  return { ...result, body: { ...result.body, content: content.slice(0, maxChars) }, truncated: result.truncated || content.length > maxChars };
+}
+
 /** Create a provider with owned render slots and no waiting queue. @param Base Released HTTP provider class. @param WebError Released error class. @param limits Resolved provider limits. @param options Optional local transport/runtime overrides. @returns Company fetch provider. */
 export function companyFetcher(Base, WebError, limits, {
   request = (url, signal) => publicRequest(url, signal, {}, undefined, undefined, limits.maxResponseBytes),
@@ -81,9 +113,11 @@ export function companyFetcher(Base, WebError, limits, {
     async followAndRead(initialUrl, signal) {
       try {
         const { response, url } = await followPublic(initialUrl, signal, request, Math.min(5, limits.maxRedirects), true);
+        // The streaming byte cap yields a usable prefix even when the declared length exceeds it.
+        response.headers.delete("content-length");
         const result = await super.readBody(response, new URL(url), signal);
         if (loginPage(url, result.body.content)) throw new WebError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
-        if (result.body.kind !== "html" || result.statusCode >= 400 || result.truncated || !needsRendering(result.body.content)) return result;
+        if (result.body.kind !== "html" || result.statusCode >= 400 || result.truncated || !needsRendering(result.body.content)) return boundedBody(result, limits.maxBodyChars);
         if (rendering >= maxConcurrent) throw new WebError("网页渲染正忙，请稍后重试", "WEB_PROVIDER_ERROR");
         rendering++;
         try { return await this.render(result, signal); }
@@ -166,7 +200,7 @@ export function companyFetcher(Base, WebError, limits, {
           const html = await page.content();
           if (loginPage(finalUrl, html)) throw webError("需要登录，无法抓取", "WEB_PROVIDER_ERROR");
           if (mainStatus >= 400 || needsRendering(html)) throw webError("网页渲染后仍无法读取正文", "WEB_PROVIDER_ERROR");
-          return { ...result, url: finalUrl, statusCode: mainStatus, body: { kind: "html", content: html.slice(0, limits.maxBodyChars) }, truncated: html.length > limits.maxBodyChars };
+          return boundedBody({ ...result, url: finalUrl, statusCode: mainStatus, body: { kind: "html", content: html } }, limits.maxBodyChars);
         } finally {
           signal.removeEventListener("abort", abort);
         }
@@ -178,5 +212,6 @@ export function companyFetcher(Base, WebError, limits, {
         await Promise.allSettled([...requests]);
       }
     }
-  }(limits);
+  // Decode up to the byte cap; apply the smaller output cap after removing scripts and styles.
+  }({ ...limits, maxBodyChars: limits.maxResponseBytes });
 }
