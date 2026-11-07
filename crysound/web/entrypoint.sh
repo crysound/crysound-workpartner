@@ -14,8 +14,9 @@ MAGPIE_API_KEY=$(cat /etc/partner/magpie.key) && export MAGPIE_API_KEY
 export DEEPSEEK_API_KEY="$MAGPIE_API_KEY" DEEPSEEK_BASE_URL="${MAGPIE_BASE_URL:?请设置 MAGPIE_BASE_URL}"
 export CRYSOUND_LLM_BASE="$DEEPSEEK_BASE_URL"
 mkdir -p /data/work && cd /data/work
-# 旧远程条目可能已被 pnpm 写掉校验值，先修复再替换成本地包。
-node /opt/partner/plugin-artifacts.mjs repair "$DSH_HOME/profiles/web" "$(readlink -f "$(command -v dsh)")" \
+# 旧远程或本地发行包的安装记录先移出，避免 pnpm 读取新镜像已不再携带的旧包。
+FEISHU_SPEC=$(node -e 'console.log(require(process.argv[1]).plugins.find(p => p.name === "@aiwayds/dsh-feishu")?.want || "")' "$CONFIG/plugins.json")
+node /opt/partner/plugin-artifacts.mjs repair "$DSH_HOME/profiles/web" "$(readlink -f "$(command -v dsh)")" "$FEISHU_SPEC" \
   || { echo "公司插件锁文件修复失败，停止启动" >&2; exit 1; }
 # 公司统一插件，版本固定，所有人一致，清单与桌面版共用（plugins.json）；已是该版本就跳过。
 node -e 'for (const p of require(process.argv[1]).plugins) console.log(p.name, p.spec, p.want)' "$CONFIG/plugins.json" |
