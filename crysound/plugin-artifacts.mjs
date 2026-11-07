@@ -8,7 +8,7 @@ export const FEISHU = {
   name: '@aiwayds/dsh-feishu',
   file: 'aiwayds-dsh-feishu-0.17.0-crysound.3.tgz',
   url: 'https://partner-dl.corp.crysound.com/plugins/GdIDOj8kNqAK1mrp/aiwayds-dsh-feishu-0.17.0-crysound.3.tgz',
-  integrity: 'sha512-gp0jVYBHebTgNh0f7qIqCPRAIEbEV/VK08If5ncxvDQBuVyR455jE7cFWudKO5RruZc082mfGxdLVZUG2BZz5A==',
+  integrity: 'sha512-wV4vD3szEFZTLjGseDtcA1O1KSqXKzgsU6nIGaJCjs6E14Wdv9nRDWdJKWJhLl1cS8awnrSpXqSRKEw3W07uOQ==',
 };
 export const WEB_SPEC = `file:/opt/company-plugins/${FEISHU.file}`;
 export const DESKTOP_WANT = `file:company-plugins/${FEISHU.file}`;
