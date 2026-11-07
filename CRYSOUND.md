@@ -69,6 +69,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 公司配置升级器生成独立的模型提示片段，指导批量读取文本、一次写完并运行小脚本、独立调用同轮并行；不改上游 dsh、工具或权限。通过原有公司配置下载与启动刷新覆盖已有用户，完整系统提示预设保持原生行为。部署与三类同题对比验收见 `crysound/web/README.md`。
 
 ### 打包
+- 网页镜像与 Mac/Windows 安装包随附 Mnemon CLI 0.2.13：从 npm `@mnemon-dev/mnemon` 的对应平台包提取原生程序（含许可证），无需用户安装 Node/npm，dsh 子进程 PATH 包含其 `bin`；版本与各平台 SHA-512 固定在 `crysound/mnemon/releases.json`，升级时更新该文件并重建镜像和桌面包，构建会核对摘要并在本机目标上实测存取；不自动安装或启用 dsh-mnemon 及第三方 Provider。
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
 - `desktop-package-environment.mjs`：本地未签名构建的默认 appId。
 - `package-target.ts`、`package-macos.ts`、`smoke-packaged-runtime.ts`、`cli/dsh`、`development-app.ts`：`.app` 名称与协议。
