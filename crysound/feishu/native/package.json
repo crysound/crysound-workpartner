@@ -5,5 +5,5 @@
   "type": "module",
   "main": "./index.mjs",
   "exports": { ".": "./index.mjs", "./client": "./client.js", "./package.json": "./package.json" },
-  "dsh": { "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-settings"], "external": ["react", "@deepseek-ai/dsh-client-ui-primitives"] } }
+  "dsh": { "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-conversation"], "external": ["react", "@deepseek-ai/dsh-client-ui-primitives"] } }
 }
