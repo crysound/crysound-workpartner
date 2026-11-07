@@ -42,7 +42,7 @@ a.zp-download > svg { flex: none; }
   .zp-pet .tile{transform-box:view-box;transform-origin:32px 40px}
   .zp-pet .body{transform-box:view-box;transform-origin:32px 60px;transition:transform .35s cubic-bezier(.3,.7,.4,1)}
   .zp-pet .face{transform:translate(calc(var(--lx,0) * 1px),calc(var(--ly,0) * 1px));transition:transform .26s cubic-bezier(.3,.7,.4,1)}
-  .zp-pet .eye{fill:#170057;transform-box:fill-box;transform-origin:50% 60%;transition:transform .08s}
+  .zp-pet .eye{transform-box:fill-box;transform-origin:50% 60%;transition:transform .08s}
   .zp-pet .f-happy,.zp-pet .f-x,.zp-pet .f-sleep{fill:none;stroke:#170057;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
   .zp-pet .f-open,.zp-pet .f-happy,.zp-pet .f-x,.zp-pet .f-sleep{opacity:0;transition:opacity .08s}
   .zp-pet[data-face=open] .f-open,.zp-pet[data-face=happy] .f-happy,.zp-pet[data-face=x] .f-x,.zp-pet[data-face=sleep] .f-sleep{opacity:1}
@@ -65,6 +65,7 @@ a.zp-download > svg { flex: none; }
   .zp-pet.peek .body{animation:zp-peek .6s cubic-bezier(.3,.7,.4,1)}
   .zp-pet.squish .tile{animation:zp-squish .5s cubic-bezier(.3,.7,.4,1)}
   .zp-pet.dizzy .tile{animation:zp-dizzy .7s ease-in-out}
+  .zp-pet.blink .glint{opacity:0}
   .zp-pet.blink .eye{transform:scaleY(.1)}
 
   @keyframes zp-breathe{0%,100%{transform:none}50%{transform:scale(1.012,1.03)}}
