@@ -68,8 +68,8 @@ export async function summarizeFetch(ctx, config, prompt, originalUrl, result, r
       const summary = data.content.filter(block => block?.type === "text" && typeof block.text === "string").map(block => block.text).join("\n").trim();
       if (!summary) throw new Error("Empty web summary response");
       const source = `Source: ${originalUrl}${result.url === originalUrl ? "" : `\nFinal URL: ${result.url}`}\n\n`;
-      // Keep both URLs independent of the model's willingness to cite, and cap unexpected verbose replies.
-      return { ...result, truncated: rendered.truncated || summary.length > 6000, body: { kind: "text", content: source + "[Question-focused page summary]\n" + summary.slice(0, 6000) } };
+      // Keep both URLs independent of the model's willingness to cite; the tool renderer applies the configured total output cap.
+      return { ...result, truncated: rendered.truncated, body: { kind: "text", content: source + "[Question-focused page summary]\n" + summary } };
     })()]);
   } catch (error) {
     parentSignal?.throwIfAborted();
