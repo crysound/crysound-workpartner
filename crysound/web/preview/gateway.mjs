@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { previewPort, previewPath, RELAY_PORT, editorHeaders, editorSetCookies } from "./policy.mjs";
 import { proxyHttp, proxyUpgrade } from "./transport.mjs";
 import { installPreviewClient } from "./client.mjs";
+import { previewDownloadBody } from "./downloads.mjs";
 
 const SID = "__Host-zp-preview";
 const NONCE = "__Host-zp-preview-nonce";
@@ -145,7 +146,8 @@ export function createPreview({ publicHost, previewHost = "", key, users, sessio
       }
       const up = await upstream(r.user.slug);
       if (!up.ip) { reject(res, 503, "工作区暂时不可用。"); return true; }
-      proxyHttp(req, res, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, r.value));
+      proxyHttp(req, res, { host: up.ip, port: relayPort }, relayHeaders(req, r), replyHeaders(r, r.value),
+        req.method === "GET" ? previewDownloadBody : undefined);
       return true;
     }
     if (!url.pathname.startsWith("/_zp/preview/")) return false;

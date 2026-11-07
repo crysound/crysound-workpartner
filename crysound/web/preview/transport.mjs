@@ -4,12 +4,16 @@ const rawHeaders = (status, headers) => `HTTP/1.1 ${status}\r\n` + Object.entrie
   .flatMap(([key, value]) => (Array.isArray(value) ? value : [value]).map((v) => `${key}: ${v}\r\n`)).join("") + "\r\n";
 
 /** Stream HTTP bodies and SSE without buffering or an idle timeout. */
-export function proxyHttp(req, res, target, headers, responseHeaders = (h) => h) {
+export function proxyHttp(req, res, target, headers, responseHeaders = (h) => h, responseBody = (reply) => reply) {
   const up = http.request({ ...target, path: req.url, method: req.method, headers }, (reply) => {
     clearTimeout(timer);
-    res.writeHead(reply.statusCode, responseHeaders(reply.headers));
+    const outgoing = responseHeaders(reply.headers);
+    const body = responseBody(reply, outgoing);
+    res.writeHead(reply.statusCode, outgoing);
     reply.on("error", () => res.destroy());
-    reply.pipe(res);
+    body.on("error", () => res.destroy());
+    res.on("close", () => { if (body !== reply) body.destroy(); });
+    body.pipe(res);
   });
   const timer = setTimeout(() => up.destroy(new Error("Preview connection timed out")), 10000);
   up.on("error", () => {

@@ -6,6 +6,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import vm from "node:vm";
+import { gzipSync, deflateSync, brotliCompressSync } from "node:zlib";
 import { createPreview, relayKey, writeRelayKey } from "../gateway.mjs";
 import { createRelay } from "../relay.mjs";
 import { previewPort, previewPath } from "../policy.mjs";
@@ -30,6 +32,14 @@ async function fixture(t) {
   let clock = Date.now(), requests = [];
   const editor = own(http.createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers });
+    if (req.url.startsWith("/html")) {
+      const html = '<!doctype html><html><head data-editor="slides"><script>window.editorSawNativeDownloads=window.__baoyuNativeDownloads;</script></head><body>中文导出</body></html>';
+      const encoding = req.url.split("/")[2];
+      const bytes = encoding === "gzip" ? gzipSync(html) : encoding === "deflate" ? deflateSync(html) : encoding === "br" ? brotliCompressSync(html) : Buffer.from(html);
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": bytes.length,
+        ...(encoding ? { "content-encoding": encoding } : {}), etag: '"original"' });
+      return res.end(bytes);
+    }
     if (req.url === "/events") {
       res.writeHead(200, { "content-type": "text/event-stream" });
       res.write("data: first\n\n"); // Keep open: the client must observe data before EOF.
@@ -95,6 +105,23 @@ async function fixture(t) {
   };
   return { preview, key, users, port, relayPort, gatewayPort, request, bootstrap, requests, advance: (ms) => { clock += ms; } };
 }
+
+test("web preview enables native downloads before editor startup, including compressed HTML", async (t) => {
+  const f = await fixture(t), b = await f.bootstrap();
+  for (const path of ["/html", "/html/gzip", "/html/deflate", "/html/br"]) {
+    const page = await f.request(b.origin + path, { jar: b.jar });
+    assert.equal(page.status, 200);
+    const window = {};
+    for (const [, script] of page.text.matchAll(/<script>(.*?)<\/script>/gs)) vm.runInNewContext(script, { window });
+    assert.equal(window.editorSawNativeDownloads, true, path);
+    assert(page.text.includes("中文导出"));
+    for (const header of ["content-length", "content-encoding", "etag"]) assert.equal(page.headers[header], undefined);
+  }
+  const direct = await f.request("/html", { direct: f.relayPort, headers: {
+    "x-zp-preview-port": String(f.port), "x-zp-relay-key": relayKey(f.key, "alice"),
+  } });
+  assert(!direct.text.includes("<script>window.__baoyuNativeDownloads=true;"), "container relay must not change desktop behavior");
+});
 
 test("port and path inputs reject the workspace control plane and non-local targets", () => {
   for (const value of [80, 443, 3080, 3090, 3091, 3092, 65536, "04710", "4710@evil", "1e4", "4710.0", "localhost:4710"]) assert.equal(previewPort(value), null, String(value));
