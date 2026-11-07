@@ -26,10 +26,16 @@ async function run(ctx) {
     const sessions = [];
     for (const record of await ctx.sessionQuery.listSessions()) sessions.push(await ctx.sessionQuery.readSession(record.header.id));
     const before = store.snapshot();
-    await learner.tick();
+    let learningError;
+    if (!process.env.MEMORY_EVAL_READ_ONLY) {
+      try { await learner.tick(); }
+      catch (error) { learningError = error; }
+    }
     const after = store.snapshot({ includeLearning: true });
     const requests = store.db.prepare('SELECT * FROM learning_requests').all();
-    writeFileSync(process.env.MEMORY_EVAL_OUTPUT, JSON.stringify({ config, before, after, sessions, requests }, null, 2) + '\n', { mode: 0o600 });
-    process.stdout.write(JSON.stringify({ completed: true, sessions: sessions.length, factsBefore: before.facts.length, factsAfter: after.facts.length, learningRequests: requests.length }) + '\n');
+    writeFileSync(process.env.MEMORY_EVAL_OUTPUT, JSON.stringify({ config, before, after, sessions, requests,
+      readOnly: Boolean(process.env.MEMORY_EVAL_READ_ONLY), learningError: learningError?.message }, null, 2) + '\n', { mode: 0o600 });
+    process.stdout.write(JSON.stringify({ completed: !learningError, sessions: sessions.length, factsBefore: before.facts.length, factsAfter: after.facts.length, learningRequests: requests.length }) + '\n');
+    if (learningError) throw learningError;
   } finally { learner.close(); store.close(); }
 }

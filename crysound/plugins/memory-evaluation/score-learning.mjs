@@ -23,7 +23,7 @@ export function scoreLearning(evaluation, ledger) {
     if (!Array.isArray(rows) || rows.length !== fixtures.length || new Set(rows.map(row => row.id)).size !== fixtures.length) return fail('missing or duplicate cases');
     const metrics = {};
     for (const variant of ['baseline', 'candidate']) {
-      let hit = 0, falseMemory = 0, unsupported = 0, claims = 0;
+      let hit = 0, falseMemory = 0, unsupported = 0, claims = 0, oldValueAlerts = 0;
       for (const fixture of fixtures) {
         const row = rows.find(row => row.id === fixture.id);
         if (!row || row.status !== 'ok' || !row.sessionEvidence || !row.modelRoutes?.length || !Array.isArray(row[variant])) return fail('unfinished real-host case');
@@ -49,11 +49,18 @@ export function scoreLearning(evaluation, ledger) {
         if (!fixture.targets.length && facts.length) falseMemory++;
         const contents = facts.map(fact => fact.content);
         for (const target of fixture.targets) if (contents.some(content => new RegExp(target.pattern, 'u').test(content))) hit++;
-        if (fixture.forbidden.some(pattern => contents.some(content => new RegExp(pattern, 'u').test(content)))) unsupported++;
+        const flagged = facts.filter(fact => fixture.forbidden.some(pattern => new RegExp(pattern, 'u').test(fact.content)));
+        if (flagged.length) {
+          oldValueAlerts++;
+          const reviews = flagged.map(fact => ledger.facts.find(item => item.group === group && item.caseId === fixture.id
+            && item.variant === variant && item.factId === fact.id).obsoleteReview);
+          if (reviews.some(review => !review || !['current', 'outdated'].includes(review.status) || !review.reason)) return fail('old-value alert lacks semantic review');
+          if (reviews.some(review => review.status === 'outdated')) unsupported++;
+        }
       }
       const targets = fixtures.reduce((total, fixture) => total + fixture.targets.length, 0);
       const negatives = fixtures.filter(fixture => fixture.targets.length === 0).length;
-      metrics[variant] = { extraction: { hit, total: targets, rate: hit / targets }, falseMemory: { hit: falseMemory, total: negatives, rate: falseMemory / negatives }, unsupported: { count: unsupported, reviewedClaims: claims } };
+      metrics[variant] = { extraction: { hit, total: targets, rate: hit / targets }, falseMemory: { hit: falseMemory, total: negatives, rate: falseMemory / negatives }, unsupported: { count: unsupported, reviewedClaims: claims, oldValueAlerts } };
     }
     metrics.gainPoints = (metrics.candidate.extraction.rate - metrics.baseline.extraction.rate) * 100;
     result[group] = metrics;

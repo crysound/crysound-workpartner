@@ -1,0 +1,3769 @@
+{
+  "datasetHash": "39d440b06effcb8984ea85cfc731ded88bc32faae8c83703277a2dd4b6372c03",
+  "facts": [
+    {
+      "group": "regression",
+      "caseId": "m01",
+      "variant": "baseline",
+      "factId": "688ea88a9267bdf1a3881b4d",
+      "hash": "370510d1cddca846be921c52863ffd96df2f5b1599e6a8cf05df2cb80036e912",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇报开头方式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他希望平时的工作汇报都先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "再展开细节",
+          "status": "unsupported",
+          "reason": "本人只要求先给结论，没有要求随后展开细节。"
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m01",
+      "variant": "candidate",
+      "factId": "688ea88a9267bdf1a3881b4d",
+      "hash": "370510d1cddca846be921c52863ffd96df2f5b1599e6a8cf05df2cb80036e912",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇报开头方式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他希望平时的工作汇报都先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "再展开细节",
+          "status": "unsupported",
+          "reason": "本人只要求先给结论，没有要求随后展开细节。"
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m02",
+      "variant": "baseline",
+      "factId": "e95f35e42043411a02d9e332",
+      "hash": "77d1d417cc771fdd4f9f50df2a5b591d3f7fe8dc128129f2a3f5f9eb66055a0e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "页面左边竖色条",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+            }
+          ]
+        },
+        {
+          "text": "他不喜欢带左边竖色条的页面样式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m02",
+      "variant": "candidate",
+      "factId": "e95f35e42043411a02d9e332",
+      "hash": "77d1d417cc771fdd4f9f50df2a5b591d3f7fe8dc128129f2a3f5f9eb66055a0e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "页面左边竖色条",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+            }
+          ]
+        },
+        {
+          "text": "他不喜欢带左边竖色条的页面样式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m03",
+      "variant": "baseline",
+      "factId": "95b097c2822fa459199efd22",
+      "hash": "9ad3acad48047ef4d2aab77bf5f4fbdb3c5b9931896e46b6f0b4c670e4cdb043",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作沟通语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "以后工作沟通都用简体中文。打个招呼吧。"
+            }
+          ]
+        },
+        {
+          "text": "他要求以后工作沟通都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "以后工作沟通都用简体中文。打个招呼吧。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m03",
+      "variant": "candidate",
+      "factId": "95b097c2822fa459199efd22",
+      "hash": "9ad3acad48047ef4d2aab77bf5f4fbdb3c5b9931896e46b6f0b4c670e4cdb043",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作沟通语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "以后工作沟通都用简体中文。打个招呼吧。"
+            }
+          ]
+        },
+        {
+          "text": "他要求以后工作沟通都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "以后工作沟通都用简体中文。打个招呼吧。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m04",
+      "variant": "baseline",
+      "factId": "45ab8a6fa8ce270cfc782261",
+      "hash": "54ff78ac7db19338f8d19f417bf2acf385844dbd0e99e9eafe61510462145b82",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "部门职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+            }
+          ]
+        },
+        {
+          "text": "用户所在部门长期负责声学产品的海外售后",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m04",
+      "variant": "candidate",
+      "factId": "45ab8a6fa8ce270cfc782261",
+      "hash": "54ff78ac7db19338f8d19f417bf2acf385844dbd0e99e9eafe61510462145b82",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "部门职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+            }
+          ]
+        },
+        {
+          "text": "用户所在部门长期负责声学产品的海外售后",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m05",
+      "variant": "baseline",
+      "factId": "80d1131c413fbbd5fabaa6a9",
+      "hash": "9c83daf181faf369c37a3c070f5347a929181eac3f81be63b3ce2078bb71c368",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+            }
+          ]
+        },
+        {
+          "text": "他负责公司的麦克风阵列测试规范",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m05",
+      "variant": "candidate",
+      "factId": "80d1131c413fbbd5fabaa6a9",
+      "hash": "9c83daf181faf369c37a3c070f5347a929181eac3f81be63b3ce2078bb71c368",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+            }
+          ]
+        },
+        {
+          "text": "他负责公司的麦克风阵列测试规范",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m06",
+      "variant": "baseline",
+      "factId": "5ce61f78f33c72e014f07adc",
+      "hash": "036278ca8efe0a45736199721096220cf196e85ee9c567bde189620bf0d99e8c",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设计习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        },
+        {
+          "text": "他做设计时喜欢先看几版再定",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        },
+        {
+          "text": "倾向先对比多个方案再收敛到一版",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m06",
+      "variant": "candidate",
+      "factId": "5ce61f78f33c72e014f07adc",
+      "hash": "036278ca8efe0a45736199721096220cf196e85ee9c567bde189620bf0d99e8c",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设计习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        },
+        {
+          "text": "他做设计时喜欢先看几版再定",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        },
+        {
+          "text": "倾向先对比多个方案再收敛到一版",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m07",
+      "variant": "baseline",
+      "factId": "d25d9e594be401f2d6ed5fc5",
+      "hash": "9b3d2c0d84af88cd6a3529d50fad6be1a5eb1a61ffcac4699f2f31c5786c5119",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报格式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写周报习惯用表格。给一个周报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯用表格形式写周报",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写周报习惯用表格。给一个周报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m07",
+      "variant": "candidate",
+      "factId": "d25d9e594be401f2d6ed5fc5",
+      "hash": "9b3d2c0d84af88cd6a3529d50fad6be1a5eb1a61ffcac4699f2f31c5786c5119",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报格式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写周报习惯用表格。给一个周报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯用表格形式写周报",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写周报习惯用表格。给一个周报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m08",
+      "variant": "baseline",
+      "factId": "4b9380367bbb57aadb677e06",
+      "hash": "897be4407c5a3876b70d6c658b9e9f3d7667d0490ab26d4c91a03e3b7fa92e58",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "看方案的顺序",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        },
+        {
+          "text": "他看方案时习惯先看风险",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        },
+        {
+          "text": "再看收益",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m08",
+      "variant": "candidate",
+      "factId": "4b9380367bbb57aadb677e06",
+      "hash": "897be4407c5a3876b70d6c658b9e9f3d7667d0490ab26d4c91a03e3b7fa92e58",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "看方案的顺序",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        },
+        {
+          "text": "他看方案时习惯先看风险",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        },
+        {
+          "text": "再看收益",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m09",
+      "variant": "baseline",
+      "factId": "61346ba63455ae5cec4e7408",
+      "hash": "babc3f440d25ef6c83a9007bd1aa81ebaa60323c9cc33159e93d095d72fc5dcc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+            }
+          ]
+        },
+        {
+          "text": "他负责一个为期三年的设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m09",
+      "variant": "candidate",
+      "factId": "61346ba63455ae5cec4e7408",
+      "hash": "babc3f440d25ef6c83a9007bd1aa81ebaa60323c9cc33159e93d095d72fc5dcc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+            }
+          ]
+        },
+        {
+          "text": "他负责一个为期三年的设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m10",
+      "variant": "baseline",
+      "factId": "0c491674a4936748a3b0103e",
+      "hash": "7e9b4c446c7c11346e4fa28c2809ae9b0ffb754050531d23c702759ebac627fc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "职业角色",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+            }
+          ]
+        },
+        {
+          "text": "他在公司担任现场应用工程师",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m10",
+      "variant": "candidate",
+      "factId": "0c491674a4936748a3b0103e",
+      "hash": "7e9b4c446c7c11346e4fa28c2809ae9b0ffb754050531d23c702759ebac627fc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "职业角色",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+            }
+          ]
+        },
+        {
+          "text": "他在公司担任现场应用工程师",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m11",
+      "variant": "baseline",
+      "factId": "b98f32af2d399bc2b474e076",
+      "hash": "bdf6531886668dae4adb4c487f66f8b0614c5351fa253982764fcc80750b827c",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工程数据单位",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        },
+        {
+          "text": "他处理工程数据通常使用毫米",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        },
+        {
+          "text": "不习惯使用英寸",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m11",
+      "variant": "candidate",
+      "factId": "b98f32af2d399bc2b474e076",
+      "hash": "bdf6531886668dae4adb4c487f66f8b0614c5351fa253982764fcc80750b827c",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工程数据单位",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        },
+        {
+          "text": "他处理工程数据通常使用毫米",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        },
+        {
+          "text": "不习惯使用英寸",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m12",
+      "variant": "baseline",
+      "factId": "8fe55ff37fbf226b149c806f",
+      "hash": "20a49cc3a58d7f008e199b8f522e0c5df5a641f8005b6105e94a8a79f1f0951f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通方式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        },
+        {
+          "text": "他希望别人指出问题时直接说",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        },
+        {
+          "text": "不要绕弯子",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m12",
+      "variant": "candidate",
+      "factId": "8fe55ff37fbf226b149c806f",
+      "hash": "20a49cc3a58d7f008e199b8f522e0c5df5a641f8005b6105e94a8a79f1f0951f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通方式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        },
+        {
+          "text": "他希望别人指出问题时直接说",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        },
+        {
+          "text": "不要绕弯子",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m13",
+      "variant": "baseline",
+      "factId": "9462264c7e1b552e261b1daf",
+      "hash": "b678cf7a8f8a1df66af89e64748542a62ed93057607136de48d1fd8a2769a822",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "开会前先看议程",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我习惯每次开会前先拿到议程。写一句会议开场。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯每次开会前先拿到议程",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我习惯每次开会前先拿到议程。写一句会议开场。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m13",
+      "variant": "candidate",
+      "factId": "9462264c7e1b552e261b1daf",
+      "hash": "b678cf7a8f8a1df66af89e64748542a62ed93057607136de48d1fd8a2769a822",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "开会前先看议程",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我习惯每次开会前先拿到议程。写一句会议开场。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯每次开会前先拿到议程",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我习惯每次开会前先拿到议程。写一句会议开场。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m14",
+      "variant": "baseline",
+      "factId": "4b4a13a76c5530416505f2cc",
+      "hash": "21805952b160069c4e22f4019cc4198896d4fa195947634696c052930e581be2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "部门与业务方向",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        },
+        {
+          "text": "他所在部门是产品验证团队",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        },
+        {
+          "text": "长期专做防水可靠性测试",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m14",
+      "variant": "candidate",
+      "factId": "4b4a13a76c5530416505f2cc",
+      "hash": "21805952b160069c4e22f4019cc4198896d4fa195947634696c052930e581be2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "部门与业务方向",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        },
+        {
+          "text": "他所在部门是产品验证团队",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        },
+        {
+          "text": "长期专做防水可靠性测试",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m15",
+      "variant": "baseline",
+      "factId": "f60990e9cb3e54b3470abfac",
+      "hash": "6eb5a4b07dcb9a2b485ef385f320be74502b59348bcdd6de5e4300fcf92cb199",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "培训职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        },
+        {
+          "text": "他负责给新员工做产品培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        },
+        {
+          "text": "这是他的固定职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m15",
+      "variant": "candidate",
+      "factId": "f60990e9cb3e54b3470abfac",
+      "hash": "6eb5a4b07dcb9a2b485ef385f320be74502b59348bcdd6de5e4300fcf92cb199",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "培训职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        },
+        {
+          "text": "他负责给新员工做产品培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        },
+        {
+          "text": "这是他的固定职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m16",
+      "variant": "baseline",
+      "factId": "92b5150785e4ad59421db5fb",
+      "hash": "c88f28fdd2aed9868c22359691b25365d2085eee6b1b23e1de1269e458e9855a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "回答格式偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        },
+        {
+          "text": "他平时喜欢编号清单式的回答",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        },
+        {
+          "text": "不喜欢长段落",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m16",
+      "variant": "candidate",
+      "factId": "92b5150785e4ad59421db5fb",
+      "hash": "c88f28fdd2aed9868c22359691b25365d2085eee6b1b23e1de1269e458e9855a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "回答格式偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        },
+        {
+          "text": "他平时喜欢编号清单式的回答",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        },
+        {
+          "text": "不喜欢长段落",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m17",
+      "variant": "baseline",
+      "factId": "09aeb90a8ec1760685dc8e47",
+      "hash": "93f6d5db2b536707a4acf703bf070d31527c8eac26b92e330b33b5b2a63a4d46",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "长期项目“蓝鲸”",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        },
+        {
+          "text": "他有一个长期项目叫“蓝鲸”",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        },
+        {
+          "text": "目标是建设声学实验室",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m17",
+      "variant": "candidate",
+      "factId": "09aeb90a8ec1760685dc8e47",
+      "hash": "93f6d5db2b536707a4acf703bf070d31527c8eac26b92e330b33b5b2a63a4d46",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "长期项目“蓝鲸”",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        },
+        {
+          "text": "他有一个长期项目叫“蓝鲸”",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        },
+        {
+          "text": "目标是建设声学实验室",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m18",
+      "variant": "baseline",
+      "factId": "5d7022ebfc903b1f22973257",
+      "hash": "86ccf8f719397cd91dcd90e34872e01bcc1a4c7cb7de12a968dd38984ec2f4f8",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "数据报告图表偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        },
+        {
+          "text": "他做数据报告一向更喜欢折线图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        },
+        {
+          "text": "不喜欢饼图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "regression",
+      "caseId": "m18",
+      "variant": "candidate",
+      "factId": "5d7022ebfc903b1f22973257",
+      "hash": "86ccf8f719397cd91dcd90e34872e01bcc1a4c7cb7de12a968dd38984ec2f4f8",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "数据报告图表偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        },
+        {
+          "text": "他做数据报告一向更喜欢折线图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        },
+        {
+          "text": "不喜欢饼图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "baseline",
+      "factId": "5ce769df0d408c98420d69a1",
+      "hash": "55ec195479399a8d80ef9ef7f1433f142b6e809b9a19ae25c88f44751eea7d47",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作汇报先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢工作汇报先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "baseline",
+      "factId": "86b35d25654957a083496977",
+      "hash": "d1d572a132b69693fb4cb4295f2c5a80a318bfa95adea30d39fd2e21f4bd69fd",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "材料尽量用表格展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢汇报材料尽量用表格展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "baseline",
+      "factId": "f8f567c9b2619874d770e83a",
+      "hash": "15c35bde1ba551802d03735e0942c0d61f99ccac3fb5f11ee4caa64866c532b9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每周整理海外售后趋势",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+            }
+          ]
+        },
+        {
+          "text": "他每周负责整理海外售后的问题趋势",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "candidate",
+      "factId": "5ce769df0d408c98420d69a1",
+      "hash": "55ec195479399a8d80ef9ef7f1433f142b6e809b9a19ae25c88f44751eea7d47",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作汇报先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢工作汇报先给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "candidate",
+      "factId": "86b35d25654957a083496977",
+      "hash": "d1d572a132b69693fb4cb4295f2c5a80a318bfa95adea30d39fd2e21f4bd69fd",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "材料尽量用表格展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢汇报材料尽量用表格展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h01",
+      "variant": "candidate",
+      "factId": "f8f567c9b2619874d770e83a",
+      "hash": "15c35bde1ba551802d03735e0942c0d61f99ccac3fb5f11ee4caa64866c532b9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每周整理海外售后趋势",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+            }
+          ]
+        },
+        {
+          "text": "他每周负责整理海外售后的问题趋势",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h02",
+      "variant": "baseline",
+      "factId": "bebbc72a2836be07de44d970",
+      "hash": "45b79a4bb019544c1324f2fbba940e30fd2ed9ab01a3b9f977ab291e8d9abcec",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学校准实验室负责人",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责公司的声学校准实验室",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h02",
+      "variant": "baseline",
+      "factId": "cac7dfe1e4e6ddf65125d33e",
+      "hash": "87cc6319aa819209cdc6aa8699949fe133423c03f8b03548b7c746091982171b",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "报告使用国际单位制",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        },
+        {
+          "text": "他的日常报告都使用国际单位制（SI）",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h02",
+      "variant": "candidate",
+      "factId": "bebbc72a2836be07de44d970",
+      "hash": "45b79a4bb019544c1324f2fbba940e30fd2ed9ab01a3b9f977ab291e8d9abcec",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学校准实验室负责人",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责公司的声学校准实验室",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h02",
+      "variant": "candidate",
+      "factId": "cac7dfe1e4e6ddf65125d33e",
+      "hash": "87cc6319aa819209cdc6aa8699949fe133423c03f8b03548b7c746091982171b",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "报告使用国际单位制",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        },
+        {
+          "text": "他的日常报告都使用国际单位制（SI）",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h03",
+      "variant": "baseline",
+      "factId": "565f5699f712f749de6264de",
+      "hash": "bdf20a3c51ff11967f9d68fdf5a97dd30bce53cf237252e5d593f0d37b175a92",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "培训材料风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他做培训材料喜欢图多字少",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h03",
+      "variant": "baseline",
+      "factId": "e537ddf170980e9249e74cfd",
+      "hash": "8092c2b870a3515d889d17a3164fa08e9640b91b7a22a185035ffdefdbfe5e5a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作内容",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他平时给销售团队做产品培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h03",
+      "variant": "candidate",
+      "factId": "e537ddf170980e9249e74cfd",
+      "hash": "8092c2b870a3515d889d17a3164fa08e9640b91b7a22a185035ffdefdbfe5e5a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作内容",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他平时给销售团队做产品培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h03",
+      "variant": "candidate",
+      "factId": "565f5699f712f749de6264de",
+      "hash": "bdf20a3c51ff11967f9d68fdf5a97dd30bce53cf237252e5d593f0d37b175a92",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "培训材料风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他做培训材料喜欢图多字少",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h04",
+      "variant": "baseline",
+      "factId": "f33cbfe499bba1153ef36ff3",
+      "hash": "1ac63b636c71197dcdc134c85df730454b90597035397add7c71dee9e9a00895",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        },
+        {
+          "text": "他希望以后所有周报都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        },
+        {
+          "text": "之前的英文要求已作废",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h04",
+      "variant": "candidate",
+      "factId": "f33cbfe499bba1153ef36ff3",
+      "hash": "1ac63b636c71197dcdc134c85df730454b90597035397add7c71dee9e9a00895",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        },
+        {
+          "text": "他希望以后所有周报都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        },
+        {
+          "text": "之前的英文要求已作废",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h05",
+      "variant": "baseline",
+      "factId": "6a478c917858c6a9b3b570ee",
+      "hash": "a19a67dc3dcacc40f22b81a61b33f29b95c3b1163fc0ee9728aaa1db7c2c97f6",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "职责：海外经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责海外经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        },
+        {
+          "text": "不再负责国内经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h05",
+      "variant": "candidate",
+      "factId": "6a478c917858c6a9b3b570ee",
+      "hash": "a19a67dc3dcacc40f22b81a61b33f29b95c3b1163fc0ee9728aaa1db7c2c97f6",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "职责：海外经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责海外经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        },
+        {
+          "text": "不再负责国内经销商培训",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h06",
+      "variant": "baseline",
+      "factId": "025423e2f8c4b62d0c39085c",
+      "hash": "f3c08b8c1a3ca1c3b346f91129ca4c37e84063c5a894959be0a206d1b5ddd0e2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "季度复盘顺序偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "他做季度项目复盘时",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "习惯先看风险清单",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "再看进展",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h06",
+      "variant": "baseline",
+      "factId": "9a39c5fbb78ada9e6c7efd1c",
+      "hash": "232e47a2f700dabc2dd976fbdca921a1ee100cd8457bc173291a4ffecfaa39c4",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        },
+        {
+          "text": "他长期推进设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        },
+        {
+          "text": "计划按季度复盘",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h06",
+      "variant": "candidate",
+      "factId": "9a39c5fbb78ada9e6c7efd1c",
+      "hash": "232e47a2f700dabc2dd976fbdca921a1ee100cd8457bc173291a4ffecfaa39c4",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        },
+        {
+          "text": "他长期推进设备校准平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        },
+        {
+          "text": "计划按季度复盘",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h06",
+      "variant": "candidate",
+      "factId": "025423e2f8c4b62d0c39085c",
+      "hash": "f3c08b8c1a3ca1c3b346f91129ca4c37e84063c5a894959be0a206d1b5ddd0e2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "季度复盘顺序偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "他做季度项目复盘时",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "习惯先看风险清单",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        },
+        {
+          "text": "再看进展",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h07",
+      "variant": "baseline",
+      "factId": "3123a9c039875fbdc78ffc30",
+      "hash": "3cb5477cd187e69e473894eb0db30fea451db119d0ac44f5cd272e7768e9768a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "测量误差的写法",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯把测量误差写成带单位的数值",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+            }
+          ]
+        },
+        {
+          "text": "例如 ±0.5 mm",
+          "status": "unsupported",
+          "reason": "本人要求伙伴提供例子，没有表示采用或偏好 ±0.5 mm。"
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h07",
+      "variant": "baseline",
+      "factId": "50329ac66d2096c5b13de346",
+      "hash": "e737e98eb823a9eb6a68ff93d26e2c10c53727973f3ea29e2976f150ae0d1c31",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "技术说明的语言风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "他平时写技术说明使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "产品型号保留英文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h07",
+      "variant": "candidate",
+      "factId": "50329ac66d2096c5b13de346",
+      "hash": "e737e98eb823a9eb6a68ff93d26e2c10c53727973f3ea29e2976f150ae0d1c31",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "技术说明的语言风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "他平时写技术说明使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "产品型号保留英文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h07",
+      "variant": "candidate",
+      "factId": "3123a9c039875fbdc78ffc30",
+      "hash": "3cb5477cd187e69e473894eb0db30fea451db119d0ac44f5cd272e7768e9768a",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "测量误差的写法",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+            }
+          ]
+        },
+        {
+          "text": "他习惯把测量误差写成带单位的数值",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+            }
+          ]
+        },
+        {
+          "text": "例如 ±0.5 mm",
+          "status": "unsupported",
+          "reason": "本人要求伙伴提供例子，没有表示采用或偏好 ±0.5 mm。"
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h08",
+      "variant": "baseline",
+      "factId": "b8e4730b58896e80a73724fa",
+      "hash": "6002e868b70e18623348032bb289ea17bd4e8f0f0f74092bbe7f7793680a16d2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学知识库维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        },
+        {
+          "text": "他长期维护公司的声学知识库",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        },
+        {
+          "text": "知识条目习惯按应用场景分类",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h08",
+      "variant": "candidate",
+      "factId": "b8e4730b58896e80a73724fa",
+      "hash": "6002e868b70e18623348032bb289ea17bd4e8f0f0f74092bbe7f7793680a16d2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学知识库维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        },
+        {
+          "text": "他长期维护公司的声学知识库",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        },
+        {
+          "text": "知识条目习惯按应用场景分类",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h09",
+      "variant": "baseline",
+      "factId": "2cf58977c94c2192cd3bb119",
+      "hash": "dbf34feef6e66009ade95043b0be69112784834df662f7fcaca7cc269982fdb9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "可靠性验证职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "他负责公司产品的长期可靠性验证",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "日常实验记录使用表格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h09",
+      "variant": "baseline",
+      "factId": "8a10c9143e4ef8229da41353",
+      "hash": "11b3961a48e6581cba166ac096bb831a2037838046303dc21cfebf4b48739265",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇总中写明样本量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "他要求汇总中明确写出样本量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h09",
+      "variant": "candidate",
+      "factId": "8a10c9143e4ef8229da41353",
+      "hash": "11b3961a48e6581cba166ac096bb831a2037838046303dc21cfebf4b48739265",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇总中写明样本量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "他要求汇总中明确写出样本量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h09",
+      "variant": "candidate",
+      "factId": "2cf58977c94c2192cd3bb119",
+      "hash": "dbf34feef6e66009ade95043b0be69112784834df662f7fcaca7cc269982fdb9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "可靠性验证职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "他负责公司产品的长期可靠性验证",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        },
+        {
+          "text": "日常实验记录使用表格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "baseline",
+      "factId": "1e23ecfe39c848a7dc3b2093",
+      "hash": "23a4d33ce5f6a028eb6c7ba145106968a91675dd341bbd4c563503e5337bef8e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作对话语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我以后所有工作对话都用简体中文。先打个招呼。"
+            }
+          ]
+        },
+        {
+          "text": "他所有工作对话都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我以后所有工作对话都用简体中文。先打个招呼。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "baseline",
+      "factId": "2ce0119e1bc59b99535dc7b4",
+      "hash": "f6b0efecd2e9b2aa7acb328f1bb6ac53f7dc2d27efc119a1cb7823a24b28cc1e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "纪要按决定与行动项分开",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        },
+        {
+          "text": "他的会议纪要长期按“决定”和“行动项”分开记录",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "baseline",
+      "factId": "4fd446050c2af06a048ba91e",
+      "hash": "78ea03059834d07646a1a6f63ea797b1922e6e3f50f46be4f7520a82911cd1c9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每周团队复盘",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        },
+        {
+          "text": "他每周固定主持团队复盘会",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "candidate",
+      "factId": "1e23ecfe39c848a7dc3b2093",
+      "hash": "23a4d33ce5f6a028eb6c7ba145106968a91675dd341bbd4c563503e5337bef8e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作对话语言",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我以后所有工作对话都用简体中文。先打个招呼。"
+            }
+          ]
+        },
+        {
+          "text": "他所有工作对话都使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我以后所有工作对话都用简体中文。先打个招呼。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "candidate",
+      "factId": "4fd446050c2af06a048ba91e",
+      "hash": "78ea03059834d07646a1a6f63ea797b1922e6e3f50f46be4f7520a82911cd1c9",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每周团队复盘",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        },
+        {
+          "text": "他每周固定主持团队复盘会",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h10",
+      "variant": "candidate",
+      "factId": "2ce0119e1bc59b99535dc7b4",
+      "hash": "f6b0efecd2e9b2aa7acb328f1bb6ac53f7dc2d27efc119a1cb7823a24b28cc1e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "纪要按决定与行动项分开",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        },
+        {
+          "text": "他的会议纪要长期按“决定”和“行动项”分开记录",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h11",
+      "variant": "baseline",
+      "factId": "e893399149e7971ea6fd0d5e",
+      "hash": "1cd4b4cebbde274bdd79a3184672576890d3902998854a475c76a943c5e375c2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "月度趋势图表偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "他月度趋势统一用折线图展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "不再使用柱状图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h11",
+      "variant": "candidate",
+      "factId": "e893399149e7971ea6fd0d5e",
+      "hash": "1cd4b4cebbde274bdd79a3184672576890d3902998854a475c76a943c5e375c2",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "月度趋势图表偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "他月度趋势统一用折线图展示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        },
+        {
+          "text": "不再使用柱状图",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h12",
+      "variant": "baseline",
+      "factId": "429296acc1fbb7e547391e44",
+      "hash": "d8b3488214dfb5d8acc21acbf9ed4ef86e1dadea63db7bad4830fd5fe26b63f8",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责海外客户的技术支持工作",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h12",
+      "variant": "baseline",
+      "factId": "7f9825575b330e94ee762968",
+      "hash": "7f6fd81623ff5a0f1c86b144436453803b4c21a3977d58d21123213f6c69790f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        },
+        {
+          "text": "他沟通时希望先说明适用条件",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h12",
+      "variant": "candidate",
+      "factId": "429296acc1fbb7e547391e44",
+      "hash": "d8b3488214dfb5d8acc21acbf9ed4ef86e1dadea63db7bad4830fd5fe26b63f8",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责海外客户的技术支持工作",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h12",
+      "variant": "candidate",
+      "factId": "7f9825575b330e94ee762968",
+      "hash": "7f6fd81623ff5a0f1c86b144436453803b4c21a3977d58d21123213f6c69790f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        },
+        {
+          "text": "他沟通时希望先说明适用条件",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h13",
+      "variant": "baseline",
+      "factId": "60f321f3179ffc4d394621d5",
+      "hash": "14f3a3c5895ed0526b0a0c5f72d5499c24fc73bae8443f96292d3c9f9eec722d",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "技术方案假设呈现",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢在技术方案中把假设单独列出",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h13",
+      "variant": "baseline",
+      "factId": "b75ec4e30e77413aa2962a3c",
+      "hash": "1363a61431233ca52850517796a632d518dd752b7628e0bc212ffb4418aebb4f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "方案比较习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        },
+        {
+          "text": "他做技术方案时通常先比较两种可行方案",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h13",
+      "variant": "candidate",
+      "factId": "60f321f3179ffc4d394621d5",
+      "hash": "14f3a3c5895ed0526b0a0c5f72d5499c24fc73bae8443f96292d3c9f9eec722d",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "技术方案假设呈现",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢在技术方案中把假设单独列出",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h13",
+      "variant": "candidate",
+      "factId": "b75ec4e30e77413aa2962a3c",
+      "hash": "1363a61431233ca52850517796a632d518dd752b7628e0bc212ffb4418aebb4f",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "方案比较习惯",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        },
+        {
+          "text": "他做技术方案时通常先比较两种可行方案",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h14",
+      "variant": "baseline",
+      "factId": "98eb84f9178ccbf2fedf10e6",
+      "hash": "a5e14a7a7ec1890d7dbe2e2683d1401693be2f2016d9b8f33b2e013ccf610abc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "演示材料中英双语",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        },
+        {
+          "text": "他的演示材料习惯中英双语呈现",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h14",
+      "variant": "baseline",
+      "factId": "b746bc8d7d151029de658e21",
+      "hash": "a3cf79efb33e6ae375093b05df1414a4f5bdbf2bf7c743032a01c98ea68c9c11",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学产品展会演示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        },
+        {
+          "text": "他长期为声学产品准备展会演示材料",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h14",
+      "variant": "candidate",
+      "factId": "b746bc8d7d151029de658e21",
+      "hash": "a3cf79efb33e6ae375093b05df1414a4f5bdbf2bf7c743032a01c98ea68c9c11",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "声学产品展会演示",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        },
+        {
+          "text": "他长期为声学产品准备展会演示材料",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h14",
+      "variant": "candidate",
+      "factId": "98eb84f9178ccbf2fedf10e6",
+      "hash": "a5e14a7a7ec1890d7dbe2e2683d1401693be2f2016d9b8f33b2e013ccf610abc",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "演示材料中英双语",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        },
+        {
+          "text": "他的演示材料习惯中英双语呈现",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h15",
+      "variant": "baseline",
+      "factId": "d5e1fbb078a6dc4dffcd9779",
+      "hash": "15335eb6692a741e93f7e5be77ad1fc4c07b3cb97b40129f998f68ec129fc3be",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "远山测试平台",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "他长期维护名为“远山”的测试平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "旧名“星河”已停用",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "不再使用",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h15",
+      "variant": "candidate",
+      "factId": "d5e1fbb078a6dc4dffcd9779",
+      "hash": "15335eb6692a741e93f7e5be77ad1fc4c07b3cb97b40129f998f68ec129fc3be",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "远山测试平台",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "他长期维护名为“远山”的测试平台项目",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "旧名“星河”已停用",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        },
+        {
+          "text": "不再使用",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+            }
+          ]
+        }
+      ],
+      "obsoleteReview": {
+        "status": "current",
+        "reason": "事实明确否定或作废旧值，未把旧值当当前偏好或职责。"
+      }
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "baseline",
+      "factId": "9873fafadf60c09e3a492e68",
+      "hash": "225a44d120f65843ce9556ffdd3bb6be7d39b91f0b0ea561e7e29b33c64db2ea",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户平时负责硬件测试",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "baseline",
+      "factId": "b130c8264bfa1241b8fad8f2",
+      "hash": "89609d0eaa59bda31539ac1027ef2e5e04029da2cc6d17e611802bdb28061bb1",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "环境噪声测量关注",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户长期关注环境噪声测量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "baseline",
+      "factId": "b2402dbc8d448911c2da5300",
+      "hash": "ccffe5ba6b340306ba7bf9ab0c5a44cbdf5fa98d629bcefdc3b9ba796003d97e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作清单格式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户喜欢工作清单使用编号列表",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "candidate",
+      "factId": "9873fafadf60c09e3a492e68",
+      "hash": "225a44d120f65843ce9556ffdd3bb6be7d39b91f0b0ea561e7e29b33c64db2ea",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户平时负责硬件测试",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "candidate",
+      "factId": "b130c8264bfa1241b8fad8f2",
+      "hash": "89609d0eaa59bda31539ac1027ef2e5e04029da2cc6d17e611802bdb28061bb1",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "环境噪声测量关注",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户长期关注环境噪声测量",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h16",
+      "variant": "candidate",
+      "factId": "b2402dbc8d448911c2da5300",
+      "hash": "ccffe5ba6b340306ba7bf9ab0c5a44cbdf5fa98d629bcefdc3b9ba796003d97e",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作清单格式",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        },
+        {
+          "text": "用户喜欢工作清单使用编号列表",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h17",
+      "variant": "baseline",
+      "factId": "d8db18e96509e1389db47070",
+      "hash": "43ac516c08bd85ae8a51b40db4e3bd606168332d660dd06d627fde0d923553a0",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他本人一直喜欢自己的周报使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h17",
+      "variant": "candidate",
+      "factId": "d8db18e96509e1389db47070",
+      "hash": "43ac516c08bd85ae8a51b40db4e3bd606168332d660dd06d627fde0d923553a0",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "周报使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+            }
+          ]
+        },
+        {
+          "text": "他本人一直喜欢自己的周报使用简体中文",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 1,
+              "quote": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h18",
+      "variant": "baseline",
+      "factId": "00e908d3a2f1a758b31ddbb2",
+      "hash": "117e3de50276271d8dea65a8cb7920dfcaf7714d0d689bf072e8f5ae93fcedf1",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责：声学校准实验室设备维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责声学校准实验室的设备维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h18",
+      "variant": "candidate",
+      "factId": "00e908d3a2f1a758b31ddbb2",
+      "hash": "117e3de50276271d8dea65a8cb7920dfcaf7714d0d689bf072e8f5ae93fcedf1",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "工作职责：声学校准实验室设备维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+            }
+          ]
+        },
+        {
+          "text": "他长期负责声学校准实验室的设备维护",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "baseline",
+      "factId": "3aef33f077c3505ca6e8ae25",
+      "hash": "22f8d1225339d747d4c9726c3ac5ce4a4c134dc2c1c98c686f76d99c65648099",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每月质量报告职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        },
+        {
+          "text": "他负责整理每月质量报告",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "baseline",
+      "factId": "47425f9577127359b08c1cbc",
+      "hash": "838cd2916b716ced70bfb6391532664163cae1326b2676262ce81cfda2f7c9c0",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "图表灰度偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        },
+        {
+          "text": "他做图表长期只使用灰度配色",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "baseline",
+      "factId": "fe0d99b941b0bb39a588401d",
+      "hash": "1954f938243ab535ee7c90b48a194aff5f024e814055c849e8660099e1311aba",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "报告结构偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        },
+        {
+          "text": "他写报告时希望先说明限制",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        },
+        {
+          "text": "再给出结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "candidate",
+      "factId": "fe0d99b941b0bb39a588401d",
+      "hash": "1954f938243ab535ee7c90b48a194aff5f024e814055c849e8660099e1311aba",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "报告结构偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        },
+        {
+          "text": "他写报告时希望先说明限制",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        },
+        {
+          "text": "再给出结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直希望报告先说限制，再说结论。给我一个句式。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "candidate",
+      "factId": "3aef33f077c3505ca6e8ae25",
+      "hash": "22f8d1225339d747d4c9726c3ac5ce4a4c134dc2c1c98c686f76d99c65648099",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "每月质量报告职责",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        },
+        {
+          "text": "他负责整理每月质量报告",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h19",
+      "variant": "candidate",
+      "factId": "47425f9577127359b08c1cbc",
+      "hash": "838cd2916b716ced70bfb6391532664163cae1326b2676262ce81cfda2f7c9c0",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "图表灰度偏好",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        },
+        {
+          "text": "他做图表长期只使用灰度配色",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 2,
+              "quote": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h20",
+      "variant": "baseline",
+      "factId": "f256be9649aab80368339690",
+      "hash": "c0a4fb909139cad653590ccb5050875edb42ce5f64710b743131754c65e312e4",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢日常沟通直接给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        },
+        {
+          "text": "并保持简洁",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h20",
+      "variant": "candidate",
+      "factId": "f256be9649aab80368339690",
+      "hash": "c0a4fb909139cad653590ccb5050875edb42ce5f64710b743131754c65e312e4",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "沟通风格",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        },
+        {
+          "text": "他喜欢日常沟通直接给结论",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        },
+        {
+          "text": "并保持简洁",
+          "status": "supported",
+          "citations": [
+            {
+              "message": 0,
+              "quote": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h22",
+      "variant": "baseline",
+      "factId": "5b8ad43e4174559a91a43e38",
+      "hash": "53ce2bdca64668ae7a6cff3136e6826f2f30ad021743d6c631b2ec1c17528609",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇报分类方式",
+          "status": "unsupported",
+          "reason": "这是粘贴文档正文，不是本人偏好；标题和正文均错误归属于本人。"
+        },
+        {
+          "text": "他希望汇报按地区分类",
+          "status": "unsupported",
+          "reason": "这是粘贴文档正文，不是本人偏好；标题和正文均错误归属于本人。"
+        }
+      ]
+    },
+    {
+      "group": "hard",
+      "caseId": "h22",
+      "variant": "candidate",
+      "factId": "5b8ad43e4174559a91a43e38",
+      "hash": "53ce2bdca64668ae7a6cff3136e6826f2f30ad021743d6c631b2ec1c17528609",
+      "reviewed": true,
+      "claims": [
+        {
+          "text": "汇报分类方式",
+          "status": "unsupported",
+          "reason": "这是粘贴文档正文，不是本人偏好；标题和正文均错误归属于本人。"
+        },
+        {
+          "text": "他希望汇报按地区分类",
+          "status": "unsupported",
+          "reason": "这是粘贴文档正文，不是本人偏好；标题和正文均错误归属于本人。"
+        }
+      ]
+    }
+  ]
+}

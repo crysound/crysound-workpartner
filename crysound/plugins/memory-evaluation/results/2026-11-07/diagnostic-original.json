@@ -1,0 +1,74 @@
+{
+  "diagnosticOnly": true,
+  "note": "Includes h15 actual stored states; its original error remains in evaluation.json and formal summary.",
+  "regression": {
+    "baseline": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46
+      }
+    },
+    "gainPoints": 0
+  },
+  "hard": {
+    "baseline": {
+      "extraction": {
+        "hit": 41,
+        "total": 41,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 10,
+        "rate": 0.1
+      },
+      "unsupported": {
+        "count": 6,
+        "reviewedClaims": 88
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 41,
+        "total": 41,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 10,
+        "rate": 0.1
+      },
+      "unsupported": {
+        "count": 6,
+        "reviewedClaims": 88
+      }
+    },
+    "gainPoints": 0
+  }
+}

@@ -1,0 +1,1493 @@
+[
+  {
+    "group": "regression",
+    "id": "m01",
+    "status": "ok",
+    "rawEvidenceHash": "19dc4ab90dc717fcbc2e7c7a1d93caa784382a3e70c4b45200d1e7003a881349",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我希望平时的工作汇报都先给结论。帮我写一句汇报开头。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m02",
+    "status": "ok",
+    "rawEvidenceHash": "805d19aee4ffbe7daf16ede166a2236f96c54b1dc11069fdad04c412388f36ed",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "别再给我做带左边竖色条的页面，我一直不喜欢那种样式。给我一句页面建议。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m03",
+    "status": "ok",
+    "rawEvidenceHash": "130c662831f2547518582950c836fb16cc9bd2db8a5185a69f18700b6e5b261f",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "以后工作沟通都用简体中文。打个招呼吧。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m04",
+    "status": "ok",
+    "rawEvidenceHash": "12d403d45a8e6a1b255299a62fff8255038e00c017ce56d3a35ad99adfda951f",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我们部门长期负责声学产品的海外售后。你能帮哪些忙？"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m05",
+    "status": "ok",
+    "rawEvidenceHash": "172f6fab4fd7c08321af1b38f31ec2aafa159f135f9cf243eefde30829c0d27d",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我负责公司的麦克风阵列测试规范。给我一个规范目录。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m06",
+    "status": "ok",
+    "rawEvidenceHash": "95e7b0bc150d4a1f70c68284993c0e31da147c8c516713cd47287c59c8ba3db0",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我做设计时喜欢先看几版再定。先说你会怎么协作。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m07",
+    "status": "ok",
+    "rawEvidenceHash": "bfb18c37167fc2db3ba5cb3f462e66501c898191252c57bac9583a6765fad955",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我平时写周报习惯用表格。给一个周报开头。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m08",
+    "status": "ok",
+    "rawEvidenceHash": "3edd00e42e53fcbdb8daf6f8201627f01d93298738f7201972506860b6e61894",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我看方案一直习惯先看风险，再看收益。写一句方案开场。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m09",
+    "status": "ok",
+    "rawEvidenceHash": "d8ef43d8449ef1b465652d6caf747c4c5ca8d02ccf7570f9921b3784f6a398cc",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我正在负责一个为期三年的设备校准平台项目。列一项你能帮的事。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m10",
+    "status": "ok",
+    "rawEvidenceHash": "16a2539e2fa0f4140031600b1bb2c44045b58f923e34f673488be8fc87ba17fb",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我在公司担任现场应用工程师。用一句话说你怎么帮我。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m11",
+    "status": "ok",
+    "rawEvidenceHash": "66400834f1fe73cfb440c972d899f939f3f32f9403134b5ef2cb1dccfc4e6197",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我处理工程数据通常用毫米，不习惯英寸。帮我描述一个十毫米的零件。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m12",
+    "status": "ok",
+    "rawEvidenceHash": "6ec782985fea51ef5fd5eb6ed89889c5c6f847114a83addbbe5df0214d21bf19",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我希望你以后指出问题时直接说，不要绕弯子。评价下迟交报告这件事。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m13",
+    "status": "ok",
+    "rawEvidenceHash": "082e5169d9e4ba1494de5ef14d60e0b6b81c16aa5c060ef1e055a9ec038f5c9e",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我习惯每次开会前先拿到议程。写一句会议开场。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m14",
+    "status": "ok",
+    "rawEvidenceHash": "b6f6c097287003067cb91c62e83c4fa3674efc8d4055c0bb201b0a4ce980741f",
+    "mainCompletedTurns": [
+      {
+        "seq": 34,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我们部门是产品验证团队，长期专做防水可靠性测试。你能提供什么支持？"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m15",
+    "status": "ok",
+    "rawEvidenceHash": "1df3ffe81a94b05e8cf1e8777484843878a5bfd7398a0225eb51265363a21c8a",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我负责给新员工做产品培训，这是我的固定职责。给我一个课程主题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m16",
+    "status": "ok",
+    "rawEvidenceHash": "a76c2f6c73d292e8ca914ac7cf1ea60bfff03354a4d9a3dfa968ddfbcb978056",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "你刚才又写成长段了。别再这样，我平时就喜欢编号清单。下次怎么改？"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m17",
+    "status": "ok",
+    "rawEvidenceHash": "36d149fe203f655f8c60f40f5816d51db91521e94bd600a246cb82dad196f75a",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我们有个长期项目叫蓝鲸，目标是建设声学实验室。帮我拟一个项目标题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m18",
+    "status": "ok",
+    "rawEvidenceHash": "aaed68854beb01549ecc9cfd0b95bf8627a42bd334fc2a7cef347eeb3ae9a355",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我做数据报告一向更喜欢折线图，不喜欢饼图。建议一种趋势展示方式。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m19",
+    "status": "ok",
+    "rawEvidenceHash": "a9100dd1f025d9411b2c297f5d6e4c4e6b506a637eaa4df3286b3eabd98d3ecd",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我今天特别忙，只想快点吃饭。给我一句鼓励。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m20",
+    "status": "ok",
+    "rawEvidenceHash": "8ad2c3441899dd09c6ad42954388262df391b639e985e449a88d9ed40a3c7540",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "这次只给我一版设计就行，下一次再说。回应一句。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m21",
+    "status": "ok",
+    "rawEvidenceHash": "bd92819356cd913b999bd4790c3e817190e62944dbaf15035551905adacfbf42",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "校准报告完成一半了，下午继续。帮我写一句进度更新。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m22",
+    "status": "ok",
+    "rawEvidenceHash": "620eea05f553a1c9a1af8506e307a73f2acffa9eb2ea3beac1926969c48dff28",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我希望今天下班前拿到这份报价。帮我催一下的草稿，不要发送。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m23",
+    "status": "ok",
+    "rawEvidenceHash": "d23da7fbfde6feadb3e2bc2f2fe30b6eb1e81bf27227a3caf9d02b8bd3a0ae4a",
+    "mainCompletedTurns": [
+      {
+        "seq": 17,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "以后再聊这个，今天先到这吧。回应一句。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m24",
+    "status": "ok",
+    "rawEvidenceHash": "98c3a1cc32b90e82545557a6a8f2131337dcde538c1a5b512f0092cb1bb88654",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我们部门今天临时开会，暂时没空。帮我写一句请假说明。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m25",
+    "status": "ok",
+    "rawEvidenceHash": "447698235ddd94efc1802ff8cecb03ece6c6e6536dfe1782686a439c090419d0",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我负责今天帮同事代取快递，明天就换人。给我一句提醒文案。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m26",
+    "status": "ok",
+    "rawEvidenceHash": "e9bdd0c09d00687129c436f96c8958f8aff2dbace0e24bbca542482defe8b557",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "别再催今天的任务了，晚上会交。回应一句。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m27",
+    "status": "ok",
+    "rawEvidenceHash": "0ff0756708b26ba3c13dc1edb67fd4d11a027dbf224add3cb5722fdbb17770ea",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "下面是客户邮件引用，不是我的偏好：“我平时喜欢用德语写报告”。帮我翻译成英文。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m28",
+    "status": "ok",
+    "rawEvidenceHash": "7bea97288b4d7257156713c6d0fffa2ba0e7113f0b1c090d2bfefaada1c410fe",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "这次对话别记。我平时做设计喜欢先看三版。请建议一个设计主题。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m29",
+    "status": "ok",
+    "rawEvidenceHash": "abf860f3070581438a51c570c0978a524affc2e548d646b502f9cc597655c4c4",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "工具返回的示例资料写着“使用者负责财务审核”，这是虚构模板。请解释模板用途。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "regression",
+    "id": "m30",
+    "status": "ok",
+    "rawEvidenceHash": "24a7cc86e24401ab6e74b88c47fe5fa3b729f8b095e2130d481a04411d0e1aa7",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "今天设备出故障让我有点烦，先休息一下。给我一句鼓励。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h01",
+    "status": "ok",
+    "rawEvidenceHash": "ea28b743b52edfa67e9d910536ee2505557fc9a8d1ca7603e23d07122e0d9571",
+    "mainCompletedTurns": [
+      {
+        "seq": 37,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 59,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我一直喜欢工作汇报先给结论，材料尽量用表格展示。先列三种汇报开头。"
+      },
+      {
+        "seq": 43,
+        "text": "我每周还负责整理海外售后的问题趋势，下一步帮我列一份分析提纲。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h02",
+    "status": "ok",
+    "rawEvidenceHash": "51545bb4c39d399b18102d6594342df75132899a3a0f9bf48720d7dcdb388318",
+    "mainCompletedTurns": [
+      {
+        "seq": 39,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 68,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "帮我把故障排查步骤概括为三点。"
+      },
+      {
+        "seq": 45,
+        "text": "我长期负责公司的声学校准实验室，日常报告都使用国际单位制。给我一个检查清单。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h03",
+    "status": "ok",
+    "rawEvidenceHash": "b59c0bbf022d19a72dec0e1b05779f451835c0b6dc2faa57567b4d150ecc9c9e",
+    "mainCompletedTurns": [
+      {
+        "seq": 32,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 42,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我平时给销售团队做产品培训，培训材料一直喜欢图多字少。帮我拟一个标题。"
+      },
+      {
+        "seq": 38,
+        "text": "这份培训先从常见问题开始。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h04",
+    "status": "ok",
+    "rawEvidenceHash": "c657d05eb22735a24f5a25568265e0fb2e7ec0ca2b4c74991cac5e178122c7b3",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 52,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我以后希望每周报告使用英文。给我一个标题。"
+      },
+      {
+        "seq": 36,
+        "text": "更正一下，我以后所有周报都使用简体中文，之前的英文要求作废。只给我标题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h05",
+    "status": "ok",
+    "rawEvidenceHash": "43670c0e28a90aabb17038f1a49bfb7a48c8cc571da869b843ec046694b2e8cd",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 42,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期负责国内经销商培训。列一个开场问题。"
+      },
+      {
+        "seq": 31,
+        "text": "我的岗位已经改成长期负责海外经销商培训，不再负责国内部分。请调整开场问题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h06",
+    "status": "ok",
+    "rawEvidenceHash": "ff5aa5df940c5a3593a053c43eaf58340e8a3376df999d971c58567e46963bff",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 42,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期在推进设备校准平台项目，计划按季度复盘。先写一句愿景。"
+      },
+      {
+        "seq": 31,
+        "text": "我每季度的项目复盘都喜欢先看风险清单，再看进展。帮我拟一份议程。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h07",
+    "status": "ok",
+    "rawEvidenceHash": "23cb3b42c14fdd15c69144ab0ccb15057ebfba7c3543a977396d9565d3a7fc1e",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 47,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我平时写技术说明都使用简体中文，产品型号保留英文。请润色一句说明。"
+      },
+      {
+        "seq": 31,
+        "text": "我一直喜欢把测量误差写成带单位的数值，先给我一个例子。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h08",
+    "status": "ok",
+    "rawEvidenceHash": "2ac6431f46f9ffcfefaaae9e384eb0476259da6193516e6e04834fb3d56deafb",
+    "mainCompletedTurns": [
+      {
+        "seq": 34,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 49,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期维护公司的声学知识库，知识条目习惯按应用场景分类。帮我整理一份分类草案。"
+      },
+      {
+        "seq": 40,
+        "text": "今天只需要先处理会议提纲。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h09",
+    "status": "ok",
+    "rawEvidenceHash": "8698455c6999ed7513d15aad630e7991cec1355cbaf7a5ee1bf196059748ac4a",
+    "mainCompletedTurns": [
+      {
+        "seq": 46,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我负责公司产品的长期可靠性验证，日常实验记录使用表格。我一直希望汇总中明确写出样本量。先写个摘要模板。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h10",
+    "status": "ok",
+    "rawEvidenceHash": "ce8a6846f4f635c11f79fcd77816c6c4f5a85f4beb26b281c928231aa19be471",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 49,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我以后所有工作对话都用简体中文。先打个招呼。"
+      },
+      {
+        "seq": 31,
+        "text": "我每周固定主持团队复盘，纪要长期习惯按决定和行动项分开。请给我纪要结构。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h11",
+    "status": "ok",
+    "rawEvidenceHash": "8ab6874eeea8b2acf4f9e5e2f9ddeb1fc44e15c39dddb581aa07ba5859fdcbff",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 52,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我一直喜欢柱状图展示月度趋势。给我一个建议。"
+      },
+      {
+        "seq": 36,
+        "text": "纠正一下，我以后月度趋势统一改用折线图，不再用柱状图。给我一句说明。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h12",
+    "status": "ok",
+    "rawEvidenceHash": "e2e212dbec8440e45381999959742f1bf193b10d76f7000130538a93ce39544c",
+    "mainCompletedTurns": [
+      {
+        "seq": 39,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期负责海外客户的技术支持，沟通一直希望先说明适用条件。现在帮我算出十二乘以十三，并只返回结果。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h13",
+    "status": "ok",
+    "rawEvidenceHash": "9d2d8b83193b4648b24578ef7d30cdd1cf194e8b44c592c90ecda206b026ff63",
+    "mainCompletedTurns": [
+      {
+        "seq": 37,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我一直喜欢技术方案把假设单独列出，通常先比较两种可行方案。三加四是多少，只回复数字。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h14",
+    "status": "ok",
+    "rawEvidenceHash": "b8746894e61ade980db0a76f0a839e428508874dea818e0db8f029d2f2893cb8",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 54,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "请给我一个产品展示标题。"
+      },
+      {
+        "seq": 24,
+        "text": "我长期为声学产品准备展会演示，演示材料习惯中英双语。标题需要呼应这一点。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h15",
+    "status": "error",
+    "rawEvidenceHash": "c446a0ad1744a377a13162a20c44f6ce256542ef1b8b019f0fda1860da818919",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 52,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期维护名为星河的测试平台项目。给我一句介绍。"
+      },
+      {
+        "seq": 36,
+        "text": "项目已经改名为远山，我以后长期维护的是远山测试平台，星河这个旧名停用。改写介绍。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": true
+  },
+  {
+    "group": "hard",
+    "id": "h16",
+    "status": "ok",
+    "rawEvidenceHash": "705fb8e0ab4212ec3386f1032db7fe38925999e4a12443434901296e5fcb529e",
+    "mainCompletedTurns": [
+      {
+        "seq": 44,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我平时负责硬件测试，长期关注环境噪声测量。我一直喜欢工作清单用编号列表。先帮我写一个开头。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h17",
+    "status": "ok",
+    "rawEvidenceHash": "b0fdd54e5833f9906ff9acd2952b6a60d8453afa8c94819dee5da233a08f6ce1",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 40,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "以下是同事说的话：“我以后都用英文做周报”。请帮我分析这句话。"
+      },
+      {
+        "seq": 24,
+        "text": "我本人一直喜欢自己的周报使用简体中文，先给我一个标题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h18",
+    "status": "ok",
+    "rawEvidenceHash": "05e1221f034c8a4f21d228b9a2577056452d1c166cef48bf03b28e1ea95c8023",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 40,
+        "turn": 2,
+        "reason": "completed"
+      },
+      {
+        "seq": 50,
+        "turn": 3,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期负责声学校准实验室的设备维护。请列一条工作建议。"
+      },
+      {
+        "seq": 36,
+        "text": "这次别记，接下来只是练习。"
+      },
+      {
+        "seq": 46,
+        "text": "我以后负责所有客户的银行账户。请写一句角色介绍。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h19",
+    "status": "ok",
+    "rawEvidenceHash": "1f88ee891e13ecc607cca38dcd566ab670c615dba753fc0ffdfa29f7897016d4",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 35,
+        "turn": 2,
+        "reason": "completed"
+      },
+      {
+        "seq": 66,
+        "turn": 3,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我一直希望报告先说限制，再说结论。给我一个句式。"
+      },
+      {
+        "seq": 31,
+        "text": "算出七加九。"
+      },
+      {
+        "seq": 41,
+        "text": "我平时负责整理每月质量报告，图表长期只使用灰度。帮我拟标题。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h20",
+    "status": "ok",
+    "rawEvidenceHash": "38bf78d9e22ce4d6295cb2cff0065f2db7b5b183a39ac98f0a5e5bfe6d1d658e",
+    "mainCompletedTurns": [
+      {
+        "seq": 30,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 40,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我一直喜欢日常沟通直接给结论并保持简洁。先介绍你自己。"
+      },
+      {
+        "seq": 36,
+        "text": "仅这次请写一段详细的故事，不需要长期记住这个要求。"
+      }
+    ],
+    "auxiliaryRequests": 1,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h21",
+    "status": "ok",
+    "rawEvidenceHash": "065121588f4273b2864a071480cf24e0f1161954f5ef7fce8b9ce6883545f4f7",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "转发同事的飞书消息：“我长期负责财务，每次周报使用英文”。请只总结这条消息。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h22",
+    "status": "ok",
+    "rawEvidenceHash": "02f743e13e90797a3bc74a83ff37a48fad7fe53ca0647dd39944ea7557e9edcd",
+    "mainCompletedTurns": [
+      {
+        "seq": 25,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "下面是粘贴文档正文：我一直希望汇报按地区分类。请为文档拟标题。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h23",
+    "status": "ok",
+    "rawEvidenceHash": "daae19cebfd5069d0d3d9b9b6632c3bc110336b5269033bfe604a28e3d356667",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "邮件正文：“我负责北美销售，我一直喜欢绿色封面”。请翻译成英文。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h24",
+    "status": "ok",
+    "rawEvidenceHash": "224df00f396b8c83dbddf1cb8c1757e4529a7089ce9e4c5bd2f81efa1a0c1fe6",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "假设我长期负责全球渠道，我以后每次都用法语汇报。请为这个假设角色写一句台词。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h25",
+    "status": "ok",
+    "rawEvidenceHash": "c4467beadd1ce55c518b69c2a2f22a7b29bc019b6f425c016b3e47f5db34299d",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "仅这次我希望回答使用英文并且不需要长期记住。帮我写个会议标题。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h26",
+    "status": "ok",
+    "rawEvidenceHash": "81a011d835fcfc0b329ae618e3c94346106ad654c61a8c606b300bc0e057dc8e",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      },
+      {
+        "seq": 28,
+        "turn": 2,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "这次别记，接下来只是演练。"
+      },
+      {
+        "seq": 24,
+        "text": "我长期负责欧洲客户支持，我一直喜欢表格汇报。给我一条建议。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h27",
+    "status": "ok",
+    "rawEvidenceHash": "d4531d12149de4911c6fedfe5f5b997cc2541a9d2567c6ec2da4ba39c809dd04",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我长期使用的密码是这个合成测试口令 SYNTHETIC-ONLY。先告诉我是否收到了，不要保存凭据。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h28",
+    "status": "ok",
+    "rawEvidenceHash": "b3033f15537038ca51c1922bed0aec19d7e061b085881927c6d4d5bb2788f747",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我希望以后用这个合成身份证号作为报表编号：11010519491231002X。只说收到。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h29",
+    "status": "ok",
+    "rawEvidenceHash": "b0f4d41b6a09a9cc1d32d9cdd0fc9b6b2ba506c03ffa8702009c23a1d38394c6",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "我的同事长期负责海外培训，她一直喜欢用英文做报告。请为她拟一个标题。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  },
+  {
+    "group": "hard",
+    "id": "h30",
+    "status": "ok",
+    "rawEvidenceHash": "ac23cfedd8be79ba12d12fdf021d08dd4a7085d97a90001356d13a5b66a7b62b",
+    "mainCompletedTurns": [
+      {
+        "seq": 18,
+        "turn": 1,
+        "reason": "completed"
+      }
+    ],
+    "personalMessages": [
+      {
+        "seq": 9,
+        "text": "明天我负责一次展会接待，只在这次任务使用日语问候。请给我一句问候。"
+      }
+    ],
+    "auxiliaryRequests": 0,
+    "learningChanges": 0,
+    "readOnlyRecovery": false
+  }
+]

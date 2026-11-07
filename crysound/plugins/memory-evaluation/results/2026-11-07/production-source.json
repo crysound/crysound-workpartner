@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "fd201be78d60713a014a454579dbc3efd12c92de",
+  "files": [
+    {
+      "file": "learning.mjs",
+      "sha256": "f1bf0c049a292529fc401901ed9000171bef2595a8fbd6cb793046f4342e2062"
+    },
+    {
+      "file": "store.mjs",
+      "sha256": "7428770c30b3600dac3e7ba1989db59d763b991d4857672d6250e50cc4845c8d"
+    },
+    {
+      "file": "index.mjs",
+      "sha256": "f791d2ffbb7909c0dda91e145ea43909acbe2786d5cee155d936c5951171b51d"
+    },
+    {
+      "file": "client.js",
+      "sha256": "9482c4ebc26bf0e37725dd2f0866980198ec95cb4c80a04a10ce4eb8c78597b4"
+    },
+    {
+      "file": "package.json",
+      "sha256": "fbda54f4598e6e30d489ffc1c76f14df53e51bdf23a44d87c8d00f4bfbb407a1"
+    }
+  ]
+}

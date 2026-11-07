@@ -39,3 +39,18 @@ test('concept hits still count, but unsupported additions inside a positive fact
   assert.equal(result.regression.candidate.unsupported.count, 1);
   assert.equal(result.passed, false);
 });
+
+test('a corrected statement that negates the old value is an alert to review, not an unsupported old preference', () => {
+  const { evaluation, ledger } = fixture();
+  const fact = { id: 'correction', kind: 'identity', title: '职责', content: '我长期负责海外经销商培训，不再负责国内经销商培训' };
+  evaluation.hard.find(row => row.id === 'h05').candidate = [fact];
+  const entry = { group: 'hard', caseId: 'h05', variant: 'candidate', factId: fact.id, hash: factHash(fact), reviewed: true,
+    claims: [{ text: fact.content, status: 'supported', citations: [{ message: 1, quote: '长期负责海外经销商培训，不再负责国内部分' }] }] };
+  ledger.facts.push(entry);
+  assert.equal(scoreLearning(evaluation, ledger).complete, false);
+  entry.obsoleteReview = { status: 'current', reason: '旧职责在否定范围内，不是当前职责' };
+  const result = scoreLearning(evaluation, ledger);
+  assert.equal(result.complete, true);
+  assert.equal(result.hard.candidate.unsupported.count, 0);
+  assert.equal(result.hard.candidate.unsupported.oldValueAlerts, 1);
+});

@@ -1,6 +1,6 @@
 # 兆华记忆
 
-`@crysound/memory` 是工作伙伴的独立记忆插件，不修改 dsh 本体，已在公司预装清单中。主对话模型从用户本轮陈述中主动保存稳定的偏好、身份和长期项目事实；本草稿增加主对话之外的后台补记，经现有公司模型网关，不下载嵌入模型、不接向量库或新外部服务。主对话与后台均不保证每个事实都会被提取；效果尚待真实配对评估。
+`@crysound/memory` 是工作伙伴的独立记忆插件，不修改 dsh 本体，已在公司预装清单中。主对话模型从用户本轮陈述中主动保存稳定的偏好、身份和长期项目事实；本草稿增加主对话之外的后台补记，经现有公司模型网关，不下载嵌入模型、不接向量库或新外部服务。主对话与后台均不保证每个事实都会被提取；本轮真实配对未见提取增益，未达交付条件。
 
 ## 使用
 
@@ -52,7 +52,7 @@ SQLite 事务串行处理并发写入，读写携带版本，冲突明确返回�
 
 管理接口沿用相同来源、方法、请求体大小与版本验证：`POST /crysound-memory/api/auto-learning` 接受 `{revision, autoLearning}`；`GET /crysound-memory/api/learning` 返回一致的事实与记录快照；`POST /crysound-memory/api/undo-learning` 接受 `{revision, id}`；`GET /crysound-memory/api/receipts` 只返回本人已提交且仍存在的事实标题和会话/轮次，不返回候选原话。普通召回不读取学习历史或辅助日志，召回预算不增加。设置提交成功而历史刷新失败时保留提交结果，显示未读完成，不能当成空历史。
 
-隔离合成验证覆盖真实 SQLite、HTTP、宿主工具、调度/辅助流协议、重启水位、取消和版本冲突；其中辅助响应为测试替身，不能证明真实模型效果。[原页面准备证据](tests/evidence/learning-preparation/README.md)和[本轮复查](tests/evidence/learning-implementation/README.md)分别说明来源。[固定困难集与评分办法](../memory-evaluation/LEARNING-EVALUATION.md)先于真实调用提交，要求困难集提取至少提高 10 个百分点，原集不退化，负例误记和无依据扩写均不升。真实评估仍未运行，不能以旧版 18/18 和 0/12 的满分回归代替。
+隔离合成验证覆盖真实 SQLite、HTTP、宿主工具、调度/辅助流协议、重启水位、取消和版本冲突；其中辅助响应为测试替身，不能证明真实模型效果。[原页面准备证据](tests/evidence/learning-preparation/README.md)和[本轮复查](tests/evidence/learning-implementation/README.md)分别说明来源。[固定困难集与评分办法](../memory-evaluation/LEARNING-EVALUATION.md)先于真实调用提交，要求困难集提取至少提高 10 个百分点，原集不退化，负例误记和无依据扩写均不升。[本轮真实结果](../memory-evaluation/results/2026-11-07/README.md)：回归 18/18→18/18，困难集 41/41→41/41，增益零；困难负例 1/10→1/10，无依据断言 3→3。一段后台提案被拒绝，正式验收未完成。不能以基线满分代替提取提升，仍保留草稿。
 
 ## 存储格式与运行时升级
 

@@ -1,0 +1,89 @@
+{
+  "formal": {
+    "complete": false,
+    "reason": "unfinished real-host case"
+  },
+  "failedCases": [
+    {
+      "group": "hard",
+      "id": "h15",
+      "status": "error",
+      "error": "Real-host learner exited with failure.\n标题不在原话中。\n"
+    }
+  ],
+  "diagnosticOnly": true,
+  "regression": {
+    "baseline": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46,
+        "oldValueAlerts": 0
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 0,
+        "total": 12,
+        "rate": 0
+      },
+      "unsupported": {
+        "count": 1,
+        "reviewedClaims": 46,
+        "oldValueAlerts": 0
+      }
+    },
+    "gainPoints": 0
+  },
+  "hard": {
+    "baseline": {
+      "extraction": {
+        "hit": 41,
+        "total": 41,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 10,
+        "rate": 0.1
+      },
+      "unsupported": {
+        "count": 3,
+        "reviewedClaims": 88,
+        "oldValueAlerts": 3
+      }
+    },
+    "candidate": {
+      "extraction": {
+        "hit": 41,
+        "total": 41,
+        "rate": 1
+      },
+      "falseMemory": {
+        "hit": 1,
+        "total": 10,
+        "rate": 0.1
+      },
+      "unsupported": {
+        "count": 3,
+        "reviewedClaims": 88,
+        "oldValueAlerts": 3
+      }
+    },
+    "gainPoints": 0
+  }
+}
