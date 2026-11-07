@@ -16,7 +16,7 @@
 - `GET` 或 `POST /_zp/treg/call/<id>`：方法必须与目录一致，POST 仅 JSON 对象或数组。
 - `GET /_zp/treg/usage`：本人 UTC 今日、本月已用与限额。
 
-每个调用必须在公共目录存在、属于开放平台、`kind` 为 data 或 routed、支持 GET/POST 且可由平台付费执行。付费调用仍逐项严格验证路由的全部子接口；目录搜索和详情查询可跳过返回 `provider_paused` 或 HTTP 404 的子接口，但至少一个子接口须可用且通过白名单，其他核对错误仍拒绝该路由。目录可见不保证当次付费调用可执行。自定义工具、hub、管理功能、AI 生成和未知端点不开放。目录详情仅在当前进程缓存，不缓存用户查询结果。
+每个调用必须在公共目录存在、属于开放平台、`kind` 为 data 或 routed、支持 GET/POST 且可由平台付费执行。目录搜索、详情查询和付费调用使用同一路由核对：跳过返回 `provider_paused` 或 HTTP 404 的子接口，至少一个子接口须可用，且所有可核对的子接口均须通过白名单；其他核对错误（包括其他 5xx、超时和分类不符）仍拒绝该路由。直接查询或调用暂停、下架的接口仍报错；金额上限与本人归属规则继续生效。自定义工具、hub、管理功能、AI 生成和未知端点不开放。目录详情仅在当前进程缓存，不缓存用户查询结果。
 
 `POST /_zp/treg/mcp/` 提供无会话 MCP：initialize、ping、initialized 通知、tools/list、tools/call；工具仅 catalog_search、catalog_get、call。call 支持 endpoint_id、params 或 query/body、method 和 idempotency_key；不接受自定义请求头、凭据、上传或金额参数。MCP 请求不是原样透传上游：2026-11-07 核对上游源码，MCP call 会转交 X-Treg-Meta，但没有转交 transport 的 X-Treg-Route-Max-Cost。网关将 MCP 工具转换为同一 REST 调用，确保金额上限、归属、白名单与脱敏都经过同一边界。MCP 返回结构化结果和文本，业务失败标记 isError。其他协议方法、批量请求、资源与管理工具被拒绝。
 
