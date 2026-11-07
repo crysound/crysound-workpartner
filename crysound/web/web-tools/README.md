@@ -42,6 +42,8 @@
 | `fetchTreg` | `true` | 失败时与 DeepSeek 并发请求 Crawl4AI |
 | `fetchDirectTimeoutMs` | `1500` | 开启任一兜底时的直抓上限，包含浏览器及清理 |
 | `fetchTregTimeoutMs` | `8000` | Crawl4AI 上限，包含公开地址检查、身份读取、请求和解析，并受剩余总预算限制 |
+| `fetchWechatTimeoutMs` | `3500` | 微信文章直抓、并发兜底和摘要的总预算；仍不超过全局总预算 |
+| `fetchPublicArticleTimeoutMs` | `3500` | 已知公开文章接口的直读预算，仍受总预算限制 |
 | `fetchTotalTimeoutMs` | `9500` | 直抓、两路并发抓取和摘要共用总工作预算，外层另留 500 毫秒 |
 
 沿用搜索的 `DEEPSEEK_API_KEY` 凭据服务（无凭据服务时才读启动环境），不增加密钥或服务。已有主模型请求的日志机制不改；辅助请求使用发布运行时的 `appendPluginRecord` 保存为可忽略的 `plugin:crysound/web-summary-request` 记录，包含实际地址和不带密钥的请求体。辅助调用会增加一次现有模型服务用量，整体成本和性能须上线测量。公司补丁文件在镜像中解析已安装的凭据、启动环境和会话依赖，轻量检查包含真实导入和会话重放。
@@ -50,7 +52,11 @@
 
 ## 失败页面与慢页面的并发兜底
 
-普通页面继续匿名直抓。直抓失败、HTTP 错误、空正文或超过 `fetchDirectTimeoutMs` 时，同时尝试 DeepSeek Fetch 和 Treg 的 `treg.web.extract`；第一份达到最小正文长度的结果胜出，取消另一条请求，两路都失败则保留原错误/HTTP 结果。返回的 Markdown 沿用短正文直返、长正文按问题摘要和原 URL 引用。不再使用 Codex 打开网页，搜索退路不变。私网、含身份的 URL、安全拦截及本人取消不通过兜底绕过。
+普通页面继续匿名直抓。直抓失败、HTTP 错误、空正文或超过 `fetchDirectTimeoutMs` 时，同时尝试 DeepSeek Fetch 和 Treg 的 `treg.web.extract`；第一份达到最小正文长度且通过空壳识别的结果胜出，取消另一条请求，两路都失败则保留原错误/HTTP 结果。返回的 Markdown 沿用短正文直返、长正文按问题摘要和原 URL 引用。不再使用 Codex 打开网页，搜索退路不变。私网、含身份的 URL、安全拦截及本人取消不通过兜底绕过。
+
+提取结果先检查正文：仅有 JavaScript 提示、验证/登录提示、Markdown 导航链接或计数的页面不能胜出；另一条请求继续。包含独立长正文、只是在文中引用 JavaScript 提示的文章仍可返回。这是确定性的空壳识别，不判断任意文章与标题的语义相关性。直抓结果也做同样检查，两路失败时明确返回无法读取正文。
+
+微信文章的 `http://mp.weixin.qq.com` 在直抓和两路兜底前规范为 HTTPS，保留查询参数和原始来源引用；默认共用较短的 3.5 秒预算，验证页不算正文，不重试或解验证码。中新网 `m.chinanews.com/wap/detail/{chs,cht}/zw/<数字>.shtml` 使用该页面自身请求的公开文章 JSON，按文章编号、成功码及正文类型核验，保留原文章 URL；接口失败交给原兜底链。它沿用公开地址检查、跳转检查和字节上限，默认直读最多 3.5 秒，普通站点仍是 1.5 秒，不等待整页脚本和统计资源。
 
 两路仅将现有容器身份令牌发送给固定内部主机。入口脚本设置 `CRYSOUND_DS_TOOLS_BASE` 和 `CRYSOUND_TREG_BASE`，分别指向内部 3091 端口的 `/_zp/ds-tools/` 与 `/_zp/treg/`；令牌读取 `CRYSOUND_DS_TOOLS_TOKEN_FILE`，默认 `/data/.zp-market-token`。不把公司付费钥匙放进用户容器。
 
@@ -63,6 +69,17 @@ DeepSeek 仅在内部端口接受精确 POST `/_zp/ds-tools/fetch` 与 `/search`
 默认直抓 1.5 秒，为两路各最多 8 秒留下完整窗口；总工作预算 9.5 秒，外层工具留到 10 秒。选择 1.5 秒是为了覆盖需求单中 DeepSeek 7.9 秒的慢页，属于待线上验证的预算取舍；原来可在 1.5–2.6 秒直抓的页面可能因此走付费兜底。摘要也只用剩余预算，临近截止保留正文。夹具验证时限与取消，不能证明真实救回率或速度。
 
 浏览器仍只处理 JS 空壳，article/main 已有至少 80 字正文不启动浏览器；导航等待 DOM 和可见正文，不等网络空闲，默认渲染最多 2 秒并受直抓预算约束。退出会中止资源请求、关闭浏览器并释放渲染槽。
+
+## 独立进程验收的环境
+
+`docker exec` 新开的 shell 不继承容器 entrypoint 动态导出的环境。运行 headless 验收时，须手工设置 `CRYSOUND_DS_TOOLS_BASE`、`CRYSOUND_TREG_BASE`、`CRYSOUND_DS_TOOLS_TOKEN_FILE`，使用入口脚本中的实际值；否则两路可能因无地址直接跳过，不能用这个结果判断提供方失效。只传容器已有身份文件的路径，不读取或打印其内容，不给用户容器付费钥匙。示例（在目标容器内部执行）：
+
+```sh
+export CRYSOUND_DS_TOOLS_BASE=http://zhaohua-partner-gateway:3091/_zp/ds-tools/
+export CRYSOUND_TREG_BASE=http://zhaohua-partner-gateway:3091/_zp/treg/
+export CRYSOUND_DS_TOOLS_TOKEN_FILE=/data/.zp-market-token
+# 再运行该容器现有的 dsh headless 验收命令，并核对计时日志中的实际派发。
+```
 
 ## 轻量检查
 

@@ -60,6 +60,8 @@
     fetchDirectTimeoutMs: 1500
     fetchTregTimeoutMs: 8000
     fetchTotalTimeoutMs: 9500
+    fetchWechatTimeoutMs: 3500
+    fetchPublicArticleTimeoutMs: 3500
     fetchDeepSeek: true
     fetchDeepSeekTimeoutMs: 8000
     fetchDeepSeekMinChars: 80

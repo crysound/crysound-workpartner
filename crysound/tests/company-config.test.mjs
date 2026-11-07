@@ -165,6 +165,8 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     assert.equal(config.fetchDirectTimeoutMs, 1500);
     assert.equal(config.fetchTregTimeoutMs, 8000);
     assert.equal(config.fetchTotalTimeoutMs, 9500);
+    assert.equal(config.fetchWechatTimeoutMs, 3500);
+    assert.equal(config.fetchPublicArticleTimeoutMs, 3500);
     assert.match(config.fetchSummaryBaseURL, /CRYSOUND_LLM_BASE/);
     const tools = [];
     apply({ tools: { register: tool => tools.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, Config(config));
