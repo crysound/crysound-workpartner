@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { patchCompanyMarketRuntime } from '../../scripts/patch-market-ui.mjs';
 import { patchThirdPartyCards } from '../../scripts/patch-market-cards.mjs';
+const officialIcons = JSON.parse(fs.readFileSync(new URL('../../config/plugins.json', import.meta.url))).officialPlugins;
 const modules = process.env.MARKET_RUNTIME_MODULES;
 if (!modules) throw new Error('MARKET_RUNTIME_MODULES must name a writable copy of the pinned released browser modules');
 patchCompanyMarketRuntime(modules);
@@ -110,11 +111,11 @@ async function layout(width,name,selector='[data-market-entry]') {
   await new Promise(resolve=>setTimeout(resolve,350));
   const state=await evaluate(`(() => {
     const cards=[...document.querySelectorAll(${JSON.stringify(selector)})];
-    const rects=cards.map(c=>{const r=c.getBoundingClientRect();const d=c.querySelector('.zp-card-description');return {x:r.x,y:r.y,w:r.width,icon:c.querySelector('.zp-card-icon')?.getBoundingClientRect().width,title:c.querySelector('.zp-card-title')?.innerText,meta:c.querySelector('.zp-card-meta')?.innerText,description:d?.textContent,clamp:d?getComputedStyle(d).webkitLineClamp:null,action:c.querySelector(".zp-card-action")?.textContent,buttons:[...c.querySelectorAll('.zp-card-action button')].map(b=>b.textContent),chevron:!!c.querySelector('.zp-card-chevron')};});
+    const rects=cards.map(c=>{const r=c.getBoundingClientRect();const d=c.querySelector('.zp-card-description');return {x:r.x,y:r.y,w:r.width,h:r.height,descriptionRect:d?{x:d.getBoundingClientRect().x,y:d.getBoundingClientRect().y,right:d.getBoundingClientRect().right,bottom:d.getBoundingClientRect().bottom}:null,actionRect:(()=>{const r=c.querySelector(".zp-card-action")?.getBoundingClientRect();return r?{x:r.x,y:r.y,bottom:r.bottom}:null;})(),titleSize:getComputedStyle(c.querySelector(".zp-card-title button")).fontSize,icon:c.querySelector('.zp-card-icon')?.getBoundingClientRect().width,title:c.querySelector('.zp-card-title')?.innerText,meta:c.querySelector('.zp-card-meta')?.innerText,description:d?.textContent,clamp:d?getComputedStyle(d).webkitLineClamp:null,action:c.querySelector(".zp-card-action")?.textContent,buttons:[...c.querySelectorAll('.zp-card-action button')].map(b=>b.textContent),chevron:!!c.querySelector('.zp-card-chevron')};});
     const panel=document.querySelector('[data-plugin-panel]');return {width:innerWidth,rects,overflow:panel.scrollWidth>panel.clientWidth+1};
   })()`);
   assert.ok(state.rects.length>0);assert.equal(state.overflow,false);
-  for(const card of state.rects) { assert.ok(card.icon>=50);assert.ok(card.title);assert.ok(card.meta);assert.equal(card.clamp,'2');assert.ok(card.action);assert.ok(card.chevron); }
+  for(const card of state.rects) { assert.ok(card.icon>=50);assert.ok(card.title);assert.ok(card.meta);assert.equal(card.clamp,'2');assert.ok(card.action);assert.ok(card.chevron);assert.equal(card.titleSize,'16px');assert.doesNotMatch(card.meta,/暂无安装统计|Install count unavailable|次安装| installs/);assert.ok(card.actionRect.x>=card.descriptionRect.right-1);assert.ok(card.actionRect.y<card.descriptionRect.bottom && card.actionRect.bottom>card.descriptionRect.y); }
   if(width>=1400) {assert.equal(Math.round(state.rects[0].y),Math.round(state.rects[1].y));assert.ok(state.rects[1].x>state.rects[0].x);}
   if(width<900) assert.ok(state.rects.every(r=>Math.abs(r.x-state.rects[0].x)<2));
   await screenshot(name);results.screenshots.push(name+'.png');results.checks.push({name,...state});
@@ -159,6 +160,23 @@ try {
   await screenshot('third-party-detail');await evaluate('document.querySelector("dialog[open] > button").click()');await until('!document.querySelector("dialog[open]")');
   results.checks.push({name:'third-party details preserve native controls',passed:true});
   assert.ok(applied.has('@deepseek-ai/dsh-client-ui-plugin-market'));assert.ok(applied.has('@deepseek-ai/dsh-client-ui-plugin-manager'));assert.ok(applied.has('dshmarket'));
+  // Show the exact official SVGs at both requested display sizes, in this test tab only.
+  await evaluate(`(() => {
+    const board=document.createElement('div');board.id='zp-icon-review';
+    board.style.cssText='position:fixed;inset:0;z-index:99999;background:#faf9f6;padding:24px;display:flex;gap:24px;width:max-content;height:max-content;color:#333;font:12px sans-serif';
+    for(const [name,entry] of Object.entries(${JSON.stringify(officialIcons)})) {
+      const col=document.createElement('div');col.style.cssText='display:flex;flex-direction:column;align-items:center;gap:16px';
+      for(const size of [64,40]) {const img=document.createElement('img');img.src=entry.icon;img.width=size;img.height=size;col.append(img);}
+      const label=document.createElement('span');label.textContent=name.split('/').pop();col.append(label);board.append(col);
+    }
+    document.body.append(board);
+    return Promise.all([...board.querySelectorAll('img')].map(img=>img.decode()));
+  })()`);
+  const iconClip=await evaluate(`(() => {const r=document.querySelector('#zp-icon-review').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()`);
+  const iconShot=await send('Page.captureScreenshot',{format:'png',clip:iconClip});
+  fs.writeFileSync(path.join(output,'icons.png'),Buffer.from(iconShot.data,'base64'));
+  await evaluate("document.querySelector('#zp-icon-review').remove()");results.screenshots.push('icons.png');
+  results.checks.push({name:'nine official icons decode at 64px and 40px',passed:true});
   results.errors=errors;fs.writeFileSync(path.join(output,"browser.json"),JSON.stringify(results,null,2)+"\n");assert.deepEqual(errors,[]);
   results.locale=english?'en':'zh';results.localeMethod=english?'tab-local native locale bootstrap without Host preference persistence':'existing account locale';
   results.pending=['packaged Electron build','deployment','real installation completion and plugin Use workflow'];

@@ -1,38 +1,48 @@
 {
   "method": "Real native page; tab-local response substitution of pinned released modules; real server data; no product writes",
+  "screenshots": [
+    "wide.png",
+    "narrow.png",
+    "phone.png",
+    "dark.png",
+    "installed.png",
+    "installed-narrow.png",
+    "third-party.png",
+    "third-party-narrow.png",
+    "icons.png"
+  ],
+  "errors": [],
   "locale": "en",
+  "localeMethod": "tab-local native locale bootstrap without Host preference persistence",
+  "pending": [
+    "packaged Electron build",
+    "deployment",
+    "real installation completion and plugin Use workflow"
+  ],
   "checks": [
     {
       "name": "wide",
       "width": 1600,
       "overflow": false,
-      "cards": 9,
-      "columns": 2,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 9
     },
     {
       "name": "narrow",
       "width": 820,
       "overflow": false,
-      "cards": 9,
-      "columns": 1,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 9
     },
     {
       "name": "phone",
       "width": 520,
       "overflow": false,
-      "cards": 9,
-      "columns": 1,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 9
     },
     {
       "name": "dark",
       "width": 1600,
       "overflow": false,
-      "cards": 9,
-      "columns": 2,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 9
     },
     {
       "name": "chevron opens native details",
@@ -47,43 +57,33 @@
       "name": "installed",
       "width": 1600,
       "overflow": false,
-      "cards": 20,
-      "columns": 2,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 20
     },
     {
       "name": "installed-narrow",
       "width": 820,
       "overflow": false,
-      "cards": 20,
-      "columns": 1,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 20
     },
     {
       "name": "third-party",
       "width": 1600,
       "overflow": false,
-      "cards": 24,
-      "columns": 2,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 24
     },
     {
       "name": "third-party-narrow",
       "width": 820,
       "overflow": false,
-      "cards": 24,
-      "columns": 1,
-      "allCardsHaveIconNameMetaDescriptionActionChevron": true
+      "cards": 24
     },
     {
       "name": "third-party details preserve native controls",
       "passed": true
+    },
+    {
+      "name": "nine official icons decode at 64px and 40px",
+      "passed": true
     }
-  ],
-  "errors": [],
-  "pending": [
-    "packaged Electron build",
-    "deployment",
-    "real installation completion and plugin Use workflow"
   ]
 }

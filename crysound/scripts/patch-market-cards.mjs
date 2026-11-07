@@ -19,7 +19,7 @@ function browserHelpers(React, { jsx, jsxs }, icons, locales) {
     let hash = 0;
     for (const char of name) hash = (hash * 31 + char.codePointAt(0)) >>> 0;
     return jsx('span', { className: 'zp-card-icon', 'aria-hidden': true,
-      style: { backgroundColor: image && image !== failed ? "transparent" : `hsl(${hash % 360} 38% 43%)` },
+      style: { backgroundColor: image && image !== failed ? "transparent" : ["#D97B48", "#BB626F", "#AC65A8", "#8B6B43", "#9B893A", "#5B984E", "#309C88"][hash % 7] },
       children: image && image !== failed ? jsx('img', { src: image, alt: '', referrerPolicy: 'no-referrer', onError: () => setFailed(image) })
         : Array.from(title.trim() || name)[0].toLocaleUpperCase(),
     });
@@ -41,30 +41,32 @@ function browserHelpers(React, { jsx, jsxs }, icons, locales) {
 export const marketCardCss = `
 [data-plugin-panel] { container-type: inline-size; }
 .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:20px!important; list-style:none; padding:0; margin:0; }
-.zp-market-card { position:relative; box-sizing:border-box; min-width:0; padding:24px!important; border:1px solid var(--dsw-alias-border-l3,#dedee2)!important; border-radius:18px!important; background:var(--dsw-alias-bg-module-platform,#fafafa)!important; display:grid!important; grid-template-columns:64px minmax(0,1fr); gap:0 20px!important; align-content:start; cursor:pointer; }
+.zp-market-card { position:relative; box-sizing:border-box; min-width:0; padding:20px!important; border:1px solid var(--dsw-alias-border-l3,#dedee2)!important; border-radius:18px!important; background:var(--dsw-alias-bg-module-platform,#fafafa)!important; display:grid!important; grid-template-columns:64px minmax(0,1fr) auto; gap:0 16px!important; align-content:start; cursor:pointer; }
 .zp-market-card:hover { border-color:var(--dsw-alias-label-tertiary,#a0a0a8)!important; }
-.zp-card-icon { grid-column:1; grid-row:1/5; width:64px; height:64px; border-radius:15px; display:flex; align-items:center; justify-content:center; overflow:hidden; color:white; font-size:28px; font-weight:600; flex:none; }
+.zp-card-icon { grid-column:1; grid-row:1/4; width:64px; height:64px; border-radius:15px; display:flex; align-items:center; justify-content:center; overflow:hidden; color:white; font-size:28px; font-weight:600; flex:none; }
 .zp-card-icon img { width:100%; height:100%; object-fit:contain; }
-.zp-card-title { grid-column:2; min-width:0; display:flex; align-items:start; gap:10px; }
-.zp-card-title button { font:inherit; font-size:18px; line-height:26px; font-weight:600; color:inherit; border:0; background:none; padding:0; text-align:start; cursor:pointer; overflow-wrap:anywhere; }
+.zp-card-title { grid-column:2/4; grid-row:1; min-width:0; display:flex; align-items:start; gap:10px; }
+.zp-card-title button { font:inherit; font-size:16px; line-height:24px; font-weight:600; color:inherit; border:0; background:none; padding:0; text-align:start; cursor:pointer; overflow-wrap:anywhere; }
 .zp-card-title .zp-card-chevron { margin-left:auto; flex:none; font-size:24px; font-weight:400; color:var(--dsw-alias-label-tertiary,#888); padding:0 0 0 8px; }
-.zp-card-meta { grid-column:2; color:var(--dsw-alias-label-tertiary,#888); font-size:12px; line-height:20px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; margin:5px 0 9px; }
-.zp-card-description { grid-column:2; color:var(--dsw-alias-label-secondary,#666); font-size:13px; line-height:21px; min-height:42px; max-height:42px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; margin:0; }
-.zp-card-action { grid-column:2; display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:18px; }
-.zp-card-action button:not([role=switch]) { border:1px solid var(--dsw-alias-border-l3,#ccc)!important; border-radius:999px!important; padding:5px 20px!important; min-height:32px; background:transparent; color:inherit; cursor:pointer; }
-.zp-native-action > span { display:inline-flex; border:1px solid var(--dsw-alias-border-l3,#ccc); border-radius:999px; padding:5px 20px; min-height:20px; }
-.zp-market-card > .zp-card-extra { grid-column:1/-1; }
-.zp-market-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin:4px 0 24px; }
+.zp-card-meta { grid-column:2/4; grid-row:2; color:var(--dsw-alias-label-tertiary,#888); font-size:12px; line-height:20px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; margin:2px 0 6px; }
+.zp-card-description { grid-column:2; grid-row:3; color:var(--dsw-alias-label-secondary,#666); font-size:13px; line-height:20px; min-height:40px; max-height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; margin:0; }
+.zp-card-action { grid-column:3; grid-row:3; display:flex; align-items:center; justify-content:flex-end; gap:10px; align-self:center; margin:0; }
+.zp-card-action button:not([role=switch]) { border:1px solid var(--dsw-alias-border-l3,#ccc)!important; border-radius:999px!important; padding:5px 14px!important; min-height:32px; background:transparent; color:inherit; cursor:pointer; }
+.zp-native-action > span { display:inline-flex; border:1px solid var(--dsw-alias-border-l3,#ccc); border-radius:999px; padding:5px 14px; min-height:20px; }
+.zp-market-card > .zp-card-extra { grid-column:1/-1; grid-row:4; }
+.zp-market-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 0 12px; }
 .zp-market-heading h2 { font-size:26px; line-height:34px; font-weight:600; margin:0; }
-.zp-market-heading p { font-size:12px; color:var(--dsw-alias-label-tertiary,#888); margin:6px 0 0; }
+.zp-market-heading p { font-size:12px; color:var(--dsw-alias-label-tertiary,#888); margin:3px 0 0; }
 .zp-market-segments { border:1px solid var(--dsw-alias-border-l3,#ddd); border-radius:999px; padding:3px; display:flex; gap:3px; }
 .zp-market-segments button { font:inherit; font-size:12px; color:inherit; padding:6px 13px; border:0; border-radius:999px; background:transparent; cursor:pointer; }
 .zp-market-segments [aria-pressed=true] { background:var(--dsw-alias-interactive-bg-hover,#eee); }
 .zp-market-card:focus-within { outline:2px solid var(--dsw-alias-label-secondary,#666); outline-offset:2px; }
 [data-company-market-toolbar], [data-discover-toolbar] { flex-wrap:wrap; }
+[data-plugin-bar] > header { padding-top:16px!important; gap:8px!important; }
+[data-plugin-tab=discover] { gap:12px!important; }
 @media(max-width:899px) { .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { grid-template-columns:minmax(0,1fr)!important; } }
 @container (max-width:650px) { .zp-card-grid, [data-plugin-group] > ul:has(.zp-market-card), [data-dsh-market-root] [class*=_grid]:has(.zp-market-card) { grid-template-columns:minmax(0,1fr)!important; } }
-@media(max-width:480px) { .zp-market-card { padding:18px!important; gap:0 14px!important; grid-template-columns:52px minmax(0,1fr); } .zp-card-icon { width:52px; height:52px; border-radius:12px; } .zp-card-title button { font-size:16px; } }
+@media(max-width:480px) { .zp-market-card { padding:18px!important; gap:0 14px!important; grid-template-columns:40px minmax(0,1fr) auto; } .zp-card-icon { width:40px; height:40px; border-radius:10px; } .zp-card-title button { font-size:16px; } }
 `;
 
 /** Patch the installed package cards; keep enable switches, errors and native details. */
@@ -93,7 +95,7 @@ export function patchInstalledCards(text) {
     (0, react_jsx_runtime.jsxs)("div", { className:"zp-card-title", children:[
       (0, react_jsx_runtime.jsx)("button", { type:"button", onClick:onOpen, children:title }),
       (0, react_jsx_runtime.jsx)("button", { type:"button", className:"zp-card-chevron", "aria-label":t("openDetail",{name:title}), onClick:onOpen, children:"›" })] }),
-    (0, react_jsx_runtime.jsx)("div", { className:"zp-card-meta", children:[t(pkg.official || zpIcons[pkg.name] ? "zpOfficial" : "zpThirdParty"), zpIcons[pkg.name] ? t("zpCompanyAuthor") : t("zpUnknownAuthor"), t("zpCountUnavailable")].filter(Boolean).join(" · ") }),
+    (0, react_jsx_runtime.jsx)("div", { className:"zp-card-meta", children:[t(pkg.official || zpIcons[pkg.name] ? "zpOfficial" : "zpThirdParty"), zpIcons[pkg.name] ? t("zpCompanyAuthor") : t("zpUnknownAuthor")].filter(Boolean).join(" · ") }),
     (0, react_jsx_runtime.jsx)("div", { className:"zp-card-description", children:description }),
     (0, react_jsx_runtime.jsx)("div", {className:"zp-card-extra",children:${tags}}),
     (0, react_jsx_runtime.jsxs)("div", { className:"zp-card-action", children:[${enable}, (0, react_jsx_runtime.jsx)("button", {type:"button",onClick:onOpen,children:t("zpUse")})] }),
@@ -107,7 +109,7 @@ export function patchInstalledCards(text) {
       (0,react_jsx_runtime.jsxs)("div",{className:"zp-card-title",children:[
         (0,react_jsx_runtime.jsx)("button",{type:"button",onClick:onOpen,children:item.label}),
         (0,react_jsx_runtime.jsx)("button",{type:"button",className:"zp-card-chevron","aria-label":t("openDetail",{name:item.label}),onClick:onOpen,children:"›"})]}),
-      (0,react_jsx_runtime.jsx)("div",{className:"zp-card-meta",children:[t("zpOfficial"),t("zpBuiltIn"),t("zpCountUnavailable")].join(" · ")}),
+      (0,react_jsx_runtime.jsx)("div",{className:"zp-card-meta",children:[t("zpOfficial"),t("zpBuiltIn")].join(" · ")}),
       (0,react_jsx_runtime.jsx)("div",{className:"zp-card-description",children:renderSlot("plugins.item",{view:"summary"},{only:item.id})}),
       (0,react_jsx_runtime.jsx)("div",{className:"zp-card-action",children:(0,react_jsx_runtime.jsx)("button",{type:"button",onClick:onOpen,children:t("zpUse")})})]});
   }`);
@@ -144,7 +146,7 @@ export function patchThirdPartyCards(text) {
     }, [opened]);
     const statistic = downloadStatistic(plugin);
     const meta = [copy.zpThirdParty, plugin.owner || copy.zpUnknownAuthor,
-      statistic ? copy.zpDownloadCount.replace("{count}", new Intl.NumberFormat(language).format(statistic.count)) : copy.zpCountUnavailable].join(" · ");
+      statistic ? copy.zpDownloadCount.replace("{count}", new Intl.NumberFormat(language).format(statistic.count)) : null].filter(Boolean).join(" · ");
     return (0, react_jsx_runtime.jsxs)("div", { className:"zp-market-card", "data-third-party-entry":plugin.url,
       onClick:event => { if (!event.target.closest("button,a,input,dialog")) setOpened(true); }, children:[
       (0, react_jsx_runtime.jsx)(ZpIcon,{name:plugin.name,title,src:plugin.icon}),

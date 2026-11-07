@@ -27,7 +27,7 @@ ctx.effect(() => ctx.locale.register(NS, {`);
     const title = entryTitle(entry, face);
     const count = entry.metadata.sortKeys["crysound-installs"];
     const meta = [t(entry.metadata.labels.includes("crysound-official") ? "zpOfficial" : "zpThirdParty"),
-      entry.author || t("zpUnknownAuthor"), count === undefined ? t("zpCountUnavailable") : t("zpInstallCount", { count: new Intl.NumberFormat(language).format(count) })].join(" · ");
+      entry.author || t("zpUnknownAuthor"), count === undefined ? null : t("zpDownloadCount", { count: new Intl.NumberFormat(language).format(count) })].filter(Boolean).join(" · ");
     return (0, react_jsx_runtime.jsxs)("li", { className: "zp-market-card", "data-market-entry": entry.name,
       onClick: event => { if (!event.target.closest("button,a,input")) onOpen(); }, children: [
       (0, react_jsx_runtime.jsx)(ZpIcon, { name: entry.name, title, src: entry.icon }),
