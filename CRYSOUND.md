@@ -70,6 +70,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 本地开发桌面版前，先用 Node 24 执行 `node crysound/plugin-artifacts.mjs download crysound/company-plugins` 准备固定插件包（生成目录不提交），再设置 `PUBLIC_HOST` 为公司网关域名（不带协议或路径），再运行 `pnpm run dev:desktop`。
 
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
+- 安装包资源检查从包内 `plugin-artifacts.mjs` 读取飞书归档文件名，与打包下载共用固定版本；不再单独维护旧文件名。
 - CI：`.github/workflows/desktop-mac.yml`，只手动触发，输入正式版本号 `version` 与更新目录 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`），在 `macos-15`（Apple 芯片）上构建。正式版本通过打包元数据注入，源 manifest 与运行时版本不变。依次做：更新自查、打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、npm 源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
 - 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签（含 `plugin-template` 里的全部 Mach-O 文件）、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；完整发版输入还生成签名 app 的 ZIP 与 `latest-mac.yml`，随 DMG 一起上传为工作流产物，下载站由伙伴助理手动发布。缺任何签名凭据就跳过。
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
