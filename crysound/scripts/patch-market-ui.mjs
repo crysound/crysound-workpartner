@@ -13,6 +13,23 @@ import { marketLocales } from "../brand/market-locales.mjs";
  * @returns 默认打开公司市场、按公司顺序和中英文名称显示标签的模块内容。
  */
 export function patchMarketUi(text) {
+  const marker = "/* CRYSOUND market navigation v1 */";
+  if (text.includes(marker)) return text;
+  text = patchMarketTabs(text);
+  const navigation = 'const disposeNavigation = ctx.reflect.provide("pluginNavigation", {';
+  if (text.split(navigation).length !== 2) throw new Error("公司市场导航补丁未唯一命中");
+  text = text.replace(navigation, `yield ctx.on("company-market/open", name => {
+    ctx.bail(ctx, "company-market/select", name);
+    ctx.layout.selectPanel(PANEL_ID);
+    instance.actions.setTab("discover");
+    instance.actions.setView({ kind: "list" });
+    return true;
+  });\n${navigation}`);
+  return marker + "\n" + text;
+}
+
+/** Preserve the pinned company tab layout while upgrading navigation independently. */
+function patchMarketTabs(text) {
   const marker = "/* CRYSOUND market tabs v3 */";
   if (text.includes(marker)) return text;
   const replace = (find, replacement) => {

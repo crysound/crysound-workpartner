@@ -6,8 +6,14 @@ import { installCompanyGuides } from "./patch-market-guide-client.mjs";
  * @returns {string} Idempotently patched module; unsupported input throws.
  */
 export function patchMarketGuides(text) {
-  const marker = "/* CRYSOUND package guides v2 */";
+  const marker = "/* CRYSOUND package guides v3 */";
   if (text.includes(marker)) return text;
+  if (text.includes("/* CRYSOUND package guides v2 */")) {
+    const start = text.indexOf("function installCompanyGuides(");
+    const end = text.indexOf("\nfunction apply(ctx) {", start);
+    if (start < 0 || end < 0) throw new Error("插件引导导航升级未唯一命中");
+    return (text.slice(0, start) + installCompanyGuides.toString() + text.slice(end)).replace("/* CRYSOUND package guides v2 */", marker);
+  }
   if (text.includes("/* CRYSOUND package guides v1 */")) {
     const before = '"uiWorkspace", "sessions", "workspaces", "remote.pluginManager", "conversation", "inputTriggers"\n';
     const start = text.indexOf("function installCompanyGuides(");
@@ -34,14 +40,65 @@ export function patchMarketGuides(text) {
  * @returns {string} Idempotently patched module; unsupported input throws.
  */
 export function patchGuideUse(text) {
-  const marker = "/* CRYSOUND guide use v1 */";
+  const marker = "/* CRYSOUND guide use v2 */";
   if (text.includes(marker)) return text;
-  const first = 'function DiscoverSection(props) {';
-  const face = 'const face = controller.face((text) => ctx.locale.resolveText(text));';
-  if (text.split(first).length !== 2 || text.split(face).length !== 2) throw new Error("插件引导使用入口未唯一命中");
-  return marker + "\n" + text.replace(first, `${first}
-    const original = props; props = { ...props, openPackage: name => original.openCompanyGuide(name, () => original.openPackage(name)) };`)
-    .replace(face, `${face}\nface.openCompanyGuide = (name, fallback) => { if (ctx.bail(ctx, "company-guide/open", name, fallback) !== true) fallback(); };`);
+  if (!text.includes("/* CRYSOUND guide use v1 */")) {
+    const first = 'function DiscoverSection(props) {';
+    const face = 'const face = controller.face((text) => ctx.locale.resolveText(text));';
+    if (text.split(first).length !== 2 || text.split(face).length !== 2) throw new Error("插件引导使用入口未唯一命中");
+    text = "/* CRYSOUND guide use v1 */\n" + text.replace(first, `${first}
+      const original = props; props = { ...props, openPackage: name => original.openCompanyGuide(name, () => original.openPackage(name)) };`)
+      .replace(face, `${face}\nface.openCompanyGuide = (name, fallback) => { if (ctx.bail(ctx, "company-guide/open", name, fallback) !== true) fallback(); };`);
+  }
+  const replace = (before, after) => {
+    if (text.split(before).length !== 2) throw new Error("市场详情导航补丁未唯一命中");
+    text = text.replace(before, () => after);
+  };
+  replace('const face = controller.face((text) => ctx.locale.resolveText(text));',
+    `const face = controller.face((text) => ctx.locale.resolveText(text));
+    (${installCompanyMarketNavigation.toString()})(ctx, controller, face, _deepseek_ai_dsh_client_store.createSnapshotStore, INITIAL_QUERY);`);
+  replace('function Browser({ state, listing, t, face, hooks, language, onInstall, openPackage }) {',
+    'function Browser({ state, listing, t, face, hooks, language, onInstall, openPackage, companyTarget }) {');
+  replace('const state = props.useDiscover((snapshot) => snapshot);',
+    'const state = props.useDiscover((snapshot) => snapshot);\nconst companyTarget = props.useCompanyMarket((snapshot) => snapshot.name);');
+  replace('listing: state.listing,', 'listing: state.listing, companyTarget,');
+  replace('if (text === query.text) return void 0;', 'if (companyTarget !== null || text === query.text) return void 0;');
+  replace('text,\n\t\t\t\tquery,', 'text, companyTarget,\n\t\t\t\tquery,');
+  replace('const openEntry = opened === null ? void 0 : value?.entries.find((entry) => entry.name === opened.name) ?? opened;',
+    'const openEntry = companyTarget !== null ? value?.entries.find((entry) => entry.name === companyTarget) : opened === null ? void 0 : value?.entries.find((entry) => entry.name === opened.name) ?? opened;');
+  replace('setOpened(null);', 'setOpened(null); if (companyTarget !== null) { setText(""); face.closeCompanyEntry(); }');
+  return text.replace("/* CRYSOUND guide use v1 */", marker);
+}
+
+/**
+ * Select an official entry through the native market query and detail view, including a cold catalog.
+ * @param {object} ctx Company market client context.
+ * @param {object} controller Native market controller with its observable listing.
+ * @param {object} face Native injected market actions.
+ * @param {Function} createSnapshotStore Native observable-store factory.
+ * @param {object} initialQuery Native unfiltered query.
+ * @returns {void}
+ */
+export function installCompanyMarketNavigation(ctx, controller, face, createSnapshotStore, initialQuery) {
+  const target = createSnapshotStore({ name: null });
+  let pending = false;
+  const prepare = () => {
+    const state = controller.store.getSnapshot();
+    if (!pending || !state.listing || state.listing.url !== state.selected) return;
+    pending = false;
+    face.search({ ...initialQuery, text: target.getSnapshot().name ?? "" });
+  };
+  face.hooks = { ...face.hooks, companyMarket: target };
+  face.closeCompanyEntry = () => { target.set({ name: null }); face.search(initialQuery); };
+  ctx.effect(() => controller.store.subscribe(prepare));
+  ctx.effect(() => ctx.on("company-market/select", name => {
+    target.set({ name }); pending = true;
+    face.ensure();
+    const first = controller.store.getSnapshot().indexes[0];
+    if (first) face.select(first.url);
+    prepare();
+    return true;
+  }));
 }
 
 /**

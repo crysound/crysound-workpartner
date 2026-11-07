@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-11-07T04:46:27.124726+00:00",
+  "method": "Dedicated tab in configured persistent browser; native dsh 0.2.2-rc.1 with branch runtime patches, production company market handler, real design/artifacts 1.0.0 package sources; synthetic approval and profile installation states; no browser response replacement or remote/session mocks",
+  "modes": {
+    "uninstalled": {
+      "mode": "uninstalled",
+      "checks": [
+        {
+          "kind": "full-native-startup",
+          "failedToLoadPlugins": false
+        },
+        {
+          "kind": "uninstalled-detail",
+          "tab": "兆华市场",
+          "package": "@crysound/design",
+          "version": "1.0.0",
+          "installButton": true
+        },
+        {
+          "kind": "native-install-confirmation",
+          "package": "@crysound/design",
+          "confirmed": false
+        },
+        {
+          "kind": "previous-search-cleared",
+          "detail": "@crysound/design"
+        },
+        {
+          "kind": "browse-company-list",
+          "tab": "兆华市场"
+        }
+      ],
+      "consoleErrors": [],
+      "designInProfileBundles": false,
+      "designInProfileDependencies": false
+    },
+    "installed": {
+      "mode": "installed",
+      "checks": [
+        {
+          "kind": "full-native-startup",
+          "failedToLoadPlugins": false
+        },
+        {
+          "kind": "installed-guide",
+          "package": "@crysound/design",
+          "version": "1.0.0",
+          "summary": "制作和修改可编辑的设计画布，多画板并排查看，可改文字、调参数并发送评论。",
+          "examples": [
+            "制作一张声学相机产品介绍海报，参数采用我提供的资料，交付可编辑画板。",
+            "为检测项目管理页面制作桌面和手机两个可编辑画板，并排查看。",
+            "修改我已有画布中的标题和按钮文案，保留其余画板并重新打开编辑器。"
+          ],
+          "tag": "兆华设计×"
+        },
+        {
+          "kind": "market-use-guide",
+          "package": "@crysound/design"
+        }
+      ],
+      "consoleErrors": [],
+      "designInProfileBundles": true,
+      "designInProfileDependencies": true
+    }
+  },
+  "limits": [
+    "No actual install confirmation or model submission in this navigation regression",
+    "Isolated registry approval and maintenance identity are synthetic; no production user data changed",
+    "Post-deployment acceptance and packaged Electron acceptance remain with partner assistant"
+  ]
+}
