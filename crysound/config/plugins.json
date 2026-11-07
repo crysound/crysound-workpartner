@@ -2,7 +2,7 @@
   "plugins": [
     {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.5.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.5.tgz"},
     {"name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12"},
-    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.2", "want": "0.1.2"}
+    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.4", "want": "0.1.4"}
   ],
   "defaultBundles": [
     "@deepseek-ai/dsh-experimental-plugin-market-bundle",

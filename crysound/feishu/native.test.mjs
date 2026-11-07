@@ -154,7 +154,7 @@ test('每日检查告知、控件、全部运行结果和未读入口跟随语�
   const respond = () => ({ enabled: false, available: false, connected: false, time: '09:00', records });
   for (const section of ['crysound-daily-check', 'crysound-daily-unread']) {
     const f = panelFixture(t, { section, respond }); await f.settle();
-    assert.match(f.text(f.render()), section === 'crysound-daily-check' ? /每天帮我查一次/ : /伙伴提醒/);
+    assert.match(f.text(f.render()), /主动提醒/);
     f.locale('en'); const english = f.text(f.render());
     assert.doesNotMatch(english, /[\u4e00-\u9fff]/u);
     const registration = f.registrations.find(item => item.id === section);
@@ -164,11 +164,11 @@ test('每日检查告知、控件、全部运行结果和未读入口跟随语�
       assert.match(english, /No new items/);
       assert.match(english, /Check your Feishu authorization/);
       assert.match(english, /Run history/);
-      assert.equal(registration.label(), 'Daily check');
+      assert.equal(registration.label(), 'Proactive reminders');
       records[1].reason = 'summary';
       assert.match(f.text(f.render()), /model credits and connection/);
-      f.locale('zh'); assert.equal(registration.label(), '每天帮我查一次');
-    } else assert.match(english, /Partner reminder/);
+      f.locale('zh'); assert.equal(registration.label(), '主动提醒');
+    } else assert.match(english, /Proactive reminders/);
   }
   const failed = panelFixture(t, { section: 'crysound-daily-check', httpStatus: 409,
     respond: () => ({ code: 'already_attempted', message: '远端中文提示不直接显示' }) });

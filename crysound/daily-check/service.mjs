@@ -52,7 +52,7 @@ export function createDailyCheck({ directory, users, connected, available, colle
     let state = load(user);
     const day = beijingDay(now());
     if (!state.enabled || !available(user) || !connected(user)) {
-      if (manual) throw fail(409, 'needs_enabled', '请先连接飞书并打开每天帮我查一次');
+      if (manual) throw fail(409, 'needs_enabled', '请先连接飞书并打开主动提醒');
       return;
     }
     if (!manual && ([0, 6].includes(day.weekday) || day.time < state.time)) return;

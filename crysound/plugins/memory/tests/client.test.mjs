@@ -4,13 +4,20 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-function harness() {
+function harness({ data } = {}) {
   const entries = new Map();
   const effects = [];
-  let state, factory;
+  let factory, active = 'zh', cursor = 0;
+  const states = [], dictionaries = new Map();
+  const translate = key => dictionaries.get(active)?.[key] ?? key;
   const react = {
     createElement: (type, props, ...children) => ({ type, props: props || {}, children }),
-    useState: initial => [state ?? initial, value => { state = value; }],
+    useState(initial) {
+      const index = cursor++;
+      if (!(index in states)) states[index] = initial;
+      return [states[index], value => { states[index] = value; }];
+    },
+    useId: () => 'memory-editor',
     useEffect: fn => effects.push(fn),
     useRef: () => ({ current: null }),
   };
@@ -18,15 +25,27 @@ function harness() {
     window: { __ModuleLoader__: { load(module) { factory = module.factory; } } },
     Intl, Date, Map, JSON,
   });
-  const plugin = factory(name => { assert.equal(name, 'react'); return react; });
+  const plugin = factory(name => name === 'react' ? react : { Button: 'Button', Switch: 'Switch' });
   plugin.apply({
+    effect: work => work(),
+    locale: {
+      register(_namespace, language, dictionary) { dictionaries.set(language, dictionary); return () => {}; },
+      bind: () => translate,
+    },
     uiConversation: { binding(id) { return { target: target => ({ session: id, target }) }; } },
     slots: {
       inject(_slot, register) { const result = register(); if (result?.next) [...result]; },
       register(options, component) { entries.set(options.key || options.name, { options, component }); return () => {}; },
     },
   });
-  return { entries, effects, state: () => state };
+  return { entries, effects, state: () => states[0],
+    language: value => { active = value; },
+    renderPanel() {
+      cursor = 0;
+      states[0] = data;
+      return entries.get('settings.section').component({ t: translate });
+    },
+  };
 }
 const result = (id, title, extra = {}) => ({ kind: 'tool-result', isError: false, meta: { memory: { ok: true, saved: { id, title } } }, ...extra });
 function snapshot(...roots) {
@@ -73,4 +92,22 @@ test('tail selection stays bound to the supplied Session source', () => {
   assert.equal(b.session, 'session-b');
   assert.equal(a.target, 'chat');
   assert.notEqual(a, b);
+});
+
+function headings(node) {
+  if (!node || typeof node !== 'object') return [];
+  if (Array.isArray(node)) return node.flatMap(headings);
+  return [...(node.type === 'h3' ? node.children : []), ...node.children.flatMap(headings)];
+}
+
+test('memory list heading follows the application language with populated and empty lists', () => {
+  for (const facts of [[], [{ id: 'synthetic', kind: 'preference', source: 'manual', title: 'Report style', content: 'Use short lists', createdAt: '2026-11-07T00:00:00Z', updatedAt: '2026-11-07T00:00:00Z' }]]) {
+    const f = harness({ data: { enabled: true, revision: 1, facts, usage: { count: facts.length, chars: 15 }, limits: { maxMemories: 50, recallChars: 6000 } } });
+    assert.ok(headings(f.renderPanel()).includes('我的记忆'));
+    f.language('en');
+    assert.ok(headings(f.renderPanel()).includes('My memories'));
+    assert.ok(!headings(f.renderPanel()).includes('我的记忆'));
+    f.language('zh');
+    assert.ok(headings(f.renderPanel()).includes('我的记忆'));
+  }
 });
