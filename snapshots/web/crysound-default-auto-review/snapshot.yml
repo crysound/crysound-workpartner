@@ -1,0 +1,13 @@
+version: 1
+scenario: crysound-default-auto-review
+profile: web
+composition: crysound-published-web-auto-review
+recording: authored
+platform: posix
+header:
+  class: crysound-published-web
+  pin: true
+replay:
+  override: true
+workspace:
+  final: true

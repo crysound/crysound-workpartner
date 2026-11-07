@@ -32,6 +32,12 @@ const PREVIEW_CLICKS = `
 `;
 
 const PATCHES = [
+  // An explicit settings return owns the viewport until it closes; first-run onboarding resumes afterwards.
+  {
+    file: "@deepseek-ai/dsh-client-ui-settings-general/lib/client.js",
+    find: "const onboardingStep = requestedOnboarding !== void 0",
+    replace: "const onboardingStep = open && activeId !== void 0 ? void 0 : requestedOnboarding !== void 0",
+  },
   // dsh 0.2.2-rc.1: company adapter applies to both iframe and Electron Browser providers.
   {
     file: "@deepseek-ai/dsh-client-ui-sidebar-browser/lib/client.js",

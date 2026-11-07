@@ -71,7 +71,7 @@ import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import {
-  BRAND_FILES, PARTNER_ORIGIN, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
+  BRAND_FILES, PARTNER_ORIGIN, handleDesktopFeishuRequest, clearPartnerSession, crysoundResources, ensurePartnerSession, isFirstRun, markFirstRunDone, readPartnerSession,
   openLoginWindow, openPreparingWindow, partnerHostEnvironment, type PreparingWindow,
 } from './crysound/partner.ts'
 import { prepareCompanyWorkspace } from './crysound/workspace.ts'
@@ -828,6 +828,8 @@ async function main(): Promise<void> {
     if (url.hostname === 'shell') return serveWebDocument(request, join(app.getAppPath(),
       url.pathname === '/design-platform.css' ? 'lib/welcome' : 'renderer'))
     if (url.hostname === 'app') {
+      // Company-only settings API; the renderer never receives the gateway login token.
+      if (url.pathname.startsWith('/_zp/feishu/')) return handleDesktopFeishuRequest(request).then(response => response ?? new Response(null, { status: 404 }))
       if (BRAND_FILES.has(url.pathname)) return serveWebDocument(request, join(crysoundResources(), 'brand'))
       // The brand layer shows the signed-in Feishu name and avatar; the web version gets the same answer from the gateway.
       if (url.pathname === '/_zp/me') {

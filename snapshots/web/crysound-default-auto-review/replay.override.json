@@ -1,0 +1,11 @@
+[
+  {
+    "risk": "low",
+    "decision": "allow"
+  },
+  {
+    "risk": "medium",
+    "decision": "deny",
+    "reason": "The pre-existing directory was not authorized for deletion."
+  }
+]

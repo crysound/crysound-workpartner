@@ -4,6 +4,9 @@
 
 ## 改了什么
 
+### 网页版默认自动审查
+- `crysound/scripts/patch-web-auto-review.mjs` 只在网页镜像构建时修补固定版本的权限 Host、权限界面和自动审查退出路径，不改上游源码或桌面运行时。未设置个人默认权限时用自动审查，显式选择继续优先；插件不可用时新会话退回工作区内修改，停用插件也不升级为完全权限。部署、额外请求消耗和回退见 [网页说明](crysound/web/README.md#默认自动审查)。
+
 ### 工作区本地服务预览
 - `crysound/web/preview/`：单一预览域与主站隔离，经主站登录兑换绑定本人和当前端口的短期 Cookie，再流式转发到容器 loopback；部署、边界与线上验收见 [预览说明](crysound/web/preview/README.md)。公司启动配置为新老工作区显式启用原生 Browser；其发布包补丁由 `crysound/config/plugin-patches.mjs` 在镜像构建时应用，第三方 Artifacts 只改 MIT `lib/`。桌面本机链接保持原状，原生桌面云端连接入口尚未实现。
 
@@ -27,6 +30,12 @@
 - DeepSeek 账号：不显示欢迎/登录窗口，`PLATFORM_IPC.open`（DeepSeek 用量与充值页）直接拒绝。
 
 Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域名均用桌面通行证鉴权，文件在 `downloads/updates/mac/`。桌面版检查、下载前读取当前登录；未登录时等待下一轮。
+
+### 原生飞书授权设置
+- `crysound/feishu/native` 是随应用分发的公司设置模块，注册原生 `settings.section` 和链接图标，复用原生按钮与主题；品牌脚本不再插入设置导航链接。`prepareSkillProfile` 在安装公司技能时将本地模块写入个人 profile，重复执行不重复加条目，不需要从市场安装。
+- 网页授权使用小窗；飞书内置浏览器使用同页授权，完成后通过固定 `?zp-settings=feishu` 标记打开原生设置。旧 `/_zp/feishu/` 页面继续可用。授权回调只向同源 opener 发送完成事件，不传授权码或令牌。
+- 桌面版 `main.ts` 仅增加公司设置的协议路由，`partner.ts` 和 `feishu/desktop.mjs` 在主进程复用本人登录与原有接口，隔离子窗口完成授权；渲染页不接触凭据。新授权附带授权时间，自动刷新不改变该时间；旧记录没有时间时明确显示未记录。
+- 部署需要同步公司配置的 `plugin-patches.mjs`（明确打开的设置页暂缓首次引导）、重启网关、重建个人容器镜像及重新发布桌面版。测试和真实验收步骤见 `crysound/feishu/README.md`；截图是测试状态预览，不能替代真实飞书与桌面安装包验收。
 
 ### 登录与模型
 - 启动时 `src/crysound/partner.ts` 读取 `userData/partner-session.json`（权限 600）；没有令牌，或网关对令牌返回 401 时，打开窗口加载 `https://workpartner.corp.crysound.com/_zp/desktop-login`，拦截跳到 `/_zp/desktop-done#token=…&name=…&avatar=…` 的那一步，存令牌后关窗进入工作区。
