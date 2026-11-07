@@ -54,14 +54,32 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
   const endpointCache = new Map(), budgets = new Map();
   const fetchJson = async (path) => {
     const response = await fetcher(origin + path, { headers: { accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(15000) });
-    if (!response.ok) { await response.body?.cancel(); throw fail(502, "数据目录暂时无法读取"); }
+    if (!response.ok) {
+      let value;
+      try { value = JSON.parse((await readBytes(response.body ?? [], 2 * 1024 * 1024)).toString()); }
+      catch (error) { /* 非 JSON 或过大的错误响应仍按目录读取失败处理。 */ }
+      throw Object.assign(fail(502, "数据目录暂时无法读取"), {
+        upstreamStatus: response.status, providerPaused: (value?.error ?? value?.detail?.error) === "provider_paused",
+      });
+    }
     return JSON.parse((await readBytes(response.body, 2 * 1024 * 1024)).toString());
   };
-  const readPlatforms = catalog ?? (async () => dataPlatforms(await fetchJson("/catalog/platforms")));
+  const loadPlatforms = catalog ?? (async () => dataPlatforms(await fetchJson("/catalog/platforms")));
+  let platformCache, platformsPending;
+  const readPlatforms = async () => {
+    if (platformCache && now() < platformCache.expires) return platformCache.value;
+    if (!platformsPending) {
+      platformsPending = loadPlatforms().then(value => {
+        platformCache = { value, expires: now() + 5 * 60 * 1000 };
+        return value;
+      }).finally(() => { platformsPending = undefined; });
+    }
+    return platformsPending;
+  };
   const platforms = async () => new Set((await readPlatforms()).map((platform) => platform.slug));
   const endpoint = async (id, ancestors = new Set()) => {
     if (typeof id !== "string" || !idPattern.test(id) || ancestors.has(id)) throw fail(403, "只允许调用已开放分类的数据接口");
-    // 只缓存公共目录详情；最终允许与否仍按当前目录和所有路由子接口核对。
+    // 公共详情缓存不缓存校验结果；目录和调用均核对路由内所有可用子接口。
     let value = endpointCache.get(id);
     if (!value) {
       value = (await fetchJson(`/catalog/endpoints/${encodeURIComponent(id)}`)).endpoint;
@@ -82,7 +100,14 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       const next = new Set([...ancestors, id]);
       // Search is pinned to Exa below, so validate only that selected child, not 20 unused providers.
       if (id === "treg.web.search" && !children.includes("exa.web.search")) throw fail(403, "搜索路由尚未开放 Exa");
-      for (const child of id === "treg.web.search" ? ["exa.web.search"] : children) await endpoint(child, next);
+      let available = 0;
+      for (const child of id === "treg.web.search" ? ["exa.web.search"] : children) {
+        try { await endpoint(child, next); available++; }
+        catch (error) {
+          if (error.upstreamStatus !== 404 && !error.providerPaused) throw error;
+        }
+      }
+      if (!available) throw fail(403, "路由暂无可用的数据接口");
     }
     return value;
   };
@@ -90,11 +115,12 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (typeof q !== "string" || q.length > 1000 || !Number.isInteger(limit) || limit < 1 || limit > 25) throw fail(400, "搜索关键词或条数无效");
     const value = await fetchJson(`/catalog/search?${new URLSearchParams({ q, limit: String(limit) })}`);
     if (!Array.isArray(value.results)) throw fail(502, "数据搜索结果无效");
-    const results = [];
+    const results = []; let failure;
     for (const row of value.results) {
       try { results.push(await endpoint(row.id)); }
-      catch (error) { if (error.status !== 403) throw error; }
+      catch (error) { failure = error; }
     }
+    if (!results.length && failure) throw failure;
     return { query: q, count: results.length, results };
   };
   const orgHeaders = () => ({ "x-treg-token": token(), "x-treg-org": orgSlug, accept: "application/json" });
@@ -211,6 +237,8 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     const reply = (result) => json(res, 200, { jsonrpc: "2.0", id: message.id, result });
     if (message.method === "notifications/initialized" && message.id === undefined) { res.writeHead(202); res.end(); return; }
     if (message.id === undefined) throw fail(400, "MCP 请求缺少标识");
+    // MCP 客户端收到方法不存在后，回退到 initialize/tools/list 握手。
+    if (message.method === "server/discover") return json(res, 200, { jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } });
     if (message.method === "initialize") return reply({ protocolVersion: "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "兆华数据", version: "1.0.0" } });
     if (message.method === "ping") return reply({});
     if (message.method === "tools/list") return reply({ tools });

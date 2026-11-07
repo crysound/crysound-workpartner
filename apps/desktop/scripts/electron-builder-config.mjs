@@ -24,7 +24,8 @@ import { resolveDesktopAutoUpdateConfig } from './desktop-auto-update-environmen
 import { resolveDesktopBuildCommit } from './desktop-build-commit.mjs'
 import { resolveDesktopBuildVersion } from './desktop-build-version.mjs'
 // CRYSOUND: release numbering belongs to the shell, not the bundled upstream runtime.
-import { releaseVersion } from '../../../crysound/scripts/mac-update-release.mjs'
+import { companyDesktopVersion } from '../../../crysound/scripts/desktop-ci.mjs'
+import { smokeMnemon } from '../../../crysound/mnemon/smoke.mjs'
 import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
 import { desktopArtifactOutput, desktopTargetBuildPaths, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
 import { installWindowsDirectoryInstaller } from './windows-directory-installer.mjs'
@@ -103,10 +104,8 @@ export function createElectronBuilderConfig(
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.
   const productVersion = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')).version
-  // CRYSOUND: inject the formal Mac version only into packaged metadata; keep source manifests aligned.
-  const buildVersion = packagesMacOS && env.CRYSOUND_DESKTOP_VERSION !== undefined
-    ? releaseVersion(env.CRYSOUND_DESKTOP_VERSION)
-    : resolveDesktopBuildVersion(env, productVersion)
+  // CRYSOUND: number the company shell on both platforms; keep source/runtime manifests aligned.
+  const buildVersion = companyDesktopVersion(env) ?? resolveDesktopBuildVersion(env, productVersion)
   if (update?.channel === 'latest' && buildVersion.includes('-')) throw new Error('desktop package: latest requires a stable version')
   const packaged = resolveDesktopBuildCommit(env)
   return {
@@ -166,6 +165,7 @@ export function createElectronBuilderConfig(
       // CRYSOUND: brand layer, default configuration, plugin list, Host hook.
       { from: fileURLToPath(new URL('../../../crysound', import.meta.url)), to: 'crysound', filter: ['brand/**/*', 'config/**/*', 'feishu/**/*', 'host-hook.mjs', 'plugin-artifacts.mjs'] },
       { from: join(buildPaths.root, 'company-plugins'), to: 'crysound/company-plugins' },
+      { from: join(buildPaths.root, 'mnemon'), to: 'crysound/mnemon' },
       // CRYSOUND: plugins pre-installed for this target (see prepare-plugin-template.ts); absent when the target cannot be built on this host.
       ...(existsSync(join(buildPaths.root, 'plugin-template', 'plugins.json')) ? [{ from: join(buildPaths.root, 'plugin-template'), to: 'crysound/plugin-template' }] : []),
       ...(packagesMacOS ? [{ from: fileURLToPath(new URL('../../../crysound/macos/zh_CN.lproj', import.meta.url)), to: 'zh_CN.lproj' }] : []),
@@ -214,6 +214,10 @@ export function createElectronBuilderConfig(
     afterPack: async context => {
       const { verifyDesktopRuntime } = await import('../lib/types/runtime-tree.js')
       const resourcesDir = context.packager.getResourcesDir(context.appOutDir)
+      // CRYSOUND: execute the copied binary, including Windows .exe, before publishing a native-host build.
+      if (resolvedPlatform === process.platform && resolvedArch === process.arch) {
+        smokeMnemon(join(resourcesDir, 'crysound', 'mnemon', 'bin'))
+      }
       if (resolvedPlatform === 'darwin' && update !== undefined) {
         await writeMacOSAppUpdateConfig(resourcesDir, resolveMacOSAppUpdateFeed(context.packager.config.publish),
           context.packager.appInfo.updaterCacheDirName)

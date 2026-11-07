@@ -4,6 +4,8 @@
 
 ## 改了什么
 
+- 记忆默认使用第三方 `dsh-mnemon@0.5.42`（显示名“可组合记忆”），网页和桌面共用 `plugins.json`，使用包自带的分层策略和关闭的增强开关；不要把插件的 `insert` 块复制到个人 `cordis.patch.yml`。`retire.mnemon-v1` 用原生卸载移出 `@crysound/memory`，保留旧数据；市场按退役清单隐藏旧插件，保留包和审批记录。网页与同一 Host 内的飞书会话共用 `/data/.mnemon`；桌面 Host 的 `MNEMON_DATA_DIR` 指向应用 `userData/.mnemon`。部署先合入 #207（Mnemon Native 命令行），同步公司配置并重建网关、更新个人容器及桌面安装包；核对新用户、旧用户和已手装用户插件设置可保存，再验收网页存入、新对话和飞书召回。
+
 - 设置市场图标：`crysound/config/plugin-patches.mjs` 修补 dshmarket 1.73.12 的真实发布路径 `client/client.js`；所有目标文件缺失都会输出“插件修补未命中”，pnpm 多处安装只在全部位置缺失时告警。真实包回归与路径审计见 [复核说明](crysound/settings-evidence/issue-167/README.md)。
 
 ### 网页版默认自动审查
@@ -27,7 +29,7 @@
 - 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，三个标签共用两列推荐卡片、官方图标与名称首字回退，窄窗口一列；复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
 - 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。
-- 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 在新老工作区一次性移出三款旧预装，保留作品和共用浏览器。发布与版本同步见市场说明。
+- 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 是独立编号的迁移数组，各自使用 `.zp-retired-<id>` 标记，保留已有迁移结果及本人之后重装的插件。公司配置、迁移脚本与网关需一起更新；用户文件和共用浏览器保持不变。发布与版本同步见市场说明。
 - 左下角账号按钮显示飞书头像和姓名，菜单里的“登录”项换成姓名（不可点）。`brand.js` 向 `/_zp/me` 取 `{name, avatar}`：网页版由网关按登录会话回答，桌面版由 `src/main.ts` 按本机保存的登录回答。网页版在账号按钮上方多一个“下载客户端”入口，指向网关的 `/_zp/download`。
 - 账号菜单隐藏各项右侧的快捷键提示文字，保留快捷键操作与无障碍快捷键说明；`brand.css` 在网页版与桌面版共用。
 
@@ -69,6 +71,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 公司配置升级器生成独立的模型提示片段，指导批量读取文本、一次写完并运行小脚本、独立调用同轮并行；不改上游 dsh、工具或权限。通过原有公司配置下载与启动刷新覆盖已有用户，完整系统提示预设保持原生行为。部署与三类同题对比验收见 `crysound/web/README.md`。
 
 ### 打包
+- 网页镜像与 Mac/Windows 安装包随附 Mnemon CLI 0.2.13：从 npm `@mnemon-dev/mnemon` 的对应平台包提取原生程序（含许可证），无需用户安装 Node/npm，dsh 子进程 PATH 包含其 `bin`；版本与各平台 SHA-512 固定在 `crysound/mnemon/releases.json`，升级时更新该文件并重建镜像和桌面包，构建会核对摘要并在本机目标上实测存取；不自动安装或启用 dsh-mnemon 及第三方 Provider。
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
 - `desktop-package-environment.mjs`：本地未签名构建的默认 appId。
 - `package-target.ts`、`package-macos.ts`、`smoke-packaged-runtime.ts`、`cli/dsh`、`development-app.ts`：`.app` 名称与协议。
@@ -80,8 +83,13 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
 - 安装包资源检查从包内 `plugin-artifacts.mjs` 读取飞书归档文件名，与打包下载共用固定版本；不再单独维护旧文件名。
-- CI：`.github/workflows/desktop-mac.yml`，只手动触发，输入正式版本号 `version` 与更新目录 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`），在 `macos-15`（Apple 芯片）上构建。正式版本通过打包元数据注入，源 manifest 与运行时版本不变。依次做：更新自查、打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、npm 源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
-- 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签（含 `plugin-template` 里的全部 Mach-O 文件）、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；完整发版输入还生成签名 app 的 ZIP 与 `latest-mac.yml`，随 DMG 一起上传为工作流产物，下载站由伙伴助理手动发布。缺任何签名凭据就跳过。
+- CI：`.github/workflows/desktop-mac.yml`（`macos-15`、Apple 芯片）与 `desktop-windows.yml`（`windows-2025`、x64）在每次 `main` 推送时自动构建。同类事件的同一分支只保留最新自动运行，手动正式构建不会被它取消。PR 改到桌面、公司目录、`packages`、运行时/原生依赖、CLI/Web、构建脚本、锁文件或这两个工作流时构建；只有 Markdown 文档变动的 PR 不触发。
+- 自动包版本为 `<下一正式版>-dev.<运行号>`，始终低于同号正式版。下一正式版由 `crysound/config/desktop-release.json` 的 `nextVersion` 声明（当前 `0.2.5`，最近成功的正式构建为 `0.2.4`）；每次正式发布后通过后续 PR 把它推进到下一计划版本。版本只注入两个平台安装包的元数据，源 manifest 与内嵌运行时版本不变。
+- 自动产物仅保留为 Actions artifact，安装包保留 14 天；运行摘要列出版本、提交、产物文件名与字节大小。未签名自动包的 artifact 名称含 `unsigned-preview`，摘要标注“未签名预览”。自动构建不生成或上传 `latest-mac.yml`、更新 ZIP，也不发布下载站。
+- Mac 签名与公证使用已有仓库 secrets：`CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`。`main` 缺任意一项直接失败；签名、公证、盖章或 Gatekeeper 核对失败同样标红并在摘要指向失败步骤。fork PR 拿不到凭据，只产出未签名预览；同仓库 PR 有完整凭据时可签名公证，缺凭据时同样只出未签名预览。不使用 `pull_request_target`。Windows 沿用未签名安装包与安装启动冒烟。
+- 正式发布仍手动：伙伴助理从成功自动运行的摘要选定提交，选择包含该提交的分支或标签，手动运行两个工作流并输入至少为 `nextVersion` 的正式版本号；Mac 同时输入 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`）。Mac 沿用 `sign-mac.sh` 的稳定版本校验，生成签名 DMG、ZIP 与 `latest-mac.yml`，再由伙伴助理手动发布下载页和更新目录；不能把 dev 包直接当成正式版。安装包检查与首启动准备冒烟沿用现有步骤。
+- `main` 自动构建失败时，由单独的、不检出仓库代码的 job 使用 `GITHUB_TOKEN` 创建或更新带 `agent` 标签的需求单，标题包含平台和提交；同一平台同一提交不重复建单。只有这个 job 获得 `issues: write`，构建 job 保持 `contents: read`，不用个人账号。
+- 本地轻量自查：Node 24 执行 `node --experimental-test-module-mocks --test crysound/scripts/desktop-ci.test.mjs crysound/scripts/desktop-workflows.test.mjs crysound/scripts/mac-update-release.test.mjs`，以及 `actionlint -shellcheck= .github/workflows/desktop-mac.yml .github/workflows/desktop-windows.yml`。实际 Mac/Windows 构建、签名公证与合入后的第一次自动产物由伙伴助理验收。
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
 ## 网页版（`crysound/web`）
@@ -143,7 +151,7 @@ done
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu` 0.17.0-crysound.6：独立正文与下方进度组件，200 毫秒推送，40 毫秒每次 6 字；每秒更新思考进度，新回答轮次从空组件开始，结束原位收起过程并保留最后正文；真实飞书打字、旧客户端及群聊话题由伙伴助理上线验收。
-- `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：文字、图片、文件和透传命令在会话缺失、归档、删除或恢复失败时自动新建，空工作区回退进程默认目录，原卡注明“已新开会话”；整轮流式卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补简短提醒，超长或更新失败时另发正文；提示先推荐 /new。
+- `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：文字、图片、文件和透传命令在会话缺失、归档、删除或恢复失败时自动新建，空工作区回退进程默认目录，原卡注明“已新开会话”；卡片进度不读秒、不显示工具参数，当前步骤用限速省略号动效，正文输出后停止动效、结束原位折叠；整轮流式卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补简短提醒，超长或更新失败时另发正文；提示先推荐 /new。
 - 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。桌面准备按 assets 资源目录加载共用脚本，不依赖源码或编译后文件的相对层级。
 - 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；飞书版本更新同时修改 `plugin-artifacts.mjs` 的文件名、下载地址和校验值，以及 `plugins.json` 的本地 spec/want。重建网页镜像并同步配置，逐人空闲时换镜像；桌面随下一安装包携带归档。不要只同步本地路径清单而沿用缺归档的旧镜像或旧桌面包。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。

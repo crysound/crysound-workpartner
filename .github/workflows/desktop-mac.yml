@@ -1,9 +1,36 @@
 name: CRYSOUND WorkPartner · macOS arm64 desktop
 
-# Builds the company desktop app (apps/desktop) for Apple Silicon. The unsigned installer is always uploaded; when
-# all signing secrets exist, it is also re-signed, notarized and uploaded as a second artifact. Nothing is published.
-# 只在发版时手动触发。
+# Automatic builds retain previews only; main requires Developer ID signing and notarization.
+# Manual releases also retain the update ZIP and feed for a separate publication step.
 on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/desktop-host/**'
+      - 'crysound/**'
+      - 'packages/**'
+      - 'vendor/**'
+      - 'native/**'
+      - 'python/**'
+      - 'scripts/**'
+      - 'apps/cli/**'
+      - 'apps/web/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - '.pnpmfile.*'
+      - 'tsconfig*.json'
+      - 'tsdown*.ts'
+      - 'vitest*.ts'
+      - 'eslint.config.*'
+      - 'patches/**'
+      - '.github/workflows/desktop-mac.yml'
+      - '.github/workflows/desktop-windows.yml'
+      - '!**/*.md'
+      - '!**/*.mdx'
   workflow_dispatch:
     inputs:
       version:
@@ -19,8 +46,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: desktop-mac-${{ github.ref }}
-  cancel-in-progress: true
+  group: desktop-mac-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   package:
@@ -31,9 +58,10 @@ jobs:
         shell: bash
     env:
       DSH_TELEMETRY_DISABLED: '1'
-      CRYSOUND_DESKTOP_VERSION: ${{ inputs.version }}
-      CRYSOUND_DESKTOP_UPDATE_URL: ${{ inputs.update_url || vars.CRYSOUND_DESKTOP_UPDATE_URL }}
-      # 'true' only when every signing secret exists; the signing step is skipped otherwise.
+      DESKTOP_PLATFORM: mac
+      REQUESTED_VERSION: ${{ inputs.version }}
+      REQUESTED_UPDATE_URL: ${{ inputs.update_url || vars.CRYSOUND_DESKTOP_UPDATE_URL }}
+      # Fork PRs receive no signing credentials; main must fail when any credential is missing.
       HAS_SIGNING: ${{ secrets.CSC_LINK != '' && secrets.CSC_KEY_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -43,12 +71,12 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
-      - name: Validate release version and update directory
-        run: node crysound/scripts/mac-update-release.mjs validate "$CRYSOUND_DESKTOP_VERSION" "$CRYSOUND_DESKTOP_UPDATE_URL"
+      - name: Resolve version and validate signing requirements
+        run: node crysound/scripts/desktop-ci.mjs prepare
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Company update behavior and release metadata tests
-        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/mac-update-release.test.mjs crysound/scripts/company-auto-update.test.mjs crysound/web/gateway/tests/updates.test.mjs
+        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/desktop-ci.test.mjs crysound/scripts/desktop-workflows.test.mjs crysound/scripts/mac-update-release.test.mjs crysound/scripts/company-auto-update.test.mjs crysound/web/gateway/tests/updates.test.mjs
       - name: Workspace preparation tests (template copy, install time bounds)
         run: pnpm exec vitest run apps/desktop/tests/crysound-workspace.spec.ts
       - name: Package mac-arm64 (unsigned)
@@ -69,7 +97,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: crysound-workpartner-mac-arm64-unsigned
+          name: crysound-workpartner-mac-arm64-${{ github.event_name == 'workflow_dispatch' && 'unsigned' || format('unsigned-preview-{0}', env.DESKTOP_CI_VERSION) }}
           path: ${{ steps.dmg.outputs.path }}
           compression-level: 0
           if-no-files-found: error
@@ -84,6 +112,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Sign and notarize (runs only when all signing secrets exist)
+        id: signing
         if: env.HAS_SIGNING == 'true'
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -93,10 +122,20 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: crysound/scripts/sign-mac.sh "${{ steps.dmg.outputs.path }}" signed
       - name: Verify signed installer (stapler, spctl, codesign)
+        id: verify
         if: env.HAS_SIGNING == 'true'
         run: crysound/scripts/verify-signed.sh "$(ls signed/*.dmg | head -n1)"
+      - name: Upload signed preview installer
+        if: env.HAS_SIGNING == 'true' && github.event_name != 'workflow_dispatch'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: crysound-workpartner-mac-arm64-signed-preview-${{ env.DESKTOP_CI_VERSION }}
+          path: signed/*.dmg
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload signed installer and update feed
-        if: env.HAS_SIGNING == 'true'
+        if: env.HAS_SIGNING == 'true' && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: crysound-workpartner-mac-arm64-signed
@@ -111,3 +150,40 @@ jobs:
         env:
           SMOKE_ONLINE_BASELINE: '1'
         run: crysound/scripts/smoke-workspace.sh "${{ steps.dmg.outputs.path }}"
+      - name: Summarize retained installers
+        if: always()
+        env:
+          SIGNING_OUTCOME: ${{ steps.signing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          shopt -s nullglob
+          node crysound/scripts/desktop-ci.mjs summary apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/*.dmg signed/*.dmg signed/*.zip signed/latest-mac.yml
+
+  report-failure:
+    needs: package
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.package.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update build failure issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const platform = 'Mac arm64';
+            const { owner, repo } = context.repo;
+            const marker = `<!-- desktop-build-failure:${platform}:${context.sha} -->`;
+            const title = `桌面自动构建失败：${platform} · ${context.sha}`;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = [marker, '', `main 上的 ${platform} 自动构建失败。`, '', `提交：${context.sha}`, `运行：${run}`, '',
+              '请查看构建摘要和失败步骤，修复后核对安装包；不要直接发布预览包。'].join('\n');
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', labels: 'agent', per_page: 100,
+            });
+            const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body, state: 'open' });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body, labels: ['agent'] });
+            }

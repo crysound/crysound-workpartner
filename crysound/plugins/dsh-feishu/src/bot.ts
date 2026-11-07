@@ -1808,7 +1808,7 @@ export class FeishuBot {
         this.turnMessages = waiting?.messages ?? []
         const target = waiting ? this.target(waiting.messages.at(-1)!) : undefined
         if (waiting && target) {
-          waiting.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, waiting.autoNew ? '已新开会话' : '')
+          waiting.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, waiting.autoNew ? '已新开会话' : '', this.config.progressAnimationIntervalMs)
           waiting.preview.start()
         }
         this.turnOutput = new TurnOutput(waiting?.preview, target)
@@ -1825,7 +1825,7 @@ export class FeishuBot {
           if (!this.turnHasUser) {
             this.turnMessages = pending.messages
             const target = this.target(pending.messages.at(-1)!)
-            pending.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, pending.autoNew ? '已新开会话' : '')
+            pending.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, pending.autoNew ? '已新开会话' : '', this.config.progressAnimationIntervalMs)
             pending.preview.start()
             this.turnOutput = new TurnOutput(pending.preview, target)
           } else {
@@ -1840,7 +1840,7 @@ export class FeishuBot {
         this.turnOutput.assistant(event.data.message.content.filter(block => block.type === 'text').map(block => block.text).join(''),
           event.data.message.content.some(block => block.type === 'tool-call'))
       } else if (event.type === 'tool/call') {
-        this.turnOutput?.tool(event.data.callId, toolProgress(event.data.name, event.data.arguments))
+        this.turnOutput?.tool(event.data.callId, toolProgress(event.data.name))
       } else if (event.type === 'turn/end') {
         const output = this.turnOutput ?? new TurnOutput()
         const messages = this.turnMessages

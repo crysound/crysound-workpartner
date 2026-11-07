@@ -17,7 +17,7 @@ test('release inputs reject versions the updater cannot order and unsafe feed UR
   }
 })
 
-test('the real Mac builder numbers the shell independently and leaves source/runtime manifests intact', async t => {
+test('the real desktop builder numbers stable and preview shells without changing source/runtime manifests', async t => {
   // This configuration check never signs, notarizes, or loads Windows-specific build tools.
   const unavailable = () => { throw new Error('Config check must not invoke signing or packaging tools') }
   const replace = (path, namedExports) => {
@@ -28,13 +28,16 @@ test('the real Mac builder numbers the shell independently and leaves source/run
     createWindowsTokenSigner: unavailable, installWindowsNsisBootstrapSigner: unavailable,
     resolveWindowsUpdatePublisher: unavailable, scrubWindowsSigningEnvironment: unavailable,
   })
-  replace('../../apps/desktop/scripts/windows-directory-installer.mjs', { installWindowsDirectoryInstaller: unavailable })
+  replace('../../apps/desktop/scripts/windows-directory-installer.mjs', { installWindowsDirectoryInstaller() {} })
   replace('../../apps/desktop/scripts/windows-asar-unpack.mjs', { prepareWindowsAsarUnpack: unavailable, verifyWindowsAsarUnpack: unavailable })
   replace('../../apps/desktop/scripts/notarize-macos.mjs', { notarizeMacOS: unavailable })
   const { createElectronBuilderConfig } = await import('../../apps/desktop/scripts/electron-builder-config.mjs')
   const manifests = ['../../package.json', '../../apps/desktop/package.json'].map(path => new URL(path, import.meta.url))
   const before = await Promise.all(manifests.map(path => readFile(path, 'utf8')))
-  const env = { DSH_DESKTOP_UNSIGNED: '1', DSH_DESKTOP_APP_ID: 'com.crysound.workpartner', CRYSOUND_DESKTOP_VERSION: '0.2.3' }
+  const env = {
+    DSH_DESKTOP_UNSIGNED: '1', DSH_DESKTOP_APP_ID: 'com.crysound.workpartner', CRYSOUND_DESKTOP_VERSION: '0.2.3',
+    DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN: 'https://gateway.example.test',
+  }
   const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
   assert.equal(config.extraMetadata.version, '0.2.3')
   assert.equal(config.publish, null)
@@ -43,6 +46,14 @@ test('the real Mac builder numbers the shell independently and leaves source/run
   assert.equal(JSON.parse(before[0]).version, JSON.parse(before[1]).version)
   assert.throws(() => createElectronBuilderConfig({ ...env, CRYSOUND_DESKTOP_VERSION: '0.2.3-rc.1' }, 'darwin', 'arm64'))
   assert.equal(createElectronBuilderConfig({ ...env, CRYSOUND_DESKTOP_VERSION: undefined }, 'darwin', 'arm64').extraMetadata.version, undefined)
+  for (const platform of ['darwin', 'win32']) {
+    const preview = createElectronBuilderConfig({ ...env, CRYSOUND_DESKTOP_VERSION: '', CRYSOUND_DESKTOP_PREVIEW_VERSION: '0.2.5-dev.17' }, platform, platform === 'darwin' ? 'arm64' : 'x64')
+    assert.equal(preview.extraMetadata.version, '0.2.5-dev.17')
+    assert.equal(preview.publish, null)
+    assert.equal(preview.extraMetadata.dshDesktopUpdateChannel, 'nightly')
+  }
+  assert.equal(createElectronBuilderConfig(env, 'win32', 'x64').extraMetadata.version, '0.2.3')
+  assert.deepEqual(await Promise.all(manifests.map(path => readFile(path, 'utf8'))), before)
 })
 
 test('signed-app configuration and feed describe the exact final ZIP bytes', async t => {

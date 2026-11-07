@@ -4,6 +4,8 @@ import { closeOpenFence } from './text.ts'
 import type { LarkGateway, MessageTarget } from './lark-client.ts'
 
 export const PREVIEW_INTERVAL_MS = 200
+/** 20 simultaneous cards use at most 800 progress updates/minute (API limit: 1000). */
+export const PROGRESS_INTERVAL_MS = 1500
 
 /** Delivery outcome for the final card; failed or clipped cards need a separate body. */
 export interface PreviewResult {
@@ -57,6 +59,8 @@ export class Preview {
   private readonly startedAt: number
   private lastBody = ''
   private lastProgress = ''
+  private lastProgressSent = -Infinity
+  private currentStep = '思考中'
   private lastSent = -Infinity
   private timer: ReturnType<typeof setTimeout> | undefined
   private heartbeat: ReturnType<typeof setInterval> | undefined
@@ -68,42 +72,55 @@ export class Preview {
   private readonly target: MessageTarget
   private readonly now: () => number
   private readonly intervalMs: number
+  private readonly progressAnimationIntervalMs: number
   readonly note: string
-  constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS, note = '') {
+  constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS, note = '', progressAnimationIntervalMs = PROGRESS_INTERVAL_MS) {
     this.lark = lark; this.target = target; this.now = now; this.intervalMs = intervalMs
     this.note = note
+    this.progressAnimationIntervalMs = progressAnimationIntervalMs
     this.startedAt = now()
   }
 
   start(): void {
     if (this.stopped || this.disabled || this.messageId || this.flight) return
-    this.heartbeat = setInterval(() => this.schedule(), 1000)
+    this.heartbeat = setInterval(() => this.schedule(), this.progressAnimationIntervalMs)
     this.heartbeat.unref?.()
     this.launch()
   }
-  line(text: string): void { if (text && !this.stopped) { this.lines.push(text); this.schedule() } }
+  line(text: string, tool = false): void {
+    if (text && !this.stopped) {
+      this.lines.push(text)
+      if (tool) this.currentStep = text
+      this.schedule()
+    }
+  }
   delta(text: string): void { if (text && !this.stopped) { this.paragraph += text; this.schedule() } }
   settled(text = '', hasTools = true): void {
     if (this.stopped) return
     const next = hasTools ? '' : text
     if (!next.startsWith(this.paragraph)) this.elementId = 'p' + randomBytes(9).toString('hex')
     this.paragraph = next
+    this.currentStep = '思考中'
     this.schedule()
   }
   private progress(): string {
-    const seconds = Math.max(0, Math.floor((this.now() - this.startedAt) / 1000))
-    return [this.note, !this.paragraph ? `思考中 · 已 ${seconds} 秒` : '',
-      this.lines.length ? `已执行 ${this.lines.length} 步` : '',
-      ...this.lines.slice(-3).map(line => line.slice(0, 300))].filter(Boolean).join('\n')
+    const dots = '.'.repeat(Math.max(0, Math.floor((this.now() - this.startedAt) / this.progressAnimationIntervalMs)) % 3 + 1)
+    return [this.note, !this.paragraph ? this.currentStep + dots : '',
+      this.lines.length ? `已执行 ${this.lines.length} 步` : ''].filter(Boolean).join('\n')
   }
   private body(): string {
     return String(finalCard(this.paragraph, '', this.lines, this.elementId, this.progressId).card.body.elements[0]!.content)
   }
   private schedule(): void {
-    if (this.stopped || this.disabled || this.flight || this.timer) return
+    if (this.stopped || this.disabled || this.flight) return
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = undefined
     if (!this.messageId) { this.start(); return }
-    if (this.body() === this.lastBody && this.elementId === this.sentElementId && this.progress() === this.lastProgress) return
-    const delay = (this.cardId ? this.intervalMs : Math.max(FALLBACK_INTERVAL_MS, this.intervalMs)) - (this.now() - this.lastSent)
+    const bodyChanged = this.body() !== this.lastBody || this.elementId !== this.sentElementId
+    if (!bodyChanged && this.progress() === this.lastProgress) return
+    const bodyDelay = (this.cardId ? this.intervalMs : Math.max(FALLBACK_INTERVAL_MS, this.intervalMs)) - (this.now() - this.lastSent)
+    const progressDelay = this.progressAnimationIntervalMs - (this.now() - this.lastProgressSent)
+    const delay = Math.max(bodyDelay, bodyChanged ? 0 : progressDelay)
     if (delay > 0) {
       this.timer = setTimeout(() => { this.timer = undefined; this.schedule() }, delay)
       this.timer.unref?.()
@@ -133,19 +150,24 @@ export class Preview {
   private async publish(): Promise<void> {
     this.lastSent = this.now()
     if (!this.messageId) {
-      this.cardId = await this.lark.createStreamingCard(this.elementId, this.progressId)
-      const initialProgress = [this.note, '思考中 · 已 0 秒'].filter(Boolean).join('\n')
+      const initialProgress = this.progress()
+      this.cardId = await this.lark.createStreamingCard(this.elementId, this.progressId, initialProgress)
       this.messageId = await this.lark.sendMessage(this.target, 'interactive', this.cardId
         ? { type: 'card', data: { card_id: this.cardId } } : this.liveCard('', initialProgress))
-      this.lastProgress = this.cardId ? '思考中 · 已 0 秒' : initialProgress
-      if (!this.messageId) this.disabled = true
+      this.lastProgress = initialProgress
+      this.lastProgressSent = this.now()
+      if (!this.messageId) { this.disabled = true; this.clearTimers() }
       return
     }
-    const body = this.body(), progress = this.progress(), elementId = this.elementId
+    const body = this.body(), elementId = this.elementId
+    const progress = this.now() - this.lastProgressSent >= this.progressAnimationIntervalMs ? this.progress() : this.lastProgress
     if (this.cardId) {
-      if (await this.stream(body, elementId)
+      const streamed = await this.stream(body, elementId)
+      if (this.stopped) return
+      if (streamed
         && (progress === this.lastProgress || await this.lark.updateCardElement(this.cardId, this.progressId,
           { tag: 'markdown', element_id: this.progressId, content: progress, text_size: 'notation' }, ++this.sequence))) {
+        if (progress !== this.lastProgress) this.lastProgressSent = this.now()
         this.lastProgress = progress
         return
       }
@@ -153,17 +175,21 @@ export class Preview {
       this.sequence++; this.cardId = undefined
     }
     const result = await this.lark.updatePreview(this.messageId, this.liveCard(body, progress))
-    if (result === 'failed') this.disabled = true
+    if (result === 'failed') { this.disabled = true; this.clearTimers() }
+    if (progress !== this.lastProgress) this.lastProgressSent = this.now()
     this.lastBody = body; this.lastProgress = progress; this.sentElementId = elementId
   }
   finish(status = '', body?: string, endedAt = this.now()): Promise<PreviewResult> {
     return this.finishFlight ??= this.settle(status, body, Math.max(0, endedAt - this.startedAt))
   }
-  private async settle(status: string, body: string | undefined, elapsedMs: number): Promise<PreviewResult> {
-    this.start(); this.stopped = true
+  private clearTimers(): void {
     if (this.timer) clearTimeout(this.timer)
     if (this.heartbeat) clearInterval(this.heartbeat)
     this.timer = undefined; this.heartbeat = undefined
+  }
+  private async settle(status: string, body: string | undefined, elapsedMs: number): Promise<PreviewResult> {
+    this.start(); this.stopped = true
+    this.clearTimers()
     await this.flight
     const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), [this.note, status].filter(Boolean).join(' · '), this.lines, this.elementId, this.progressId)
     const result = (delivered: boolean): PreviewResult => ({ delivered, overflow, elapsedMs })
@@ -192,7 +218,7 @@ export class TurnOutput {
   tool(id: string, line: string): void {
     if (this.toolIds.has(id)) return
     this.toolIds.add(id)
-    this.preview?.line(line)
+    this.preview?.line(line, true)
   }
   assistant(text: string, hasTools: boolean): void {
     if (text) this.lastText = text

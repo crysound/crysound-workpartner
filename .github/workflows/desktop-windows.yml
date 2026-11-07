@@ -3,14 +3,47 @@ name: CRYSOUND WorkPartner · Windows x64 desktop
 # Builds the company desktop app (apps/desktop) for Windows x64 on a GitHub-hosted runner. The installer is
 # unsigned (no Windows code-signing certificate yet), so SmartScreen warns on first run. Nothing is published.
 on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/desktop-host/**'
+      - 'crysound/**'
+      - 'packages/**'
+      - 'vendor/**'
+      - 'native/**'
+      - 'python/**'
+      - 'scripts/**'
+      - 'apps/cli/**'
+      - 'apps/web/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - '.pnpmfile.*'
+      - 'tsconfig*.json'
+      - 'tsdown*.ts'
+      - 'vitest*.ts'
+      - 'eslint.config.*'
+      - 'patches/**'
+      - '.github/workflows/desktop-mac.yml'
+      - '.github/workflows/desktop-windows.yml'
+      - '!**/*.md'
+      - '!**/*.mdx'
   workflow_dispatch:
+    inputs:
+      version:
+        description: '正式版本号，例如 0.2.5（必须高于已发布版本）'
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: desktop-windows-${{ github.ref }}
-  cancel-in-progress: true
+  group: desktop-windows-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   package:
@@ -18,9 +51,11 @@ jobs:
     timeout-minutes: 150
     defaults:
       run:
-        shell: bash
+        shell: pwsh
     env:
       DSH_TELEMETRY_DISABLED: '1'
+      DESKTOP_PLATFORM: win
+      REQUESTED_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -29,18 +64,22 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
+      - name: Resolve version
+        run: node crysound/scripts/desktop-ci.mjs prepare
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: CI version and release metadata tests
+        run: node --experimental-transform-types --experimental-test-module-mocks --test crysound/scripts/desktop-ci.test.mjs crysound/scripts/desktop-workflows.test.mjs crysound/scripts/mac-update-release.test.mjs
       # Windows packaging always reads apps/desktop/.env.windows. The company app ignores the update policy at
       # run time, so the policy origin only has to pass validation; no signing or upload settings are set.
       - name: Write packaging settings
         run: |
-          cat > apps/desktop/.env.windows <<'ENV'
+          @'
           DSH_DESKTOP_APP_ID=com.crysound.workpartner
           DSH_DESKTOP_AUTO_UPDATE_ENV=production
           DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://partner.corp.crysound.com
           DSH_DESKTOP_WINDOWS_COMPRESSION_LEVEL=3
-          ENV
+          '@ | Set-Content -Path apps/desktop/.env.windows -Encoding utf8
       # PowerShell, not Git Bash: the packaging scripts call tar with D:\ paths, which GNU tar from Git Bash
       # reads as a remote host; Windows' own tar handles them.
       - name: Package win-x64 (unsigned)
@@ -53,14 +92,14 @@ jobs:
       - name: Locate installer
         id: exe
         run: |
-          ls -lh apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/ || find apps/desktop/.desktop-build -maxdepth 4 -name '*.exe'
-          exe=$(ls apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe | head -n1)
-          test -f "$exe"
-          echo "path=$exe" >> "$GITHUB_OUTPUT"
+          $exe = Get-ChildItem apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe | Select-Object -First 1
+          if (-not $exe) { throw 'installer not found' }
+          "path=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+          $exe | Format-Table Name, Length
       - name: Upload installer
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: crysound-workpartner-win-x64-unsigned
+          name: crysound-workpartner-win-x64-${{ github.event_name == 'workflow_dispatch' && 'unsigned' || format('unsigned-preview-{0}', env.DESKTOP_CI_VERSION) }}
           path: ${{ steps.exe.outputs.path }}
           compression-level: 0
           if-no-files-found: error
@@ -113,3 +152,37 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
+      - name: Summarize retained installers
+        if: always()
+        run: |
+          $files = @(Get-ChildItem apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+          node crysound/scripts/desktop-ci.mjs summary @files
+
+  report-failure:
+    needs: package
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.package.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update build failure issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const platform = 'Windows x64';
+            const { owner, repo } = context.repo;
+            const marker = `<!-- desktop-build-failure:${platform}:${context.sha} -->`;
+            const title = `桌面自动构建失败：${platform} · ${context.sha}`;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = [marker, '', `main 上的 ${platform} 自动构建失败。`, '', `提交：${context.sha}`, `运行：${run}`, '',
+              '请查看构建摘要和失败步骤，修复后核对安装包；不要直接发布预览包。'].join('\n');
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', labels: 'agent', per_page: 100,
+            });
+            const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body, state: 'open' });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body, labels: ['agent'] });
+            }
