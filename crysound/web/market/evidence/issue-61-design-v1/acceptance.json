@@ -1,0 +1,182 @@
+{
+  "checkedAt": "2026-11-07T04:11:12.316Z",
+  "method": "Configured persistent browser, dedicated CDP tab; native dsh 0.2.2-rc.1 patched from agent/issue-61; unchanged merged design/artifacts 1.0.0 package sources; production market handler with synthetic registry approval; no browser response replacement or remote/session mocks",
+  "approvalBasis": "partner.question.answered #61 confirms design/artifacts 1.0.0 approved; authenticated deployed guide independently matches design package exactly",
+  "onlineGuide": {
+    "status": 200,
+    "design": {
+      "name": "@crysound/design",
+      "version": "1.0.0",
+      "title": "兆华设计",
+      "home": true,
+      "guide": {
+        "zh": {
+          "summary": "制作和修改可编辑的设计画布，多画板并排查看，可改文字、调参数并发送评论。",
+          "prompt": "请使用本插件的 /crysound-design 技能完成以下设计画布需求。已有画布沿用原目录，按照技能提供的画板格式制作或修改，并打开本地编辑器供查看与反馈。",
+          "examples": [
+            "制作一张声学相机产品介绍海报，参数采用我提供的资料，交付可编辑画板。",
+            "为检测项目管理页面制作桌面和手机两个可编辑画板，并排查看。",
+            "修改我已有画布中的标题和按钮文案，保留其余画板并重新打开编辑器。"
+          ]
+        },
+        "en": {
+          "summary": "Create and revise editable design canvases with artboards side by side, text edits, tweaks, and comments.",
+          "prompt": "Use this plugin’s /crysound-design skill for the following design canvas request. Keep an existing canvas in its current folder. Create or revise artboards in the skill’s format and open the local editor for review and comments.",
+          "examples": [
+            "Create an editable acoustic camera product poster using the specifications I provide.",
+            "Create editable desktop and mobile artboards for an inspection project management page, displayed side by side.",
+            "Revise the heading and button copy in my existing canvas, keep the other artboards, and reopen the editor."
+          ]
+        }
+      }
+    }
+  },
+  "fullNativeStartup": {
+    "kind": "fullNativeStartup",
+    "failedToLoadPlugins": false,
+    "responseSubstitution": false
+  },
+  "display": [
+    {
+      "kind": "guide",
+      "route": "home",
+      "lang": "zh",
+      "name": "@crysound/design",
+      "version": "1.0.0",
+      "summary": "制作和修改可编辑的设计画布，多画板并排查看，可改文字、调参数并发送评论。",
+      "examples": [
+        "制作一张声学相机产品介绍海报，参数采用我提供的资料，交付可编辑画板。",
+        "为检测项目管理页面制作桌面和手机两个可编辑画板，并排查看。",
+        "修改我已有画布中的标题和按钮文案，保留其余画板并重新打开编辑器。"
+      ],
+      "tag": "兆华设计×"
+    },
+    {
+      "kind": "guide",
+      "route": "market",
+      "lang": "zh",
+      "name": "@crysound/design",
+      "version": "1.0.0",
+      "summary": "制作和修改可编辑的设计画布，多画板并排查看，可改文字、调参数并发送评论。",
+      "examples": [
+        "制作一张声学相机产品介绍海报，参数采用我提供的资料，交付可编辑画板。",
+        "为检测项目管理页面制作桌面和手机两个可编辑画板，并排查看。",
+        "修改我已有画布中的标题和按钮文案，保留其余画板并重新打开编辑器。"
+      ],
+      "tag": "兆华设计×"
+    },
+    {
+      "kind": "guide",
+      "route": "home",
+      "lang": "en",
+      "name": "@crysound/design",
+      "version": "1.0.0",
+      "summary": "Create and revise editable design canvases with artboards side by side, text edits, tweaks, and comments.",
+      "examples": [
+        "Create an editable acoustic camera product poster using the specifications I provide.",
+        "Create editable desktop and mobile artboards for an inspection project management page, displayed side by side.",
+        "Revise the heading and button copy in my existing canvas, keep the other artboards, and reopen the editor."
+      ],
+      "tag": "兆华设计×"
+    },
+    {
+      "kind": "guide",
+      "route": "market",
+      "lang": "en",
+      "name": "@crysound/design",
+      "version": "1.0.0",
+      "summary": "Create and revise editable design canvases with artboards side by side, text edits, tweaks, and comments.",
+      "examples": [
+        "Create an editable acoustic camera product poster using the specifications I provide.",
+        "Create editable desktop and mobile artboards for an inspection project management page, displayed side by side.",
+        "Revise the heading and button copy in my existing canvas, keep the other artboards, and reopen the editor."
+      ],
+      "tag": "兆华设计×"
+    }
+  ],
+  "submissions": [
+    {
+      "language": "zh",
+      "clickedExample": 3,
+      "promptAndExampleMatchPackage": true,
+      "userGuideMessages": 1,
+      "skillInvocation": {
+        "name": "crysound-design",
+        "form": "instructions",
+        "count": 1,
+        "fullSkillContentPresent": true
+      },
+      "turnCompleted": true,
+      "missingCanvasRequested": true,
+      "syntheticAnswerEndedCheck": true,
+      "finalReply": "已调用 crysound-design 技能。继续修改需要你提供原画布目录，以及标题和按钮的新文案；如有多个画板，请注明目标画板。\n\n本轮未新建或修改任何文件。"
+    },
+    {
+      "language": "en",
+      "clickedExample": 3,
+      "promptAndExampleMatchPackage": true,
+      "userGuideMessages": 1,
+      "skillInvocation": {
+        "name": "crysound-design",
+        "form": "instructions",
+        "count": 1,
+        "fullSkillContentPresent": true
+      },
+      "turnCompleted": true,
+      "missingCanvasRequested": true,
+      "syntheticAnswerEndedCheck": true,
+      "finalReply": "The **crysound-design** skill was selected. No files were created or changed.\n\nPlease provide the original canvas folder and the new heading and button copy. Once available, I’ll revise that canvas in its current folder, preserve the other artboards, and reopen the local editor for review and comments."
+    }
+  ],
+  "installation": {
+    "method": "Fresh isolated directory; pnpm add @crysound/design@1.0.0 --ignore-scripts against the isolated company market handler; no application dependency installation or production plugin changes",
+    "directDependencies": {
+      "@crysound/design": "1.0.0"
+    },
+    "automaticDependency": {
+      "@crysound/artifacts": "^1.0.0"
+    },
+    "packages": [
+      {
+        "name": "@crysound/design",
+        "version": "1.0.0",
+        "source": "crysound/workpartner-plugin-design@edbf8d466be9ac014d67d4637988353c1ee3055f:crysound-design",
+        "archiveIntegrity": "sha512-PLVY2wbwqLNHhaR2plX7iNUmQuBovZJ8HQ7MgG0thz9QGjFa1OUUK27l5MwQn54UOo0FHimZ8lL3h3FYFHa8/g==",
+        "installedFilesMatchSource": true,
+        "fileCount": 39
+      },
+      {
+        "name": "@crysound/artifacts",
+        "version": "1.0.0",
+        "source": "crysound/workpartner-plugin-artifacts@bf1335ee577c61534df18d13e9a97a05cac4d2d5",
+        "archiveIntegrity": "sha512-kz5kSIyNT2zdPglBhNlcqTEGWgxWnro087Yj4ZTWO5Bo9OG4uOGlnDV8p70ggpuPBiPfW+IaWEyxqCerKN9v/g==",
+        "installedFilesMatchSource": true,
+        "fileCount": 12
+      }
+    ],
+    "registryDownloads": [
+      {
+        "name": "@crysound/design",
+        "version": "1.0.0",
+        "kind": "tarball"
+      },
+      {
+        "name": "@crysound/artifacts",
+        "version": "1.0.0",
+        "kind": "tarball"
+      }
+    ]
+  },
+  "consoleErrors": [],
+  "retainedEvidence": [
+    "motion 0.1.3 bilingual guides, real examples and attachments from issue-61-provided",
+    "original failing/successful startup comparison from issue-61-boot"
+  ],
+  "limits": [
+    "Isolated registry approval records are synthetic; do not infer real approval from them",
+    "Examples request an existing canvas; the empty synthetic workspace led to clarification, not design artifact creation",
+    "Native market installation on the deployed service remains deployment acceptance; the package dependency was actually installed by pnpm in isolation",
+    "Electron finished package acceptance deferred to next normal desktop build by partner assistant; does not block web merge",
+    "Post-deployment native startup and both design entry points remain partner assistant acceptance"
+  ]
+}
