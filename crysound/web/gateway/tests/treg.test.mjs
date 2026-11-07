@@ -252,3 +252,32 @@ test("无市场目录缓存：真实调用按当前公共平台白名单校验�
     assert.equal(call.redirect, "error");
   }
 });
+
+test("web.search 固定 Exa 且关闭瀑布，上限不超过个人设置和一美分，仍按本人预算收费", async t => {
+  const f = await fixture(t);
+  f.lookup(id => id === "treg.web.search" ? ep(id, { kind: "routed", routed_children: ["exa.web.search"] }) : ep(id));
+  const result = await f.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust","limit":10}', headers: {
+    ...headers, "x-treg-route-prefer": "other", "x-treg-route-waterfall": "1", "x-treg-route-max-cost": "999", "x-treg-meta": "user=bob",
+  } });
+  assert.equal(result.status, 200);
+  const forwarded = f.calls.find(r => r.url.endsWith("/call/treg.web.search"));
+  assert.equal(forwarded.headers["x-treg-route-prefer"], "exa");
+  assert.equal(forwarded.headers["x-treg-route-waterfall"], "0");
+  assert.equal(forwarded.headers["x-treg-route-max-cost"], "0.01");
+  assert.equal(forwarded.headers["x-treg-meta"], "user=alice");
+  assert.deepEqual(JSON.parse(forwarded.body), { q: "Rust", limit: 10 });
+  assert.equal((await f.request("/usage")).body.daily.usedUsd, .001);
+  const denied = await fixture(t);
+  denied.lookup(id => id === "treg.web.search" ? ep(id, { kind: "routed", routed_children: ["exa.web.search"] }) : ep(id, { platform: "ai" }));
+  assert.equal((await denied.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust"}' })).status, 403);
+  assert.equal(denied.calls.filter(r => r.url.includes("/call/")).length, 0);
+  const missing = await fixture(t);
+  missing.lookup(id => ep(id, { kind: "routed", routed_children: ["other.web.search"] }));
+  assert.equal((await missing.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust"}' })).status, 403);
+  const limited = await fixture(t, { env: { TREG_CALL_MAX_USD: ".005" } });
+  await limited.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust"}' });
+  assert.equal(limited.calls.find(r => r.url.includes("/call/")).headers["x-treg-route-max-cost"], "0.005");
+  const blocked = await fixture(t, { env: { TREG_MONTHLY_USD: "0" } });
+  assert.equal((await blocked.request("/call/treg.web.search", { method: "POST", body: '{"q":"Rust"}' })).status, 429);
+  assert.equal(blocked.calls.filter(r => r.url.includes("/call/")).length, 0);
+});

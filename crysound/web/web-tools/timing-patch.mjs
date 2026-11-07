@@ -26,6 +26,7 @@ export function instrumentTiming(name, source) {
   ] : name === "@deepseek-ai/dsh-web-search-deepseek" ? [
     ['options.recordRequest?.({', 'toolTiming.search("search-request-record");\n\t\toptions.recordRequest?.({'],
     ['response = await fetch(endpoint, {', 'toolTiming.search("search-request-dispatch");\n\t\t\tresponse = await fetch(endpoint, {'],
+    ['options(), request, signal)', '{ ...options(), recordExa: (stage, extra) => toolTiming.exa(stage, extra) }, request, signal)'],
   ] : undefined;
   if (!edits) throw new Error(`Unknown tool timing package: ${name}`);
   let after = source;
