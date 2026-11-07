@@ -2,7 +2,7 @@
   "plugins": [
     {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.8.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.8.tgz"},
     {"name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12"},
-    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.4", "want": "0.1.4"},
+    {"name": "dsh-mnemon", "spec": "dsh-mnemon@0.5.42", "want": "0.5.42"},
     {"name": "@crysound/artifacts", "spec": "@crysound/artifacts@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/design-system", "spec": "@crysound/design-system@1.0.0", "want": "1.0.0", "missingOnly": true},
     {"name": "@crysound/slides", "spec": "@crysound/slides@1.1.0", "want": "1.1.0", "missingOnly": true},
@@ -11,6 +11,7 @@
     {"name": "@crysound/motion", "spec": "@crysound/motion@1.1.0", "want": "1.1.0", "missingOnly": true}
   ],
   "defaultBundles": [
+    "dsh-mnemon",
     "@deepseek-ai/dsh-experimental-plugin-market-bundle",
     "@deepseek-ai/dsh-experimental-voice-input-bundle",
     "@deepseek-ai/dsh-experimental-auto-review",
@@ -25,8 +26,10 @@
     "@crysound/slides": {"displayName": "兆华幻灯片", "maintainers": []},
     "@crysound/dashboard": {"displayName": "兆华看板", "maintainers": []},
     "@crysound/data": {"displayName": "兆华数据", "maintainers": []},
-    "@crysound/memory": {"displayName": "兆华记忆", "maintainers": []},
     "@crysound/image": {"displayName": "兆华生图", "maintainers": []}
   },
-  "retire": {"id": "market-v1", "packages": ["dsh-slidestudio", "dsh-video-editor", "dsh-oil-ui"]}
+  "retire": [
+    {"id": "market-v1", "packages": ["dsh-slidestudio", "dsh-video-editor", "dsh-oil-ui"]},
+    {"id": "mnemon-v1", "packages": ["@crysound/memory"]}
+  ]
 }

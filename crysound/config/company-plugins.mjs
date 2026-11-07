@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 /**
- * Retire the configured third-party dependencies once, keeping all user files and other plugins.
+ * Retire the configured dependencies once, keeping all user files and other plugins.
  * Refresh the official package list used by the Host to refuse uninstall without preventing disable.
  * A failed removal leaves the migration unmarked so the next update retries it.
  * @param {string} profile Profile directory.
@@ -25,14 +25,15 @@ export function preparePluginPolicy(profile, config, remove) {
     fs.renameSync(`${file}.company-tmp`, file);
   };
   let manifest = read();
-  const retired = config.retire;
-  if (retired && (typeof retired.id !== "string" || !/^[a-z0-9-]+$/.test(retired.id) || !Array.isArray(retired.packages) || retired.packages.some((name) => !/^[a-z0-9][a-z0-9._-]*$/.test(name)))) throw new Error("公司插件迁移配置无效");
+  const retirements = config.retire ?? [];
+  if (!Array.isArray(retirements) || retirements.some((retired) => !retired || typeof retired.id !== "string" || !/^[a-z0-9-]+$/.test(retired.id) || !Array.isArray(retired.packages) || retired.packages.some((name) => !/^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/.test(name)))) throw new Error("公司插件迁移配置无效");
   const names = Object.keys(config.officialPlugins ?? {});
   if (names.some((name) => !/^@crysound\/[a-z0-9][a-z0-9._~-]*$/.test(name))) throw new Error("官方包名无效");
   ((manifest.dsh ??= {}).company ??= {}).officialPackages = names;
   save(manifest);
-  const mark = retired && path.join(profile, `.zp-retired-${retired.id}`);
-  if (mark && !fs.existsSync(mark)) {
+  for (const retired of retirements) {
+    const mark = path.join(profile, `.zp-retired-${retired.id}`);
+    if (fs.existsSync(mark)) continue;
     const names = retired.packages.filter((name) => Object.hasOwn(manifest.dependencies ?? {}, name));
     if (names.length) remove(names);
     manifest = read();

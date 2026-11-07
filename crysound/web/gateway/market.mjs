@@ -43,10 +43,12 @@ function readState(file) {
  *   fetcher 默认使用进程 fetch；maxBytes 默认限制发布 JSON 为 64 MiB。
  *   officialPublishers 与 officialPackages 必须同时命中才显示官方标识；后者允许 @crysound/*，缺省均为空。
  *   officialPlugins 由公司 plugins.json 指定包名、中文名与维护人；officialMaintainers 可覆盖部署名单。
+ *   retiredPackages 从市场索引和引导中隐藏退役包，保留注册表内容和审批记录。
  *   官方维护人可发布新版本但仍须逐版审批，其他包保持首发者所有权。
  * @returns 异步处理器；已处理的市场路径返回 true，其他路径返回 false，HTTP 失败由处理器回答。
  */
-export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+export function createMarket({ stateFile, registry, authorization, publicOrigin, internalOrigin, authenticate, sessionUser, readUsers, admins, officialPublishers = [], officialPackages = [], officialMaintainers = {}, officialPlugins = {}, retiredPackages = [], notify = async () => {}, fetcher = fetch, maxBytes = 64 * 1024 * 1024 }) {
+  if (!Array.isArray(retiredPackages) || retiredPackages.some((name) => !/^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/.test(name))) throw new Error("退役插件配置必须是包名列表");
   if (!officialMaintainers || Array.isArray(officialMaintainers) || typeof officialMaintainers !== "object" || Object.entries(officialMaintainers).some(([name, slugs]) => !PACKAGE.test(name) || !Array.isArray(slugs) || !slugs.length || slugs.some((slug) => typeof slug !== "string" || !slug.trim()))) throw new Error("市场维护人配置必须是包名到用户代号列表的对象");
   if (!officialPlugins || Array.isArray(officialPlugins) || typeof officialPlugins !== "object" || Object.entries(officialPlugins).some(([name, entry]) => !PACKAGE.test(name) || !entry || typeof entry.displayName !== "string" || !entry.displayName.startsWith("兆华") || entry.displayName.length > 80 || !Array.isArray(entry.maintainers) || entry.maintainers.some((slug) => typeof slug !== "string" || !slug.trim()) || (entry.home !== undefined && typeof entry.home !== "boolean"))) throw new Error("官方插件配置必须包含包名、兆华开头的显示名和维护人列表");
   const maintainers = (name) => officialMaintainers[name] ?? officialPlugins[name]?.maintainers ?? [];
@@ -146,6 +148,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     const users = readUsers();
     const labels = { "crysound-official": { title: { zh: "兆华官方", en: "CRYSOUND official" } } };
     for (const [name, pkg] of Object.entries(state.packages)) {
+      if (retiredPackages.includes(name)) continue;
       const approved = Object.keys(pkg.versions).filter((v) => pkg.versions[v].status === "approved").sort(semver.rcompare);
       if (!approved.length) continue;
       const response = await upstream(`/${encodeURIComponent(name)}`);

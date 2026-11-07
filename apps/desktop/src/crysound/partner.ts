@@ -164,6 +164,7 @@ export function partnerHostEnvironment(partner: PartnerSession, environment: Nod
     CRYSOUND_MARKET_REGISTRY: `${PARTNER_ORIGIN}/_zp/npm/`,
     CRYSOUND_NPM_USERCONFIG: join(resolveDesktopPaths().profile, '.npmrc'),
     CRYSOUND_HOST_HOOK: pathToFileURL(join(crysoundResources(), 'host-hook.mjs')).href,
+    MNEMON_DATA_DIR: join(app.getPath('userData'), '.mnemon'),
     DSH_TELEMETRY_DISABLED: '1',
   }
 }
