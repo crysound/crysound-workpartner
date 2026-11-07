@@ -153,7 +153,7 @@ export function partnerHostEnvironment(partner: PartnerSession, environment: Nod
   const company = join(app.getPath('userData'), 'company')
   const skillHash = createHash('sha256').update(readFileSync(join(crysoundResources(), 'feishu', 'official-skills.tar.gz'))).digest('hex').slice(0, 16)
   return {
-    PATH: `${join(company, 'bin')}${delimiter}${environment.PATH ?? ''}`,
+    PATH: `${join(company, 'bin')}${delimiter}${join(crysoundResources(), 'mnemon', 'bin')}${delimiter}${environment.PATH ?? ''}`,
     CRYSOUND_FEISHU_CONFIG: join(company, 'feishu.json'),
     CRYSOUND_COMPANY_SKILLS: join(company, `feishu-skills-${skillHash}`),
     LARKSUITE_CLI_STRICT_MODE: 'user',

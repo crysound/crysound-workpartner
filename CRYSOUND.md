@@ -24,7 +24,7 @@
 - 菜单、关于面板与各语言文案里的 DeepSeek Harness 全部换成新名（`src/locale.ts`，中文用“兆华工作伙伴”，其他语言用 CRYSOUND WorkPartner）。
 - 品牌层（`crysound/brand/`）与网页版共用，由 `src/main.ts` 的协议处理在 index 文档里注入：标题、侧栏与首页 logo、插件中文名、侧栏顺序、首次进入的飞书引导（`welcome.js`，首次进入工作区时带 `?zp-welcome=1`）。
 - 共用 `skin.js` 首屏选择“兆华柔和”；明确保存为 `default` 的设备保留经典外观。柔和页签和导航强调使用中性色，焦点、光标、开关和链接保留 Cindy 功能色，设置可切换；侧栏搜索在新对话下一行就地展开，固定版运行时补丁与验收见 `crysound/sidebar-a/README.md`。
-- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，官方卡片与同事列表复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
+- 公司市场：共享构建期补丁调整市场、侧栏和原生 Creator 入口，三个标签共用两列推荐卡片、官方图标与名称首字回退，窄窗口一列；复用原生索引、分类和安装流程；维护人显示、包内样例图及部署方式见 `crysound/web/market/README.zh.md`。
 - 首页能力引导：公司补丁复用原生输入框和命令认领，官方包维护双语说明与三个示例；首页最多四个入口，设计、动效由官方配置启用。首页未安装、未启用或版本不符时打开官方包的原生市场详情与安装入口，市场“使用”缺匹配引导时回到原生设置；网页与桌面读同一受鉴权端点，部署和验收限制见市场说明。
 - 引导补丁 v2 显式注入 `remote` 和其插件管理命名空间，按原生远端结果读取清单；会话内通过 `get("conversation")` 解析服务。首页也渲染输入框下的扩展位；真实网页启动回归见 `crysound/web/market/verify-guide-boot.mjs`。
 - 官方插件策略：`plugins.json` 的 `officialPlugins` 提供中文名与维护人，原生管理页禁止卸载而允许停用；`retire` 在新老工作区一次性移出三款旧预装，保留作品和共用浏览器。发布与版本同步见市场说明。
@@ -69,6 +69,7 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 - 公司配置升级器生成独立的模型提示片段，指导批量读取文本、一次写完并运行小脚本、独立调用同轮并行；不改上游 dsh、工具或权限。通过原有公司配置下载与启动刷新覆盖已有用户，完整系统提示预设保持原生行为。部署与三类同题对比验收见 `crysound/web/README.md`。
 
 ### 打包
+- 网页镜像与 Mac/Windows 安装包随附 Mnemon CLI 0.2.13：从 npm `@mnemon-dev/mnemon` 的对应平台包提取原生程序（含许可证），无需用户安装 Node/npm，dsh 子进程 PATH 包含其 `bin`；版本与各平台 SHA-512 固定在 `crysound/mnemon/releases.json`，升级时更新该文件并重建镜像和桌面包，构建会核对摘要并在本机目标上实测存取；不自动安装或启用 dsh-mnemon 及第三方 Provider。
 - `apps/desktop/scripts/electron-builder-config.mjs`：productName、protocols、artifactName、`extraResources`（把 `crysound/` 的 `brand`、`config`、`host-hook.mjs` 放进 `Resources/crysound`）、macOS 分类与麦克风说明。
 - `desktop-package-environment.mjs`：本地未签名构建的默认 appId。
 - `package-target.ts`、`package-macos.ts`、`smoke-packaged-runtime.ts`、`cli/dsh`、`development-app.ts`：`.app` 名称与协议。
@@ -148,7 +149,7 @@ done
 - `design`：`@crysound/design` 公司设计技能（固定 huashu-design + frontend-design 来源），提供 `/design` 与技能工具入口；默认公司品牌，只保留网页、App 原型、信息图、海报和体检，复用现有 SlideStudio 浏览器且最多并发两个。打包、兆华市场发布与测试账号验收见 `crysound/plugins/design/README.md`，不自动加入全员预装清单。
 - `motion`：`@crysound/motion`，固定 huashu-motion 0.3.1 的无依赖渲染子集；公司中文品牌模板、静帧、合成配乐与 MP4/GIF。网页版复用共用浏览器和 ffmpeg，同一容器一次一项任务、最多 2 个渲染浏览器、5 分钟截止；不启动预览服务，不下载口播模型或采样。市场发布与镜像预置说明见 `crysound/plugins/motion/README.md`，未加入默认插件清单。
 - `dsh-feishu` 0.17.0-crysound.6：独立正文与下方进度组件，200 毫秒推送，40 毫秒每次 6 字；每秒更新思考进度，新回答轮次从空组件开始，结束原位收起过程并保留最后正文；真实飞书打字、旧客户端及群聊话题由伙伴助理上线验收。
-- `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：文字、图片、文件和透传命令在会话缺失、归档、删除或恢复失败时自动新建，空工作区回退进程默认目录，原卡注明“已新开会话”；整轮流式卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补简短提醒，超长或更新失败时另发正文；提示先推荐 /new。
+- `dsh-feishu`：飞书机器人，复刻自 fan56/dsh-feishu（Apache-2.0，基线与 npm 0.17.0 逐字节一致，见 `BASELINE.md`）。包名仍是 `@aiwayds/dsh-feishu`，同事 profile 里的机器人配置按包名记录，换版本不丢。公司改动：文字、图片、文件和透传命令在会话缺失、归档、删除或恢复失败时自动新建，空工作区回退进程默认目录，原卡注明“已新开会话”；卡片进度不读秒、不显示工具参数，当前步骤用限速省略号动效，正文输出后停止动效、结束原位折叠；整轮流式卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补简短提醒，超长或更新失败时另发正文；提示先推荐 /new。
 - 飞书本地包：`crysound/plugin-artifacts.mjs` 固定下载地址和 SHA-512。网页构建下载并校验到 `/opt/company-plugins/`，`plugins.json` 的 spec/want 使用 `file:/opt/company-plugins/<文件名>`；入口在安装前只补回这一个旧远程包缺失的锁文件校验值。Mac/Windows 打包都携带同一归档，桌面准备时校验并复制到 profile 的 `company-plugins/`，依赖与模板锁文件使用 `file:company-plugins/<文件名>`，不记录构建机或安装包路径。桌面准备按 assets 资源目录加载共用脚本，不依赖源码或编译后文件的相对层级。
 - 发版：在插件目录 `npm ci && npm test && npm pack`，版本号写成 `<上游版本>-crysound.<n>`；tgz 传到下载站存储桶 `plugins/<随机段>/` 下（`CLOUDFLARE_ACCOUNT_ID` 要指公司账号）；飞书版本更新同时修改 `plugin-artifacts.mjs` 的文件名、下载地址和校验值，以及 `plugins.json` 的本地 spec/want。重建网页镜像并同步配置，逐人空闲时换镜像；桌面随下一安装包携带归档。不要只同步本地路径清单而沿用缺归档的旧镜像或旧桌面包。
 - 跟上游：把上游新提交合进插件目录，保留公司改动，重跑测试再发版。

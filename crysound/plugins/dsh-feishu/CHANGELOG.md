@@ -3,6 +3,13 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.8] - 2026-11-07
+
+### Changed (CRYSOUND fork)
+- Replace elapsed-second progress with thinking/tool activity and cycling dots, paced separately from answer typing. `progressAnimationIntervalMs` defaults to 1500 ms and supports slower intervals up to 10000 ms.
+- Show short tool names without arguments. Pause idle animation during answer output; keep step history in the final collapsed panel and cancel timers on completion, error, cancellation, or delivery refusal.
+- Initialize CardKit and whole-card fallbacks with the same progress text, including automatic-session notes.
+
 ## [0.17.0-crysound.7] - 2026-11-07
 
 ### Fixed (CRYSOUND fork)

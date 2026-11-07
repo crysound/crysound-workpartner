@@ -2,9 +2,15 @@ FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates python3 ripgrep iproute2 librsvg2-bin \
  && rm -rf /var/lib/apt/lists/* \
  && npm i -g @deepseek-ai/dsh@0.2.2-rc.1 pnpm@10 && npm cache clean --force
+# The same pinned npm native payload ships in desktop installers; no plugin is enabled here.
+COPY mnemon/ /opt/partner/mnemon-build/
+RUN node /opt/partner/mnemon-build/prepare.mjs /opt/partner/mnemon \
+ && node /opt/partner/mnemon-build/smoke.mjs /opt/partner/mnemon/bin
+ENV PATH="/opt/partner/mnemon/bin:${PATH}"
 # 公司市场标签在打包时修补；运行中的普通用户不写全局运行时。
 COPY scripts/patch-official-plugins.mjs /opt/partner/scripts/
 COPY scripts/patch-market-*.mjs /opt/partner/scripts/
+COPY config/plugins.json /opt/partner/config/plugins.json
 COPY brand/market-locales.mjs /opt/partner/brand/market-locales.mjs
 RUN node /opt/partner/scripts/patch-official-plugins.mjs "$(npm root -g)/@deepseek-ai/dsh/node_modules"
 RUN node /opt/partner/scripts/patch-market-ui.mjs --runtime "$(npm root -g)/@deepseek-ai/dsh/node_modules"
