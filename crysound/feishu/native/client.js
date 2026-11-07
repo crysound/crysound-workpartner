@@ -3,7 +3,7 @@ window.__ModuleLoader__.load({
   id: '@crysound/feishu-settings',
   factory(require) {
     const { createElement: h, useState, useEffect, useRef } = require('react');
-    const { Button, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
+    const { Button, Modal, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
     const sectionId = 'crysound-feishu';
     const desktop = location.protocol === 'dsh-app:';
     const embedded = /Lark|Feishu/i.test(navigator.userAgent);
@@ -20,6 +20,9 @@ window.__ModuleLoader__.load({
       cloudNote: 'This connects Feishu Project in the cloud. Use the desktop app for local mode.',
       banner: 'Feishu is not connected. Your assistant cannot look up messages, calendars, or documents for you.', connectFeishu: 'Connect Feishu',
       checkAgain: 'Check again', statusError: 'Unable to verify the Feishu connection. Please check again.',
+      reminderTitle: 'Connect Feishu to let your assistant help',
+      reminderIntro: 'Your assistant uses your Feishu identity to look up messages, calendars, and documents. It will ask before sending messages, submitting approvals, or taking similar actions.',
+      later: 'Later', close: 'Close',
       confirm: 'Disconnecting stops your partner from using this authorization. Disconnect?', cancel: 'Cancel', code: 'Authorization code:',
       authorized: 'Authorized {time}', timeUnknown: 'Authorization time not recorded',
       validDays: '{days} days remaining', validLessThanDay: 'Less than 1 day remaining',
@@ -37,6 +40,9 @@ window.__ModuleLoader__.load({
       cloudNote: '此处连接云端的飞书项目。本机运行模式请在桌面版连接。',
       banner: '还没连接飞书，助理无法替你查消息、日程、文档。', connectFeishu: '连接飞书',
       checkAgain: '重新检查', statusError: '暂时无法核实飞书连接，请重新检查。',
+      reminderTitle: '连接飞书，让助理帮你办事',
+      reminderIntro: '连接后，助理可以用你本人的飞书身份查消息、日程和文档。发消息、审批等操作会先问你。',
+      later: '稍后', close: '关闭',
       confirm: '断开后，伙伴将无法继续使用这项授权。确认断开？', cancel: '取消', code: '授权码：',
       authorized: '授权于 {time}', timeUnknown: '授权时间未记录',
       validDays: '还剩 {days} 天有效', validLessThanDay: '还剩不到 1 天有效',
@@ -59,7 +65,39 @@ window.__ModuleLoader__.load({
 @media(max-width:540px){.zp-feishu-banner{align-items:flex-start;flex-direction:column;gap:8px;padding:10px 12px}.zp-feishu-banner button{align-self:flex-end}}
 @media(max-width:540px){.zp-feishu-row{align-items:flex-start;flex-direction:column;gap:12px}.zp-feishu-actions{align-self:flex-end}}
 `;
-    /** @param {{t: FeishuTranslate, formatTime: (date: Date) => string}} props */
+    function DailyReminder({ eligible, onConnect, t }) {
+      const [open, setOpen] = useState(false);
+      const [covered, setCovered] = useState(true);
+      const attempted = useRef(false);
+      useEffect(() => {
+        // Onboarding owns #root.inert; other native dialogs also keep priority.
+        const update = () => setCovered(Boolean(document.getElementById('root')?.inert ||
+          document.querySelector('[role="dialog"][aria-modal="true"]:not([data-shortcut-modal="feishu-reminder"])')));
+        const observer = new MutationObserver(update);
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['inert'] });
+        update();
+        return () => observer.disconnect();
+      }, []);
+      useEffect(() => {
+        if (!eligible) { setOpen(false); return; }
+        if (covered || attempted.current) return;
+        attempted.current = true;
+        const now = new Date();
+        const day = [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('-');
+        try {
+          if (localStorage.getItem('zp-feishu-reminder-day') === day) return;
+          localStorage.setItem('zp-feishu-reminder-day', day);
+        } catch (error) { /* Storage may be disabled; the ref still limits this mounted reminder to one display. */ }
+        setOpen(true);
+      }, [eligible, covered]);
+      return h(Modal, { open: open && eligible && !covered, title: t('reminderTitle'),
+        closeLabel: t('close'), description: t('reminderIntro'), shortcutModal: 'feishu-reminder',
+        onClose: () => setOpen(false),
+        footer: h('div', { className: 'zp-feishu-actions' },
+          h(Button, { variant: 'outline', onClick: () => setOpen(false) }, t('later')),
+          h(Button, { variant: 'primary', onClick: () => { setOpen(false); onConnect(); } }, t('connectFeishu'))) });
+    }
+    /** @param {{t: FeishuTranslate, formatTime: (date: Date) => string, banner?: boolean}} props */
     function Panel({ t, formatTime, banner = false }) {
       async function api(route, method = 'GET', signal) {
         const response = await fetch(base + route, { method, credentials: 'same-origin', cache: 'no-store', signal,
@@ -219,6 +257,7 @@ window.__ModuleLoader__.load({
         if (state === null || (state.connected && !state.revoking && state.enabled !== false)) return null;
         const unavailable = state.enabled === false || state.revoking;
         return h('aside', { className: 'zp-feishu-banner', 'aria-label': t('title') },
+          h(DailyReminder, { eligible: !state.connected && !state.error && !unavailable, onConnect: () => connect('feishu'), t }),
           h('div', { className: 'zp-feishu-banner-copy', role: 'status' },
             h('p', null, state.error ? t('statusError') : unavailable ? description(state, 'feishu') : t('banner')),
             hint ? h('p', null, t(hint)) : null, error ? h('p', { role: 'alert' }, error) : null),
