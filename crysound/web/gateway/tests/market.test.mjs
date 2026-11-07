@@ -563,3 +563,92 @@ test("包内引导只读已批准官方版本，首页开关来自公司名单�
   f.options.officialPlugins = {}; f.restart();
   assert.deepEqual(JSON.parse((await f.request(endpoint, { headers: bearer("alice") })).text).guides, []);
 });
+
+test("审批持久化后通知原发布人，拒绝原因转义且重启可见，重复审批不重复发消息", async (t) => {
+  const deliveries = [];
+  const f = await fixture(t, { notifyPublisher: async (notice) => {
+    const persisted = JSON.parse(fs.readFileSync(f.stateFile, "utf8")).packages[name].versions[notice.version];
+    assert.equal(persisted.status, notice.status, "review must be committed before messaging");
+    deliveries.push(notice);
+    return { status: "sent" };
+  } });
+  const submit = (version, action, reason = "") => f.request("/_zp/market/admin", {
+    method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin },
+    body: new URLSearchParams({ name, version, action, reason, publisher: "bob" }),
+  });
+  for (const [version, action, reason] of [["1.0.0", "approved", ""], ["2.0.0", "rejected", "请补说明 <script>alert(1)</script>"]]) {
+    const body = doc(version); body.versions[version].displayName = "示例插件";
+    assert.equal((await f.request(route, { method: "PUT", headers: bearer("alice"), body: JSON.stringify(body) })).status, 201);
+    assert.equal((await submit(version, action, reason)).status, 303);
+    assert.equal((await submit(version, action, reason)).status, 409);
+  }
+  assert.deepEqual(deliveries.map(({ publisher, status, displayName }) => ({ publisher, status, displayName })), [
+    { publisher: "alice", status: "approved", displayName: "示例插件" }, { publisher: "alice", status: "rejected", displayName: "示例插件" },
+  ]);
+  assert.equal(deliveries[1].reason, "请补说明 <script>alert(1)</script>");
+  f.restart();
+  const page = await f.request("/_zp/market/admin", { headers: { cookie: "test-session=admin" } });
+  assert.match(page.text, /已审批记录/); assert.match(page.text, /已批准上架/); assert.match(page.text, /未通过审批/);
+  assert.match(page.text, /请补说明 &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(page.text, /<script>/);
+  assert.equal((page.text.match(/发布人机器人通知已发送/g) || []).length, 2);
+  const index = await f.index();
+  assert.deepEqual(index.plugins[0].versions.map(({ version }) => version), ["1.0.0"]);
+});
+
+test("未开通机器人和通知故障不回滚审批；旧记录仍可读，拒绝原因有长度限制", async (t) => {
+  for (const outcome of ["unavailable", "failed"]) {
+    await t.test(outcome, async (t) => {
+      const f = await fixture(t, { notifyPublisher: async () => {
+        if (outcome === "failed") throw new Error("offline");
+        return { status: "unavailable", message: "尚不能接收公司机器人消息" };
+      } });
+      await f.publish("alice", "1.0.0");
+      const submit = (action, reason) => f.request("/_zp/market/admin", { method: "POST", headers: { cookie: "test-session=admin", origin: publicOrigin }, body: new URLSearchParams({ name, version: "1.0.0", action, reason }) });
+      assert.equal((await submit("rejected", "长".repeat(1001))).status, 400);
+      assert.equal(JSON.parse(fs.readFileSync(f.stateFile)).packages[name].versions["1.0.0"].status, "pending");
+      assert.equal((await submit("approved", "")).status, 303);
+      const data = JSON.parse(fs.readFileSync(f.stateFile));
+      assert.equal(data.packages[name].versions["1.0.0"].reviewNotification.status, outcome);
+      f.restart();
+      assert.equal((await f.index()).plugins.length, 1);
+      const page = await f.request("/_zp/market/admin", { headers: { cookie: "test-session=admin" } });
+      assert.match(page.text, outcome === "failed" ? /暂未确认通知送达/ : /尚不能接收公司机器人消息/);
+      delete data.packages[name].versions["1.0.0"].reviewNotification;
+      delete data.packages[name].versions["1.0.0"].displayName;
+      fs.writeFileSync(f.stateFile, JSON.stringify(data)); f.restart();
+      assert.match((await f.request("/_zp/market/admin", { headers: { cookie: "test-session=admin" } })).text, /未确认通知送达/);
+    });
+  }
+});
+
+test("并发批准与拒绝只保存一个决定、发送一条结果通知", async (t) => {
+  const deliveries = [];
+  const f = await fixture(t, { notifyPublisher: async (notice) => { deliveries.push(notice); return { status: "sent" }; } });
+  await f.publish("alice", "1.0.0");
+  const results = await Promise.all([f.review("1.0.0", "approved"), f.review("1.0.0", "rejected")]);
+  assert.deepEqual(results.map(r => r.status).sort(), [303, 409]);
+  assert.equal(deliveries.length, 1);
+  const saved = JSON.parse(fs.readFileSync(f.stateFile)).packages[name].versions["1.0.0"];
+  assert.equal(saved.status, deliveries[0].status);
+});
+
+test("审批保存失败不发消息，通知状态保存失败仍保留决定且不宣称送达", async (t) => {
+  const deliveries = [];
+  const f = await fixture(t, { notifyPublisher: async (notice) => {
+    deliveries.push(notice);
+    fs.mkdirSync(f.stateFile + ".tmp");
+    return { status: "sent" };
+  } });
+  await f.publish("alice", "1.0.0");
+  fs.mkdirSync(f.stateFile + ".tmp");
+  assert.equal((await f.review("1.0.0")).status, 500);
+  assert.equal(deliveries.length, 0);
+  fs.rmdirSync(f.stateFile + ".tmp");
+  assert.equal((await f.review("1.0.0")).status, 303);
+  f.restart();
+  assert.equal((await f.index()).plugins.length, 1);
+  const page = await f.request("/_zp/market/admin", { headers: { cookie: "test-session=admin" } });
+  assert.match(page.text, /未确认通知送达/);
+  assert.doesNotMatch(page.text, /机器人通知已发送/);
+});

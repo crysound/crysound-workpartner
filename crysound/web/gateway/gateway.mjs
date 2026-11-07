@@ -7,7 +7,7 @@ import http from "node:http";
 import net from "node:net";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmins } from "./onboard.mjs";
+import { authorizeUrl, identify, provision, readUsers, slugFor, notifyMarketAdmins, notifyMarketPublisher } from "./onboard.mjs";
 
 import { issueToken, tokenUser, writeContainerToken } from "./market-auth.mjs";
 import { createMarket } from "./market.mjs";
@@ -116,6 +116,7 @@ const market = createMarket({
   officialMaintainers: JSON.parse(process.env.MARKET_OFFICIAL_MAINTAINERS || "{}"),
   officialPackages: (process.env.MARKET_OFFICIAL_PACKAGES || "").split(",").map((s) => s.trim()).filter(Boolean),
   notify: notifyMarketAdmins,
+  notifyPublisher: notifyMarketPublisher,
   internalOrigin: "http://zhaohua-partner-gateway:3090",
 });
 

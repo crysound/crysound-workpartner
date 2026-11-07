@@ -1,0 +1,98 @@
+{
+  "method": "Real native page; tab-local response substitution of pinned released modules; real server data; no product writes",
+  "screenshots": [
+    "en-wide.png",
+    "en-narrow.png"
+  ],
+  "checks": [
+    {
+      "name": "company publication hint",
+      "text": "Share your own plugin: tell WorkPartner ‘publish to CRYSOUND market’; everyone can install it after admin approval.",
+      "fontSize": "12px",
+      "color": "rgba(0, 0, 0, 0.44)",
+      "background": "rgba(0, 0, 0, 0)",
+      "borderLeft": "0px"
+    },
+    {
+      "name": "wide",
+      "width": 1600,
+      "overflow": false,
+      "cardCount": 9,
+      "columns": 2
+    },
+    {
+      "name": "narrow",
+      "width": 820,
+      "overflow": false,
+      "cardCount": 9,
+      "columns": 1
+    },
+    {
+      "name": "phone",
+      "width": 520,
+      "overflow": false,
+      "cardCount": 9,
+      "columns": 1
+    },
+    {
+      "name": "dark",
+      "width": 1600,
+      "overflow": false,
+      "cardCount": 9,
+      "columns": 2
+    },
+    {
+      "name": "chevron opens native details",
+      "hasVersion": true,
+      "hasCategory": true
+    },
+    {
+      "name": "native controlled search and clearing",
+      "passed": true
+    },
+    {
+      "name": "installed",
+      "width": 1600,
+      "overflow": false,
+      "cardCount": 20,
+      "columns": 2
+    },
+    {
+      "name": "installed-narrow",
+      "width": 820,
+      "overflow": false,
+      "cardCount": 20,
+      "columns": 1
+    },
+    {
+      "name": "third-party",
+      "width": 1600,
+      "overflow": false,
+      "cardCount": 24,
+      "columns": 2
+    },
+    {
+      "name": "third-party-narrow",
+      "width": 820,
+      "overflow": false,
+      "cardCount": 24,
+      "columns": 1
+    },
+    {
+      "name": "third-party details preserve native controls",
+      "passed": true
+    },
+    {
+      "name": "nine official icons decode at 64px and 40px",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "locale": "en",
+  "localeMethod": "tab-local native locale bootstrap without Host preference persistence",
+  "pending": [
+    "real Creator mode completion dialogue",
+    "real test-account publication and approval/rejection Feishu receipts",
+    "packaged desktop build and deployment"
+  ]
+}

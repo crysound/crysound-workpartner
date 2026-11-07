@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { marketLocales } from '../../brand/market-locales.mjs';
 import { patchCompanyMarketRuntime } from '../../scripts/patch-market-ui.mjs';
 import { patchThirdPartyCards } from '../../scripts/patch-market-cards.mjs';
 const officialIcons = JSON.parse(fs.readFileSync(new URL('../../config/plugins.json', import.meta.url))).officialPlugins;
@@ -100,8 +101,8 @@ async function until(expression, ready = () => true) {
   throw new Error("Native page did not reach expected state");
 }
 async function screenshot(name) {
-  const clip = await evaluate(`(() => { const p=document.querySelector('[data-plugin-panel]'); const r=p.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:Math.min(innerHeight-r.y,r.height),scale:1}; })()`);
-  const shot=await send('Page.captureScreenshot',{format:'png',clip});
+  // The responsive sidebar can move after measuring a panel clip; capture the viewport.
+  const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(output,name+'.png'),Buffer.from(shot.data,'base64'));
 }
 const clickText = text => evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(text)})?.click()`);
@@ -127,6 +128,10 @@ try {
   await until('document.querySelector("[data-composer-input][contenteditable=true]") || document.querySelector("[data-plugin-panel]")',()=>[...replacement.keys()].every(name=>applied.has(name)) && (!english || applied.has("locale")));
   await clickText(words.market);await until('document.querySelector("[role=tab]")');await clickText(words.company);
   await until('document.querySelector("[data-market-entry].zp-market-card")');
+  const hint=await evaluate(`(() => {const p=document.querySelector('[data-company-publish-hint]');if(!p)return null;const style=getComputedStyle(p);return {text:p.textContent,fontSize:style.fontSize,color:style.color,background:style.backgroundColor,borderLeft:style.borderLeftWidth};})()`);
+  assert.equal(hint?.text,marketLocales[english?'en':'zh'].zpPublishHint);
+  assert.equal(hint.fontSize,'12px');assert.equal(hint.background,'rgba(0, 0, 0, 0)');assert.equal(hint.borderLeft,'0px');
+  results.checks.push({name:'company publication hint',...hint});
   await layout(1600,'wide');await layout(820,'narrow');await layout(520,'phone');
   await send('Emulation.setDeviceMetricsOverride',{width:1600,height:1000,deviceScaleFactor:1,mobile:false});
   const initial=await evaluate('document.body.hasAttribute("data-ds-dark-theme")');
@@ -153,8 +158,10 @@ try {
   await evaluate('document.querySelectorAll(".zp-market-segments button")[1].click()');assert.ok(await evaluate('document.querySelectorAll("[data-market-entry]").length')<=count);
   await evaluate('document.querySelectorAll(".zp-market-segments button")[0].click()');
   await clickText(words.installed);await until('document.querySelector("[data-company-card]")');
+  assert.equal(await evaluate('document.querySelectorAll("[data-company-publish-hint]").length'),0);
   await layout(1600,'installed','[data-company-card]');await layout(820,'installed-narrow','[data-company-card]');
   await clickText(words.third);await until('document.querySelector("[data-third-party-entry]")');
+  assert.equal(await evaluate('document.querySelectorAll("[data-company-publish-hint]").length'),0);
   await layout(1600,'third-party','[data-third-party-entry]');await layout(820,'third-party-narrow','[data-third-party-entry]');
   await evaluate('document.querySelector("[data-third-party-entry] .zp-card-chevron").click()');await until('document.querySelector("dialog[open]")');
   await screenshot('third-party-detail');await evaluate('document.querySelector("dialog[open] > button").click()');await until('!document.querySelector("dialog[open]")');
