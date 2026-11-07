@@ -26,7 +26,7 @@ dsh 的 bundle、个人、全局和启动覆盖层按顺序生效，patch 的 `c
 
 ## 飞书插件本地归档
 
-飞书插件使用镜像内 `file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.2.tgz`。构建脚本从固定发行地址下载，核对 SHA-512 后才写入镜像。启动时在任何 `plugin add` 前修复个人 `pnpm-lock.yaml` 及已有 `node_modules/.pnpm/lock.yaml` 中该旧远程地址缺失的校验值，再按新 want 替换；不清空锁文件、不修改其他插件的 resolution。已有校验值不匹配或 YAML 无效时停止启动并保留原文件。
+飞书插件使用镜像内 `file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz`。构建脚本从固定发行地址下载，核对 SHA-512 后才写入镜像。启动时在任何 `plugin add` 前修复个人 `pnpm-lock.yaml` 及已有 `node_modules/.pnpm/lock.yaml` 中该旧远程地址缺失的校验值，再按新 want 替换；不清空锁文件、不修改其他插件的 resolution。已有校验值不匹配或 YAML 无效时停止启动并保留原文件。
 
 本次必须重建镜像并同步清单，先验证独立测试账号，再逐人空闲时换镜像；不能只更新清单后重启旧镜像。Mac/Windows 下个安装包携带同一校验后的归档，桌面会将共享清单中的网页路径转换为 profile 内的相对文件依赖。旧桌面包不支持这个本地路径，需随新包更新。
 
