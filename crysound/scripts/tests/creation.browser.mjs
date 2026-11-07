@@ -159,12 +159,10 @@ try {
   await until('!!document.querySelector(".bda-page")','real works page mounts');
   assert.equal(await evaluate('document.querySelector(".bda-page").innerText.includes("兆华作品")'), false);
   checks.push('real works page mounted and contains no old page name');
-  await click('.bda-tool[aria-label="新建"]');
-  await until('document.querySelectorAll("[role=menuitem][data-skill]").length===5','five installed creation skills in native New menu');
-  const createButtons=await evaluate('[...document.querySelectorAll("[role=menuitem][data-skill]")].map(e=>({skill:e.dataset.skill,disabled:e.disabled}))');
+  await until('document.querySelectorAll(".bda-tiles [data-skill]").length===5','five installed creation skills on the native New tiles');
+  const createButtons=await evaluate('[...document.querySelectorAll(".bda-tiles [data-skill]")].map(e=>({skill:e.dataset.skill,disabled:e.disabled}))');
   assert.deepEqual(createButtons.map(b=>b.skill).sort(),['crysound-dashboard','crysound-design','crysound-design-system','crysound-motion','crysound-slides']);
   assert.ok(createButtons.every(b=>!b.disabled));
-  await key('Escape');
   checks.push('observed creation controls: '+JSON.stringify(createButtons));
   for(const dark of [false,true]) {
     await call('function(dark){document.body.toggleAttribute("data-ds-dark-theme",dark)}',dark);

@@ -1,0 +1,61 @@
+{
+  "preview": "Branch response substitution in a dedicated authenticated persistent-browser tab; no deployment or user file changes.",
+  "versions": [
+    {
+      "name": "@crysound/design",
+      "version": "1.1.0"
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "1.1.0"
+    },
+    {
+      "name": "@crysound/artifacts",
+      "version": "1.0.0"
+    },
+    {
+      "name": "@crysound/design-system",
+      "version": "1.0.0"
+    },
+    {
+      "name": "@crysound/slides",
+      "version": "1.1.0"
+    },
+    {
+      "name": "@crysound/dashboard",
+      "version": "1.1.0"
+    }
+  ],
+  "patched": [
+    "skin.css",
+    "brand.css",
+    "skin.js",
+    "artifacts",
+    "ui-sidebar",
+    "ui-workspace"
+  ],
+  "checks": [
+    "search and company works mount",
+    "works label is unbranded",
+    "one company works before automation and market; no upstream or companion rows",
+    "all six pinned versions match the live approved market catalog",
+    "company works opens its native panel",
+    "real works page mounts",
+    "real works page mounted and contains no old page name",
+    "five installed creation skills on the native New tiles",
+    "observed creation controls: [{\"skill\":\"crysound-slides\",\"disabled\":false},{\"skill\":\"crysound-design\",\"disabled\":false},{\"skill\":\"crysound-dashboard\",\"disabled\":false},{\"skill\":\"crysound-design-system\",\"disabled\":false},{\"skill\":\"crysound-motion\",\"disabled\":false}]",
+    "collapsed navigation",
+    "expanded navigation restored",
+    "works page restored",
+    "collapsed navigation",
+    "expanded navigation restored",
+    "works page restored"
+  ],
+  "errors": [],
+  "notVerified": [
+    "Mobile drawer and mobile screenshots: the current page did not expose the native opener",
+    "New and upgraded actual profiles installing from the registry",
+    "Four creation editors: native New opens a skill prompt draft; generating new works was not run",
+    "Rebuilt partner image and actual Electron package"
+  ]
+}
