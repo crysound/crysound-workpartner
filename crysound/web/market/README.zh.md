@@ -76,6 +76,8 @@ docker compose -f crysound/web/compose.yml up -d --force-recreate verdaccio gate
 
 部署需重建网关和用户镜像，下个桌面包在生成完整性记录前应用共用补丁。维护人需发布引导字段、按原流程批准并对齐已安装版本，才能验收两个首页入口。[组件预览证据](evidence/issue-61-c/evidence.md) 使用测试包与假会话，不证明完整原生输入框、真实模型请求、线上包内容或 Electron 导航。真实产品仍需验收两个入口、已有草稿、带附件取消、示例只提交一次、语言与主题切换及窄屏。
 
+引导补丁 v2 同时声明 `remote` 与 `remote.pluginManager`；子命名空间不能替代远端事件服务的注入。客户端按原生 `{ ok, value }` 结果读取清单，通过 `get` 解析会话的 conversation 服务。会话补丁也让空白首页渲染输入框下的扩展位。再次执行运行时补丁会在生成完整性记录前升级 v1。在独立且已登录、显示空白原生会话的浏览器标签页运行 `CDP_TAB=<标签页> node crysound/web/market/verify-guide-boot.mjs <输出目录>`：它只替换浏览器响应，复现漏声明依赖的启动失败，再带修复完整刷新，要求首页有官方入口且控制台没有错误。它不改服务器或已安装插件；[启动证据](evidence/issue-61-boot/evidence.md) 单独保留包内引导的待验收项。
+
 ## 预装与更新
 
 `plugins.json` 的 `retire` 是带固定迁移编号的一次性依赖移出清单。网页和桌面更新时通过原生 `dsh plugin remove` 移出演示文稿、视频剪辑和 oil-ui，仅修改 profile 的依赖及启用记录；不删除工作目录、作品或插件数据。失败不写完成标记，下次更新重试；成功后本人仍可从第三方市场重装。镜像继续保留 `/opt/slidestudio-runtime`、字体与 ffmpeg，`OM_CHROME` 保持不变。

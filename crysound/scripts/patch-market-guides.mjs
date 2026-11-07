@@ -6,13 +6,22 @@ import { installCompanyGuides } from "./patch-market-guide-client.mjs";
  * @returns {string} Idempotently patched module; unsupported input throws.
  */
 export function patchMarketGuides(text) {
-  const marker = "/* CRYSOUND package guides v1 */";
+  const marker = "/* CRYSOUND package guides v2 */";
   if (text.includes(marker)) return text;
+  if (text.includes("/* CRYSOUND package guides v1 */")) {
+    const before = '"uiWorkspace", "sessions", "workspaces", "remote.pluginManager", "conversation", "inputTriggers"\n';
+    const start = text.indexOf("function installCompanyGuides(");
+    const end = text.indexOf("\nfunction apply(ctx) {", start);
+    if (text.split(before).length !== 2 || start < 0 || end < 0) throw new Error("插件引导依赖升级未唯一命中，请核对 dsh 版本");
+    text = text.slice(0, start) + installCompanyGuides.toString() + text.slice(end);
+    return text.replace("/* CRYSOUND package guides v1 */", marker)
+      .replace(before, before.replace('"remote.pluginManager"', '"remote", "remote.pluginManager"'));
+  }
   const replace = (needle, next) => {
     if (text.split(needle).length !== 2) throw new Error("插件引导补丁未唯一命中，请核对 dsh 版本");
     text = text.replace(needle, () => next);
   };
-  replace('"uiWorkspace"\n', '"uiWorkspace", "sessions", "workspaces", "remote.pluginManager", "conversation", "inputTriggers"\n');
+  replace('"uiWorkspace"\n', '"uiWorkspace", "sessions", "workspaces", "remote", "remote.pluginManager", "conversation", "inputTriggers"\n');
   replace('function apply(ctx) {', `${installCompanyGuides.toString()}\nfunction apply(ctx) {
     installCompanyGuides(ctx, _deepseek_ai_dsh_client_store.createSnapshotStore, react_jsx_runtime.jsx, react_jsx_runtime.jsxs);
     ctx.effect(() => { const style = document.createElement("style"); style.textContent = ${JSON.stringify(guideCss)}; document.head.appendChild(style); return () => style.remove(); });`);
@@ -42,11 +51,12 @@ export function patchGuideUse(text) {
  */
 export function patchGuidePlaceholder(text) {
   const changes = [
+    ['variant === "composer" && input !== void 0 && sessionId !== void 0 ? renderSlot("conversation.composer.dock", {})', 'input !== void 0 && sessionId !== void 0 ? renderSlot("conversation.composer.dock", {})'],
     ['"placeholder.hero": "描述你想要构建的内容, / 调用指令, @ 文件或对话"', '"placeholder.hero": "例如：帮我整理会议纪要，列出下一步行动"'],
     ['"placeholder.hero": "Describe what you want to build, / commands, @ files or sessions"', '"placeholder.hero": "For example: Summarize these meeting notes and list the next actions"'],
   ];
   for (const [before, after] of changes) {
-    if (text.includes(after)) continue;
+    if (!text.includes(before) && text.includes(after)) continue;
     if (text.split(before).length !== 2) throw new Error("首页例句补丁未唯一命中");
     text = text.replace(before, after);
   }
