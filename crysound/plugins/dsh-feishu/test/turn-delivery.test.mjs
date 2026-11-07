@@ -12,8 +12,8 @@ const message = (id = 'trigger', extra = {}) => ({ openId: 'operator', chatId: '
   messageType: 'text', text: 'hello', mentions: [], ...extra })
 function harness(options = {}) {
   const calls = [], prompts = [], warnings = []
-  let now = 0, bound = options.unbound ? undefined : 'session'
-  const state = { lastChatId: 'chat', pairedOperators: [] }
+  let now = 0, bound = options.unbound ? undefined : options.bound ?? 'session'
+  const state = { lastChatId: 'chat', pairedOperators: [], ...options.state }
   const lark = {
     async react(id, emoji) { calls.push(['react', id, emoji]); return `r-${id}` },
     async deleteReaction(id, reaction) { calls.push(['unreact', id, reaction]) },
@@ -33,9 +33,11 @@ function harness(options = {}) {
   const attachments = { async saveImage() { return { attachmentId: 'img', mediaType: 'image/png' } },
     async saveFile() { return { attachmentId: 'file', name: 'document.pdf', bytes: 1 } }, ...options.attachments }
   const binder = { getSessionId: () => bound, getAgent: () => bound ? agent : undefined, isReadOnlyView: () => false,
-    async createNew() { calls.push(['create']); bound = 'session'; return { sessionId: bound, agent } }, ...options.binder }
+    async bind() { throw Error('session unavailable') },
+    async detach() { bound = undefined },
+    async createNew(cwd, selection) { calls.push(['create', cwd, selection, state.boundSessionId]); bound = 'session'; return { sessionId: bound, agent } }, ...options.binder }
   const bot = new FeishuBot({ ctx: { logger: { info() {}, debug() {}, error() {}, warn(...args) { warnings.push(args) } },
-    get: key => key === 'attachments' ? attachments : undefined },
+    get: key => key === 'attachments' ? attachments : options.services?.[key] },
     config: { bodySegmentChars: 4000, statusIntervalMs: 30000, backgroundPush: 'off', ...options.config }, lark, binder,
     store: { get: () => state, async update(patch) { Object.assign(state, patch) } }, allowlist: new Set(['operator']), now: () => now })
   const event = (type, data = {}) => bot.onSessionEvent({ id: 'session' }, { type, data, time: now })
@@ -54,7 +56,7 @@ for (const type of ['text', 'image', 'file']) test(`${type}: OnIt precedes creat
   assert.deepEqual(h.calls[0], ['react', type, 'OnIt'])
   assert.ok(h.calls.findIndex(c => c[0] === 'create') > 0)
   assert.ok(h.calls.findIndex(c => c[0] === 'inject') > 0)
-  const rejected = harness({ binder: { getAgent: () => undefined, async bind() { throw Error('unavailable') } } })
+  const rejected = harness({ binder: { getAgent: () => undefined, async bind() { throw Error('unavailable') }, async createNew() { throw Error('disk full') } } })
   if (type === 'text') await rejected.bot.handlePrompt(m, 'hello'); else await rejected.bot.handleMedia(m, [])
   assert.deepEqual(rejected.calls.slice(-2).map(c => c[0]), ['unreact', 'send'])
 })
@@ -624,3 +626,89 @@ for (const scenario of [{ chatType: 'p2p' }, { parentId: 'quote' }, { messageTyp
     assert.deepEqual(sends[1][3], { text: '做完了，结果在上面。' })
   })
 }
+
+
+for (const type of ['text', 'image', 'file']) {
+  for (const failure of ['deleted', 'archived', 'resume-failed', 'stale-live']) {
+    test(`${type}: ${failure} binding is cleared before auto-new and content is delivered once`, async () => {
+      const h = harness({ bound: 'old', state: { boundSessionId: 'old' },
+        services: failure === 'archived' ? { workspaceRegistry: { archivedSessionIds: ['old'], list: () => [] } }
+          : failure === 'stale-live' ? { sessions: { get: () => undefined } } : {},
+        binder: ['deleted', 'resume-failed'].includes(failure) ? { getAgent: () => undefined } : {} })
+      const m = message('replacement', { messageType: type, imageKey: 'image', fileKey: 'file', fileName: 'doc.pdf' })
+      if (type === 'text') await h.bot.handlePrompt(m, 'hello'); else await h.bot.handleMedia(m, [])
+      assert.equal(h.calls.filter(c => c[0] === 'create').length, 1)
+      assert.equal(h.calls.find(c => c[0] === 'create')[3], undefined)
+      assert.equal(h.state.boundSessionId, 'session')
+      assert.equal(h.prompts.length, 1)
+      assert.ok(h.prompts[0].content.some(block => block.type === (type === 'text' ? 'text' : type)))
+      h.event('turn/start'); h.consume(); h.assistant('answer'); await tick(); await h.end()
+      const final = h.calls.find(c => c[0] === 'fallback')[2]
+      assert.deepEqual(final.body.elements[0].content, 'answer')
+      assert.deepEqual(final.body.elements.at(-1), { tag: 'markdown', content: '已新开会话', text_size: 'notation' })
+      assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
+    })
+  }
+}
+
+test('empty workspace registry uses process directory and phone default model without a picker', async () => {
+  const phoneModel = { provider: 'test', model: 'phone-default', reasoningEffort: 'high' }
+  const h = harness({ unbound: true, state: { phoneModel }, services: { workspaceRegistry: { list: () => [] } } })
+  await h.bot.handlePrompt(message(), 'hello')
+  assert.deepEqual(h.calls.find(c => c[0] === 'create').slice(1, 3), [process.cwd(), phoneModel])
+  assert.equal(h.prompts.length, 1)
+  assert.equal(h.calls.filter(c => c[0] === 'command').length, 0)
+})
+
+test('auto-new uses first registered workspace like the default /new picker', async () => {
+  const h = harness({ unbound: true, services: { workspaceRegistry: { list: () => [{ path: '/work/default' }] } } })
+  await h.bot.handlePrompt(message(), 'hello')
+  assert.equal(h.calls.find(c => c[0] === 'create')[1], '/work/default')
+})
+
+test('failed auto-new clears old binding, reports the cause and offers /new', async () => {
+  const h = harness({ bound: 'old', state: { boundSessionId: 'old' }, binder: {
+    getAgent: () => undefined, async createNew() { throw Error('disk full') },
+  } })
+  await h.bot.handlePrompt(message(), 'hello')
+  assert.equal(h.state.boundSessionId, undefined)
+  assert.equal(h.prompts.length, 0)
+  const body = JSON.stringify(h.calls.filter(c => c[0] === 'send'))
+  assert.match(body, /新会话创建失败：disk full/)
+  assert.match(body, /请发 \/new 重试/)
+  assert.doesNotMatch(body, /还没有选会话/)
+  assert.ok(h.calls.some(c => c[0] === 'unreact'))
+})
+
+for (const bound of [undefined, 'old']) test(`passthrough auto-creates for ${bound ?? 'missing'} binding and annotates its own result`, async () => {
+  const executed = []
+  const h = harness({ unbound: bound === undefined, bound, state: { boundSessionId: bound },
+    binder: bound ? { getAgent: () => undefined } : {}, services: { commands: {
+      find: () => ({}), async execute(agent, line) { executed.push([agent.id, line]); return { result: { text: 'ok' } } },
+    } } })
+  await h.bot.handlePassthrough('permission', '/permission workspace')
+  assert.deepEqual(executed, [['session', '/permission workspace']])
+  const replies = h.calls.filter(c => c[0] === 'command')
+  assert.equal(replies.length, 1)
+  assert.equal(replies[0][2].body.elements[0].content, 'ok')
+  assert.deepEqual(replies[0][2].body.elements.at(-1), { tag: 'markdown', content: '已新开会话', text_size: 'notation' })
+})
+
+test('passthrough creation failure reports the cause without executing the command', async () => {
+  const h = harness({ unbound: true, binder: { async createNew() { throw Error('directory unavailable') } } })
+  await h.bot.handlePassthrough('permission', '/permission workspace')
+  assert.match(JSON.stringify(h.calls), /新会话创建失败：directory unavailable/)
+  assert.match(JSON.stringify(h.calls), /请发 \/new 重试/)
+})
+
+test('read-only prompt still queues on the original session without creating or clearing it', async () => {
+  const queued = []
+  const h = harness({ state: { boundSessionId: 'remote' }, binder: {
+    isReadOnlyView: () => true, queueRemoteFollowup: text => queued.push(text), outboxSize: () => queued.length,
+  } })
+  await h.bot.handlePrompt(message(), 'queued')
+  assert.deepEqual(queued, ['queued'])
+  assert.equal(h.state.boundSessionId, 'remote')
+  assert.equal(h.calls.filter(c => c[0] === 'create').length, 0)
+  assert.match(JSON.stringify(h.calls), /已排队/)
+})

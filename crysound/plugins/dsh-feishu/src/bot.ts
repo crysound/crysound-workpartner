@@ -10,7 +10,7 @@
  *   tap claims admin (persisted, effective in-process immediately); groups
  *   never pair, and once any admin exists strangers are silent again;
  * - unbound ordinary text creates a session with the default cwd/model;
- *   creation failure logs a warning and replies with the /new /resume hint;
+ *   creation failure reports its reason and offers /new to retry;
  * - prompts inject via `agent.steer` while a turn runs (join the CURRENT
  *   turn's next round — the operator's mid-course corrections land
  *   immediately) and `agent.followup` when idle (open the next turn);
@@ -122,6 +122,8 @@ import type { BindResult, SessionBinder } from './binder.ts'
 import type { StateStore } from './state-store.ts'
 import { clipLine, segmentText, markdownTableCount } from './text.ts'
 import { Preview, TurnOutput } from './preview.ts'
+
+class AutoNewError extends Error {}
 import { toolProgress } from './progress.ts'
 import { replyChain, forwardedContent, type ResourceImage } from './resources.ts'
 import { imageExtensionOf, sniffImageMediaType } from './image.ts'
@@ -254,7 +256,7 @@ export class FeishuBot {
   private turnHasUser = false
   private queuedMessages: InboundMessage[] = []
   private readonly acknowledgements = new Map<string, Promise<string | undefined>>()
-  private readonly pendingPrompts = new Map<string, { messages: InboundMessage[]; sessionId: string; preview?: Preview }>()
+  private readonly pendingPrompts = new Map<string, { messages: InboundMessage[]; sessionId: string; autoNew?: boolean; preview?: Preview }>()
   private readonly imageBatches = new Map<string, { messages: InboundMessage[]; timer: ReturnType<typeof setTimeout> }>()
   /** The bot's own open_id — group mention routing (resolved at start; optional). */
   private botOpenId: string | undefined
@@ -566,18 +568,21 @@ export class FeishuBot {
   }
 
   /** Reply with a body card — markdown renders in lark_md, not in msg_type=text. */
-  private async reply(text: string): Promise<void> {
+  private async reply(text: string, note = ''): Promise<void> {
     const chatId = this.store.get().lastChatId
     if (chatId === undefined) return
-    await this.lark.sendCard(chatId, buildBodyCard(text))
+    const card = buildBodyCard(text)
+    if (note) card.body.elements.push({ tag: 'markdown', content: note, text_size: 'notation' })
+    await this.lark.sendCard(chatId, card)
   }
 
   /** Reply with a long body, segmented at the configured size; each segment ships as its own card. */
-  private async replyLong(text: string): Promise<void> {
+  private async replyLong(text: string, note = ''): Promise<void> {
     const chatId = this.store.get().lastChatId
     if (chatId === undefined) return
     for (const segment of segmentText(text, this.config.bodySegmentChars)) {
-      await this.lark.sendCard(chatId, buildBodyCard(segment))
+      await this.reply(segment, note)
+      note = ''
     }
   }
 
@@ -1409,7 +1414,7 @@ export class FeishuBot {
     if (outcome === 'refused') {
       await this.reply(this.binder.isReadOnlyView()
         ? '当前为只读旁观（该会话正由另一进程驱动），无法从这里派活。'
-        : '还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
+        : '会话暂不可用，请发 /new 重试。')
     }
   }
 
@@ -1435,11 +1440,19 @@ export class FeishuBot {
   }
 
   private async handlePassthrough(name: string, line: string): Promise<void> {
-    const agent = await this.ensureBoundAgent()
-    if (agent === undefined) {
-      await this.reply('还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
+    let resolved: { agent: Agent; created: boolean } | undefined
+    try {
+      resolved = await this.ensureInputAgent()
+    } catch (error) {
+      await this.reply(error instanceof Error ? error.message : '新会话创建失败，请发 /new 重试。')
       return
     }
+    if (!resolved) {
+      await this.reply('当前为只读旁观（该会话正由另一进程驱动），无法执行命令。')
+      return
+    }
+    const { agent, created } = resolved
+    const note = created ? '已新开会话' : ''
     const commands = this.ctx.get('commands') as
       | {
           execute(
@@ -1452,11 +1465,11 @@ export class FeishuBot {
         }
       | undefined
     if (commands === undefined) {
-      await this.reply('当前 profile 没有命令服务，无法透传。')
+      await this.reply('当前 profile 没有命令服务，无法透传。', note)
       return
     }
     if (commands.find?.(agent, name) === undefined) {
-      await this.reply(`命令 /${name} 在当前环境不可用。`)
+      await this.reply(`命令 /${name} 在当前环境不可用。`, note)
       return
     }
     try {
@@ -1466,15 +1479,15 @@ export class FeishuBot {
       const outcome = await execution
       const text = outcome?.result?.text
       if (outcome?.result?.kind === 'error') {
-        await this.reply(`/${name} 执行失败：${clipLine(text ?? '未知错误', 500)}`)
+        await this.reply(`/${name} 执行失败：${clipLine(text ?? '未知错误', 500)}`, note)
       } else if (text !== undefined && text !== '') {
-        await this.replyLong(text)
+        await this.replyLong(text, note)
       } else {
-        await this.reply(`/${name} 已执行。`)
+        await this.reply(`/${name} 已执行。`, note)
       }
     } catch (error) {
       this.ctx.logger.warn('dsh-feishu: passthrough /%s failed: %o', name, error)
-      await this.reply(`/${name} 执行出错。`)
+      await this.reply(`/${name} 执行出错。`, note)
     }
   }
 
@@ -1488,13 +1501,14 @@ export class FeishuBot {
   private async injectContent(content: readonly ContentBlock[], messages: InboundMessage[] = []): Promise<'steered' | 'opened' | 'refused'> {
     if (content.length === 0) return 'refused'
     if (this.binder.isReadOnlyView()) return 'refused'
-    const agent = await this.ensureBoundAgent()
-    if (agent === undefined) return 'refused'
+    const resolved = await this.ensureInputAgent()
+    if (!resolved) return 'refused'
+    const { agent, created } = resolved
     const userMessage = createUserMessage({
       content: [...content],
       source: { kind: 'user' },
     })
-    if (messages.length) this.pendingPrompts.set(userMessage.id, { messages, sessionId: String(agent.id ?? this.binder.getSessionId()) })
+    if (messages.length) this.pendingPrompts.set(userMessage.id, { messages, autoNew: created, sessionId: String(agent.id ?? this.binder.getSessionId()) })
     try {
       if (agent.status === 'running') {
         agent.steer(userMessage)
@@ -1562,18 +1576,10 @@ export class FeishuBot {
   private async submitContent(messages: InboundMessage[], content: readonly ContentBlock[]): Promise<void> {
     const trigger = messages.at(-1)!
     try {
-      let outcome = await this.injectContent(content, messages)
-      if (outcome === 'refused' && this.binder.getSessionId() === undefined && !this.binder.isReadOnlyView()) {
-        try {
-          const created = await this.binder.createNew(this.newSessionCwd(undefined), this.newSessionDefaultSelection(undefined), undefined)
-          if (created.model !== undefined) this.selectionRefs.set(created.sessionId, created.model)
-          await this.store.update({ boundSessionId: created.sessionId, picker: undefined })
-          outcome = await this.injectContent(content, messages)
-        } catch (error) { this.ctx.logger.warn('dsh-feishu: auto-new failed: %o', error) }
-      }
+      const outcome = await this.injectContent(content, messages)
       if (outcome === 'refused') {
         await this.clearAcknowledgements(messages)
-        await this.sendFinal(this.target(trigger), '还没有选会话。发 /new 新建一个会话，或发 /resume 进入网页里已有的会话。')
+        await this.sendFinal(this.target(trigger), '当前为只读旁观（该会话正由另一进程驱动），无法从这里派活。')
       }
     } catch (error) {
       for (const [id, pending] of this.pendingPrompts) if (pending.messages === messages) {
@@ -1581,7 +1587,7 @@ export class FeishuBot {
         this.pendingPrompts.delete(id)
       }
       await this.clearAcknowledgements(messages)
-      await this.sendFinal(this.target(trigger), '消息未能进入会话，请重发一次。')
+      await this.sendFinal(this.target(trigger), error instanceof AutoNewError ? error.message : '消息未能进入会话，请重发一次。')
       this.ctx.logger.warn('dsh-feishu: injection failed: %o', error)
     }
   }
@@ -1711,6 +1717,38 @@ export class FeishuBot {
     return undefined
   }
 
+  /** Resolve an input target, replacing an unusable binding without reviving archived work. */
+  private async ensureInputAgent(): Promise<{ agent: Agent; created: boolean } | undefined> {
+    if (this.binder.isReadOnlyView()) return undefined
+    const id = this.binder.getSessionId() ?? this.store.get().boundSessionId
+    const registry = this.ctx.get('workspaceRegistry') as
+      | { archivedSessionIds?: readonly string[]; list?: () => Array<{ path?: string }> }
+      | undefined
+    const archived = id !== undefined && registry?.archivedSessionIds?.includes(id)
+    const agent = archived ? undefined : await this.ensureBoundAgent()
+    const sessions = this.ctx.get('sessions') as { get(id: string): unknown } | undefined
+    if (agent && (sessions === undefined || sessions.get(String(agent.id)) !== undefined)) {
+      return { agent, created: false }
+    }
+    try {
+      // Persist the invalidation before attempting creation, including failures.
+      await this.store.update({ boundSessionId: undefined, picker: undefined })
+      await this.binder.detach()
+      const cwd = this.newSessionCwd(undefined)
+      const workspaces = registry?.list?.() ?? []
+      const directory = workspaces.find(workspace => workspace.path === cwd)?.path
+        ?? workspaces.find(workspace => workspace.path)?.path ?? cwd
+      const created = await this.binder.createNew(directory, this.newSessionDefaultSelection(undefined), undefined)
+      if (created.model !== undefined) this.selectionRefs.set(created.sessionId, created.model)
+      await this.store.update({ boundSessionId: created.sessionId, picker: undefined })
+      return { agent: created.agent, created: true }
+    } catch (error) {
+      this.ctx.logger.warn('dsh-feishu: auto-new failed: %o', error)
+      const reason = clipLine(error instanceof Error ? error.message : String(error), 200) || '未知原因'
+      throw new AutoNewError(`新会话创建失败：${reason}。请发 /new 重试。`)
+    }
+  }
+
   /** Resolve the bound session to a live agent, resuming it if needed. */
   private async ensureBoundAgent(): Promise<Agent | undefined> {
     const id = this.binder.getSessionId() ?? this.store.get().boundSessionId
@@ -1770,7 +1808,7 @@ export class FeishuBot {
         this.turnMessages = waiting?.messages ?? []
         const target = waiting ? this.target(waiting.messages.at(-1)!) : undefined
         if (waiting && target) {
-          waiting.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs)
+          waiting.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, waiting.autoNew ? '已新开会话' : '')
           waiting.preview.start()
         }
         this.turnOutput = new TurnOutput(waiting?.preview, target)
@@ -1787,7 +1825,7 @@ export class FeishuBot {
           if (!this.turnHasUser) {
             this.turnMessages = pending.messages
             const target = this.target(pending.messages.at(-1)!)
-            pending.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs)
+            pending.preview ??= new Preview(this.lark, target, this.now, this.config.previewIntervalMs, pending.autoNew ? '已新开会话' : '')
             pending.preview.start()
             this.turnOutput = new TurnOutput(pending.preview, target)
           } else {
@@ -1965,7 +2003,7 @@ export class FeishuBot {
     }
   }
 
-  private async sendFinal(target: MessageTarget, text: string): Promise<void> {
+  private async sendFinal(target: MessageTarget, text: string, note = ''): Promise<void> {
     const post = markdownTableCount(text) > 5
     const segments = segmentText(text, this.config.bodySegmentChars ?? 4000)
     let plain = false
@@ -1974,6 +2012,9 @@ export class FeishuBot {
       const type = plain ? 'text' : post ? 'post' : 'interactive'
       const content = type === 'text' ? { text: segment } : post
         ? { zh_cn: { content: [[{ tag: 'md', text: segment }]] } } : buildBodyCard(segment)
+      if (type === 'interactive' && i === 0 && note) {
+        (content as Schema2Card).body.elements.push({ tag: 'markdown', content: note, text_size: 'notation' })
+      }
       let sent = await this.lark.sendMessage(target, type, content)
       if (!sent) sent = await this.lark.sendMessage(target, type, content)
       if (!sent && !plain) {
@@ -1998,7 +2039,7 @@ export class FeishuBot {
     const retained = await output.preview?.finish(status.slice(0, 500), body, endedAt)
     const target = output.target ?? fallbackTarget
     if (target) {
-      if (!retained?.delivered || retained.overflow) await this.sendFinal(target, body)
+      if (!retained?.delivered || retained.overflow) await this.sendFinal(target, body, retained?.delivered ? '' : output.preview?.note)
       else {
         const threshold = this.config.completionReminderSeconds ?? 60
         if (threshold > 0 && retained.elapsedMs > threshold * 1000) {

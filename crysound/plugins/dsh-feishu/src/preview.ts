@@ -68,8 +68,10 @@ export class Preview {
   private readonly target: MessageTarget
   private readonly now: () => number
   private readonly intervalMs: number
-  constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS) {
+  readonly note: string
+  constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS, note = '') {
     this.lark = lark; this.target = target; this.now = now; this.intervalMs = intervalMs
+    this.note = note
     this.startedAt = now()
   }
 
@@ -90,7 +92,7 @@ export class Preview {
   }
   private progress(): string {
     const seconds = Math.max(0, Math.floor((this.now() - this.startedAt) / 1000))
-    return [!this.paragraph ? `思考中 · 已 ${seconds} 秒` : '',
+    return [this.note, !this.paragraph ? `思考中 · 已 ${seconds} 秒` : '',
       this.lines.length ? `已执行 ${this.lines.length} 步` : '',
       ...this.lines.slice(-3).map(line => line.slice(0, 300))].filter(Boolean).join('\n')
   }
@@ -132,9 +134,10 @@ export class Preview {
     this.lastSent = this.now()
     if (!this.messageId) {
       this.cardId = await this.lark.createStreamingCard(this.elementId, this.progressId)
+      const initialProgress = [this.note, '思考中 · 已 0 秒'].filter(Boolean).join('\n')
       this.messageId = await this.lark.sendMessage(this.target, 'interactive', this.cardId
-        ? { type: 'card', data: { card_id: this.cardId } } : this.liveCard('', '思考中 · 已 0 秒'))
-      this.lastProgress = '思考中 · 已 0 秒'
+        ? { type: 'card', data: { card_id: this.cardId } } : this.liveCard('', initialProgress))
+      this.lastProgress = this.cardId ? '思考中 · 已 0 秒' : initialProgress
       if (!this.messageId) this.disabled = true
       return
     }
@@ -162,7 +165,7 @@ export class Preview {
     if (this.heartbeat) clearInterval(this.heartbeat)
     this.timer = undefined; this.heartbeat = undefined
     await this.flight
-    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), status, this.lines, this.elementId, this.progressId)
+    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), [this.note, status].filter(Boolean).join(' · '), this.lines, this.elementId, this.progressId)
     const result = (delivered: boolean): PreviewResult => ({ delivered, overflow, elapsedMs })
     if (!this.messageId) return result(false)
     if (this.cardId) {

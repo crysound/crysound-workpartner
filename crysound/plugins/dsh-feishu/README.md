@@ -1,5 +1,5 @@
 本目录是兆华声学（CRYSOUND）维护的修改版，源自 fan56/dsh-feishu 的 5e5555d（npm 0.17.0），保留 Apache-2.0 许可。
-未选会话的普通消息会自动新建会话；整轮卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补发简短提醒，不重复发送正文。
+普通文字、图片、文件和会话透传命令在绑定缺失、归档、删除或无法恢复时自动新建；先清掉失效绑定，默认工作区为空时使用进程默认目录，模型使用手机或环境默认值。原回复卡片用小字注明“已新开会话”，创建失败说明原因并提示 /new 重试，只读排队不变；整轮卡片保留最终正文，正常完成无状态行，异常仅显示简短状态且不显示用时；超过 60 秒补发简短提醒，不重复发送正文。
 
 # dsh-feishu
 
@@ -15,7 +15,7 @@ Drive an existing [dsh](https://github.com/deepseek-ai/deepseek-harness) (DeepSe
 
 - **One-command onboarding**: `/feishu-onboard` on the desktop — scan-to-create the Feishu app, auto-writes credentials + operators, hot-activates without a restart
 - **Self-serve pairing**: empty allowlist → the first DM claims admin via a one-tap card
-- **Automatic sessions**: ordinary text without a selected session creates one with the default working directory and model; creation failures log a warning and show the `/new` / `/resume` hint.
+- **Automatic sessions**: text, images, files and session passthrough commands automatically replace missing, archived, deleted or unrestorable bindings. Use the default workspace/model, or the process directory when no workspace is registered. The original reply card notes “已新开会话”; creation failures include the cause and `/new` retry guidance. Read-only queuing is unchanged.
 - **Turn replies (CRYSOUND .6)**: `OnIt` appears before session work. At turn start, one card starts with an empty answer and a separate progress element. The progress ticks every second while thinking and retains only three recent lines plus a step count; it never enters the typewriter. CardKit receives cumulative answer text every 200 ms by default. New answer rounds replace the answer element with an empty element and a fresh ID. Completion collapses the process below the unchanged answer. Reasoning is never shown. Completion keeps the final answer in that card without a completion or elapsed-time footer; abnormal endings keep only a short status; the final streamed body and retained body match. Turns longer than `completionReminderSeconds` (default 60; 0 disables) send only “做完了，结果在上面。” as a new text reply. Oversized bodies retain a prefix plus “全文见下条” and send the full segmented answer separately; failed final CardKit and whole-card updates also send a separate answer. Tool-driven file/image sends remain separate. `OnIt` is removed and consumed steer messages become `DONE`.
 - **Approval cards**: when the host's approval waterfall asks for a sandbox escalation, the phone gets a **✅ 允许一次 / ❌ 拒绝** card — an unattended run no longer stalls at the desk (the session's approval policy must be `ask`; expiry fails closed)
 - **Interactive ask-user cards**: when the agent calls `ask_user_question`, your phone gets an **interactive card** (dropdown / multi-select / text input + submit); the answer flows straight back. Pair it with [ask-router](https://www.npmjs.com/package/@aiwayds/dsh-ask-router) for **both desktop and phone prompting — first answer wins**
