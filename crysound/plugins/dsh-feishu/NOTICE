@@ -35,8 +35,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-兆华声学（CRYSOUND）修改版，版本 0.17.0-crysound.4。
+兆华声学（CRYSOUND）修改版，版本 0.17.0-crysound.5。
 来源：https://github.com/fan56/dsh-feishu，提交 5e5555d（npm 0.17.0 的源码）。
-修改：未选会话时自动以默认工作目录和模型新建会话；按 jconnect 的交互规格实现先 OnIt 确认、整轮 CardKit 流式进度卡、卡片保留最终正文及底部状态和用时、长任务补简短提醒与表情清理；加入话题回复、引用链、富文本/文件/合并转发、连续图片合并、即时停止与失败降级；同步源码测试和说明，不修改上游许可。
+修改：未选会话时自动以默认工作目录和模型新建会话；按 jconnect 的交互规格实现先 OnIt 确认、整轮 CardKit 流式进度卡、卡片保留最终正文，正常完成无状态行、异常仅显示简短状态且不显示用时、长任务补简短提醒与表情清理；加入话题回复、引用链、富文本/文件/合并转发、连续图片合并、即时停止与失败降级；同步源码测试和说明，不修改上游许可。
 本次按工作伙伴需求单 #112 的行为规格独立实现，未复制 jconnect 源码。
 保留上游版权与许可声明，继续遵循 Apache License, Version 2.0。

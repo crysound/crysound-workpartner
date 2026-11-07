@@ -19,7 +19,7 @@ function finalCard(body: string, footer: string) {
     config: { width_mode: 'fill' },
     body: { elements: [
       { tag: 'markdown', content: text },
-      { tag: 'markdown', content: footer, text_size: 'notation' },
+      ...(footer ? [{ tag: 'markdown', content: footer, text_size: 'notation' }] : []),
     ] },
   })
   const fits = (text: string) => text.length <= 8000
@@ -128,8 +128,8 @@ export class Preview {
     card.config.summary = { content: '思考中…' }
     return card
   }
-  /** Keep a supplied body, or the current paragraph for lifecycle notices; endedAt excludes queued delivery time. */
-  finish(status = '已完成', body?: string, endedAt = this.now()): Promise<PreviewResult> {
+  /** Keep the body and an optional abnormal-end status; endedAt excludes queued delivery time. */
+  finish(status = '', body?: string, endedAt = this.now()): Promise<PreviewResult> {
     return this.finishFlight ??= this.settle(status, body, Math.max(0, endedAt - this.startedAt))
   }
   private async settle(status: string, body: string | undefined, elapsedMs: number): Promise<PreviewResult> {
@@ -138,9 +138,7 @@ export class Preview {
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined
     await this.flight
-    const seconds = Math.round(elapsedMs / 1000)
-    const footer = `${status} · 用时 ${seconds} 秒`
-    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), footer)
+    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), status)
     const result = (delivered: boolean): PreviewResult => ({ delivered, overflow, elapsedMs })
     if (!this.messageId) return result(false)
     if (this.cardId) {

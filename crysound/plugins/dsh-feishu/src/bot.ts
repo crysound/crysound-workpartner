@@ -1991,10 +1991,10 @@ export class FeishuBot {
     let body = output.body(override)
     if (reason === 'max-tokens') body += '\n⚠️ 达到长度上限'
     if (reason === 'blocked') body += '\n🚫 被拦截'
-    const status = reason === 'error' ? `失败：${error || '本轮执行失败'}`
+    const status = reason === 'error' ? '出错了'
       : reason === 'aborted' || reason === 'stopped' ? '已停止'
       : reason === 'max-tokens' ? '已达到长度上限'
-      : reason === 'blocked' ? '已被拦截' : '已完成'
+      : reason === 'blocked' ? '已被拦截' : ''
     const retained = await output.preview?.finish(status.slice(0, 500), body, endedAt)
     const target = output.target ?? fallbackTarget
     if (target) {

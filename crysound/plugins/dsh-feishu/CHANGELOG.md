@@ -3,6 +3,12 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.5] - 2026-11-07
+
+### Changed (CRYSOUND fork)
+- Completed reply cards contain only the final body, without a completion or elapsed-time footer. Abnormal endings keep a short status without elapsed time.
+- Preserve elapsed-time tracking for long-task reminders, final-body whitespace, CardKit settlement, oversized replies, attachment/tool sends and delivery fallbacks.
+
 ## [0.17.0-crysound.4] - 2026-11-07
 
 ### Changed (CRYSOUND fork)
