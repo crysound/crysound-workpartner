@@ -174,7 +174,7 @@ test("fallback always tries DeepSeek Flash then Luna on HTTP, network, empty-too
   }
 });
 
-test("default search budgets allow twelve seconds for Flash and four for Luna", async t => {
+test("default search budgets give fast Flash failures remaining time for Luna", async t => {
   const root = await patchedRelease(t);
   const budgets = [], calls = [];
   const timeout = AbortSignal.timeout.bind(AbortSignal);
@@ -189,7 +189,8 @@ test("default search budgets allow twelve seconds for Flash and four for Luna", 
     const result = await searchWithFallback(DeepSeekSearchProvider, WebError, options, { query: "新闻" });
     assert.equal(result.sources.length, 1);
     assert.deepEqual(calls, ["deepseek/deepseek-flash", "codex/gpt-6-luna"]);
-    assert.deepEqual(budgets, [12000, 4000]);
+    assert.ok(budgets[0] <= 12000 && budgets[0] >= 11900);
+    assert.ok(budgets[1] > 17000 && budgets[1] <= 18000, "fast failure gives Luna nearly all the tool budget");
   } finally { clearInterval(keepAlive); }
 });
 
@@ -326,7 +327,7 @@ test("released search dispatches after credentials and logging without a timer o
         requestContext: () => ({ provider: "magpie" }),
         append: () => events.push("request-log"),
       } }) } : undefined,
-  }, Object.fromEntries(Object.entries({ ...options, apiKey: undefined, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+  }, Object.fromEntries(Object.entries({ ...api.Config({}), ...options, apiKey: undefined, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   // No clock advance: an introduced sleep/debounce would prevent dispatch and fail this test.
   t.mock.timers.enable({ apis: ["setTimeout", "setImmediate"] });
   await provider.search({ query: "杭州天气" });
@@ -442,13 +443,21 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   await writeFile(file, native);
   patchWebTools(root);
   const fromNative = await readFile(file, "utf8");
+  const previousSearchApi = fromNative
+    .replace('import { resolveSearchBudget } from "./crysound-search.mjs";\n', '')
+    .replace(/,\n\tsearchTotalTimeoutMs:[\s\S]*?searchLunaReserveMs:[^\n]*\n/, '\n')
+    .replace('const options = () => ({ ...resolveOptions(ctx, {', 'const options = () => resolveOptions(ctx, {')
+    .replace(/\t\}\), searchBudget: resolveSearchBudget\([^\n]*\n\toptions\(\);/, '\t});');
+  await writeFile(file, previousSearchApi);
+  patchWebTools(root);
+  assert.equal(await readFile(file, "utf8"), fromNative, "previous Search API patch upgrades without duplicate imports");
   await writeFile(file, importLine + native.replace(originalCall, oldCall));
   patchWebTools(root);
   assert.equal(await readFile(file, "utf8"), fromNative, "native and previous company artifacts converge");
   const tools = await released("dsh-tool-web", { root });
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
-  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "twelve-second primary and four-second fallback fit in the real tool deadline");
+  assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "search attempts share the real tool deadline");
   assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 10000);
   const toolFile = join(root, "@deepseek-ai/dsh-tool-web/lib/index.js");
   const currentTool = await readFile(toolFile, "utf8");
@@ -467,7 +476,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const api = await released("dsh-web-search-deepseek", { root, fetch: async (_url, init) => Response.json(searchResult) });
   let provider, selected = "claude-sonnet-4-5";
   const log = [];
-  api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
+  api.apply({ web: { registerSearchProvider: value => { provider = value; } }, get: name => name === "agents" ? { currentInitiator: () => ({ model: { current: () => ({ model: selected }) }, session: { requestContext: () => ({}), append: (_event, entry) => log.push(entry.body.model) } }) } : undefined }, Object.fromEntries(Object.entries({ ...api.Config({}), ...options, apiKeyEnv: "DEEPSEEK_API_KEY" }).map(([key, value]) => [key, { get: () => value }])));
   await provider.search({ query: "q" });
   selected = "deepseek/chat";
   await provider.search({ query: "q" });
