@@ -6,9 +6,9 @@ import { join } from 'node:path';
 
 export const FEISHU = {
   name: '@aiwayds/dsh-feishu',
-  file: 'aiwayds-dsh-feishu-0.17.0-crysound.5.tgz',
-  url: 'https://partner-dl.corp.crysound.com/plugins/GdIDOj8kNqAK1mrp/aiwayds-dsh-feishu-0.17.0-crysound.5.tgz',
-  integrity: 'sha512-jPGCgkYlA+6ow0r3U33bK7yi4pKkgmMtajxSxdeMBM8hEKJ3PpL5hI3p9mxZRbC5A/XYoz66CVtIkvxVOJfadQ==',
+  file: 'aiwayds-dsh-feishu-0.17.0-crysound.6.tgz',
+  url: 'https://partner-dl.corp.crysound.com/plugins/GdIDOj8kNqAK1mrp/aiwayds-dsh-feishu-0.17.0-crysound.6.tgz',
+  integrity: 'sha512-RucA16SY2S3e7fRN0OeQLtPj2LR++Eay4DO9N9u/nUQ6CdB9DXF/JZFRMNDD54FzyB77KrHIpIwzSO7x0RwHVg==',
 };
 export const WEB_SPEC = `file:/opt/company-plugins/${FEISHU.file}`;
 export const DESKTOP_WANT = `file:company-plugins/${FEISHU.file}`;

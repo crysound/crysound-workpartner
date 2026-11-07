@@ -45,7 +45,9 @@ export interface LarkGateway {
   react(messageId: string, emojiType: string): Promise<string | undefined>
   deleteReaction(messageId: string, reactionId: string): Promise<void>
   /** Create a CardKit entity; undefined falls back to ordinary cards. */
-  createStreamingCard(elementId: string): Promise<string | undefined>
+  createStreamingCard(elementId: string, progressId: string): Promise<string | undefined>
+  /** Replace progress without typing, or start a new answer with an empty element. */
+  updateCardElement(cardId: string, elementId: string, element: Record<string, unknown>, sequence: number): Promise<boolean>
   streamCardContent(cardId: string, elementId: string, content: string, sequence: number): Promise<boolean>
   /** Close streaming at sequence, then replace the entity at sequence + 1. */
   settleStreamingCard(cardId: string, sequence: number, card: AnyCard): Promise<boolean>
@@ -429,23 +431,36 @@ export class LarkClient implements LarkGateway {
     } catch (error) { this.warnOnce('delete-reaction', error) }
   }
 
-  async createStreamingCard(elementId: string): Promise<string | undefined> {
+  async createStreamingCard(elementId: string, progressId: string): Promise<string | undefined> {
     try {
       const response = await requestFeishu(() => this.client.request<{ data?: { card_id?: unknown } }>({
         url: '/open-apis/cardkit/v1/cards', method: 'POST',
         data: { type: 'card_json', data: JSON.stringify({
           schema: '2.0', config: {
-            streaming_mode: true, summary: { content: '思考中…' },
+            width_mode: 'fill', streaming_mode: true, summary: { content: '思考中…' },
             streaming_config: {
-              print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast',
+              print_frequency_ms: { default: 40, android: 40, ios: 40, pc: 40 }, print_step: { default: 6, android: 6, ios: 6, pc: 6 }, print_strategy: 'fast',
             },
           },
-          body: { elements: [{ tag: 'markdown', element_id: elementId, content: '思考中…' }] },
+          body: { elements: [
+            { tag: 'markdown', element_id: elementId, content: '' },
+            { tag: 'markdown', element_id: progressId, content: '思考中 · 已 0 秒', text_size: 'notation' },
+          ] },
         }) },
       }), { maxRetries: 0 })
       const id = response?.data?.card_id
       return typeof id === 'string' && id !== '' ? id : undefined
     } catch (error) { this.warnOnce('cardkit-create', error); return undefined }
+  }
+
+  async updateCardElement(cardId: string, elementId: string, element: Record<string, unknown>, sequence: number): Promise<boolean> {
+    try {
+      await requestFeishu(() => this.client.request({
+        url: `/open-apis/cardkit/v1/cards/${encodeURIComponent(cardId)}/elements/${encodeURIComponent(elementId)}`,
+        method: 'PUT', data: { element: JSON.stringify(element), sequence },
+      }), { maxRetries: 0 })
+      return true
+    } catch (error) { this.warnOnce('cardkit-element', error); return false }
   }
 
   async streamCardContent(cardId: string, elementId: string, content: string, sequence: number): Promise<boolean> {

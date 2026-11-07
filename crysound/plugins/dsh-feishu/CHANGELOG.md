@@ -3,6 +3,13 @@
 All notable changes to dsh-feishu are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0-crysound.6] - 2026-11-07
+
+### Changed (CRYSOUND fork)
+- Fix typewriter settings at 40 ms / 6 characters on every platform and default pushes to 200 ms.
+- Separate cumulative answer text from non-typing progress; show a one-second thinking heartbeat, three recent progress lines and a total count. Reset each answer round with a fresh empty element.
+- Retain the exact last streamed answer and its element at settlement, collapsing process below it. Keep long-task reminders, overflow delivery, abnormal status and fallback behavior.
+
 ## [0.17.0-crysound.5] - 2026-11-07
 
 ### Changed (CRYSOUND fork)

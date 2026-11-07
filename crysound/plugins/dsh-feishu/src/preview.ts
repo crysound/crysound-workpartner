@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto'
-import { buildBodyCard, type Schema2Card } from './card.ts'
+import type { Schema2Card } from './card.ts'
 import { closeOpenFence } from './text.ts'
 import type { LarkGateway, MessageTarget } from './lark-client.ts'
 
-export const PREVIEW_INTERVAL_MS = 250
+export const PREVIEW_INTERVAL_MS = 200
 
 /** Delivery outcome for the final card; failed or clipped cards need a separate body. */
 export interface PreviewResult {
@@ -12,55 +12,54 @@ export interface PreviewResult {
   readonly elapsedMs: number
 }
 
-/** Keep ample room below Feishu's 30 KB card limit, including nested JSON encoding. */
-function finalCard(body: string, footer: string) {
-  const make = (text: string): Schema2Card => ({
-    schema: '2.0',
-    config: { width_mode: 'fill' },
+/** Body stays first, so collapsing the process never moves the answer. */
+function answerCard(body: string, footer: string, lines: readonly string[], elementId?: string, progressId?: string): Schema2Card {
+  return {
+    schema: '2.0', config: { width_mode: 'fill' },
     body: { elements: [
-      { tag: 'markdown', content: text },
+      { tag: 'markdown', ...(elementId ? { element_id: elementId } : {}), content: body },
+      ...(lines.length ? [{ tag: 'collapsible_panel', ...(progressId ? { element_id: progressId } : {}),
+        expanded: false, header: { title: { tag: 'plain_text', content: `过程（${lines.length} 步）` } },
+        elements: [{ tag: 'markdown', content: lines.slice(-3).map(line => line.slice(0, 300)).join('\n') }] }] : []),
       ...(footer ? [{ tag: 'markdown', content: footer, text_size: 'notation' }] : []),
     ] },
-  })
-  const fits = (text: string) => text.length <= 8000
-    && Buffer.byteLength(JSON.stringify(JSON.stringify(make(text)))) <= 28000
-  if (fits(body)) return { card: make(body), overflow: false }
-  const suffix = '\n\n全文见下条'
-  let prefix = Array.from(body).slice(0, 8000).join('')
-  while (!fits(closeOpenFence(prefix) + suffix)) prefix = Array.from(prefix).slice(0, -200).join('')
-  return { card: make(closeOpenFence(prefix) + suffix), overflow: true }
-}
-const FALLBACK_INTERVAL_MS = 700
-export function previewBody(lines: readonly string[], paragraph: string, streaming = false): string | undefined {
-  const rows = lines.flatMap(line => line.match(/[\s\S]{1,2000}/g) ?? [])
-  if (!streaming) paragraph = paragraph.split('\n').map(line => (line.match(/[\s\S]{1,2000}/g) ?? ['']).join('\n')).join('\n')
-  let folded = 0
-  for (;;) {
-    const parts = [...(folded ? [`…（前 ${folded} 条已折叠）`] : []), ...rows]
-    let body = [parts.join('\n'), paragraph].filter(Boolean).join('\n\n')
-    if (!streaming) body = body.trimEnd()
-    if (!streaming && (body.match(/```/g)?.length ?? 0) % 2) body += '\n```'
-    if (!streaming) body += '\n\n...'
-    if (body.length <= 8000 && Buffer.byteLength(JSON.stringify(JSON.stringify(body))) <= 20000) return body
-    if (!rows.length) return undefined
-    rows.shift()
-    folded++
   }
 }
 
-/** One turn owns one publisher, timer and in-flight PATCH; finish drains it. */
+/** Reserve space for process/status and nested JSON encoding below the 30 KB limit. */
+function finalCard(body: string, footer: string, lines: readonly string[], elementId?: string, progressId?: string) {
+  const make = (text: string) => answerCard(text, footer, lines, elementId, progressId)
+  const fits = (text: string) => text.length <= 8000
+    && Buffer.byteLength(JSON.stringify(JSON.stringify(text))) <= 20000
+  const suffix = '\n\n全文见下条'
+  const chars = Array.from(body)
+  let low = 0, high = Math.min(chars.length, 7900)
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2)
+    if (fits(chars.slice(0, mid).join('') + '\n```' + suffix)) low = mid
+    else high = mid - 1
+  }
+  const prefix = chars.slice(0, low).join('')
+  const overflow = low < chars.length
+  return { card: make(overflow ? closeOpenFence(prefix) + suffix : body), overflow }
+}
+const FALLBACK_INTERVAL_MS = 700
+/** One turn owns the publisher and heartbeat; every outbound mutation is serialized. */
 export class Preview {
   private lines: string[] = []
   private paragraph = ''
   private messageId: string | undefined
   private cardId: string | undefined
-  private readonly elementId = 'p' + randomBytes(9).toString('hex')
+  private elementId = 'p' + randomBytes(9).toString('hex')
+  private sentElementId = this.elementId
+  private readonly progressId = 'p' + randomBytes(9).toString('hex')
   private sequence = 0
   private readonly startedAt: number
-  private readonly intervalMs: number
-  private lastBody: string | undefined
+  private lastBody = ''
+  private lastProgress = ''
   private lastSent = -Infinity
   private timer: ReturnType<typeof setTimeout> | undefined
+  private heartbeat: ReturnType<typeof setInterval> | undefined
   private flight: Promise<void> | undefined
   private finishFlight: Promise<PreviewResult> | undefined
   private stopped = false
@@ -68,84 +67,111 @@ export class Preview {
   private readonly lark: LarkGateway
   private readonly target: MessageTarget
   private readonly now: () => number
+  private readonly intervalMs: number
   constructor(lark: LarkGateway, target: MessageTarget, now: () => number = Date.now, intervalMs = PREVIEW_INTERVAL_MS) {
-    this.lark = lark; this.target = target; this.now = now
-    this.startedAt = now(); this.intervalMs = intervalMs
+    this.lark = lark; this.target = target; this.now = now; this.intervalMs = intervalMs
+    this.startedAt = now()
   }
 
-  /** Start once, before any model output; subsequent content reuses this publisher. */
   start(): void {
     if (this.stopped || this.disabled || this.messageId || this.flight) return
-    this.flight = this.publish('').finally(() => { this.flight = undefined; this.schedule() })
+    this.heartbeat = setInterval(() => this.schedule(), 1000)
+    this.heartbeat.unref?.()
+    this.launch()
   }
-
-  line(text: string): void { if (text) { this.lines.push(text); this.schedule() } }
-  delta(text: string): void { if (text) { this.paragraph += text; this.schedule() } }
+  line(text: string): void { if (text && !this.stopped) { this.lines.push(text); this.schedule() } }
+  delta(text: string): void { if (text && !this.stopped) { this.paragraph += text; this.schedule() } }
   settled(text = '', hasTools = true): void {
-    this.paragraph = hasTools ? '' : text
-    if (!hasTools) this.lines = []
+    if (this.stopped) return
+    const next = hasTools ? '' : text
+    if (!next.startsWith(this.paragraph)) this.elementId = 'p' + randomBytes(9).toString('hex')
+    this.paragraph = next
     this.schedule()
   }
-
+  private progress(): string {
+    const seconds = Math.max(0, Math.floor((this.now() - this.startedAt) / 1000))
+    return [!this.paragraph ? `思考中 · 已 ${seconds} 秒` : '',
+      this.lines.length ? `已执行 ${this.lines.length} 步` : '',
+      ...this.lines.slice(-3).map(line => line.slice(0, 300))].filter(Boolean).join('\n')
+  }
+  private body(): string {
+    return String(finalCard(this.paragraph, '', this.lines, this.elementId, this.progressId).card.body.elements[0]!.content)
+  }
   private schedule(): void {
     if (this.stopped || this.disabled || this.flight || this.timer) return
-    const body = previewBody(this.lines, this.paragraph, this.cardId !== undefined)
-    if (!body || body === this.lastBody || (!this.lines.length && !this.paragraph)) return
+    if (!this.messageId) { this.start(); return }
+    if (this.body() === this.lastBody && this.elementId === this.sentElementId && this.progress() === this.lastProgress) return
     const delay = (this.cardId ? this.intervalMs : Math.max(FALLBACK_INTERVAL_MS, this.intervalMs)) - (this.now() - this.lastSent)
     if (delay > 0) {
       this.timer = setTimeout(() => { this.timer = undefined; this.schedule() }, delay)
       this.timer.unref?.()
-      return
-    }
-    this.flight = this.publish(body).finally(() => { this.flight = undefined; this.schedule() })
+    } else this.launch()
   }
-  private async publish(body: string): Promise<void> {
+  private launch(): void {
+    this.flight = this.publish().finally(() => { this.flight = undefined; this.schedule() })
+  }
+  private liveCard(body: string, progress: string): Schema2Card {
+    return { schema: '2.0', config: { width_mode: 'fill', summary: { content: body.slice(0, 120) || '思考中…' } }, body: { elements: [
+      { tag: 'markdown', element_id: this.elementId, content: body },
+      { tag: 'markdown', element_id: this.progressId, content: progress, text_size: 'notation' },
+    ] } }
+  }
+  private async stream(body: string, elementId: string): Promise<boolean> {
+    if (!this.cardId) return false
+    if (this.sentElementId !== elementId || !body.startsWith(this.lastBody)) {
+      if (!await this.lark.updateCardElement(this.cardId, this.sentElementId,
+        { tag: 'markdown', element_id: elementId, content: '' }, ++this.sequence)) return false
+      this.sentElementId = elementId; this.lastBody = ''
+    }
+    if (body === this.lastBody) return true
+    if (!await this.lark.streamCardContent(this.cardId, elementId, body, ++this.sequence)) return false
+    this.lastBody = body
+    return true
+  }
+  private async publish(): Promise<void> {
     this.lastSent = this.now()
     if (!this.messageId) {
-      this.cardId = await this.lark.createStreamingCard(this.elementId)
+      this.cardId = await this.lark.createStreamingCard(this.elementId, this.progressId)
       this.messageId = await this.lark.sendMessage(this.target, 'interactive', this.cardId
-        ? { type: 'card', data: { card_id: this.cardId } } : this.placeholderCard())
+        ? { type: 'card', data: { card_id: this.cardId } } : this.liveCard('', '思考中 · 已 0 秒'))
+      this.lastProgress = '思考中 · 已 0 秒'
       if (!this.messageId) this.disabled = true
       return
     }
+    const body = this.body(), progress = this.progress(), elementId = this.elementId
     if (this.cardId) {
-      // No temporary ellipsis or closing fence: normal deltas keep the old text as a prefix.
-      if (await this.lark.streamCardContent(this.cardId, this.elementId, body, ++this.sequence)) {
-        this.lastBody = body
+      if (await this.stream(body, elementId)
+        && (progress === this.lastProgress || await this.lark.updateCardElement(this.cardId, this.progressId,
+          { tag: 'markdown', element_id: this.progressId, content: progress, text_size: 'notation' }, ++this.sequence))) {
+        this.lastProgress = progress
         return
       }
-      await this.lark.settleStreamingCard(this.cardId, ++this.sequence, buildBodyCard(body))
-      this.sequence++
-      this.cardId = undefined
+      await this.lark.settleStreamingCard(this.cardId, ++this.sequence, this.liveCard(body, progress))
+      this.sequence++; this.cardId = undefined
     }
-    const result = await this.lark.updatePreview(this.messageId, buildBodyCard(body))
+    const result = await this.lark.updatePreview(this.messageId, this.liveCard(body, progress))
     if (result === 'failed') this.disabled = true
-    // A rate-limited frame is skipped; only a subsequent change retries it.
-    this.lastBody = body
+    this.lastBody = body; this.lastProgress = progress; this.sentElementId = elementId
   }
-  private placeholderCard() {
-    const card = buildBodyCard('思考中…')
-    card.config.summary = { content: '思考中…' }
-    return card
-  }
-  /** Keep the body and an optional abnormal-end status; endedAt excludes queued delivery time. */
   finish(status = '', body?: string, endedAt = this.now()): Promise<PreviewResult> {
     return this.finishFlight ??= this.settle(status, body, Math.max(0, endedAt - this.startedAt))
   }
   private async settle(status: string, body: string | undefined, elapsedMs: number): Promise<PreviewResult> {
-    this.start()
-    this.stopped = true
+    this.start(); this.stopped = true
     if (this.timer) clearTimeout(this.timer)
-    this.timer = undefined
+    if (this.heartbeat) clearInterval(this.heartbeat)
+    this.timer = undefined; this.heartbeat = undefined
     await this.flight
-    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), status)
+    const { card, overflow } = finalCard(body ?? (this.paragraph || '思考中…'), status, this.lines, this.elementId, this.progressId)
     const result = (delivered: boolean): PreviewResult => ({ delivered, overflow, elapsedMs })
     if (!this.messageId) return result(false)
     if (this.cardId) {
-      // Flush the exact rendered final body before disabling the typewriter.
       const text = String(card.body.elements[0]!.content)
-      await this.lark.streamCardContent(this.cardId, this.elementId, text, ++this.sequence)
-      if (await this.lark.settleStreamingCard(this.cardId, ++this.sequence, card)) return result(true)
+      if (!text.startsWith(this.lastBody)) this.elementId = 'p' + randomBytes(9).toString('hex')
+      card.body.elements[0]!.element_id = this.elementId
+      const flushed = await this.stream(text, this.elementId)
+      const settled = await this.lark.settleStreamingCard(this.cardId, ++this.sequence, card)
+      if (flushed && settled) return result(true)
     }
     return result(await this.lark.patchCard(this.messageId, card))
   }

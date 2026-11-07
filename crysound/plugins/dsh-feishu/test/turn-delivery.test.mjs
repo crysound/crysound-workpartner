@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { FeishuBot } from '../lib/bot.js'
-import { Preview, TurnOutput, previewBody } from '../lib/preview.js'
+import { Preview, TurnOutput } from '../lib/preview.js'
 import { toolProgress } from '../lib/progress.js'
 import { replyChain, forwardedContent } from '../lib/resources.js'
 import { preprocessCardMarkdown, markdownTableCount } from '../lib/text.js'
@@ -21,6 +21,7 @@ function harness(options = {}) {
     async sendCard(chatId, card) { calls.push(['command', chatId, card]); return 'command' },
     async updatePreview(id, card) { calls.push(['patch', id, card]); return 'ok' },
     async patchCard(id, card) { calls.push(['fallback', id, card]); return true },
+    async updateCardElement() { return true },
     async createStreamingCard() { return undefined },
     async downloadImage(id, key) { calls.push(['download-image', id, key]); return png },
     async downloadFile(id, key) { calls.push(['download-file', id, key]); return new Uint8Array([1]) },
@@ -85,7 +86,8 @@ test('normal turn retains the full answer and footer in the original card withou
   h.clock(700); t.mock.timers.tick(700); await tick()
   assert.equal(h.calls.filter(c => c[0] === 'patch').length, 1)
   const preview = h.calls.find(c => c[0] === 'patch')[2].body.elements[0].content
-  assert.equal(preview, '运行命令\n正在检查\n\nfinal\n\n...')
+  assert.equal(preview, 'final')
+  assert.match(h.calls.find(c => c[0] === 'patch')[2].body.elements[1].content, /运行命令\n正在检查/)
   h.assistant('x'.repeat(4500))
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   await h.end()
@@ -243,11 +245,7 @@ test('progress summaries filter secret labels, basenames, commands, hosts, and a
   assert.equal(toolProgress('edit', { description: '修改配置\n完成' }), '修改配置 完成')
 })
 
-test('preview bounds and fence marker; substantive content remains in final reply', () => {
-  assert.equal(previewBody([], 'code```js\nx '), 'code```js\nx\n```\n\n...')
-  assert.match(previewBody(['x'.repeat(2000), 'y'.repeat(2000), 'z'.repeat(2000), 'w'.repeat(2000)], ''), /^…（前 1 条已折叠）/)
-  assert.equal(previewBody([], 'x'.repeat(8001)), undefined)
-  assert.ok(Buffer.byteLength(JSON.stringify(JSON.stringify(previewBody(['\\'.repeat(10000)], '')))) <= 20000)
+test('substantive intermediate content remains in final reply', () => {
   const output = new TurnOutput(); output.assistant('x'.repeat(400), true); output.assistant('short', true); output.assistant('answer', false)
   assert.equal(output.body(), `（中途内容）\n\n${'x'.repeat(400)}\n\nanswer`)
   output.assistant('x'.repeat(400), false); assert.equal(output.body(), 'x'.repeat(400))
@@ -365,15 +363,16 @@ for (const [kind, status] of [['completed', ''], ['error', '出错了'], ['abort
   })
 }
 
-test('CardKit cumulative code text keeps prefixes, emits at 250ms, and drains before closing', async t => {
+test('CardKit cumulative code text keeps prefixes, paces updates, and drains before closing', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   let now = 0, release
   const calls = []
   const h = harness({ lark: {
+    async updateCardElement() { return true },
     async createStreamingCard(element) { calls.push(['create', element]); return 'card' },
     async streamCardContent(card, element, text, sequence) {
       calls.push(['stream', card, element, text, sequence])
-      if (sequence === 2) await new Promise(resolve => { release = resolve })
+      if (text.endsWith('1;')) await new Promise(resolve => { release = resolve })
       return true
     },
     async settleStreamingCard(card, sequence, content) { calls.push(['settle', card, sequence, content]); return true },
@@ -386,14 +385,14 @@ test('CardKit cumulative code text keeps prefixes, emits at 250ms, and drains be
   assert.equal(frames.length, 2)
   assert.equal(frames[1][3], frames[0][3] + '1;')
   assert.equal(frames[0][3], '```js\nconst x = ')
-  assert.deepEqual(frames.map(c => c[4]), [1, 2])
+  assert.deepEqual(frames.map(c => c[4]), [1, 3])
   const finish = preview.finish(); await tick()
   assert.ok(!calls.some(c => c[0] === 'settle'))
   release(); await finish
   assert.equal(calls.at(-1)[2], 4)
   assert.equal(calls.at(-1)[3].body.elements.length, 1)
   now = 2000; t.mock.timers.tick(1500); await tick()
-  assert.equal(calls.filter(c => c[0] === 'stream').length, 3)
+  assert.equal(calls.filter(c => c[0] === 'stream').length, 2)
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.deepEqual(h.calls.find(c => c[0] === 'send')[3], { type: 'card', data: { card_id: 'card' } })
 })
@@ -402,6 +401,7 @@ test('CardKit refusal switches to whole-card patches and retains the final answe
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const calls = []
   const h = harness({ lark: {
+    async updateCardElement() { return true },
     async createStreamingCard() { return 'card' },
     async streamCardContent(...args) { calls.push(['stream', ...args]); return false },
     async settleStreamingCard(...args) { calls.push(['settle', ...args]); return false },
@@ -442,6 +442,7 @@ test('generated CardKit element identifiers meet the JSON 2.0 format and stay di
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const elements = []
   const h = harness({ lark: {
+    async updateCardElement() { return true },
     async createStreamingCard(element) { elements.push(element); return `card-${elements.length}` },
     async streamCardContent() { return true },
     async settleStreamingCard() { return true },
@@ -466,8 +467,9 @@ for (const scenario of [
   h.event('turn/start'); h.consume(); await tick()
   const sends = h.calls.filter(c => c[0] === 'send')
   assert.equal(sends.length, 1)
-  assert.equal(sends[0][3].body.elements[0].content, '思考中…')
+  assert.equal(sends[0][3].body.elements[0].content, '')
   assert.equal(sends[0][3].config.summary.content, '思考中…')
+  assert.equal(sends[0][3].body.elements[1].content, '思考中 · 已 0 秒')
   h.assistant('final'); await h.end()
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements.length, 1)
@@ -479,7 +481,7 @@ for (const reason of ['completed', 'error', 'aborted']) test(`turn with no progr
   await h.end(reason, { error: { message: 'preparation failed' } })
   const sends = h.calls.filter(c => c[0] === 'send')
   assert.equal(sends.length, 1)
-  assert.equal(sends[0][3].body.elements[0].content, '思考中…')
+  assert.equal(sends[0][3].body.elements[0].content, '')
   const card = h.calls.find(c => c[0] === 'fallback')[2]
   assert.equal(card.body.elements.length, reason === 'completed' ? 1 : 2)
   if (reason !== 'completed') assert.equal(card.body.elements[1].content, reason === 'error' ? '出错了' : '已停止')
@@ -490,7 +492,7 @@ test('turn/start publishes immediately before the first user event; preparation 
   const h = harness()
   await h.bot.handlePrompt(message(), 'hello'); h.event('turn/start'); await tick()
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
-  assert.equal(h.calls.at(-1)[3].body.elements[0].content, '思考中…')
+  assert.equal(h.calls.at(-1)[3].body.elements[0].content, '')
   await h.end('error', { error: { message: 'preparation failed' } })
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
   assert.equal(h.calls.find(c => c[0] === 'fallback')[2].body.elements[1].content, '出错了')
@@ -532,7 +534,7 @@ for (const [seconds, threshold, reminder] of [[59, 60, false], [60, 60, false], 
     await h.end()
     const sends = h.calls.filter(c => c[0] === 'send')
     assert.equal(sends.length, reminder ? 2 : 1)
-    assert.deepEqual(h.calls.find(c => c[0] === 'fallback')[2].body.elements, [{ tag: 'markdown', content: 'answer' }])
+    assert.deepEqual(h.calls.find(c => c[0] === 'fallback')[2].body.elements.map(({ element_id, ...element }) => element), [{ tag: 'markdown', content: 'answer' }])
     if (reminder) {
       assert.deepEqual(sends[1].slice(1), [{ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'text', { text: '做完了，结果在上面。' }])
     }
@@ -556,6 +558,7 @@ for (const body of ['a'.repeat(8100), '汉'.repeat(10000), '\\'.repeat(7999), '�
 test('failed CardKit settlement and message patch send the body once; a successful patch suppresses it', async () => {
   for (const patchOk of [false, true]) {
     const h = harness({ lark: {
+      async updateCardElement() { return true },
       async createStreamingCard() { return 'card' },
       async streamCardContent() { return false },
       async settleStreamingCard() { return false },
@@ -572,6 +575,7 @@ test('failed CardKit settlement and message patch send the body once; a successf
 for (const multipart of [false, true]) test(`final CardKit content equals the final card body, including Markdown and trailing whitespace, multipart=${multipart}`, async () => {
   const frames = [], cards = []
   const h = harness({ lark: {
+    async updateCardElement() { return true },
     async createStreamingCard() { return 'card' },
     async streamCardContent(card, element, text) { frames.push(text); return true },
     async settleStreamingCard(card, sequence, content) { cards.push(content); return true },
@@ -601,7 +605,7 @@ test('queued card delivery time does not trigger a long-task reminder', async ()
   const ended = h.end()
   h.clock(90000); release(); await ended
   const card = h.calls.find(c => c[0] === 'fallback')[2]
-  assert.deepEqual(card.body.elements, [{ tag: 'markdown', content: 'answer' }])
+  assert.deepEqual(card.body.elements.map(({ element_id, ...element }) => element), [{ tag: 'markdown', content: 'answer' }])
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
 })
 
