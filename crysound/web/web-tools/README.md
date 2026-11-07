@@ -30,38 +30,39 @@
 
 | 字段 | 公司默认值 | 用途 |
 | --- | --- | --- |
-| `fetchSummary` | `true` | 摘要开关，关闭后返回原抓取输出；DeepSeek 与 Codex 兜底由独立开关控制 |
+| `fetchSummary` | `true` | 摘要开关，关闭后返回原抓取输出；DeepSeek 与 Treg 兜底由独立开关控制 |
 | `fetchSummaryModel` | `deepseek/deepseek-flash` | 摘要模型，可改为公司网关提供的 GPT 快速档 |
 | `fetchSummaryBaseURL` | 启动环境中的公司模型地址 | 与原搜索相同的网关，发送到 `/messages`；配置不写部署地址 |
 | `fetchSummaryTimeoutMs` | `2000` | 包含凭据读取、请求和响应解析的额外等待上限 |
-| `fetchSummaryMaxTokens` | `1600` | 摘要及 Codex 打开输出预算；普通摘要关闭思考、不附带搜索工具 |
+| `fetchSummaryMaxTokens` | `1600` | 摘要输出预算；普通摘要关闭思考、不附带搜索工具 |
 | `fetchSummaryMinChars` | `12000` | 有界 Markdown 不超过此长度时直接返回 |
-| `fetchDeepSeek` | `true` | 失败时先向内部网关请求付费抓取 |
+| `fetchDeepSeek` | `true` | 失败时与 Treg 并发请求 |
 | `fetchDeepSeekTimeoutMs` | `8000` | 付费抓取阶段上限，仍受剩余总预算限制 |
-| `fetchDeepSeekMinChars` | `80` | 返回正文去空白后的最小字符数；不足时继续 Codex |
-| `fetchOpen` | `true` | DeepSeek 不可用或失败后，有剩余预算才尝试一次 Codex 打开 |
-| `fetchOpenModel` | `codex/gpt-6-luna` | 打开公开网页的模型 |
-| `fetchDirectTimeoutMs` | `3000` | 开启任一兜底时的直抓上限，包含浏览器及清理 |
-| `fetchOpenTimeoutMs` | `6000` | Codex 兜底上限，包含公开地址检查、凭据、请求和解析，并受剩余总预算限制 |
-| `fetchTotalTimeoutMs` | `9500` | 直抓、付费抓取、摘要、Codex 共用总工作预算，外层另留 500 毫秒 |
+| `fetchDeepSeekMinChars` | `80` | 返回正文去空白后的最小字符数；两路共用的最小正文长度 |
+| `fetchTreg` | `true` | 失败时与 DeepSeek 并发请求 Crawl4AI |
+| `fetchDirectTimeoutMs` | `1500` | 开启任一兜底时的直抓上限，包含浏览器及清理 |
+| `fetchTregTimeoutMs` | `8000` | Crawl4AI 上限，包含公开地址检查、身份读取、请求和解析，并受剩余总预算限制 |
+| `fetchTotalTimeoutMs` | `9500` | 直抓、两路并发抓取和摘要共用总工作预算，外层另留 500 毫秒 |
 
 沿用搜索的 `DEEPSEEK_API_KEY` 凭据服务（无凭据服务时才读启动环境），不增加密钥或服务。已有主模型请求的日志机制不改；辅助请求使用发布运行时的 `appendPluginRecord` 保存为可忽略的 `plugin:crysound/web-summary-request` 记录，包含实际地址和不带密钥的请求体。辅助调用会增加一次现有模型服务用量，整体成本和性能须上线测量。公司补丁文件在镜像中解析已安装的凭据、启动环境和会话依赖，轻量检查包含真实导入和会话重放。
 
-没有 `prompt`、空问题、开关关闭、HTTP 错误页或空正文不调用辅助模型。凭据不可用、日志不能保存、请求失败、响应不可解析或没有摘要、超过摘要时限，都保持原结果，由原渲染器返回截断原文。本人取消则抛出取消，不能继续交回正文；超时后才完成的凭据读取也不能补发请求。不重试辅助调用，不跟随模型接口重定向。开启任一兜底时，工具时限为 `fetchTotalTimeoutMs` 再留 500 毫秒结果处理余量（默认 10 秒）；直抓及其后的辅助调用串行、不重试，摘要也不能超出剩余预算。关闭 `fetchDeepSeek` 和 `fetchOpen` 两个兜底时，恢复原抓取时限加摘要上限；同时关闭摘要即恢复原抓取时限。公司联网提示同时要求网页遇到 403、登录或反爬时更换来源，禁止写脚本或 curl 命令绕过。
+没有 `prompt`、空问题、开关关闭、HTTP 错误页或空正文不调用辅助模型。凭据不可用、日志不能保存、请求失败、响应不可解析或没有摘要、超过摘要时限，都保持原结果，由原渲染器返回截断原文。本人取消则抛出取消，不能继续交回正文；超时后才完成的凭据读取也不能补发请求。不重试辅助调用，不跟随模型接口重定向。开启任一兜底时，工具时限为 `fetchTotalTimeoutMs` 再留 500 毫秒结果处理余量（默认 10 秒）；直抓失败后两路并发、不重试，摘要也不能超出剩余预算。关闭 `fetchDeepSeek` 和 `fetchTreg` 两个兜底时，恢复原抓取时限加摘要上限；同时关闭摘要即恢复原抓取时限。公司联网提示同时要求网页遇到 403、登录或反爬时更换来源，禁止写脚本或 curl 命令绕过。
 
-## 失败页面与慢页面的 DeepSeek → Codex 兜底
+## 失败页面与慢页面的并发兜底
 
-普通页面仍在容器匿名直抓；只有原抓取报错（包括 PDF、登录识别、跳转、渲染、请求错误）、HTTP 错误或空正文，或 3000 毫秒仍未返回正文时，才先尝试一次 DeepSeek Fetch。付费抓取失败、正文不足 80 字或超过单段时限，并且总预算还有余量时，才通过已有公司地址的 `/responses` 调一次 `fetchOpenModel`，携带 `web_search` 工具、原 URL 与问题。它要求只打开该 URL，不另行搜索，并在读不到时明确返回不可读。请求体通过可忽略的 `plugin:crysound/web-open-request` 保存，不写凭据；沿用现有会话重放格式。网关必须返回完成的目标 URL 打开记录（`web_search_call` / `open_page`）以及可解析的可读摘要，缺记录、拒绝、空响应或未完成均视为失败，不把凭空回答当作救回。最终仍由代码附来源并经过原工具输出字符上限。
+普通页面继续匿名直抓。直抓失败、HTTP 错误、空正文或超过 `fetchDirectTimeoutMs` 时，同时尝试 DeepSeek Fetch 和 Treg 的 `treg.web.extract`；第一份达到最小正文长度的结果胜出，取消另一条请求，两路都失败则保留原错误/HTTP 结果。返回的 Markdown 沿用短正文直返、长正文按问题摘要和原 URL 引用。不再使用 Codex 打开网页，搜索退路不变。私网、含身份的 URL、安全拦截及本人取消不通过兜底绕过。
 
-DeepSeek 官方 [Fetch](https://api-docs.deepseek.com/api/fetch/) 返回 `{title, content}`（Markdown）。容器仅用 `/data/.zp-market-token` 中已有的身份令牌调用 `CRYSOUND_DS_TOOLS_BASE`（入口脚本设为网关内部 3091 端口的 `/_zp/ds-tools/`）；该地址只允许固定内部主机，令牌不发往外部模型。实际付费钥匙由网关读取 `DS_TOOLS_API_KEY` 或 `DS_TOOLS_API_KEY_FILE`（默认 `/secure/deepseek-tools.key`）。拿到可读 Markdown 后，沿用短正文直返、长正文按问题摘要。两个兜底失败仍返回原错误，不能将缺正文或登录提示当作救回。
+两路仅将现有容器身份令牌发送给固定内部主机。入口脚本设置 `CRYSOUND_DS_TOOLS_BASE` 和 `CRYSOUND_TREG_BASE`，分别指向内部 3091 端口的 `/_zp/ds-tools/` 与 `/_zp/treg/`；令牌读取 `CRYSOUND_DS_TOOLS_TOKEN_FILE`，默认 `/data/.zp-market-token`。不把公司付费钥匙放进用户容器。
 
-网关仅在内部端口接受两个精确 POST 路由 `/_zp/ds-tools/fetch` 与 `/search`，公网路由明确拒绝。复用签名身份及当前开通名单，默认每人每分钟最多 20 次，`DS_TOOLS_USER_RPM` 可调；请求限 16 KiB、上游响应限 2 MB，拒绝额外接口、重定向和无效参数。Search 按[官方参数](https://api-docs.deepseek.com/api/search/)准备，尚未接入搜索流程，`search.mjs` 不变。
+Treg 仅额外放行 `treg.web.extract`，网关强制 `X-Treg-Route-Prefer: crawl4ai`、`X-Treg-Route-Waterfall: 0`、`X-Treg-Route-Max-Cost: 0.005`（个人单次上限更低时取更低值）。不透传调用者的路由或归属头，沿用本人日/月额度与预算配置；额度用完时本路失败，不影响 DeepSeek。正文按公开目录规定读取 `output.pages[0].markdown`；空 pages、薄正文或无效结构不能胜出。取消传到上游，不自动重试未知结果；取消不保证提供方免计费。
 
-费用全公司合计按北京时间自然月封顶 10 美元，`DS_TOOLS_MONTHLY_USD` 只可调低。每次成功请求 750 微美元；发请求前写入持久 `/state/ds-tools.json` 并同步落盘，包含在途预留的已占额度不超过上限（默认最多 13333 次，即 9.99975 美元）。明确的上游失败释放预留；网络断连、取消、进程崩溃等结果未知时保留预留，成功但解析失败也占额度。按人限流同样跨重启保留；月界后新月份独立，旧请求仍记在原月。账本损坏阻止网关启动，不能静默清空；单个网关进程独占此账本，不支持多副本共享写入。达到上限后不再付费请求，容器仍可在剩余时间内走 Codex，失败保留原错误。账本只记人数标识、计数和时间窗口；响应错误、日志不含钥匙或上游错误原文。
+DeepSeek 仅在内部端口接受精确 POST `/_zp/ds-tools/fetch` 与 `/search`；公网拒绝，签名身份、有效期和当前开通名单必查。Fetch 使用[官方协议](https://api-docs.deepseek.com/api/fetch/)，search 转发已备好，尚未接入搜索流程。网关读取 `DEEPSEEK_TOOLS_KEY_FILE`（默认 `/run/deepseek-tools/deepseek-tools.key`），也支持手工部署时的 `DEEPSEEK_TOOLS_API_KEY`。文件缺失时不影响启动，请求视为不可用；`DEEPSEEK_TOOLS_ENABLED=0` 直接阻止上游调用，不作废与模型网关共用的钥匙。请求最多 16 KiB、响应最多 2 MB，不跟随重定向、不透传用户 Cookie 或上游错误原文。
 
-禁抓的私网、保留地址、无效 URL、含身份信息的 URL 和本人取消不尝试兜底；直抓已识别的安全拦截也不重试。Codex 打开前再次检查原地址及全部 DNS 答案。兜底失败保留原错误/HTTP 结果；取消停止整个调用，晚到的凭据不能再补发请求。短正文与普通成功页面完全不调用 Codex，避免无条件占用账号额度。已有匿名登录页识别、跨源跳转、浏览器 UA 和网络限制保留。
+`DEEPSEEK_TOOLS_USER_RPM` 默认 20，跨重启按人限流。`DEEPSEEK_TOOLS_MONTHLY_USD` 默认公司每北京自然月 10 美元、只可调低，每成功请求 750 微美元。在单网关进程独占的 `/state/ds-tools.json` 中原子同步预留；明确上游失败释放，断连/取消/崩溃等未知结果保留，成功但解析失败也占额。月界新请求记新月，在途请求仍记原月。账本 `days[北京日期][本人标识][fetch或search]` 持久保存实际派发数 `calls` 和上游成功数 `success`，不含钥匙、URL 或正文；损坏账本拒绝启动，不清空重置。
 
-浏览器仍只服务去掉脚本样式后不足 240 字、article/main 无至少 80 字正文的 JS 空壳页，默认最多 2000 毫秒。导航等待 DOM 就绪，再等待可见正文、登录标题或密码框，不再等待网络空闲；正文已就绪但分析请求长期不结束时也可返回。进程会中止资源请求、关闭浏览器并释放渲染槽。
+默认直抓 1.5 秒，为两路各最多 8 秒留下完整窗口；总工作预算 9.5 秒，外层工具留到 10 秒。选择 1.5 秒是为了覆盖需求单中 DeepSeek 7.9 秒的慢页，属于待线上验证的预算取舍；原来可在 1.5–2.6 秒直抓的页面可能因此走付费兜底。摘要也只用剩余预算，临近截止保留正文。夹具验证时限与取消，不能证明真实救回率或速度。
+
+浏览器仍只处理 JS 空壳，article/main 已有至少 80 字正文不启动浏览器；导航等待 DOM 和可见正文，不等网络空闲，默认渲染最多 2 秒并受直抓预算约束。退出会中止资源请求、关闭浏览器并释放渲染槽。
 
 ## 轻量检查
 
@@ -89,11 +90,11 @@ node --experimental-vm-modules --test crysound/web/web-tools/web-tools.test.mjs
 
 摘要部署需同步同一提交的 `partner.patch.yml`、`profile-upgrades.mjs`，并重建网页镜像。先升级长期测试账号；新会话用 `web_fetch({url, prompt})` 核对实际辅助模型、原 URL、关键原句和数字，故障时核对原文回退。随后复跑 #137 原来的同一组 3 题，固定模型、推理档位、预设、插件和新会话，每题改前改后各三次并交替执行。分别记录上下文峰值、主模型生成时间、总耗时、辅助摘要耗时/失败次数，以及答案中不少于 5 个去重来源；按原口径比较，保留完整会话，不用合成返回宣称实际提速。此处的无密钥测试不代替新镜像、真实模型摘要质量或三题性能验收，这些由伙伴助理上线后完成。
 
-只回退摘要时，在共享公司配置中设 `fetchSummary: false`，安排测试账号重启并从新会话核实不再产生摘要请求；确认后按既有空闲升级策略逐人重启。不用重建镜像、不换密钥，原文仍按 40000 字符上限返回。要回退整个运行时则换回保留的旧镜像。桌面安装包不含本次摘要和打开补丁，继续原抓取行为；共享的换来源提示仍会更新。
+只回退摘要时，在共享公司配置中设 `fetchSummary: false`，安排测试账号重启并从新会话核实不再产生摘要请求；确认后按既有空闲升级策略逐人重启。不用重建镜像、不换密钥，原文仍按 40000 字符上限返回。要回退整个运行时则换回保留的旧镜像。桌面安装包不含本次摘要和并发抓取补丁，继续原抓取行为；共享的换来源提示仍会更新。
 
 
-本次抓取提速需要重建网页镜像，同步共享的 `partner.patch.yml` 与 `profile-upgrades.mjs`，并更新网关模块和 Compose 后重建网关。只同步公司配置不能增加兜底能力。管理员须先把已有付费钥匙准备在 `PARTNER_SECURE/deepseek-tools.key`；Compose 为该文件加仅网关可见的只读挂载，禁止创建空目录代替文件，未准备好不能重建网关。钥匙不进镜像或用户容器，不需要新建或轮换。沿用原用户容器升级策略，先测试账号后推广。
+本次抓取提速需要重建网页镜像，同步共享的 `partner.patch.yml` 与 `profile-upgrades.mjs`，并更新网关模块和 Compose 后重建网关。只同步公司配置不能增加兜底能力。管理员须先把已有付费钥匙准备在 `PARTNER_SECURE/deepseek-tools.key`；Compose 将网关已有安全目录额外挂到只读的 `/run/deepseek-tools`，钥匙文件缺失也不阻止网关启动，只关闭这项功能。钥匙不进镜像或用户容器，不需要新建或轮换。沿用原用户容器升级策略，先测试账号后推广。
 
-完整本地证据和上线步骤见 [#182 验收说明](../../config/evidence/issue-182/README.md)。最新线上目标为失败页至少救回 6/8、长尾不超过 10 秒，同时保留原三题性能与来源数量要求。钥匙放置、真实模型与网页救回、线上耗时均由伙伴助理验收；本地夹具不能当作已通过。若网关裁掉 Codex 打开记录，兜底会保留原错误，须在测试账号核对实际 Responses 返回。回退付费抓取可设 `fetchDeepSeek:false`，仅保留 Codex；将网关月额度设 0 会保留账本并停止付费调用。
+完整本地证据和上线步骤见 [#182 验收说明](../../config/evidence/issue-182/README.md)。失败页至少救回 7/8、长尾不超过 10 秒，以及原三题性能目标，均待伙伴助理在真实部署验收。`fetchDeepSeek:false` 停 DeepSeek，`fetchTreg:false` 停 Treg；两个都关恢复原直抓时限。`DEEPSEEK_TOOLS_ENABLED=0` 在网关停 DeepSeek 上游调用，保留共用钥匙及账本。
 
 本次搜索顺序调整的自查依据、线上天气与三题调研验收要求见[交付记录](../../config/evidence/issue-181/README.md)。

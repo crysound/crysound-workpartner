@@ -142,7 +142,7 @@ test("first startup seeds defaults once; subsequent startups preserve user choic
 test("new and existing profiles refresh web limits, preserve unrelated options and repeat identically", async (t) => {
   const root = await temp(t), seed = join(assets, "config/partner.patch.yml");
   const { Config, apply } = await import(createRequire(runtime).resolve("@deepseek-ai/dsh-tool-web"));
-  for (const [index, before] of [undefined, "[]\n", "- id: tool-web\n  config: {fetchMaxOutputChars: 200000, searchTimeoutMs: 65000, searchMaxResults: 6, fetchTimeoutMs: 12000}\n"].entries()) {
+  for (const [index, before] of [undefined, "[]\n", "- id: tool-web\n  config: {fetchOpen: true, fetchOpenModel: old, fetchOpenTimeoutMs: 6000, fetchMaxOutputChars: 200000, searchTimeoutMs: 65000, searchMaxResults: 6, fetchTimeoutMs: 12000}\n"].entries()) {
     const file = join(root, `web-${index}.yml`);
     if (before !== undefined) await writeFile(file, before);
     refreshProfile(file, seed, yaml, before === undefined);
@@ -158,10 +158,12 @@ test("new and existing profiles refresh web limits, preserve unrelated options a
     assert.equal(config.fetchDeepSeek, true);
     assert.equal(config.fetchDeepSeekTimeoutMs, 8000);
     assert.equal(config.fetchDeepSeekMinChars, 80);
-    assert.equal(config.fetchOpen, true);
-    assert.equal(config.fetchOpenModel, "codex/gpt-6-luna");
-    assert.equal(config.fetchDirectTimeoutMs, 3000);
-    assert.equal(config.fetchOpenTimeoutMs, 6000);
+    assert.equal(config.fetchTreg, true);
+    assert.equal(config.fetchOpen, undefined);
+    assert.equal(config.fetchOpenModel, undefined);
+    assert.equal(config.fetchOpenTimeoutMs, undefined);
+    assert.equal(config.fetchDirectTimeoutMs, 1500);
+    assert.equal(config.fetchTregTimeoutMs, 8000);
     assert.equal(config.fetchTotalTimeoutMs, 9500);
     assert.match(config.fetchSummaryBaseURL, /CRYSOUND_LLM_BASE/);
     const tools = [];
@@ -189,14 +191,14 @@ test("company summary rollback and model changes reach existing profiles without
   await writeFile(file, "- id: tool-web\n  config: {fetchSummary: false, searchMaxResults: 6}\n");
   refreshProfile(file, seed, yaml);
   assert.equal(load(await readFile(file, "utf8")).find(row => row.id === "tool-web").config.fetchSummary, true);
-  await writeFile(seed, company.replace("fetchSummary: true", "fetchSummary: false").replace("fetchSummaryModel: deepseek/deepseek-flash", "fetchSummaryModel: codex/gpt-6.1-sol").replace("fetchOpen: true", "fetchOpen: false").replace("fetchDeepSeek: true", "fetchDeepSeek: false").replace("fetchOpenTimeoutMs: 6000", "fetchOpenTimeoutMs: 7000"));
+  await writeFile(seed, company.replace("fetchSummary: true", "fetchSummary: false").replace("fetchSummaryModel: deepseek/deepseek-flash", "fetchSummaryModel: codex/gpt-6.1-sol").replace("fetchTreg: true", "fetchTreg: false").replace("fetchDeepSeek: true", "fetchDeepSeek: false").replace("fetchTregTimeoutMs: 8000", "fetchTregTimeoutMs: 7000"));
   refreshProfile(file, seed, yaml);
   const after = await readFile(file, "utf8"), config = load(after).find(row => row.id === "tool-web").config;
   assert.equal(config.fetchSummary, false);
   assert.equal(config.fetchSummaryModel, "codex/gpt-6.1-sol");
-  assert.equal(config.fetchOpen, false);
+  assert.equal(config.fetchTreg, false);
   assert.equal(config.fetchDeepSeek, false);
-  assert.equal(config.fetchOpenTimeoutMs, 7000);
+  assert.equal(config.fetchTregTimeoutMs, 7000);
   assert.equal(config.searchMaxResults, 6);
   assert.match(after, /!!js process.env.CRYSOUND_LLM_BASE/);
   refreshProfile(file, seed, yaml);

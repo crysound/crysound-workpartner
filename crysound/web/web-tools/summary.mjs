@@ -6,12 +6,12 @@ import { toolTiming } from "./timing.mjs";
 export function validateSummaryConfig(config) {
   if (typeof config.fetchSummary !== "boolean") throw new Error("tool-web: fetchSummary must be boolean");
   if (typeof config.fetchSummaryModel !== "string" || !config.fetchSummaryModel.trim()) throw new Error("tool-web: fetchSummaryModel must be non-empty");
-  for (const key of ["fetchSummaryTimeoutMs", "fetchSummaryMaxTokens", "fetchSummaryMinChars", "fetchDirectTimeoutMs", "fetchOpenTimeoutMs", "fetchTotalTimeoutMs", "fetchDeepSeekTimeoutMs", "fetchDeepSeekMinChars"]) {
+  for (const key of ["fetchSummaryTimeoutMs", "fetchSummaryMaxTokens", "fetchSummaryMinChars", "fetchDirectTimeoutMs", "fetchTregTimeoutMs", "fetchTotalTimeoutMs", "fetchDeepSeekTimeoutMs", "fetchDeepSeekMinChars"]) {
     if (!Number.isInteger(config[key]) || config[key] < 1 || config[key] > 2_147_483_647) throw new Error(`tool-web: ${key} must be a positive integer within Node's timer range`);
   }
-  if (typeof config.fetchOpen !== "boolean" || typeof config.fetchOpenModel !== "string" || !config.fetchOpenModel.trim()) throw new Error("tool-web: invalid fetchOpen settings");
+  if (typeof config.fetchTreg !== "boolean") throw new Error("tool-web: invalid fetchTreg settings");
   if (typeof config.fetchDeepSeek !== "boolean") throw new Error("tool-web: fetchDeepSeek must be boolean");
-  if ((config.fetchOpen || config.fetchDeepSeek) && (config.fetchTotalTimeoutMs + 500 > 2_147_483_647
+  if ((config.fetchTreg || config.fetchDeepSeek) && (config.fetchTotalTimeoutMs + 500 > 2_147_483_647
     || config.fetchDirectTimeoutMs + (config.fetchSummary ? config.fetchSummaryTimeoutMs : 0) > config.fetchTotalTimeoutMs)) throw new Error("tool-web: invalid combined fetch deadline");
   // Empty means resolve the company address from the launch environment at dispatch.
   if (config.fetchSummaryBaseURL !== "") {

@@ -172,6 +172,7 @@ const dsTools = createDsTools({ stateFile: "/state/ds-tools.json", authenticate:
 const feishuInternal = http.createServer(async (req, res) => {
   if (req.url === "/token") return feishu.token(req, res);
   if (await dsTools(req, res, new URL(req.url, "http://gateway.internal"))) return;
+  if (await treg(req, res, new URL(req.url, "http://gateway.internal"))) return;
   if (await dailyInternal(req, res, new URL(req.url, "http://gateway.internal"))) return;
   res.writeHead(404); res.end();
 });

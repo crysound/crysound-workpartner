@@ -15,7 +15,7 @@ export function timingReport(records) {
     const required = ["block-end", "finish", "assistant-message-written", "tools-execute-start", "tool-result-returned"];
     if (name === "web_search") required.push("search-request-record", "search-request-dispatch");
     const fetchStages = {};
-    for (const segment of ["direct", "download", "extract", "render", "summary-request", "deepseek", "deepseek-request", "open", "open-request"]) {
+    for (const segment of ["direct", "download", "extract", "render", "summary-request", "deepseek", "deepseek-request", "treg", "treg-request"]) {
       const starts = [], spans = [];
       for (const record of records) {
         if (record.stage === `fetch-${segment}-start`) starts.push(record);
@@ -28,7 +28,7 @@ export function timingReport(records) {
       fetchStages[segment] = spans;
     }
     return {
-      ...(name === "web_fetch" ? { fetchStages, fetchRequests: { deepseek: records.filter(record => record.stage === "fetch-deepseek-request-start").length, codex: records.filter(record => record.stage === "fetch-open-request-start").length }, fetchBranches: records.filter(record => /^fetch-.*-skip$/.test(record.stage)).map(({ stage, outcome }) => ({ stage, outcome })) } : {}),
+      ...(name === "web_fetch" ? { fetchStages, fetchRequests: { deepseek: records.filter(record => record.stage === "fetch-deepseek-request-start").length, treg: records.filter(record => record.stage === "fetch-treg-request-start").length }, fetchBranches: records.filter(record => /^fetch-.*-skip$/.test(record.stage)).map(({ stage, outcome }) => ({ stage, outcome })) } : {}),
       session, turn, step, attempt, callId, name, pid, processStartTime,
       missing: required.filter(stage => first(stage) === undefined),
       durationsMs: {
@@ -79,8 +79,8 @@ export function fetchTimingSummary(reports) {
   }
   const fallbackCalls = reports.reduce((sum, report) => ({
     deepseek: sum.deepseek + (report.fetchRequests?.deepseek ?? 0),
-    codex: sum.codex + (report.fetchRequests?.codex ?? 0),
-  }), { deepseek: 0, codex: 0 });
+    treg: sum.treg + (report.fetchRequests?.treg ?? 0),
+  }), { deepseek: 0, treg: 0 });
   return { fallbackCalls, calls: reports.filter(report => report.name === "web_fetch").length, stages, branches };
 }
 

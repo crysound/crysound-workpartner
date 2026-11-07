@@ -688,7 +688,7 @@ test("summary model, endpoint and token budget follow config; invalid settings r
   assert.equal(sent.url, "https://alternate.example/v1/messages");
   assert.equal(sent.body.model, "codex/gpt-6.1-sol");
   assert.equal(sent.body.max_tokens, 900);
-  for (const config of [{ fetchDeepSeek: "yes" }, { fetchDeepSeekTimeoutMs: 0 }, { fetchDeepSeekMinChars: 0 }, { fetchOpen: "yes" }, { fetchOpenModel: "" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchOpenTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 4000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
+  for (const config of [{ fetchDeepSeek: "yes" }, { fetchDeepSeekTimeoutMs: 0 }, { fetchDeepSeekMinChars: 0 }, { fetchTreg: "yes" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchTregTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 1000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
   await assert.rejects(tool.execute({ url: result.url, prompt: 123 }, {}), /prompt/);
 });
 
@@ -717,19 +717,7 @@ test("patched tool imports through real release dependencies and auxiliary reque
   assert.equal(record.ignorable, true);
   assert.deepEqual(record.data.body, sent);
   assert.doesNotMatch(JSON.stringify(record), /fake-key/);
-  const openedUrl = "https://8.8.8.8/report.pdf";
-  const opened = await fetchPage({ web: { fetch: async () => { throw Object.assign(new Error("PDF unsupported"), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" }); } },
-    get: name => name === "agents" ? { currentInitiator: () => ({ session }) } : undefined,
-  }, config, { url: openedUrl }, "收入？", value => ({ text: api.formatFetchOutput(value, 40000), truncated: false }), undefined, {
-    credentialRef, appendPluginRecord, launchEnvironmentOf: () => new Map([["DEEPSEEK_API_KEY", { value: "fake-key" }]]),
-    request: async () => Response.json(openResponse(openedUrl)),
-  });
-  assert.match(opened.body.content, /Source: https:\/\/8.8.8.8\/report.pdf/);
-  const openSession = Session.create(SessionId("replayed-open"), JSON.parse(JSON.stringify(session.snapshotEvents())));
-  const openRecord = openSession.snapshotEvents().find(event => event.type === "plugin:crysound/web-open-request");
-  assert.equal(openRecord.ignorable, true);
-  assert.equal(openRecord.data.body.model, "codex/gpt-6-luna");
-  assert.doesNotMatch(JSON.stringify(openRecord), /fake-key/);
+
 });
 
 test("summary length follows the configured output budget and retains trailing caveats when they fit", async t => {
@@ -768,71 +756,11 @@ test("short question pages bypass summary credentials and preserve numbers, quot
   assert.match(output, /public.example\/final/);
 });
 
-function openResponse(url, overrides = {}) {
-  return { status: "completed", output: [
-    { type: "web_search_call", status: "completed", action: { type: "open_page", url } },
-    { type: "message", content: [{ type: "output_text", text: JSON.stringify({ readable: true, summary: '收入 1.2 亿元，增长 12%；仅适用于校准设备。' }) }] },
-  ], ...overrides };
-}
-
-test("failed fetches open exactly the requested public page once and preserve a cited bounded summary", async t => {
-  const url = "https://8.8.8.8/report.pdf", calls = [], records = [];
-  const { tool, ctx } = await summaryTool(t, {}, async (endpoint, init) => {
-    calls.push({ endpoint, init });
-    return Response.json(openResponse(url));
-  }, { record: (type, data) => records.push({ type, data }) });
-  for (const code of ["WEB_UNSUPPORTED_CONTENT_TYPE", "WEB_REDIRECT_BLOCKED", "WEB_PROVIDER_ERROR", "WEB_FETCH_TIMEOUT"]) {
-    ctx.web.fetch = async () => { throw Object.assign(new Error("原来的错误"), { code }); };
-    const args = { url, prompt: "收入与适用限制？" };
-    const result = await tool.execute(args, {});
-    assert.match(result.body.content, /Source: https:\/\/8.8.8.8\/report.pdf/);
-    assert.match(result.body.content, /Question-focused page summary/);
-    assert.match(result.body.content, /12%.*校准设备/);
-    assert.ok(tool.output.render(args, result)[0].text.length <= 40000);
-  }
-  assert.equal(calls.length, 4);
-  const { endpoint, init } = calls[0], body = JSON.parse(init.body);
-  assert.equal(endpoint, "https://company.example/v1/responses");
-  assert.equal(body.model, "codex/gpt-6-luna");
-  assert.deepEqual(body.tools, [{ type: "web_search" }]);
-  assert.match(body.input, /收入与适用限制/);
-  assert.match(body.input, /Open only the supplied URL/);
-  assert.equal(init.redirect, "error");
-  assert.equal(init.headers.authorization, "Bearer fixture-summary-key");
-  assert.equal(records.length, 4);
-  assert.equal(records[0].type, "plugin:crysound/web-open-request");
-  assert.deepEqual(records[0].data.body, body);
-  assert.doesNotMatch(JSON.stringify(records), /fixture-summary-key/);
-});
-
-test("open errors, refusal, fabricated answers and missing traces preserve the original fetch failure", async t => {
-  const url = "https://8.8.8.8/page", failure = Object.assign(new Error("需要登录，无法抓取"), { code: "WEB_PROVIDER_ERROR" });
-  const variants = ["http", "network", "json", "refusal", "no-open", "wrong-url", "incomplete", "empty"];
-  for (const variant of variants) {
-    let calls = 0;
-    const { tool, ctx } = await summaryTool(t, {}, async () => {
-      calls++;
-      if (variant === "http") return new Response(null, { status: 503 });
-      if (variant === "network") throw new Error("offline");
-      if (variant === "json") return new Response("invalid");
-      const data = openResponse(variant === "wrong-url" ? url + "other" : url);
-      if (variant === "no-open") data.output.shift();
-      if (variant === "incomplete") data.status = "incomplete";
-      if (variant === "refusal") data.output[1].content[0].text = JSON.stringify({ readable: false, summary: "" });
-      if (variant === "empty") data.output[1].content = [];
-      return Response.json(data);
-    });
-    ctx.web.fetch = async () => { throw failure; };
-    await assert.rejects(tool.execute({ url }, {}), error => error === failure, variant);
-    assert.equal(calls, 1);
-  }
-});
-
-test("blocked URLs, cancellation and disabled open never consume Codex quota", async t => {
-  for (const config of [{}, { fetchOpen: false }]) {
+test("blocked URLs, cancellation and disabled fallbacks never dispatch paid requests", async t => {
+  for (const config of [{ fetchDeepSeek: true, fetchTreg: true }, { fetchDeepSeek: false, fetchTreg: false }]) {
     let calls = 0;
     const { tool, ctx } = await summaryTool(t, config, () => { calls++; throw new Error("unexpected open request"); });
-    const failure = Object.assign(new Error("blocked"), { code: config.fetchOpen === false ? "WEB_PROVIDER_ERROR" : "WEB_BLOCKED_URL" });
+    const failure = Object.assign(new Error("blocked"), { code: config.fetchTreg === false ? "WEB_PROVIDER_ERROR" : "WEB_BLOCKED_URL" });
     ctx.web.fetch = async () => { throw failure; };
     await assert.rejects(tool.execute({ url: "https://8.8.8.8/page" }, {}), error => error === failure);
     const stop = new AbortController(); stop.abort(new Error("本人取消"));
@@ -848,58 +776,7 @@ test("blocked URLs, cancellation and disabled open never consume Codex quota", a
   assert.equal(privateCalls, 0);
 });
 
-test("direct deadline aborts retrieval; open deadline and caller cancellation abort the auxiliary request", async t => {
-  const url = "https://8.8.8.8/page";
-  let directSignal, openSignal, entered, now = 0;
-  t.mock.method(performance, "now", () => now);
-  const ready = new Promise(resolve => { entered = resolve; });
-  const { tool, ctx } = await summaryTool(t, {}, async (_endpoint, init) => {
-    openSignal = init.signal; entered();
-    return new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
-  });
-  ctx.web.fetch = (_input, signal) => { directSignal = signal; return new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true })); };
-  t.mock.timers.enable({ apis: ["setTimeout"] });
-  const pending = tool.execute({ url }, {});
-  await new Promise(resolve => setImmediate(resolve));
-  now = 3000;
-  t.mock.timers.tick(3000);
-  await ready;
-  assert.equal(directSignal.aborted, true);
-  now = 9000;
-  t.mock.timers.tick(6000);
-  await assert.rejects(pending, { code: "WEB_FETCH_TIMEOUT" });
-  assert.equal(openSignal.aborted, true);
-
-  let started;
-  const startedOpen = new Promise(resolve => { started = resolve; });
-  const stop = new AbortController();
-  const second = await summaryTool(t, {}, async (_endpoint, init) => {
-    openSignal = init.signal; started();
-    return new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
-  });
-  second.ctx.web.fetch = async () => { throw new Error("direct failed"); };
-  const cancelled = second.tool.execute({ url }, { signal: stop.signal });
-  await startedOpen; stop.abort(new Error("本人取消"));
-  await assert.rejects(cancelled, /本人取消/);
-  assert.equal(openSignal.aborted, true);
-});
-
-test("HTTP errors remain the original result if open fails; late open credentials cannot dispatch", async t => {
-  let ready, finish, calls = 0;
-  const started = new Promise(resolve => { ready = resolve; });
-  const credentials = new Promise(resolve => { finish = resolve; });
-  const { tool, ctx, result } = await summaryTool(t, {}, () => { calls++; assert.fail("late model dispatch"); }, { resolveKey: () => { ready(); return credentials; } });
-  result.statusCode = 403;
-  t.mock.timers.enable({ apis: ["setTimeout"] });
-  const pending = tool.execute({ url: "https://8.8.8.8/page" }, {});
-  await started; t.mock.timers.tick(6000);
-  assert.equal((await pending).statusCode, result.statusCode);
-  finish({ value: "fake" });
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(calls, 0);
-});
-
-test("released fetch pipeline records download, extraction, summary and open stages under the initiating call only", async t => {
+test("released fetch pipeline records download, extraction and summary stages under the initiating call only", async t => {
   const root = await mkdtemp(join(tmpdir(), "partner-fetch-timing-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const file = join(root, "timing.jsonl");
@@ -909,8 +786,7 @@ test("released fetch pipeline records download, extraction, summary and open sta
   t.mock.method(performance, "now", () => now);
   const { tool, ctx } = await summaryTool(t, {}, async (endpoint, init) => {
     now += 20;
-    return Response.json(endpoint.endsWith("/responses") ? openResponse("https://8.8.8.8/SECRET.pdf")
-      : { content: [{ type: "text", text: "增长 12%。" }] });
+    return Response.json({ content: [{ type: "text", text: "增长 12%。" }] });
   });
   const run = async (callId, url) => {
     const attempt = toolTiming.attempt("timed-fetch", 1, 2, "attempt-1");
@@ -929,21 +805,18 @@ test("released fetch pipeline records download, extraction, summary and open sta
     request: async () => { now += 5; return html('<h1>短正文</h1><p>收入 12%。</p>'); },
   }).fetch(input, signal);
   await run("short-call", "https://8.8.8.8/SECRET-short.html");
-  ctx.web.fetch = async () => { throw Object.assign(new Error("SECRET error"), { code: "WEB_UNSUPPORTED_CONTENT_TYPE" }); };
-  await run("open-call", "https://8.8.8.8/SECRET.pdf");
   const records = (await readFile(file, "utf8")).trim().split("\n").map(line => JSON.parse(line));
   assert.doesNotMatch(JSON.stringify(records), /SECRET|fixture-summary-key|https:|question|headers/);
   assert.ok(records.every(record => record.session === "timed-fetch" && record.attempt === "attempt-1"));
   const reports = timingReport(records);
-  assert.equal(reports.length, 3);
+  assert.equal(reports.length, 2);
   const summary = reports.find(report => report.callId === "summary-call");
   assert.equal(summary.fetchStages.download[0].durationMs, 10);
   assert.equal(summary.fetchStages["summary-request"][0].durationMs, 20);
   assert.equal(summary.fetchStages.extract.length, 2, "HTML compaction and Markdown conversion are independently sampled");
   assert.ok(reports.find(report => report.callId === "short-call").fetchBranches.some(record => record.outcome === "short"));
-  assert.equal(reports.find(report => report.callId === "open-call").fetchStages["open-request"][0].durationMs, 20);
   const aggregate = fetchTimingSummary(reports);
-  assert.equal(aggregate.calls, 3);
+  assert.equal(aggregate.calls, 2);
   assert.equal(aggregate.stages.download.medianMs, 5);
   assert.equal(aggregate.stages.download.p90Ms, 10);
   assert.equal(aggregate.stages["summary-request"].count, 1);
@@ -972,4 +845,32 @@ test("released patched web_fetch uses gateway identity for paid rescue and keeps
   assert.equal(calls[0].init.headers.authorization, `Bearer ${token}`);
   assert.match(output, /https:\/\/8.8.8.8\/report/); assert.match(output, /12%.*校准设备/);
   assert.equal(tool.timeoutMs, 10000);
+});
+
+test("released tool races Crawl4AI and DeepSeek with container identity and cancels the losing HTTP request", async t => {
+  const root = await mkdtemp(join(tmpdir(), "partner-parallel-identity-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const tokenFile = join(root, "identity"), token = "zpd.fixture." + "a".repeat(43);
+  await writeFile(tokenFile, token, { mode: 0o600 });
+  for (const winner of ["treg", "deepseek"]) {
+    let ready, count = 0, loser;
+    const both = new Promise(resolve => { ready = resolve; }), calls = [];
+    const page = `${winner} 收入 1.2 亿元，同比增长 12%，仅适用于校准设备。`.repeat(10);
+    const { tool, ctx } = await summaryTool(t, { fetchDeepSeek: true, fetchTreg: true }, async (endpoint, init) => {
+      calls.push({ endpoint, init }); if (++count === 2) ready(); await both;
+      const provider = endpoint.endsWith("/fetch") ? "deepseek" : "treg";
+      if (provider === winner) return Response.json(provider === "treg" ? { output: { pages: [{ ok: true, markdown: page }] } } : { title: "年度数据", content: page });
+      loser = init.signal;
+      return new Promise((_, reject) => { init.signal.throwIfAborted(); init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }); });
+    });
+    ctx.environment.set("CRYSOUND_DS_TOOLS_BASE", { value: "http://zhaohua-partner-gateway:3091/_zp/ds-tools/" });
+    ctx.environment.set("CRYSOUND_TREG_BASE", { value: "http://zhaohua-partner-gateway:3091/_zp/treg/" });
+    ctx.environment.set("CRYSOUND_DS_TOOLS_TOKEN_FILE", { value: tokenFile });
+    ctx.web.fetch = async () => { throw Object.assign(new Error("原抓取失败"), { code: "WEB_PROVIDER_ERROR" }); };
+    const args = { url: "https://8.8.8.8/report.pdf", prompt: "收入与限制？" }, result = await tool.execute(args, {});
+    assert.equal(calls.length, 2); assert.equal(loser.aborted, true); assert.match(result.body.content, new RegExp(winner));
+    assert.match(tool.output.render(args, result)[0].text, /12%.*校准设备/);
+    assert.ok(calls.every(call => call.init.headers.authorization === `Bearer ${token}`));
+    assert.ok(calls.every(call => !call.endpoint.includes("/responses"))); assert.equal(tool.timeoutMs, 10000);
+  }
 });

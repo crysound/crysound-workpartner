@@ -56,10 +56,9 @@
     fetchSummaryTimeoutMs: 2000
     fetchSummaryMaxTokens: 1600
     fetchSummaryMinChars: 12000
-    fetchOpen: true
-    fetchOpenModel: codex/gpt-6-luna
-    fetchDirectTimeoutMs: 3000
-    fetchOpenTimeoutMs: 6000
+    fetchTreg: true
+    fetchDirectTimeoutMs: 1500
+    fetchTregTimeoutMs: 8000
     fetchTotalTimeoutMs: 9500
     fetchDeepSeek: true
     fetchDeepSeekTimeoutMs: 8000

@@ -18,9 +18,10 @@ services:
       PREVIEW_HOST: ${PREVIEW_HOST:-}
       OLD_HOSTS: ${OLD_HOSTS:-}
       FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
-      DS_TOOLS_API_KEY_FILE: ${DS_TOOLS_API_KEY_FILE:-/secure/deepseek-tools.key}
-      DS_TOOLS_MONTHLY_USD: ${DS_TOOLS_MONTHLY_USD:-10}
-      DS_TOOLS_USER_RPM: ${DS_TOOLS_USER_RPM:-20}
+      DEEPSEEK_TOOLS_ENABLED: ${DEEPSEEK_TOOLS_ENABLED:-1}
+      DEEPSEEK_TOOLS_KEY_FILE: ${DEEPSEEK_TOOLS_KEY_FILE:-/run/deepseek-tools/deepseek-tools.key}
+      DEEPSEEK_TOOLS_MONTHLY_USD: ${DEEPSEEK_TOOLS_MONTHLY_USD:-10}
+      DEEPSEEK_TOOLS_USER_RPM: ${DEEPSEEK_TOOLS_USER_RPM:-20}
       TREG_ENABLED: ${TREG_ENABLED:-0}
       TREG_ORG_ID: ${TREG_ORG_ID:-}
       TREG_ORG_SLUG: ${TREG_ORG_SLUG:-}
@@ -69,10 +70,10 @@ services:
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure
-      # Existing paid tools key: gateway only, read-only; prepare before recreating the gateway.
+      # Read-only view of the existing secure directory: an absent tools key disables only this feature.
       - type: bind
-        source: ${PARTNER_SECURE}/deepseek-tools.key
-        target: /secure/deepseek-tools.key
+        source: ${PARTNER_SECURE}
+        target: /run/deepseek-tools
         read_only: true
         bind:
           create_host_path: false

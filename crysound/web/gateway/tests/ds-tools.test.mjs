@@ -16,7 +16,7 @@ async function fixture(t, env = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ds-tools-")), stateFile = path.join(root, "ledger.json"), keyFile = path.join(root, "paid.key");
   fs.writeFileSync(keyFile, paidKey, { mode: 0o400 });
   let time = Date.parse("2026-11-07T12:00:00Z"), response = () => Response.json({ title: "公开页", content: "网页证据" });
-  const calls = [], options = { stateFile, env: { DS_TOOLS_API_KEY_FILE: keyFile, ...env }, now: () => time,
+  const calls = [], options = { stateFile, env: { DEEPSEEK_TOOLS_KEY_FILE: keyFile, ...env }, now: () => time,
     authenticate: req => tokenUser(req, signingKey, users),
     request: async (url, init) => { calls.push({ url, init }); return response(url, init); } };
   let handle = createDsTools(options);
@@ -63,7 +63,7 @@ test("fetch/search validate bounded payloads, strip credentials and never forwar
 });
 
 test("durable per-person rate limits survive restart; identities and next minute are independent", async t => {
-  const f = await fixture(t, { DS_TOOLS_USER_RPM: "1" });
+  const f = await fixture(t, { DEEPSEEK_TOOLS_USER_RPM: "1" });
   assert.equal((await f.call()).status, 200); f.restart();
   assert.equal((await f.call()).status, 429);
   assert.equal((await f.call({ user: users[1] })).status, 200);
@@ -73,7 +73,7 @@ test("durable per-person rate limits survive restart; identities and next minute
 });
 
 test("reserve before concurrent dispatch, cap global spend, persist unknown outcomes and reset at Beijing month", async t => {
-  const f = await fixture(t, { DS_TOOLS_MONTHLY_USD: "0.0015" });
+  const f = await fixture(t, { DEEPSEEK_TOOLS_MONTHLY_USD: "0.0015" });
   let release;
   const gate = new Promise(resolve => { release = resolve; });
   f.setResponse(async () => { await gate; throw new Error(`unknown ${paidKey}`); });
@@ -95,7 +95,7 @@ test("reserve before concurrent dispatch, cap global spend, persist unknown outc
 });
 
 test("explicit upstream failures refund reservation, malformed successful replies remain charged and no secrets leak", async t => {
-  const f = await fixture(t, { DS_TOOLS_MONTHLY_USD: "0.00075" });
+  const f = await fixture(t, { DEEPSEEK_TOOLS_MONTHLY_USD: "0.00075" });
   f.setResponse(() => Response.json({ key: paidKey }, { status: 401, headers: { authorization: paidKey } }));
   const failed = await f.call(); assert.equal(failed.status, 502); assert.doesNotMatch(failed.text, /fixture-paid-key/);
   f.restart();
@@ -107,7 +107,7 @@ test("explicit upstream failures refund reservation, malformed successful replie
 test("missing credentials, corrupt ledger and excessive configured budget fail closed", async t => {
   const f = await fixture(t);
   fs.unlinkSync(f.keyFile); assert.equal((await f.call()).status, 503); assert.equal(f.calls.length, 0);
-  for (const DS_TOOLS_MONTHLY_USD of ["11", "-1", "NaN"]) assert.throws(() => createDsTools({ ...f.options, env: { DS_TOOLS_MONTHLY_USD } }), /limits/);
+  for (const DEEPSEEK_TOOLS_MONTHLY_USD of ["11", "-1", "NaN"]) assert.throws(() => createDsTools({ ...f.options, env: { DEEPSEEK_TOOLS_MONTHLY_USD } }), /limits/);
   fs.writeFileSync(f.stateFile, "broken"); assert.throws(f.restart, /ledger/);
   fs.writeFileSync(f.stateFile, JSON.stringify({ months: { "2026-11": { charged: -1, success: 0 } }, users: {} })); assert.throws(f.restart, /ledger/);
 });
@@ -134,4 +134,21 @@ test("real HTTP upstream receives only paid credential and disconnect cancels it
   await entered; stop.abort(); await assert.rejects(pending, { name: "AbortError" });
   await disconnected; assert.equal(outgoingSignal.aborted, true);
   assert.deepEqual(JSON.parse(fs.readFileSync(f.stateFile)).months["2026-11"], { charged: 2, success: 1 });
+});
+
+test("gateway switch disables shared key without revocation; daily person/tool counters persist", async t => {
+  const disabled = await fixture(t, { DEEPSEEK_TOOLS_ENABLED: "0" });
+  assert.equal((await disabled.call()).status, 503); assert.equal(disabled.calls.length, 0);
+  assert.equal(fs.readFileSync(disabled.keyFile, "utf8"), paidKey);
+  const f = await fixture(t);
+  await f.call(); await f.call({ user: users[1] });
+  f.setResponse(() => Response.json({ results: [] })); await f.call({ route: "search", body: { query: "网页" } });
+  f.setResponse(() => new Response(null, { status: 503 })); await f.call();
+  f.restart();
+  let ledger = JSON.parse(fs.readFileSync(f.stateFile));
+  assert.deepEqual(ledger.days["2026-11-07"], { alice: { fetch: { calls: 2, success: 1 }, search: { calls: 1, success: 1 } }, bob: { fetch: { calls: 1, success: 1 } } });
+  f.setTime(Date.parse("2026-11-07T16:00:00Z"));
+  f.setResponse(() => Response.json({ title: "标题", content: "正文" })); await f.call();
+  ledger = JSON.parse(fs.readFileSync(f.stateFile)); assert.deepEqual(ledger.days["2026-11-08"].alice.fetch, { calls: 1, success: 1 });
+  assert.equal(ledger.days["2026-11-07"].alice.fetch.calls, 2);
 });
