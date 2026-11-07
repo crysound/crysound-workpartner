@@ -12,7 +12,7 @@ const url = "https://8.8.8.8/report", page = "收入 1.2 亿元，增长 12%，�
 const config = { fetchDeepSeek: true, fetchTreg: true, fetchSummary: true, fetchSummaryModel: "deepseek/deepseek-flash",
   fetchSummaryBaseURL: "https://model.example/v1", fetchSummaryMinChars: 12000,
   fetchSummaryTimeoutMs: 2000, fetchSummaryMaxTokens: 1600, fetchMaxOutputChars: 40000,
-  fetchDirectTimeoutMs: 1500, fetchDeepSeekTimeoutMs: 8000, fetchDeepSeekMinChars: 80, fetchTregTimeoutMs: 8000, fetchTotalTimeoutMs: 9500 };
+  fetchDirectTimeoutMs: 1500, fetchDeepSeekTimeoutMs: 8000, fetchDeepSeekMinChars: 80, fetchTregTimeoutMs: 8000, fetchTotalTimeoutMs: 9500, fetchWechatTimeoutMs: 3500, fetchPublicArticleTimeoutMs: 3500 };
 const original = () => Object.assign(new Error("原抓取错误"), { code: "WEB_PROVIDER_ERROR" });
 const raw = () => ({ url, statusCode: 200, body: { kind: "text", content: page }, truncated: false });
 
@@ -28,7 +28,7 @@ function fixture(t, request, override = {}) {
   const services = { launchEnvironmentOf: () => environment, credentialRef: value => value, appendPluginRecord: (session, type, data) => session.append(type, data),
     request: async (endpoint, init) => { calls.push({ endpoint, init }); return request(endpoint, init); } };
   return { ctx, calls, records, environment, token, root,
-    run: (signal, question = "收入和限制？") => fetchPage(ctx, { ...config, ...override }, { url }, question, value => ({ text: value.body.content, truncated: value.truncated }), signal, services) };
+    run: (signal, question = "收入和限制？", input = { url }) => fetchPage(ctx, { ...config, ...override }, input, question, value => ({ text: value.body.content, truncated: value.truncated }), signal, services) };
 }
 
 const reply = (provider, content = page) => Response.json(provider === "deepseek" ? { title: "年度数据", content }
@@ -36,6 +36,77 @@ const reply = (provider, content = page) => Response.json(provider === "deepseek
 const providerOf = endpoint => endpoint.endsWith("/fetch") ? "deepseek" : "treg";
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 const hanging = signal => new Promise((_, reject) => { signal.throwIfAborted(); signal.addEventListener("abort", () => reject(signal.reason), { once: true }); });
+
+const shells = [
+  "We're sorry but 中国新闻网 doesn't work properly without JavaScript enabled. Please enable it to continue. 43.1万",
+  "请开启 JavaScript 后继续访问。".repeat(8),
+  "环境异常 当前环境异常，完成验证后即可继续访问。 去验证".repeat(5),
+  "[首页](https://news.example/) [新闻](https://news.example/news) [关于我们](https://news.example/about) 43.1万".repeat(3),
+  "43.1万 1234567 8901234 ".repeat(8),
+];
+
+test("shells, verification, navigation and counters cannot win or cancel the readable provider", async t => {
+  for (const rejected of ["deepseek", "treg"]) for (const shell of shells) {
+    const bad = deferred();
+    const f = fixture(t, async endpoint => {
+      const provider = providerOf(endpoint);
+      if (provider !== rejected) { await bad.promise; return reply(provider); }
+      bad.resolve(); return reply(provider, shell);
+    });
+    assert.match((await f.run()).body.content, /收入 1.2 亿元/);
+    assert.equal(f.calls.length, 2);
+  }
+  const f = fixture(t, async () => reply("deepseek", shells[0]), { fetchTreg: false });
+  await assert.rejects(f.run(), /原抓取错误/);
+});
+
+test("direct shells trigger fallbacks and stay errors when both providers fail", async t => {
+  const f = fixture(t, async endpoint => reply(providerOf(endpoint)));
+  f.ctx.web.fetch = async () => ({ ...raw(), body: { kind: "text", content: shells[0] } });
+  assert.match((await f.run()).body.content, /收入 1.2 亿元/);
+  const failed = fixture(t, async () => new Response(null, { status: 502 }));
+  failed.ctx.web.fetch = f.ctx.web.fetch;
+  await assert.rejects(failed.run(), /空壳或验证提示/);
+});
+
+test("a real article quoting a JavaScript warning remains readable", async t => {
+  const f = fixture(t, async () => reply("deepseek", shells[0] + "\n\n" + page), { fetchTreg: false });
+  assert.match((await f.run()).body.content, /收入 1.2 亿元/);
+});
+
+test("Weixin uses HTTPS for direct and paid retrieval, preserves queries and original citation", async t => {
+  const requested = "http://mp.weixin.qq.com/s?__biz=abc==&mid=123&idx=3&sn=opaque", normalized = requested.replace("http:", "https:");
+  const f = fixture(t, async (_endpoint, init) => {
+    assert.equal(JSON.parse(init.body).url, normalized); return reply("deepseek");
+  }, { fetchTreg: false });
+  f.ctx.web.fetch = async input => { assert.equal(input.url, normalized); throw original(); };
+  const result = await f.run(undefined, "", { url: requested });
+  assert.match(result.body.content, /Source: http:\/\/mp.weixin.qq.com/);
+  assert.match(result.body.content, /Source: https:\/\/mp.weixin.qq.com/);
+});
+
+test("unreadable Weixin attempts stop at the shorter total budget and cancel both providers", async t => {
+  let now = 0; const both = deferred(), signals = [];
+  t.mock.method(performance, "now", () => now);
+  const f = fixture(t, async (_endpoint, init) => { signals.push(init.signal); if (signals.length === 2) both.resolve(); return hanging(init.signal); });
+  f.ctx.web.fetch = (_input, signal) => hanging(signal);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const pending = f.run(undefined, "", { url: "http://mp.weixin.qq.com/s?mid=123" });
+  const rejected = assert.rejects(pending, { code: "WEB_FETCH_TIMEOUT" });
+  await new Promise(resolve => setImmediate(resolve)); now = 1500; t.mock.timers.tick(1500);
+  await both.promise; now = 3500; t.mock.timers.tick(2000); await rejected;
+  assert.ok(signals.every(signal => signal.aborted)); assert.equal(f.calls.length, 2);
+});
+
+test("the public article reader can finish beyond the ordinary direct deadline without paid requests", async t => {
+  let now = 0, finish; const ready = deferred(); t.mock.method(performance, "now", () => now);
+  const f = fixture(t, async () => assert.fail("paid request"));
+  f.ctx.web.fetch = () => { ready.resolve(); return new Promise(resolve => { finish = resolve; }); };
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const pending = f.run(undefined, "", { url: "https://m.chinanews.com/wap/detail/chs/zw/10714120.shtml" });
+  await ready.promise; now = 2000; t.mock.timers.tick(2000); finish(raw());
+  assert.match((await pending).body.content, /收入 1.2 亿元/); assert.equal(f.calls.length, 0);
+});
 
 test("normal pages never call either paid fallback", async t => {
   const f = fixture(t, async () => assert.fail("paid request")); f.ctx.web.fetch = async () => raw();

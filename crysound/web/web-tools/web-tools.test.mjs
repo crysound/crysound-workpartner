@@ -45,6 +45,22 @@ function fixtureRequest(origin, observed = [], maxResponseBytes = limits.maxResp
   }, maxResponseBytes);
 }
 
+test("mobile China News reads the same public article JSON without rendering and preserves source", async t => {
+  const { HttpFetchProvider } = await released("dsh-web-fetch-http");
+  const source = "https://m.chinanews.com/wap/detail/chs/zw/10714120.shtml", visited = [];
+  let value = { msgcode: 0, data: { id: "10714120", title: "苹果家居新品", contentNoTag: content } };
+  const provider = companyFetcher(HttpFetchProvider, WebError, limits, {
+    request: async target => { visited.push(target); return Response.json(value); },
+    loadRuntime: () => assert.fail("public article does not need Chromium"),
+  });
+  const result = await provider.fetch({ url: source });
+  assert.equal(result.url, source); assert.match(result.body.content, /苹果家居新品/); assert.match(result.body.content, /国内网页正文/);
+  assert.deepEqual(visited, ["https://dw.chinanews.com/cns/app/v1/wapDetail/content/10714120.json?language=chs"]);
+  for (const data of [{ ...value, msgcode: 1 }, { msgcode: 0, data: { ...value.data, id: "other" } }, { msgcode: 0, data: { ...value.data, contentNoTag: "" } }]) {
+    value = data; await assert.rejects(provider.fetch({ url: source }), { code: "WEB_PROVIDER_ERROR" });
+  }
+});
+
 test("only public IPs pass, including alternate IPv4 and IPv6 encodings", async () => {
   for (const address of ["127.0.0.1", "0.0.0.0", "10.1.2.3", "172.16.0.1", "192.168.1.1", "169.254.169.254", "100.64.0.1", "224.0.0.1", "::1", "::", "fc00::1", "fe80::1", "::ffff:127.0.0.1", "2002:7f00:1::", "2001:db8::1"]) assert.equal(isPublicAddress(address), false, address);
   for (const address of ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"]) assert.equal(isPublicAddress(address), true, address);
@@ -582,6 +598,19 @@ async function summaryTool(t, config = {}, request = async () => Response.json({
   return { tool, result, ctx, api };
 }
 
+test("released tool checks page text without counting long source headers or its own safety notice", async t => {
+  const { tool, result } = await summaryTool(t, { fetchDeepSeek: false, fetchTreg: false }, async () => assert.fail("model request"));
+  result.url = "https://public.example/article?source=" + "a".repeat(120);
+  for (const body of [
+    { kind: "text", content: "We're sorry but 中国新闻网 doesn't work properly without JavaScript enabled. Please enable it to continue. 43.1万" },
+    { kind: "html", content: "<main><p>环境异常 当前环境异常，完成验证后即可继续访问。</p><p>去验证</p></main>" },
+    { kind: "html", content: '<nav><a href="/a">首页</a><a href="/b">新闻</a><a href="/c">关于我们</a></nav>' },
+  ]) {
+    result.body = body;
+    await assert.rejects(tool.execute({ url: result.url }, {}), /空壳或验证提示/);
+  }
+});
+
 test("released web_fetch accepts a question, sends bounded Markdown to company model and returns only a cited summary", async t => {
   const calls = [], records = [];
   const { tool, result } = await summaryTool(t, {}, async (url, init) => {
@@ -697,7 +726,7 @@ test("summary model, endpoint and token budget follow config; invalid settings r
   assert.equal(sent.url, "https://alternate.example/v1/messages");
   assert.equal(sent.body.model, "codex/gpt-6.1-sol");
   assert.equal(sent.body.max_tokens, 900);
-  for (const config of [{ fetchDeepSeek: "yes" }, { fetchDeepSeekTimeoutMs: 0 }, { fetchDeepSeekMinChars: 0 }, { fetchTreg: "yes" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchTregTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 1000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
+  for (const config of [{ fetchWechatTimeoutMs: 0 }, { fetchPublicArticleTimeoutMs: 0 }, { fetchDeepSeek: "yes" }, { fetchDeepSeekTimeoutMs: 0 }, { fetchDeepSeekMinChars: 0 }, { fetchTreg: "yes" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchTregTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 1000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
   await assert.rejects(tool.execute({ url: result.url, prompt: 123 }, {}), /prompt/);
 });
 

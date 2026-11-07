@@ -1,0 +1,53 @@
+{
+  "url": "http(s)://mp.weixin.qq.com/s?__biz=MzIxNzE3ODE3MQ==&mid=2651098970&idx=3&sn=f8b48572f7167952d0e6407abf117717",
+  "limit_per_call_seconds": 8,
+  "results": [
+    {
+      "route": "deepseek.fetch",
+      "scheme": "http",
+      "status": 200,
+      "chars": 65,
+      "looks_like_block_page": true,
+      "head": "环境异常 当前环境异常，完成验证后即可继续访问。 去验证 ： ， 。 视频 小程序 赞 ，轻点两下取",
+      "title_chars": 6,
+      "secs": 1.19
+    },
+    {
+      "route": "treg.crawl4ai.web.scrape",
+      "scheme": "http",
+      "exit": 1,
+      "ok": false,
+      "engine": "",
+      "reason": "cooldown",
+      "fell_back": false,
+      "cache": "archive",
+      "ms": 784,
+      "chars": 0,
+      "looks_like_block_page": false,
+      "head": "",
+      "secs": 4.93
+    },
+    {
+      "route": "deepseek.fetch",
+      "scheme": "https",
+      "status": null,
+      "error_class": "TimeoutError",
+      "error_text": "The read operation timed out",
+      "secs": 8.81
+    },
+    {
+      "route": "treg.crawl4ai.web.scrape",
+      "scheme": "https",
+      "error_class": "timeout_8s",
+      "secs": 8.01
+    }
+  ],
+  "summary": {
+    "deepseek_fetch_http": "HTTP 200，1.19 s，正文 65 字，内容是微信“环境异常，完成验证后即可继续访问”拦截页，不可读。",
+    "deepseek_fetch_https": "客户端 8 s 读超时（实际 8.81 s），无状态码、无正文。",
+    "treg_crawl4ai_http": "ok=false，reason=cooldown，cache=archive，Treg 报告 784 ms，CLI 总计 4.93 s，无正文。",
+    "treg_crawl4ai_https": "8 s 超时（CLI 超时），无状态码、无正文。"
+  },
+  "reading": "http 与 https 都没有拿到该微信文章的可读正文。DeepSeek http 返回 200 但内容是微信验证拦截页（与需求单表里的“65 字”一致）；https 两路均在 8 s 内无响应。单次样本，只能说明此 URL 当时的表现，不能据此区分 http 与 https 的普遍差异。",
+  "source": "伙伴助理使用既有授权与路由提供的单次 HTTP/HTTPS 对照；本开发进程未持有付费钥匙。"
+}

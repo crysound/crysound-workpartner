@@ -1,6 +1,7 @@
 /** Company anonymous fetch adapter and bounded Chromium fallback. */
 import { toolTiming } from "./timing.mjs";
 import { publicRequest, USER_AGENT, LANGUAGE, webError } from "./network.mjs";
+import { publicArticle } from "./page-content.mjs";
 
 /** Detect login destinations or forms. @param url Final destination. @param html Page HTML, absent before navigation. @returns Whether login is required. */
 export function loginPage(url, html = "") {
@@ -122,6 +123,20 @@ export function companyFetcher(Base, WebError, limits, {
       let downloaded = false;
       try {
         toolTiming.fetch("download-start");
+        const article = publicArticle({ url: initialUrl });
+        // This is the public JSON loaded by the mobile article, not a second publisher or a search.
+        if (article) {
+          const { response, url } = await followPublic(article.url, signal, request, Math.min(5, limits.maxRedirects), true);
+          const result = await super.readBody(response, new URL(url), signal);
+          if (result.statusCode >= 400 || result.truncated) throw webError("公开文章接口无法读取正文", "WEB_PROVIDER_ERROR");
+          const data = JSON.parse(result.body.content);
+          if (data?.msgcode !== 0 || data.data?.id !== article.id || typeof data.data.title !== "string"
+            || typeof data.data.contentNoTag !== "string" || !data.data.contentNoTag.trim()) throw webError("公开文章接口没有正文", "WEB_PROVIDER_ERROR");
+          downloaded = true;
+          toolTiming.fetch("download-end", "success");
+          toolTiming.fetch("render-skip", "public-article");
+          return boundedBody({ ...result, url: initialUrl, body: { kind: "text", content: `${data.data.title}\n\n${data.data.contentNoTag}` } }, limits.maxBodyChars);
+        }
         const { response, url } = await followPublic(initialUrl, signal, request, Math.min(5, limits.maxRedirects), true);
         // The streaming byte cap yields a usable prefix even when the declared length exceeds it.
         response.headers.delete("content-length");

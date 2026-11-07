@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { publicTarget, withAbort } from "./network.mjs";
 import { toolTiming } from "./timing.mjs";
+import { unreadablePage } from "./page-content.mjs";
 
 /** Forward a public URL using only the container identity; paid credentials stay in the gateway. */
 export async function gatewayFetch(provider, ctx, config, input, signal, services) {
@@ -30,7 +31,7 @@ export async function gatewayFetch(provider, ctx, config, input, signal, service
     title = typeof pages[0].title === "string" ? pages[0].title : "";
     text = pages[0].markdown;
   }
-  if (typeof title !== "string" || typeof text !== "string" || text.replace(/\s/g, "").length < config.fetchDeepSeekMinChars) throw new Error("Page unreadable");
+  if (typeof title !== "string" || typeof text !== "string" || text.replace(/\s/g, "").length < config.fetchDeepSeekMinChars || unreadablePage(text)) throw new Error("Page unreadable");
   toolTiming.fetch(`${provider}-request-end`, "success");
   const content = `Source: ${input.url}\n\n${title}\n\n${text}`;
   return { url: input.url, statusCode: 200, truncated: content.length > config.fetchMaxOutputChars,

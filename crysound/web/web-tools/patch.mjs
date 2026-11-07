@@ -18,7 +18,7 @@ const patches = [
       to: 'searchTimeoutMs: z.number().default(18_000)',
     }, {
       from: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS)',
-      to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(2_000),\n\tfetchSummaryMaxTokens: z.number().default(1600),\n\tfetchSummaryMinChars: z.number().default(12000),\n\tfetchTreg: z.boolean().default(true),\n\tfetchDirectTimeoutMs: z.number().default(1500),\n\tfetchTregTimeoutMs: z.number().default(8000),\n\tfetchTotalTimeoutMs: z.number().default(9500),\n\tfetchDeepSeek: z.boolean().default(true),\n\tfetchDeepSeekTimeoutMs: z.number().default(8000),\n\tfetchDeepSeekMinChars: z.number().default(80)',
+      to: 'fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),\n\tfetchSummary: z.boolean().default(true),\n\tfetchSummaryModel: z.string().default("deepseek/deepseek-flash"),\n\tfetchSummaryBaseURL: z.string().default(""),\n\tfetchSummaryTimeoutMs: z.number().default(2_000),\n\tfetchSummaryMaxTokens: z.number().default(1600),\n\tfetchSummaryMinChars: z.number().default(12000),\n\tfetchTreg: z.boolean().default(true),\n\tfetchDirectTimeoutMs: z.number().default(1500),\n\tfetchTregTimeoutMs: z.number().default(8000),\n\tfetchTotalTimeoutMs: z.number().default(9500),\n\tfetchWechatTimeoutMs: z.number().default(3500),\n\tfetchPublicArticleTimeoutMs: z.number().default(3500),\n\tfetchDeepSeek: z.boolean().default(true),\n\tfetchDeepSeekTimeoutMs: z.number().default(8000),\n\tfetchDeepSeekMinChars: z.number().default(80)',
     }, {
       from: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars) {',
       to: 'function applyWebFetchTool(ctx, timeoutMs, maxOutputChars, summaryConfig = { fetchSummary: false }) {',
@@ -37,12 +37,12 @@ const patches = [
       to: 'function parseFetchArgs(args) {\n\tif (args.prompt !== void 0 && typeof args.prompt !== "string") throw new Error("prompt must be a string");',
     }, {
       from: 'const result = await ctx.web.fetch({ url: input.url }, exec.signal);',
-      to: 'const result = await fetchPage(ctx, summaryConfig, { url: input.url }, args.prompt, value => renderFetchOutput(value, maxOutputChars), exec.signal, { credentialRef, launchEnvironmentOf, appendPluginRecord, request: fetch });',
+      to: 'const result = await fetchPage(ctx, summaryConfig, { url: input.url }, args.prompt, value => renderFetchOutput(value, maxOutputChars), exec.signal, { credentialRef, launchEnvironmentOf, appendPluginRecord, request: fetch, extract: value => renderBody(value.body, maxOutputChars).text });',
     }, {
       from: 'timeoutMs,\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
       to: 'timeoutMs: (summaryConfig.fetchTreg || summaryConfig.fetchDeepSeek) ? summaryConfig.fetchTotalTimeoutMs + 500 : timeoutMs + (summaryConfig.fetchSummary ? summaryConfig.fetchSummaryTimeoutMs : 0),\n\t\tisConcurrencySafe: () => true,\n\t\tasync execute(args, exec) {\n\t\t\tconst input = parseFetchArgs(args);',
     }],
-    files: { "summary.mjs": "crysound-summary.mjs", "fetch-pipeline.mjs": "crysound-fetch-pipeline.mjs", "gateway-fetch.mjs": "crysound-gateway-fetch.mjs", "network.mjs": "network.mjs" },
+    files: { "summary.mjs": "crysound-summary.mjs", "fetch-pipeline.mjs": "crysound-fetch-pipeline.mjs", "gateway-fetch.mjs": "crysound-gateway-fetch.mjs", "page-content.mjs": "crysound-page-content.mjs", "network.mjs": "network.mjs" },
   },
   {
     package: "@deepseek-ai/dsh-web-search-deepseek",
@@ -78,7 +78,7 @@ const patches = [
       from: 'ctx.web.registerFetchProvider(new HttpFetchProvider(limits));',
       to: 'ctx.web.registerFetchProvider(companyFetcher(HttpFetchProvider, WebError, limits, renderOptions(resolved)));',
     }],
-    files: { "fetch.mjs": "crysound-fetch.mjs", "network.mjs": "network.mjs" },
+    files: { "fetch.mjs": "crysound-fetch.mjs", "page-content.mjs": "crysound-page-content.mjs", "network.mjs": "network.mjs" },
   },
 ];
 
