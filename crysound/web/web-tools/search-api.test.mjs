@@ -92,6 +92,36 @@ test("actual released tool runs one API request per query concurrently and rende
   assert.match(rendered, /2026-11-07/);
 });
 
+test("English API and Exa requests overlap, merge sources and retain both timing reports", async t => {
+  const f = await fixture(t, async () => { assert.fail("API success must not call a model"); });
+  const calls = [], releases = [], metrics = [];
+  f.services.env = { ...env, CRYSOUND_MARKET_ORIGIN: "http://fixture-gateway", CRYSOUND_MARKET_TOKEN_FILE: "/fixture/identity" };
+  f.services.fetcher = (url, init) => new Promise(resolve => {
+    const api = String(url) === env.CRYSOUND_DS_TOOLS_BASE + "search";
+    calls.push(api ? "api" : "exa");
+    if (!api) {
+      assert.match(String(url), /\/_zp\/treg\/call\/treg.web.search$/);
+      assert.equal(init.headers["X-Treg-Route-Max-Cost"], "0.01");
+    }
+    releases.push(() => resolve(Response.json(api ? apiResult() : { output: { results: [
+      { url: "https://official.example/release", title: "Official release", publishedDate: "2026-11-07", summary: "Current release" },
+    ] } })));
+    if (releases.length === 2) releases.forEach(release => release());
+  });
+  const record = (stage, extra) => metrics.push({ stage, ...extra, callId: "combined", name: "web_search" });
+  const result = await searchWithFallback(f.Provider, WebError, { ...options, recordSearch: record, recordExa: record },
+    { query: "latest stable Rust release", maxResults: 10 }, undefined, 12000, f.services);
+  assert.deepEqual(calls.sort(), ["api", "exa"]);
+  assert.equal(result.content, "");
+  assert.equal(result.sources.length, 10);
+  assert.equal(result.sources[0].url, "https://official.example/release");
+  assert.equal(result.sources[1].url, "https://weather.example/0");
+  const report = timingReport(metrics)[0];
+  assert.deepEqual(report.searchPhases.map(phase => [phase.provider, phase.won]), [["search-api", true]]);
+  assert.equal(report.exa.calls, 1);
+  assert.equal(report.exa.adopted, true);
+});
+
 test("missing gateway, disabled gateway, invalid identity and unsafe gateway go straight to Flash", async t => {
   const calls = [];
   const f = await fixture(t, async (_url, init) => { calls.push(JSON.parse(init.body).model); return Response.json(native); });
