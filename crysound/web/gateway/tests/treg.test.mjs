@@ -494,3 +494,90 @@ test("平台目录五分钟内复用，到期更新白名单，读取失败不�
   f.setPlatforms([{ slug: "web", label: "Web", category: "SEO/AEO" }]);
   assert.equal((await f.call()).status, 200);
 });
+
+test("本次花费上限在 MCP 和 REST 中均取本人上限与请求值的较小值，不传保持默认", async (t) => {
+  const f = await fixture(t);
+  for (const [requested, expected] of [[0.01, "0.01"], [9, "0.1"], [undefined, "0.1"], [0.0000001, "1e-7"]]) {
+    const args = { endpoint_id: "provider.web.search", params: { q: "company" }, ...(requested === undefined ? {} : { max_cost_usd: requested }) };
+    const mcp = await f.mcp("call", args);
+    assert.equal(mcp.body.result.isError, false);
+    assert.equal(f.calls.filter(row => row.url.includes("/call/")).at(-1).headers["x-treg-route-max-cost"], expected);
+    const suffix = requested === undefined ? "" : `&max_cost_usd=${requested}`;
+    const rest = await f.request(`/call/provider.web.search?lang=zh${suffix}`, { method: "POST", body: '{"q":"company"}' });
+    assert.equal(rest.status, 200);
+    const forwarded = f.calls.filter(row => row.url.includes("/call/")).at(-1);
+    assert.equal(forwarded.headers["x-treg-route-max-cost"], expected);
+    assert.equal(forwarded.url, "https://treg.to/call/provider.web.search?lang=zh");
+    assert.deepEqual(JSON.parse(forwarded.body), { q: "company" });
+  }
+  f.lookup(id => ep(id, { method: "GET" }));
+  const get = await f.request("/call/provider.web.get?q=company&max_cost_usd=0.01");
+  assert.equal(get.status, 200);
+  const forwarded = f.calls.filter(row => row.url.includes("/call/")).at(-1);
+  assert.equal(forwarded.headers["x-treg-route-max-cost"], "0.01");
+  assert.equal(forwarded.url, "https://treg.to/call/provider.web.get?q=company");
+});
+
+test("无效的本次花费上限不会发起付费调用", async (t) => {
+  const f = await fixture(t);
+  for (const max_cost_usd of [0, -1, "0.01", "bad", null, false, {}, []]) {
+    const r = await f.mcp("call", { endpoint_id: "provider.web.search", max_cost_usd });
+    assert.equal(r.status, 400);
+    assert.match(r.body.error, /本次最高花费/);
+  }
+  for (const value of ["0", "-1", "bad", "", "NaN", "Infinity", "1e999", "0.01&max_cost_usd=0.02", "%20"]) {
+    const r = await f.request(`/call/provider.web.search?max_cost_usd=${value}`, { method: "POST", body: "{}" });
+    assert.equal(r.status, 400);
+    assert.match(r.body.error, /本次最高花费/);
+  }
+  assert.equal(f.calls.filter(row => row.url.includes("/call/")).length, 0);
+});
+
+test("工具说明和目录显示本人的单次上限，公共目录缓存不串人", async (t) => {
+  const f = await fixture(t, { overrides: { bob: { callMaxUsd: 0.02 } } });
+  for (const [user, expected] of [[alice, 0.1], [bob, 0.02], [alice, 0.1]]) {
+    const h = { ...headers, authorization: `Bearer ${issueToken(key, user)}` };
+    const list = await f.request("/mcp", { headers: h, method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) });
+    const tool = list.body.result.tools.find(row => row.name === "call");
+    assert.equal(tool.inputSchema.properties.max_cost_usd.type, "number");
+    assert.match(tool.description, new RegExp(`当前为 ${expected} 美元`));
+    const rest = await f.request("/catalog/endpoints/provider.web.search", { headers: h });
+    assert.equal(rest.body.zp_call_max_usd, expected);
+    const mcp = await f.request("/mcp", { headers: h, method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "catalog_get", arguments: { endpoint_id: "provider.web.search" } } }) });
+    assert.equal(mcp.body.result.structuredContent.zp_call_max_usd, expected);
+  }
+});
+
+test("MCP 结果带实扣和上游调用编号，REST 保持原始内容并透出编号头", async (t) => {
+  const f = await fixture(t);
+  f.setResponse(() => Response.json({ company: "example" }, { headers: { "x-treg-cost-micro": "500", "x-treg-call-id": "call-example-214" } }));
+  const mcp = await f.mcp("call", { endpoint_id: "provider.web.search", max_cost_usd: 0.01 });
+  const value = mcp.body.result.structuredContent;
+  assert.equal(value.cost_usd, 0.0005);
+  assert.equal(value.call_id, "call-example-214");
+  assert.deepEqual(JSON.parse(mcp.body.result.content[0].text), value);
+  const rest = await f.call();
+  assert.equal(rest.headers.get("x-treg-call-id"), "call-example-214");
+  assert.equal(rest.headers.get("x-treg-cost-micro"), "500");
+  assert.deepEqual(rest.body, { company: "example" });
+  f.setResponse(() => Response.json({ ok: true }));
+  const missing = await f.mcp("call", { endpoint_id: "provider.web.search" });
+  assert.equal(missing.body.result.structuredContent.call_id, null);
+  assert.equal(missing.body.result.structuredContent.cost_usd, null);
+  assert.equal((await f.call()).headers.get("x-treg-call-id"), null);
+});
+
+test("本次上限也限制固定搜索和网页提取路由，既有更低路由上限保留", async (t) => {
+  const f = await fixture(t);
+  f.lookup(id => id === "treg.web.extract"
+    ? ep(id, { kind: "routed", routed_children: ["crawl4ai.web.scrape"] })
+    : id === "treg.web.search" ? ep(id, { kind: "routed", routed_children: ["exa.web.search"] }) : ep(id));
+  for (const [id, params, routeCap] of [["treg.web.search", { q: "company" }, "0.01"], ["treg.web.extract", { url: "https://example.com" }, "0.005"]]) {
+    for (const [max_cost_usd, expected] of [[0.0001, "0.0001"], [9, routeCap]]) {
+      const result = await f.mcp("call", { endpoint_id: id, params, max_cost_usd });
+      assert.equal(result.body.result.isError, false);
+      const forwarded = f.calls.filter(row => row.url.includes("/call/")).at(-1);
+      assert.equal(forwarded.headers["x-treg-route-max-cost"], expected);
+    }
+  }
+});

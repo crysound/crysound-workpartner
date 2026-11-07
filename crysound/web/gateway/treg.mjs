@@ -13,10 +13,15 @@ const tools = [
     endpoint_id: { type: "string" }, params: { anyOf: [{ type: "object" }, { type: "array" }] },
     method: { type: "string", enum: ["GET", "POST"] }, query: { type: "object" }, body: { anyOf: [{ type: "object" }, { type: "array" }] },
     idempotency_key: { type: "string", maxLength: 150 },
+    max_cost_usd: { type: "number", exclusiveMinimum: 0, description: "本次最高花费（美元），不能超过本人单次上限。" },
   }, required: ["endpoint_id"], additionalProperties: false } },
 ];
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const keys = (value, allowed) => object(value) && Object.keys(value).every((key) => allowed.includes(key));
+function parseMaxCost(value) {
+  if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value) || value <= 0)) throw fail(400, "本次最高花费必须是大于零的美元金额");
+  return value;
+}
 const json = (res, status, body) => {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" });
   res.end(JSON.stringify(body));
@@ -50,6 +55,8 @@ function queryString(value) {
 export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified = false, stateDir,
   authenticate, catalog, env = {}, overrides = {}, notify = async () => {}, fetcher = fetch, now = Date.now }) {
   const limitsFor = tregLimits(env, overrides);
+  const callMaxUsd = (user) => limitsFor(user.slug).call / 1e6;
+  const catalogGet = async (user, id) => ({ endpoint: await endpoint(id), zp_call_max_usd: callMaxUsd(user) });
   const claimNotice = enabled ? createTregNotices({ dir: stateDir, now }) : null;
   const endpointCache = new Map(), budgets = new Map();
   const fetchJson = async (path) => {
@@ -174,7 +181,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (!claimNotice()) return;
     try { await notify(); } catch (error) { console.warn("数据额度管理员通知未送达，请检查数据服务"); }
   };
-  const call = async (user, id, method, query, body, idempotencyKey, signal) => {
+  const call = async (user, id, method, query, body, idempotencyKey, maxCostUsd, signal) => {
     if (!attributionVerified || !/^[1-9]\d*$/.test(String(orgId)) || !/^[a-z0-9-]+$/.test(orgSlug || "")) throw fail(503, "数据服务尚待管理员完成验证");
     const ep = await endpoint(id);
     if (method !== ep.method) throw fail(403, "请求方法必须与数据目录一致");
@@ -192,14 +199,15 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (limits.monthly === 0) throw fail(429, monthlyMessage);
     if (limits.daily === 0) throw fail(429, dailyMessage);
     if (limits.call === 0) throw fail(429, "单次数据额度为零，请联系管理员");
+    const maxCost = Math.min(limits.call / 1e6, maxCostUsd ?? Infinity);
     await budget(user);
     signal?.throwIfAborted();
-    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String((extraction ? Math.min(limits.call, 5000) : limits.call) / 1e6), "content-type": "application/json" };
+    const headers = { ...authHeaders(user), "x-treg-route-max-cost": String(extraction ? Math.min(maxCost, 0.005) : maxCost), "content-type": "application/json" };
     if (extraction) Object.assign(headers, { "x-treg-route-prefer": "crawl4ai", "x-treg-route-waterfall": "0" });
     // Only this existing search route uses Exa; never trust caller routing/identity headers.
     if (id === "treg.web.search") Object.assign(headers, {
       "x-treg-route-prefer": "exa", "x-treg-route-waterfall": "0",
-      "x-treg-route-max-cost": String(Math.min(limits.call / 1e6, 0.01)),
+      "x-treg-route-max-cost": String(Math.min(maxCost, 0.01)),
     });
     // 上游幂等键是组织级命名空间；把本人加入，避免拿另一人的缓存结果。
     if (idempotencyKey) headers["idempotency-key"] = crypto.createHash("sha256").update(`${user.slug}\0${idempotencyKey}`).digest("hex");
@@ -227,6 +235,7 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     }
     return { status: response.status, endpoint_id: id, body: value,
       cost_usd: Number.isSafeInteger(actual) ? actual / 1e6 : null,
+      call_id: response.headers.get("x-treg-call-id"),
       costEstimated: !Number.isSafeInteger(actual) };
   };
   const mcp = async (req, res, user) => {
@@ -241,18 +250,21 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     if (message.method === "server/discover") return json(res, 200, { jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } });
     if (message.method === "initialize") return reply({ protocolVersion: "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "兆华数据", version: "1.0.0" } });
     if (message.method === "ping") return reply({});
-    if (message.method === "tools/list") return reply({ tools });
+    if (message.method === "tools/list") return reply({ tools: tools.map(tool => tool.name === "call" ? {
+      ...tool, description: `${tool.description} 可设本次最高花费（美元）；不设则按本人单次上限，当前为 ${callMaxUsd(user)} 美元。`,
+    } : tool) });
     if (message.method !== "tools/call" || !keys(message.params, ["name", "arguments"])) throw fail(403, "此 MCP 功能尚未开放");
+    const maxCostUsd = message.params.name === "call" ? parseMaxCost(message.params.arguments?.max_cost_usd) : undefined;
     try {
       const { name, arguments: args } = message.params;
       let value;
       if (name === "catalog_search" && keys(args, ["query", "limit"])) value = await search(args.query, args.limit ?? 8);
-      else if (name === "catalog_get" && keys(args, ["endpoint_id"])) value = { endpoint: await endpoint(args.endpoint_id) };
-      else if (name === "call" && keys(args, ["endpoint_id", "params", "method", "query", "body", "idempotency_key"])) {
+      else if (name === "catalog_get" && keys(args, ["endpoint_id"])) value = await catalogGet(user, args.endpoint_id);
+      else if (name === "call" && keys(args, ["endpoint_id", "params", "method", "query", "body", "idempotency_key", "max_cost_usd"])) {
         const ep = await endpoint(args.endpoint_id), method = args.method ?? ep.method;
         if (args.params !== undefined && (args.body !== undefined || args.query !== undefined)) throw fail(400, "params 不能与 body 或 query 同时传入");
         if (args.body !== undefined && !object(args.body) && !Array.isArray(args.body)) throw fail(400, "调用内容必须是 JSON 对象或数组");
-        value = await call(user, args.endpoint_id, method, args.query ?? (method === "GET" ? args.params ?? {} : {}), args.body ?? args.params, args.idempotency_key);
+        value = await call(user, args.endpoint_id, method, args.query ?? (method === "GET" ? args.params ?? {} : {}), args.body ?? args.params, args.idempotency_key, maxCostUsd);
       } else throw fail(403, "只开放数据搜索、详情和调用，不能传入自定义身份或请求头");
       return reply({ content: [{ type: "text", text: JSON.stringify(value) }], structuredContent: value, isError: false });
     } catch (error) {
@@ -276,13 +288,17 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
       } else if (path === "/catalog/search" && req.method === "GET" && [...url.searchParams.keys()].every((key) => ["q", "limit"].includes(key))) {
         json(res, 200, await search(url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 8)));
       } else if (path.startsWith("/catalog/endpoints/") && req.method === "GET" && !url.search) {
-        json(res, 200, { endpoint: await endpoint(path.slice("/catalog/endpoints/".length)) });
+        json(res, 200, await catalogGet(user, path.slice("/catalog/endpoints/".length)));
       } else if (path.startsWith("/call/") && ["GET", "POST"].includes(req.method)) {
+        const rawMaxCost = url.searchParams.getAll("max_cost_usd");
+        const maxCostUsd = parseMaxCost(rawMaxCost.length === 0 ? undefined
+          : rawMaxCost.length === 1 && rawMaxCost[0].trim() !== "" ? Number(rawMaxCost[0]) : NaN);
         const body = req.method === "POST" ? await bodyJson(req) : undefined;
-        const query = Object.fromEntries([...new Set(url.searchParams.keys())].map((key) => {
+        const query = Object.fromEntries([...new Set(url.searchParams.keys())].filter(key => key !== "max_cost_usd").map((key) => {
           const values = url.searchParams.getAll(key); return [key, values.length === 1 ? values[0] : values];
         }));
-        const result = await call(user, path.slice(6), req.method, query, body, req.headers["idempotency-key"], stop.signal);
+        const result = await call(user, path.slice(6), req.method, query, body, req.headers["idempotency-key"], maxCostUsd, stop.signal);
+        if (result.call_id !== null) res.setHeader("x-treg-call-id", result.call_id);
         if (result.costEstimated) res.setHeader("x-zp-cost-estimated", "1");
         else res.setHeader("x-treg-cost-micro", String(Math.round(result.cost_usd * 1e6)));
         json(res, 200, result.body);
