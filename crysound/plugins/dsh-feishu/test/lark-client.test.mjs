@@ -220,12 +220,14 @@ test('CardKit creates streaming JSON 2.0, sends card_id into threads, streams an
   const calls = []
   client.client.request = async args => { calls.push(args); return { code: 0, data: { card_id: 'card' } } }
   client.client.im.message.reply = async args => { calls.push(args); return { code: 0, data: { message_id: 'message' } } }
-  assert.equal(await client.createStreamingCard('unique_element'), 'card')
+  assert.equal(await client.createStreamingCard('unique_element', 'progress_element'), 'card')
   const initial = JSON.parse(calls[0].data.data)
   assert.equal(initial.config.streaming_mode, true)
   assert.equal(initial.config.summary.content, '思考中…')
-  assert.deepEqual(initial.config.streaming_config, { print_frequency_ms: { default: 70 }, print_step: { default: 1 }, print_strategy: 'fast' })
+  assert.deepEqual(initial.config.streaming_config, { print_frequency_ms: { default: 40, android: 40, ios: 40, pc: 40 }, print_step: { default: 6, android: 6, ios: 6, pc: 6 }, print_strategy: 'fast' })
   assert.equal(initial.body.elements[0].element_id, 'unique_element')
+  assert.equal(initial.body.elements[0].content, '')
+  assert.equal(initial.body.elements[1].element_id, 'progress_element')
   await client.sendMessage({ chatId: 'chat', messageId: 'origin', threadId: 'thread' }, 'interactive', { type: 'card', data: { card_id: 'card' } })
   assert.deepEqual(JSON.parse(calls[1].data.content), { type: 'card', data: { card_id: 'card' } })
   assert.equal(calls[1].data.reply_in_thread, true)
@@ -246,4 +248,18 @@ for (const code of [300309, 99991672]) test(`CardKit code ${code} reports fallba
   assert.equal(await client.streamCardContent('card', 'element', 'text', 1), false)
   assert.equal(await client.settleStreamingCard('card', 2, {}), false)
   assert.deepEqual(calls.map(c => c.data.sequence), [1, 2, 3])
+})
+
+
+test('progress and new answer rounds use non-typing element replacement', async () => {
+  const client = new LarkClient({ appId: 'test', appSecret: 'test', domain: 'feishu' })
+  const calls = []
+  client.client.request = async args => { calls.push(args); return { code: 0 } }
+  const element = { tag: 'markdown', element_id: 'progress', content: '已执行 6 步' }
+  assert.equal(await client.updateCardElement('card', 'progress', element, 1), true)
+  assert.equal(calls[0].method, 'PUT')
+  assert.equal(calls[0].url, '/open-apis/cardkit/v1/cards/card/elements/progress')
+  assert.deepEqual(calls[0].data, { element: JSON.stringify(element), sequence: 1 })
+  client.client.request = async () => ({ code: 300309, msg: 'closed' })
+  assert.equal(await client.updateCardElement('card', 'progress', element, 2), false)
 })

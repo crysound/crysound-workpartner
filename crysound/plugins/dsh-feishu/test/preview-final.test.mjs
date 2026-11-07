@@ -6,6 +6,7 @@ function rig(options = {}) {
   const calls = []
   let now = 0
   const lark = {
+    async updateCardElement() { return true },
     async createStreamingCard() { return options.streaming ? 'card' : undefined },
     async sendMessage(...args) { calls.push(['send', ...args]); return options.noMessage ? undefined : 'message' },
     async streamCardContent(...args) { calls.push(['stream', ...args]); return true },
@@ -26,6 +27,7 @@ for (const streaming of [false, true]) test(`final body survives completion, str
   assert.deepEqual(result, { delivered: true, overflow: false, elapsedMs: 18100 })
   const last = h.calls.at(-1)
   const card = last.at(-1)
+  for (const element of card.body.elements) delete element.element_id
   assert.equal(card.body.elements[0].content, body)
   assert.deepEqual(card.body.elements, [{ tag: 'markdown', content: body }])
   assert.equal(h.calls.filter(c => c[0] === 'send').length, 1)
@@ -84,6 +86,7 @@ for (const streaming of [false, true]) test(`abnormal status has no elapsed time
   h.clock(18100)
   await h.preview.finish('已停止', 'partial answer')
   const card = h.calls.at(-1).at(-1)
+  for (const element of card.body.elements) delete element.element_id
   assert.deepEqual(card.body.elements, [
     { tag: 'markdown', content: 'partial answer' },
     { tag: 'markdown', content: '已停止', text_size: 'notation' },
