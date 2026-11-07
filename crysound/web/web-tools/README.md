@@ -71,3 +71,13 @@ node --experimental-vm-modules --test crysound/web/web-tools/web-tools.test.mjs
 本次搜索顺序调整的自查依据、线上天气与三题调研验收要求见[交付记录](../../config/evidence/issue-181/README.md)。
 
 英文查询现在并发补充经现有 Treg 网关的 Exa 来源；正文仍保留原搜索回答，中文查询保持原路径。语言判定、五秒共同截止线、费用边界、自查以及部署后尚需完成的验收见[英文搜索记录](../../config/evidence/issue-185/README.md)。此项增加付费调用，须先按需求处理手册确认费用再交付上线。
+
+公司镜像适配层的固定工具输出与会话重放检查：
+
+```sh
+DSH_WEB_TOOLS_RELEASE_ROOT="$RELEASE_ROOT" \
+DSH_SESSION_RELEASE_ROOT="$SESSION_RELEASE_ROOT" \
+node --experimental-vm-modules --test crysound/web/web-tools/exa-transcript.test.mjs
+```
+
+`SESSION_RELEASE_ROOT` 指向已有 `@deepseek-ai/dsh-session@0.2.2-rc.1` 的 node_modules；与网页工具在同一依赖树时可省略。三个固定记录覆盖 Exa 来源补充、额度不足回退和中文路径，保存完整模型可见文字、来源与日期元数据、截断标记及原始调用参数。测试执行修补后的发布工具，和只读预期记录逐项比较，再写入独立临时文件并通过真实 Session 重放，核对模型消息及搜索卡片。它是适配层的库级回归检查，不启动 dsh 进程，也不替代上游进程级 snapshot 通道或线上搜索验收。
