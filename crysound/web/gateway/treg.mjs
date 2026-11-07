@@ -211,6 +211,8 @@ export function createTreg({ enabled, token, orgId, orgSlug, attributionVerified
     const reply = (result) => json(res, 200, { jsonrpc: "2.0", id: message.id, result });
     if (message.method === "notifications/initialized" && message.id === undefined) { res.writeHead(202); res.end(); return; }
     if (message.id === undefined) throw fail(400, "MCP 请求缺少标识");
+    // MCP 客户端收到方法不存在后，回退到 initialize/tools/list 握手。
+    if (message.method === "server/discover") return json(res, 200, { jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } });
     if (message.method === "initialize") return reply({ protocolVersion: "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "兆华数据", version: "1.0.0" } });
     if (message.method === "ping") return reply({});
     if (message.method === "tools/list") return reply({ tools });

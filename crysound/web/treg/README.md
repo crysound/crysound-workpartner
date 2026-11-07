@@ -20,6 +20,8 @@
 
 `POST /_zp/treg/mcp/` 提供无会话 MCP：initialize、ping、initialized 通知、tools/list、tools/call；工具仅 catalog_search、catalog_get、call。call 支持 endpoint_id、params 或 query/body、method 和 idempotency_key；不接受自定义请求头、凭据、上传或金额参数。MCP 请求不是原样透传上游：2026-11-07 核对上游源码，MCP call 会转交 X-Treg-Meta，但没有转交 transport 的 X-Treg-Route-Max-Cost。网关将 MCP 工具转换为同一 REST 调用，确保金额上限、归属、白名单与脱敏都经过同一边界。MCP 返回结构化结果和文本，业务失败标记 isError。其他协议方法、批量请求、资源与管理工具被拒绝。
 
+MCP 客户端的 `server/discover` 探测在身份、服务开关和请求格式校验通过后，返回 HTTP 200、JSON-RPC 错误 `-32601`（Method not found）及原请求 `id`，使客户端回退到现有 `initialize` / `tools/list` 握手。这不提供发现服务；其他未开放方法仍返回 403，未登录仍返回 401，服务关闭仍返回 503。
+
 组织令牌只由网关读取。实际调用仅发送网关新建的 X-Treg-Token、X-Treg-Org、X-Treg-Meta: user=<已验证本人 slug>、X-Treg-Route-Max-Cost 和必要 JSON 头；不转交客户端的 Cookie、组织、金额或归属头。调用者幂等标识加本人命名空间后散列，避免另一人取得组织级幂等缓存。持有另一位已开通人的有效通行证仍会代表那位通行证本人；此功能不能判断通行证是否被盗，所以不得分享个人令牌。
 
 ## 原生标签预算与用量
