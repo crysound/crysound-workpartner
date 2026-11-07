@@ -80,8 +80,13 @@ Mac 更新清单和安装包通过网关 `/_zp/updates/mac/` 读取；新旧域�
 
 - 本地（需要 Apple Silicon Mac、Node ≥ 24.9）：`pnpm install --frozen-lockfile && pnpm run package:desktop:mac:arm64:unsigned`，产物在 `apps/desktop/.desktop-build/targets/mac-arm64/unsigned-artifacts/crysound-workpartner-<版本>-mac-arm64-unsigned.dmg`。
 - 安装包资源检查从包内 `plugin-artifacts.mjs` 读取飞书归档文件名，与打包下载共用固定版本；不再单独维护旧文件名。
-- CI：`.github/workflows/desktop-mac.yml`，只手动触发，输入正式版本号 `version` 与更新目录 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`），在 `macos-15`（Apple 芯片）上构建。正式版本通过打包元数据注入，源 manifest 与运行时版本不变。依次做：更新自查、打包、检查安装包内容（`crysound/scripts/verify-mac-package.sh`）、上传 artifact `crysound-workpartner-mac-arm64-unsigned`、首启动准备冒烟（`crysound/scripts/smoke-workspace.sh`，用包内运行时在临时目录里、npm 源指向不可达地址的条件下准备 5 个插件，打印用时，并附联网安装的对照用时）。
-- 签名与公证：仓库 secrets 里同时有 `CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 时，`crysound/scripts/sign-mac.sh` 会重签（含 `plugin-template` 里的全部 Mach-O 文件）、公证、盖章并另传 `crysound-workpartner-mac-arm64-signed`；完整发版输入还生成签名 app 的 ZIP 与 `latest-mac.yml`，随 DMG 一起上传为工作流产物，下载站由伙伴助理手动发布。缺任何签名凭据就跳过。
+- CI：`.github/workflows/desktop-mac.yml`（`macos-15`、Apple 芯片）与 `desktop-windows.yml`（`windows-2025`、x64）在每次 `main` 推送时自动构建。同类事件的同一分支只保留最新自动运行，手动正式构建不会被它取消。PR 改到桌面、公司目录、`packages`、运行时/原生依赖、CLI/Web、构建脚本、锁文件或这两个工作流时构建；只有 Markdown 文档变动的 PR 不触发。
+- 自动包版本为 `<下一正式版>-dev.<运行号>`，始终低于同号正式版。下一正式版由 `crysound/config/desktop-release.json` 的 `nextVersion` 声明（当前 `0.2.5`，最近成功的正式构建为 `0.2.4`）；每次正式发布后通过后续 PR 把它推进到下一计划版本。版本只注入两个平台安装包的元数据，源 manifest 与内嵌运行时版本不变。
+- 自动产物仅保留为 Actions artifact，安装包保留 14 天；运行摘要列出版本、提交、产物文件名与字节大小。未签名自动包的 artifact 名称含 `unsigned-preview`，摘要标注“未签名预览”。自动构建不生成或上传 `latest-mac.yml`、更新 ZIP，也不发布下载站。
+- Mac 签名与公证使用已有仓库 secrets：`CSC_LINK`（base64 的 .p12）、`CSC_KEY_PASSWORD`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`。`main` 缺任意一项直接失败；签名、公证、盖章或 Gatekeeper 核对失败同样标红并在摘要指向失败步骤。fork PR 拿不到凭据，只产出未签名预览；同仓库 PR 有完整凭据时可签名公证，缺凭据时同样只出未签名预览。不使用 `pull_request_target`。Windows 沿用未签名安装包与安装启动冒烟。
+- 正式发布仍手动：伙伴助理从成功自动运行的摘要选定提交，选择包含该提交的分支或标签，手动运行两个工作流并输入至少为 `nextVersion` 的正式版本号；Mac 同时输入 `update_url`（可回退到仓库变量 `CRYSOUND_DESKTOP_UPDATE_URL`）。Mac 沿用 `sign-mac.sh` 的稳定版本校验，生成签名 DMG、ZIP 与 `latest-mac.yml`，再由伙伴助理手动发布下载页和更新目录；不能把 dev 包直接当成正式版。安装包检查与首启动准备冒烟沿用现有步骤。
+- `main` 自动构建失败时，由单独的、不检出仓库代码的 job 使用 `GITHUB_TOKEN` 创建或更新带 `agent` 标签的需求单，标题包含平台和提交；同一平台同一提交不重复建单。只有这个 job 获得 `issues: write`，构建 job 保持 `contents: read`，不用个人账号。
+- 本地轻量自查：Node 24 执行 `node --experimental-test-module-mocks --test crysound/scripts/desktop-ci.test.mjs crysound/scripts/desktop-workflows.test.mjs crysound/scripts/mac-update-release.test.mjs`，以及 `actionlint -shellcheck= .github/workflows/desktop-mac.yml .github/workflows/desktop-windows.yml`。实际 Mac/Windows 构建、签名公证与合入后的第一次自动产物由伙伴助理验收。
 - 未签名的 dmg 下载后被系统隔离，首次打开前在终端执行 `xattr -cr /Applications/CRYSOUND\ WorkPartner.app`，或右键“打开”。
 
 ## 网页版（`crysound/web`）
