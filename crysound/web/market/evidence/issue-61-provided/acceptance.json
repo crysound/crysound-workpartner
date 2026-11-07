@@ -1,0 +1,176 @@
+{
+  "checkedAt": "2026-11-07T03:47:19.114Z",
+  "method": "Native isolated dsh 0.2.2-rc.1 patched from agent/issue-61; unmodified provided design 0.2.1 and motion 0.1.3; production market handler with synthetic registry approvals; real model turns; configured persistent-browser CDP tabs; no browser response or session mocks",
+  "onlineGuides": {
+    "authenticated": true,
+    "status": 200,
+    "guides": [
+      {
+        "name": "@crysound/motion",
+        "version": "0.1.3",
+        "metadataMatchesProvidedPackage": true
+      }
+    ],
+    "design": "absent: approval not confirmed"
+  },
+  "display": [
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "zh",
+      "route": "home",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "zh",
+      "route": "home",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "zh",
+      "route": "market",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "zh",
+      "route": "market",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "en",
+      "route": "home",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "en",
+      "route": "home",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "en",
+      "route": "market",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "en",
+      "route": "market",
+      "summaryMatchesPackage": true,
+      "threeExamplesMatchPackage": true,
+      "capabilityTagMatches": true
+    }
+  ],
+  "submissions": [
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "en",
+      "case": "third example",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": true,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "finalReply": "Please upload the sales CSV first. I haven’t received a file yet, and I won’t invent sales data.\n\nOnce it’s attached, I’ll inspect its columns and build three CRYSOUND-branded dashboard directions showing monthly trends and product shares, with traceable data sources. After you choose a direction, I’ll complete it, check the rendered dashboard, and deliver editable source files with any unverified items listed.\n\nIdeally, the CSV includes a date, product name, and sales amount or quantity. I’ll flag missing definitions, such as currency or whether sales include returns, after reviewing the file."
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "en",
+      "case": "third example",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": true,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "finalReply": "The current workspace, `<isolated workspace>`, is empty. There’s no motion project, MP4, or keyframes to inspect, so I couldn’t export the GIF.\n\nPlease place the completed project folder in this workspace, or provide its existing local path. I’ll then check the source, dimensions, local assets, and keyframes; confirm the 24-second duration; and export a silent GIF using at most two render browsers while preserving the original MP4 and source files."
+    },
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "en",
+      "case": "attachment",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": false,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "file": {
+        "attachmentId": "sha256:59411f6398fc46fcf862bae66edef1f2b2e18e35da7197dc212bbc47666c1009",
+        "name": "issue-61-attachment.csv",
+        "bytes": 34
+      },
+      "storedBytesEqualOriginal": true,
+      "finalReply": "Received. First data row: `2026-01,17`."
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "zh",
+      "case": "third example",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": true,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "finalReply": "当前工作区 `<isolated workspace>` 为空，未找到已完成的 24 秒动效项目、源文件或 MP4，因此暂时无法检查关键帧或导出 GIF，也没有可提供的成品下载路径。\n\n请将原项目目录放入当前工作区，或提供它在云端的绝对路径。收到后我会检查源文件，执行 `check`，生成并查看 0、4.5、13、23 秒的静帧，再以最多 2 个浏览器导出无声 GIF，保留原 MP4 和源文件。"
+    },
+    {
+      "name": "@crysound/motion",
+      "version": "0.1.3",
+      "language": "zh",
+      "case": "attachment",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": false,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "file": {
+        "attachmentId": "sha256:59411f6398fc46fcf862bae66edef1f2b2e18e35da7197dc212bbc47666c1009",
+        "name": "issue-61-attachment.csv",
+        "bytes": 34
+      },
+      "storedBytesEqualOriginal": true,
+      "finalReply": "已收到。第一行数据：2026-01,17"
+    },
+    {
+      "name": "@crysound/design",
+      "version": "0.2.1",
+      "language": "zh",
+      "case": "third example",
+      "exactPackagePromptPrefix": true,
+      "exactPackageExample": true,
+      "userMessagesWithGuide": 1,
+      "turnCompleted": true,
+      "finalReply": "目前未收到 CSV 附件，工作区内也没有数据文件。请上传销售数据 CSV；至少应包含**日期或月份、产品名称、销售额或销量**。\n\n收到后，我会先核对字段、单位与统计口径，再按兆华品牌制作三个实际设计方向供你选择，展示月度趋势和产品占比，并标明数据来源。最终交付可编辑源文件、检查结果及未验收项；缺失的数据会标为“待确认”，不会编造。"
+    }
+  ],
+  "consoleErrors": [],
+  "pending": [
+    "design 0.2.1 online approval and guide visibility",
+    "packaged Electron acceptance by partner assistant",
+    "deployment acceptance after authorization"
+  ]
+}
