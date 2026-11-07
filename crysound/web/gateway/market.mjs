@@ -104,7 +104,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       if (designated(name) && !existing && !maintained && !officialPublishers.includes(user.slug)) throw fail(403, "这个包名由兆华官方保留，只有指定维护人或公司发布账号能首次发布");
       if (existing && existing.owner !== user.slug && !maintained) throw fail(403, "只有首个发布者或指定的官方维护人能发布这个包的新版本");
       if (!isOfficial(name, existing?.owner ?? user.slug) && [name.split("/").at(-1), manifest.displayName, manifest.title].some((value) => typeof value === "string" && value.trim().startsWith("兆华"))) throw fail(403, "“兆华”开头的名称仅供官方插件使用，请修改插件名称后重新发布");
-      if (existing?.versions[version]) throw fail(409, "这个版本已记录，不能覆盖；请发布新版本或联系管理员核对 publishing 状态");
+      if (existing?.versions[version]) throw fail(409, "这个版本已记录，不能覆盖；请发布新版本或联系管理员核对上传记录");
       const current = await upstream(path);
       if (current.status !== 404 && !current.ok) { await current.body?.cancel(); throw fail(502, "无法核对现有版本，请稍后重试"); }
       const old = current.ok ? await current.json() : null;
@@ -120,9 +120,9 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       save(next);
       let response;
       try { response = await upstream(path, { method: "PUT", headers: { "content-type": "application/json" }, body: upload }); }
-      catch (error) { throw fail(502, "上传结果未知，已保留 publishing 记录；请管理员核对注册表，勿重复发布同一版本"); }
+      catch (error) { throw fail(502, "插件上传结果未知，已保留待核对记录；请管理员核对上传结果，勿重复发布同一版本"); }
       await response.body?.cancel();
-      if (response.status >= 500) throw fail(502, "注册表上传结果未知，已保留 publishing 记录；请管理员核对");
+      if (response.status >= 500) throw fail(502, "插件上传结果未知，已保留待核对记录；请管理员核对，勿重复发布同一版本");
       if (!response.ok) {
         // 后端明确拒绝时撤销预留；连接中断则保留，避免他人抢占或覆盖。
         const rollback = structuredClone(state);
@@ -134,9 +134,9 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
       const done = structuredClone(state);
       done.packages[name].versions[version].status = "pending";
       try { save(done); }
-      catch (error) { throw fail(500, "注册表已接受上传，但待审批记录保存失败；保留 publishing，请管理员核对，勿重复发布"); }
+      catch (error) { throw fail(500, "插件已上传，但待审批记录保存失败；已保留待核对记录，请管理员核对，勿重复发布"); }
       void Promise.resolve().then(() => notify({ name, version, publisher: user.slug, admins })).catch((error) => console.log("市场审批通知失败，请打开审批页查看"));
-      json(res, 201, { ok: true, status: "pending", message: "发布成功，等待管理员审批" });
+      json(res, 201, { ok: true, status: "pending", message: `${name} ${version} 已上传，等待管理员审批` });
     });
   }
 
@@ -222,7 +222,7 @@ export function createMarket({ stateFile, registry, authorization, publicOrigin,
     }
     if (req.method !== "GET") throw fail(405, "不支持此方法");
     const rows = Object.entries(state.packages).flatMap(([name, pkg]) => Object.entries(pkg.versions).filter(([, row]) => row.status === "pending").map(([version, row]) =>
-      `<article><h2>${esc(name)} · ${esc(version)}</h2><p>发布者：${esc(row.publisher)}</p><p>${esc(row.description)}</p><pre>${esc(row.readme)}</pre><form method="post"><input type="hidden" name="name" value="${esc(name)}"><input type="hidden" name="version" value="${esc(version)}"><button name="action" value="approved">批准</button> <button name="action" value="rejected">拒绝</button> <button name="action" value="notify">重发审批卡片</button></form></article>`)).join("");
+      `<article><h2>${esc(name)} · ${esc(version)}</h2><p>发布者：${esc(row.publisher)}</p><p>${esc(row.description)}</p><pre>${esc(row.readme)}</pre><form method="post"><input type="hidden" name="name" value="${esc(name)}"><input type="hidden" name="version" value="${esc(version)}"><button name="action" value="approved">批准上架</button> <button name="action" value="rejected">拒绝上架</button> <button name="action" value="notify">重发审批卡片</button></form></article>`)).join("");
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'", "x-content-type-options": "nosniff" });
     res.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>兆华市场审批</title><style>body{font:16px/1.6 sans-serif;max-width:850px;margin:32px auto;padding:0 20px;color:#170057}article{border-bottom:1px solid #ddd;padding:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:8px 20px}</style><h1>兆华市场 · 待审批</h1>${rows || "<p>暂无待审批版本。</p>"}</html>`);
   }

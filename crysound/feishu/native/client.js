@@ -11,11 +11,11 @@ window.__ModuleLoader__.load({
     const namespace = 'crysound.feishu';
     const en = {
       title: 'Feishu authorization', intro: 'Connect to let your partner work with Feishu as you. It will ask before sending messages or emails, submitting approvals, deleting content, or changing sharing permissions.',
-      feishu: 'Feishu', project: 'Feishu Project', connect: 'Connect', reconnect: 'Reauthorize', disconnect: 'Disconnect',
+      feishu: 'Feishu', project: 'Feishu Project', connect: 'Connect {object}', reconnect: 'Reauthorize {object}', disconnect: 'Disconnect {object}',
       checking: 'Checking authorization…', unknown: 'Unable to verify right now', connected: 'Connected', disconnected: 'Not connected',
       disabled: 'Feishu authorization is disabled by your administrator', revoking: 'Access stopped. Remote revocation is pending; try disconnecting again.',
       returnHere: 'Return here when finished', waiting: 'Waiting for you to authorize', expired: 'Authorization expired. Connect again.',
-      retry: 'Unable to process authorization. Reopen this page or return later to retry.',
+      retry: 'Unable to process this authorization. Check its connection status or contact your administrator.',
       localNote: 'This connects Feishu Project on this device. Use the web app for cloud mode.',
       cloudNote: 'This connects Feishu Project in the cloud. Use the desktop app for local mode.',
       confirm: 'Disconnecting stops your partner from using this authorization. Disconnect?', cancel: 'Cancel', code: 'Authorization code:',
@@ -26,11 +26,11 @@ window.__ModuleLoader__.load({
     /** @type {Record<keyof typeof en, string>} */
     const zh = {
       title: '飞书授权', intro: '连接后，伙伴可以用你的身份处理飞书里的内容；发消息、发邮件、提交审批、删除、改分享权限之前会先问你。',
-      feishu: '飞书', project: '飞书项目', connect: '连接', reconnect: '重新授权', disconnect: '断开',
+      feishu: '飞书', project: '飞书项目', connect: '连接{object}', reconnect: '重新授权{object}', disconnect: '断开{object}',
       checking: '正在检查授权…', unknown: '暂时无法核实', connected: '已连接', disconnected: '未连接',
       disabled: '管理员已停用飞书授权', revoking: '已停止使用，远端撤销待完成，请重试断开',
       returnHere: '完成后回到这里', waiting: '等待你完成授权', expired: '授权已过期，请重新连接',
-      retry: '暂时无法处理授权，请重新打开页面或稍后切回重试。',
+      retry: '这项授权未处理完成，请查看连接状态；仍无法处理请联系管理员。',
       localNote: '此处连接本机的飞书项目。云端模式请在网页版连接。',
       cloudNote: '此处连接云端的飞书项目。本机运行模式请在桌面版连接。',
       confirm: '断开后，伙伴将无法继续使用这项授权。确认断开？', cancel: '取消', code: '授权码：',
@@ -196,9 +196,9 @@ window.__ModuleLoader__.load({
           h('div', { className: 'zp-feishu-actions' },
             confirmation === kind ? h('div', null, h('p', null, t('confirm')),
               h(Button, { size: 'sm', variant: 'outline', onClick: () => setConfirmation(null) }, t('cancel')),
-              h(Button, { size: 'sm', variant: 'outline', onClick: () => disconnect(kind) }, t('disconnect'))) : h('div', { className: 'zp-feishu-actions' },
-              h(Button, { size: 'sm', variant: connected ? 'outline' : 'primary', disabled: busy !== null || state === null || state?.error || state?.enabled === false || revoking, onClick: () => connect(kind) }, connected ? t('reconnect') : t('connect')),
-              connected || revoking ? h(Button, { size: 'sm', variant: 'outline', disabled: busy !== null, onClick: () => setConfirmation(kind) }, t('disconnect')) : null)));
+              h(Button, { size: 'sm', variant: 'outline', onClick: () => disconnect(kind) }, t('disconnect', { object: t(kind) }))) : h('div', { className: 'zp-feishu-actions' },
+              h(Button, { size: 'sm', variant: connected ? 'outline' : 'primary', disabled: busy !== null || state === null || state?.error || state?.enabled === false || revoking, onClick: () => connect(kind) }, t(connected ? 'reconnect' : 'connect', { object: t(kind) })),
+              connected || revoking ? h(Button, { size: 'sm', variant: 'outline', disabled: busy !== null, onClick: () => setConfirmation(kind) }, t('disconnect', { object: t(kind) })) : null)));
       }
       return h('section', { className: 'zp-feishu', 'aria-label': t('title') },
         h('h2', null, t('title')), h('p', { className: 'zp-feishu-muted zp-feishu-intro' }, t('intro')), row('feishu'), row('project'),
