@@ -17,13 +17,13 @@ const guidance = {
   zh: { summary: "制作公司品牌的网页、海报和原型", prompt: "请使用 /design 技能完成以下需求。", examples: ["设计产品介绍页", "制作展会海报", "检查页面设计"] },
   en: { summary: "Create branded pages, posters and prototypes", prompt: "Use the /design skill for the following request.", examples: ["Design a product page", "Create an event poster", "Review a page design"] },
 };
-const guide = { name: "@crysound/design", version: "0.2.1", title: "兆华设计", home: true, guide: guidance };
+const guide = { name: "@crysound/design", version: "0.2.1", title: "兆华设计", guide: guidance };
 const jsx = (type, props, key) => ({ type, props, key });
 const store = value => ({ getSnapshot: () => value, set: next => { value = next; }, subscribe: () => () => {} });
 
-async function fixture(t) {
+async function fixture(t, guides = [guide]) {
   const original = globalThis.fetch;
-  globalThis.fetch = async () => Response.json({ guides: [guide, ...Array.from({ length: 5 }, (_, i) => ({ ...guide, name: `@crysound/example${i}` }))] });
+  globalThis.fetch = async () => Response.json({ guides });
   t.after(() => { globalThis.fetch = original; });
   const registrations = new Map(), events = new Map(), disposers = [], sent = [], notices = [], calls = [];
   const inputState = store({ draft: "", draftRev: 0, phase: "plain", attachmentIds: [], occurrences: [] });
@@ -61,24 +61,9 @@ async function fixture(t) {
     return { ...face, useInput: selector => selector(inputState.getSnapshot()), useSession: selector => selector(sessionState.getSnapshot()), useCompanyGuides: selector => selector(face.hooks.companyGuides.getSnapshot()), useGuideLocale: selector => selector(ctx.locale.getSnapshot()) };
   };
   const render = name => registrations.get(name).Component(props(name));
-  return { ctx, sent, notices, calls, render, props, inputState, sessionState, events, source: () => source, claim: () => savedClaim,
+  return { ctx, sent, notices, calls, render, props, inputState, sessionState, events, registrations, source: () => source, claim: () => savedClaim,
     installed: value => { installed = value; }, enabled: value => { enabled = value; }, remoteFailure: value => { remoteFailure = value; }, version: value => { version = value; }, language: value => { language = value; locale.set({ active: value }); } };
 }
-
-test("首页未安装入口打开对应市场详情，已启用进入说明卡，逛市场打开公司列表", async t => {
-  const f = await fixture(t), face = f.props("conversation.composer.dock");
-  f.installed(false); face.choose(guide.name);
-  await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(f.calls, [{ event: "company-market/open", args: [guide.name] }]);
-  assert.equal(f.render("conversation.input.dock"), null);
-  f.calls.length = 0; f.installed(true); face.choose(guide.name);
-  await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(f.calls, ["work"]);
-  assert.equal(f.render("conversation.input.dock").props.children[0].props.children, guide.title);
-  f.calls.length = 0; face.browse();
-  assert.deepEqual(f.calls, [{ event: "company-market/open", args: [null] }]);
-  assert.equal(f.sent.length, 0);
-});
 
 test("公司来源排第二时，冷启动与旧筛选都定位公司包；缺公司来源不搜索其他市场", async t => {
   const company = "https://gateway.test/_zp/market/index.json";
@@ -122,14 +107,12 @@ test("公司来源排第二时，冷启动与旧筛选都定位公司包；缺�
   assert.equal(events.size, 0); assert.equal(listeners.size, 0);
 });
 
-test("仅空白新对话显示最多四个官方入口，草稿、附件和历史对话隐藏入口", async t => {
-  const f = await fixture(t), name = "conversation.composer.dock";
-  assert.equal(f.render(name).props.children.length, 6);
-  assert.equal(f.render(name).props.children.filter(Boolean).length, 5);
-  for (const change of [{ draft: "unsent" }, { attachmentIds: ["image"] }]) {
-    const before = f.inputState.getSnapshot(); f.inputState.set({ ...before, ...change }); assert.equal(f.render(name), null); f.inputState.set(before);
-  }
-  f.sessionState.set({ blank: false }); assert.equal(f.render(name), null);
+test("首页不注册快捷按钮或空白占位，即使旧引导仍带 home 标记", async t => {
+  const f = await fixture(t, [{ ...guide, home: true }]);
+  assert.equal(f.registrations.has("conversation.composer.dock"), false);
+  assert.equal(f.render("conversation.input.left"), null);
+  assert.equal(f.render("conversation.input.dock"), null);
+  assert.equal(f.sent.length, 0);
 });
 
 test("选择能力不发消息；标签、包内三示例与双语同步；取消只移出能力保留草稿附件", async t => {
@@ -222,15 +205,18 @@ test("固定发布模块修补幂等、兼容数据按钮先后顺序；未知�
   assert.throws(() => patchMarketGuides(entry.replace('function apply(ctx)', 'function changed(ctx)')));
 });
 
-test("旧引导升级后与新补丁字节一致；首页实际渲染快捷插槽", { skip: !process.env.GUIDE_RUNTIME }, () => {
+test("旧引导 v1/v2/v3 升级后字节一致且不再注册首页快捷按钮", { skip: !process.env.GUIDE_RUNTIME }, () => {
   const root = process.env.GUIDE_RUNTIME;
   const entry = fs.readFileSync(path.join(root, "ui-entry-customization/lib/client.js"), "utf8");
   const patched = patchMarketGuides(patchMarketEntry(entry));
-  const legacy = patched.replace("package guides v3", "package guides v1")
+  const legacy = patched.replace("package guides v4", "package guides v1")
     .replace('"remote", "remote.pluginManager"', '"remote.pluginManager"')
     .replace(installCompanyGuides.toString(), "function installCompanyGuides() { throw new Error('legacy'); }");
   assert.equal(patchMarketGuides(legacy), patched);
   assert.equal(patchMarketGuides(legacy.replace("package guides v1", "package guides v2").replace('"remote.pluginManager"', '"remote", "remote.pluginManager"')), patched);
+  assert.equal(patchMarketGuides(legacy.replace("package guides v1", "package guides v3").replace('"remote.pluginManager"', '"remote", "remote.pluginManager"')), patched);
+  assert.ok(!patched.includes('className: "zp-guide-shortcuts"'));
+  assert.ok(!patched.includes('["conversation.composer.dock", Shortcuts]'));
   const conversation = fs.readFileSync(path.join(root, "ui-conversation/lib/client.js"), "utf8");
   const next = patchGuidePlaceholder(conversation);
   assert.ok(!next.includes('variant === "composer" && input !== void 0 && sessionId !== void 0 ? renderSlot("conversation.composer.dock", {})'));

@@ -1,0 +1,41 @@
+{
+  "method": "full native page reload with tab-local response substitution; real remote API and guide endpoint; no component/session stubs",
+  "screenshot": "before/after light/dark screenshots crop out the sidebar and account; themes are applied only to this tab",
+  "before": {
+    "buttons": [
+      "兆华设计",
+      "兆华动画",
+      "去市场看看"
+    ],
+    "rowCount": 1,
+    "composer": {
+      "x": 280,
+      "y": 252.5,
+      "width": 1153,
+      "height": 348
+    }
+  },
+  "after": {
+    "failedToLoadPlugins": false,
+    "errors": [],
+    "patchedModules": [
+      "ui-conversation",
+      "ui-entry-customization",
+      "ui-plugin-market"
+    ],
+    "home": [],
+    "buttons": [],
+    "rowCount": 0,
+    "composer": {
+      "x": 280,
+      "y": 285.5,
+      "width": 1153,
+      "height": 282
+    }
+  },
+  "pending": [
+    "approved installed package: market Use to guide",
+    "real model submission",
+    "packaged desktop"
+  ]
+}
