@@ -1,0 +1,28 @@
+{
+  "test": "Temporary browser-only insertion, no product deployment",
+  "cycles": [
+    {
+      "single": true,
+      "first": true,
+      "togglePresent": true
+    },
+    {
+      "single": true,
+      "first": true,
+      "togglePresent": true
+    },
+    {
+      "single": true,
+      "first": true,
+      "togglePresent": true
+    },
+    {
+      "single": true,
+      "first": true,
+      "togglePresent": true
+    }
+  ],
+  "existingSessionOpened": true,
+  "newTabExistingSessionAvailable": true,
+  "afterSessionNavigation": true
+}
