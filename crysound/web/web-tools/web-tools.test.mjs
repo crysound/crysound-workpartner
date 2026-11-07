@@ -244,6 +244,35 @@ test("released search returns bounded answer text with citations or without sour
   }
 });
 
+test("multiple native searches keep the final answer instead of spending its budget on intermediate commentary", async t => {
+  const root = await patchedRelease(t);
+  const firstURL = "https://weather.example/first";
+  const finalURL = "https://weather.example/final";
+  const finalText = "杭州今天晴，最高气温 22℃。";
+  const blocks = [
+    { type: "web_search_tool_result", content: [{ type: "web_search_result", url: firstURL, title: "初步天气" }] },
+    { type: "text", text: "我还需要查询最新的天气信息。".repeat(100), citations: [{ url: firstURL, cited_text: "早间观测" }] },
+    { type: "web_search_tool_result", content: [{ type: "web_search_result", url: finalURL, title: "最新天气" }] },
+    { type: "text", text: finalText, citations: [{ url: finalURL, cited_text: "晴，22℃" }] },
+    { type: "text", text: "请以最新预报为准。" },
+  ];
+  const api = await released("dsh-web-search-deepseek", { root, fetch: async () => Response.json({ content: blocks }) });
+  const result = await searchWithFallback(api.DeepSeekSearchProvider, WebError, options, { query: "杭州天气" });
+  const tools = await released("dsh-tool-web", { root });
+  const registered = [];
+  tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } }, web: { search: async () => result } }, tools.Config({}));
+  const tool = registered.find(tool => tool.name === "web_search");
+  const value = await tool.execute({ queries: ["杭州天气"] }, { signal: new AbortController().signal });
+  assert.equal(value.content, finalText + " 请以最新预报为准。");
+  assert.deepEqual(Array.from(value.sources, source => source.url), [firstURL, finalURL]);
+  assert.equal(value.sources[0].summary, "早间观测");
+  assert.equal(value.sources[1].summary, "晴，22℃");
+  const rendered = tool.output.render({}, value)[0].text;
+  assert.ok(rendered.includes(finalText));
+  assert.doesNotMatch(rendered, /我还需要查询/);
+  assert.equal(tool.output.presentationMeta({}, value).answer, value.content);
+});
+
 test("released search dispatches after credentials and logging without a timer or extra model turn", { timeout: 5000 }, async t => {
   const root = await patchedRelease(t);
   const events = [];
