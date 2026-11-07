@@ -86,6 +86,11 @@ test('p2p messages carry no mentions', () => {
   assert.deepEqual(message.mentions, [])
 })
 
+test('messages without a mention list preserve command text', () => {
+  assert.equal(mentionText(' /preset '), '/preset')
+  assert.equal(mentionText(' /think ', undefined, 'ou_bot'), '/think')
+})
+
 test('malformed JSON content degrades to the raw string', () => {
   const message = parseReceiveEvent(payload({ content: 'plain' }))
   assert.equal(message.text, 'plain')

@@ -54,7 +54,7 @@ export function postContent(value: Record<string, unknown>, mentions: readonly I
   }
   return { text: paragraphs.join('\n').trim(), images }
 }
-export function mentionText(text: string, mentions: readonly InboundMention[], botId?: string): string {
+export function mentionText(text: string, mentions: readonly InboundMention[] = [], botId?: string): string {
   for (const mention of mentions) if (mention.key) {
     text = text.split(mention.key).join(mention.openId === botId ? ' ' : `@${mention.name ?? mention.openId}`)
   }
