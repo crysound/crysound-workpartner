@@ -42,7 +42,8 @@
   --dsw-alias-interactive-bg-hover: rgba(0, 0, 0, 0.05); /* surface-hover */
   --dsw-alias-interactive-bg-active: rgba(0, 0, 0, 0.08); /* perm-item-selected-bg */
   --dsw-alias-interactive-bg-hover-accent: rgba(0, 0, 0, 0.10); /* file-chip-bg */
-  --dsw-alias-interactive-bg-hover-solid: rgba(0, 0, 0, 0.05); /* surface-hover */
+  /* Composite over surface so pinned headers mask the scrolling content. */
+  --dsw-alias-interactive-bg-hover-solid: #E6E6E1; /* surface-hover */
   --dsw-specific-selector: rgba(0, 0, 0, 0.05); /* surface-hover */
   --dsw-specific-tip: rgba(0, 0, 0, 0.035); /* surface-hover-soft */
   --dsw-specific-sidebar-nav-item-active: rgba(0, 0, 0, 0.08); /* settings-menu-bg-selected */
@@ -115,7 +116,8 @@
   --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.06); /* surface-hover */
   --dsw-alias-interactive-bg-active: rgba(255, 255, 255, 0.10); /* perm-item-selected-bg */
   --dsw-alias-interactive-bg-hover-accent: rgba(255, 255, 255, 0.13); /* file-chip-bg */
-  --dsw-alias-interactive-bg-hover-solid: rgba(255, 255, 255, 0.06); /* surface-hover */
+  /* Composite over surface so pinned headers mask the scrolling content. */
+  --dsw-alias-interactive-bg-hover-solid: #262626; /* surface-hover */
   --dsw-specific-selector: rgba(255, 255, 255, 0.06); /* surface-hover */
   --dsw-specific-tip: rgba(255, 255, 255, 0.04); /* surface-hover-soft */
   --dsw-specific-sidebar-nav-item-active: rgba(255, 255, 255, 0.10); /* settings-menu-bg-selected */

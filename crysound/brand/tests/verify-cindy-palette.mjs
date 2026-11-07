@@ -19,6 +19,11 @@ for (const theme of ['light', 'dark']) {
   for (const [, variable, actual, token] of declarations) {
     assert.ok(token in tokens, `${theme}: unknown source token ${token}`);
     let expected = tokens[token];
+    if (variable === '--dsw-alias-interactive-bg-hover-solid') {
+      const [r, g, b, alpha] = expected.match(/[\d.]+/g).map(Number);
+      const surface = tokens.surface.slice(1).match(/../g).map(hex => parseInt(hex, 16));
+      expected = '#' + surface.map((channel, i) => Math.round(channel * (1 - alpha) + [r, g, b][i] * alpha).toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
     if (token === 'sidebar-item-active' || token === 'sidebar-item-hover') expected = `hsl(${expected})`;
     if (token === 'switch-thumb-on' && theme === 'light') expected = tokens.surface;
     assert.equal(actual, expected, `${theme} ${variable} from ${token}`);
@@ -31,4 +36,4 @@ for (const value of ['238, 238, 233, 0.85', '5, 5, 5, 0.85']) {
   assert.ok(css.includes(`rgb(${value.replaceAll(', ', ' ').replace(' 0.85', ' / 0.85')})`));
 }
 assert.doesNotMatch(css, /#(?:170057|5733e6|3a16b4|eeebf8)\b/i, 'Skin colors exclude product logo colors');
-console.log(`${count} mapped colors match the Cindy source; both Mac backings match; no brand purple in the skin`);
+console.log(`${count} mapped colors match the Cindy source (solid hover composited over surface); both Mac backings match; no brand purple in the skin`);
