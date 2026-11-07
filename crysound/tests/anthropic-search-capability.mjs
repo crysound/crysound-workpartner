@@ -93,7 +93,7 @@ try {
   assert.equal(requests[0].tools[0].type, undefined);
   assert.ok(requests[0].tools[0].input_schema);
   const persisted = JSON.parse(JSON.stringify({ content: text, replayState: finish.replayState }));
-  assert.ok(!JSON.stringify(persisted).includes(sourceURL));
+  assert.doesNotMatch(JSON.stringify(persisted), /server-search-source/);
   assert.ok(!JSON.stringify(persisted).includes(serverId));
   // Replay the exact JSON-serializable output that a session can save.
   for await (const chunk of adapter.stream({ ...options, messages: [user, {
@@ -101,7 +101,7 @@ try {
   }, { role: 'user', content: [{ type: 'text', text: 'Continue.' }] }] })) {
     assert.notEqual(chunk.type === 'finish' && chunk.reason.kind, 'error');
   }
-  assert.ok(!JSON.stringify(requests[1].messages).includes(sourceURL));
+  assert.doesNotMatch(JSON.stringify(requests[1].messages), /server-search-source/);
   assert.ok(!JSON.stringify(requests[1].messages).includes(serverId));
   console.log(JSON.stringify({
     versions, fixtureRequests: requests.length, textStreaming: 'works',
