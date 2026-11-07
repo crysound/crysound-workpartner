@@ -36,7 +36,8 @@ export async function companyConfig(
         if (typeof list !== 'object' || list === null || !('plugins' in list) || !Array.isArray(list.plugins)
           || !list.plugins.every((plugin: unknown) => typeof plugin === 'object' && plugin !== null
             && 'name' in plugin && typeof plugin.name === 'string' && 'spec' in plugin && typeof plugin.spec === 'string'
-            && 'want' in plugin && typeof plugin.want === 'string')
+            && 'want' in plugin && typeof plugin.want === 'string'
+            && (!('missingOnly' in plugin) || typeof plugin.missingOnly === 'boolean'))
           || !('defaultBundles' in list) || !Array.isArray(list.defaultBundles) || !list.defaultBundles.every((name: unknown) => typeof name === 'string')) {
           throw new Error('公司插件清单格式不正确')
         }

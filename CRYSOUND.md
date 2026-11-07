@@ -204,3 +204,7 @@ done
 ## 需求单标签
 
 打了 `agent` 标签的需求单由自动开发流程处理：改代码、开 PR、做轻量自查。PR 打上 `deliver` 标签表示已交负责人审查、合入、部署和验收；负责人验收完成后关闭需求单，并去掉 PR 的 `deliver` 标签。
+
+## 作品与创作插件预装
+
+作品入口使用 `crysound-artifacts.artifacts`，固定在搜索之后、自动化之前；隐藏上游重复入口与五个创作插件的单独入口，仅改变导航投影。作品页中文名通过共享启动修补统一成“作品”，市场仍叫“兆华作品”。版本、验证范围、启动耗时限制与回退见 [交付记录](crysound/sidebar-a/evidence/creation-preinstall/README.md)。

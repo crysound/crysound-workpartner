@@ -48,7 +48,7 @@ export interface WorkspaceResult {
 }
 
 interface PluginList {
-  readonly plugins: readonly { readonly name: string; readonly spec: string; readonly want: string }[]
+  readonly plugins: readonly { readonly name: string; readonly spec: string; readonly want: string; readonly missingOnly?: boolean }[]
   readonly defaultBundles: readonly string[]
 }
 
@@ -176,7 +176,8 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     const deadline = Date.now() + limits.installTotal
     const skipped: string[] = []
     for (const plugin of list.plugins) {
-      if ((await recorded())[plugin.name] === plugin.want) continue
+      const installed = await recorded()
+      if (plugin.missingOnly ? Object.hasOwn(installed, plugin.name) : installed[plugin.name] === plugin.want) continue
       const remaining = deadline - Date.now()
       if (remaining <= 0) { skipped.push(plugin.name); continue }
       onBusy()
@@ -226,6 +227,6 @@ export async function prepareCompanyWorkspace(options: WorkspaceOptions): Promis
     const feishuCode = await run(execPath, [join(options.assets, 'feishu', 'desktop-setup.mjs'), join(userData, 'company'), join(userData, 'partner-session.json'), marketOrigin, execPath, join(profile, 'cordis.patch.yml'), projectHost], environment, limits.patch)
     if (feishuCode !== 0) throw new Error('CRYSOUND: Feishu command and skill preparation failed')
     const done = await recorded()
-    return { missing: list.plugins.filter(plugin => done[plugin.name] !== plugin.want).map(plugin => plugin.name) }
+    return { missing: list.plugins.filter(plugin => plugin.missingOnly ? !Object.hasOwn(done, plugin.name) : done[plugin.name] !== plugin.want).map(plugin => plugin.name) }
   } finally { await config.dispose() }
 }

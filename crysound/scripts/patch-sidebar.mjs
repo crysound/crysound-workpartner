@@ -164,7 +164,7 @@ function patchSidebarSearchV2(text) {
 }
 
 /** Remove the market subtitle from fresh artifacts and exact deployed navigation predecessors. */
-export function patchSidebarModule(text) {
+function patchSidebarMarketV3(text) {
   const edit = editor(patchSidebarSearchV2(text), 'navigation', 3);
   if (edit.done) return text;
   const { replace } = edit;
@@ -175,6 +175,19 @@ export function patchSidebarModule(text) {
   replace('(PanelRow, { t, id, label:', '(PanelRow, { id, label:');
   replace(' "zp.marketHint": "插件·技能",', '');
   replace(' "zp.marketHint": "Plugins · skills",', '');
+  return edit.finish();
+}
+
+/** Refresh the company artifacts destination in original and previously patched navigation. */
+export function patchSidebarModule(text) {
+  text = patchSidebarMarketV3(text);
+  const edit = editor(text, 'artifacts');
+  if (edit.done) return text;
+  const start = text.indexOf('function sidebarPanels(panels) {');
+  const end = text.indexOf('\nfunction SidebarRoot(', start);
+  if (start < 0 || end < 0) throw new Error('Sidebar artifacts: missing panel policy');
+  const previous = text.slice(start, end);
+  if (previous !== sidebarPanels.toString()) edit.replace(previous, sidebarPanels.toString());
   return edit.finish();
 }
 

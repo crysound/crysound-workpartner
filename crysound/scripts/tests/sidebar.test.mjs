@@ -14,15 +14,25 @@ if (!source) throw new Error('SIDEBAR_RUNTIME_MODULES must point to unmodified p
 const panel = (id, label = id, order = 0, owner = id, pluginName = label) => ({ id, label, order, owner, pluginName });
 
 test('fixed navigation precedes plugins regardless of negative order; 0/1/2/3 threshold', () => {
-  const fixed = [panel('plugins'), panel('schedules'), panel('baoyu-design.artifacts')];
+  const fixed = [panel('plugins'), panel('schedules'), panel('crysound-artifacts.artifacts')];
   const extras = [panel('notes', '笔记', -100), panel('desk', '工作台', -1000), panel('clock', '闹钟', -999)];
   for (let count = 0; count <= 3; count++) {
     const result = sidebarPanels([...extras.slice(0, count), ...fixed]);
-    assert.deepEqual(result.fixed.map(p => p.id), ['baoyu-design.artifacts', 'schedules', 'plugins']);
+    assert.deepEqual(result.fixed.map(p => p.id), ['crysound-artifacts.artifacts', 'schedules', 'plugins']);
     assert.equal(result.visible.length, 3 + (count > 2 ? 0 : count));
     assert.equal(result.extras.length, count);
   }
   assert.deepEqual(sidebarPanels([...extras, ...fixed]).extras.map(p => p.label), ['笔记', '工作台', '闹钟']);
+});
+
+test('company works hides upstream and companion entries without changing panel records', () => {
+  const entries = [panel('baoyu-design.artifacts', 'Artifacts'), panel('crysound-artifacts.artifacts', '作品'),
+    ...['slides', 'design', 'design-system', 'dashboard', 'motion'].map(name => panel(name, name, -100, `@crysound/${name}/client`)),
+    panel('schedules'), panel('plugins'), panel('personal', '个人插件')];
+  const before = structuredClone(entries);
+  assert.deepEqual(sidebarPanels(entries).visible.map(p => p.id), ['crysound-artifacts.artifacts', 'schedules', 'plugins', 'personal']);
+  assert.deepEqual(entries, before);
+  assert.deepEqual(sidebarPanels([entries[0], panel('plugins')]).visible.map(p => p.id), ['plugins']);
 });
 
 test('plugin names own the primary sort; same plugin uses order then registration order', () => {
@@ -195,7 +205,7 @@ function allNodes(tree) {
 test('published sidebar activates with declared dependencies, resolves inventory names, and renders real panel/menu callbacks', async () => {
   const original = fs.readFileSync(path.join(source, '@deepseek-ai/dsh-client-ui-sidebar/lib/client.js'), 'utf8');
   const module = loadSidebar(patchSidebarModule(original), true);
-  const entries = [panel('plugins', '市场'), panel('schedules', '自动化任务'), panel('baoyu-design.artifacts', '作品'), panel('p1', 'A row', 0, 'plugin1'), panel('p2', 'Z row', 1, 'plugin1'), panel('p3', 'A', 0, 'plugin2')];
+  const entries = [panel('plugins', '市场'), panel('schedules', '自动化任务'), panel('crysound-artifacts.artifacts', '作品'), panel('p1', 'A row', 0, 'plugin1'), panel('p2', 'Z row', 1, 'plugin1'), panel('p3', 'A', 0, 'plugin2')];
   const warnings = [], slots = new Map(), dictionaries = {}, listeners = [];
   let selected, invoked;
   const ctx = {
@@ -236,7 +246,7 @@ test('published sidebar activates with declared dependencies, resolves inventory
   rail.find(n => n.type === 'button' && n.props['data-zp-sidebar-search']).props.onClick();
   assert.equal(invoked, 'session.search');
   const rows = nodes.filter(n => n.type?.name === 'PanelRow');
-  assert.deepEqual(rows.map(n => n.props.id), ['baoyu-design.artifacts', 'schedules', 'plugins']);
+  assert.deepEqual(rows.map(n => n.props.id), ['crysound-artifacts.artifacts', 'schedules', 'plugins']);
   assert.equal(rows[1].props.label, '自动化');
   const more = nodes.find(n => n.type?.name === 'PanelMoreMenu');
   assert.deepEqual(more.props.entries.map(p => p.id), ['p1', 'p2', 'p3']);

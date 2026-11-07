@@ -32,6 +32,13 @@ const PREVIEW_CLICKS = `
 `;
 
 const PATCHES = [
+  // Company artifacts 1.0.0: change page copy only; market metadata and storage paths stay intact.
+  {
+    file: "@crysound/artifacts/lib/client.js",
+    find: "兆华作品",
+    replace: "作品",
+    all: true,
+  },
   // dshmarket hides only a direct SVG, but the settings shell now wraps its glyph.
   {
     file: "dshmarket/lib/client.js",
@@ -94,7 +101,7 @@ for (const root of roots) for (const p of PATCHES) {
   const file = path.join(root, p.file);
   if (!fs.existsSync(file)) continue;
   const text = fs.readFileSync(file, "utf8");
-  if (text.includes(p.replace)) continue;
+  if (!p.all && text.includes(p.replace)) continue;
   if (!text.includes(p.find)) {
     if (!text.includes(p.replace)) console.log(`插件修补未命中，可能插件已升级：${p.file}`);
     continue;
