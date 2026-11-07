@@ -1,8 +1,8 @@
 {
   "plugins": [
-    {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz"},
+    {"name": "@aiwayds/dsh-feishu", "spec": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.2.tgz", "want": "file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.2.tgz"},
     {"name": "dshmarket", "spec": "dshmarket@1.73.12", "want": "1.73.12"},
-    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.0", "want": "0.1.0"}
+    {"name": "@crysound/memory", "spec": "@crysound/memory@0.1.2", "want": "0.1.2"}
   ],
   "defaultBundles": [
     "@deepseek-ai/dsh-experimental-plugin-market-bundle",
@@ -12,8 +12,12 @@
     "@deepseek-ai/dsh-experimental-session-titles-bundle"
   ],
   "officialPlugins": {
-    "@crysound/design": {"displayName": "兆华设计", "maintainers": []},
-    "@crysound/motion": {"displayName": "兆华动效", "maintainers": []},
+    "@crysound/design": {"displayName": "兆华设计", "maintainers": [], "home": true},
+    "@crysound/motion": {"displayName": "兆华动画", "maintainers": [], "home": true},
+    "@crysound/artifacts": {"displayName": "兆华作品", "maintainers": []},
+    "@crysound/design-system": {"displayName": "兆华设计系统", "maintainers": []},
+    "@crysound/slides": {"displayName": "兆华幻灯片", "maintainers": []},
+    "@crysound/dashboard": {"displayName": "兆华看板", "maintainers": []},
     "@crysound/data": {"displayName": "兆华数据", "maintainers": []},
     "@crysound/memory": {"displayName": "兆华记忆", "maintainers": []},
     "@crysound/image": {"displayName": "兆华生图", "maintainers": []}

@@ -1,0 +1,22 @@
+{
+  "startupFlag": true,
+  "externalUnchanged": true,
+  "revokedOnExternalNavigation": true,
+  "standaloneDownload": true,
+  "contentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-buGSs67iDeGE7nu37TYVAN/8ax3/srWCiLCSSev8cmo=' 'sha256-CgtPgVznClHgOYgR9o4YCpR+Ve2Pbb5Cad42/Z8hSL8=' 'sha256-kBDvnJygASrEudxdG+4JW9WRP8/RbTtbd4L/o6eb48M='; style-src 'unsafe-inline'",
+  "cspVariants": [
+    "editor",
+    "inline",
+    "fallback",
+    "elements",
+    "nonce",
+    "multiple"
+  ],
+  "filename": "中文下载验证.txt",
+  "download": {
+    "guid": "edd9c884-a81c-4804-b209-97ba78b60d00",
+    "totalBytes": 18,
+    "receivedBytes": 18,
+    "state": "completed"
+  }
+}

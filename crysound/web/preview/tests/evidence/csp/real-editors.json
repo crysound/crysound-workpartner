@@ -1,0 +1,118 @@
+{
+  "verifiedAt": "2026-11-07T05:04:34.346Z",
+  "results": [
+    {
+      "editor": "slides",
+      "mode": "control",
+      "placement": "standalone",
+      "flag": false,
+      "title": "验收-crysound",
+      "framed": false,
+      "buttons": 14,
+      "markerCount": 1,
+      "markerBlocked": true,
+      "securityErrors": [
+        "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'unsafe-eval' 'sha256-PP7YARE0zoqIWC4vlvlLHI5w9t7JuzvmVHrba6402YQ=' 'sha256-ZPmd/gqePevTvPTsT4RyS0CSslGvy0nvMJVffXxTG6Q=''. Either the 'unsafe-inline' keyword, a hash ('sha256-kBDvnJygASrEudxdG+4JW9WRP8/RbTtbd4L/o6eb48M='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+      ],
+      "exceptions": []
+    },
+    {
+      "editor": "slides",
+      "mode": "control",
+      "placement": "frame",
+      "flag": false,
+      "title": "验收-crysound",
+      "framed": true,
+      "buttons": 14,
+      "markerCount": 1,
+      "markerBlocked": true,
+      "securityErrors": [
+        "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'unsafe-eval' 'sha256-PP7YARE0zoqIWC4vlvlLHI5w9t7JuzvmVHrba6402YQ=' 'sha256-ZPmd/gqePevTvPTsT4RyS0CSslGvy0nvMJVffXxTG6Q=''. Either the 'unsafe-inline' keyword, a hash ('sha256-kBDvnJygASrEudxdG+4JW9WRP8/RbTtbd4L/o6eb48M='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+      ],
+      "exceptions": []
+    },
+    {
+      "editor": "slides",
+      "mode": "branch",
+      "placement": "standalone",
+      "flag": true,
+      "title": "验收-crysound",
+      "framed": false,
+      "buttons": 14,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    },
+    {
+      "editor": "slides",
+      "mode": "branch",
+      "placement": "frame",
+      "flag": true,
+      "title": "验收-crysound",
+      "framed": true,
+      "buttons": 14,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    },
+    {
+      "editor": "design",
+      "mode": "control",
+      "placement": "standalone",
+      "flag": true,
+      "title": "Official synthetic canvas",
+      "framed": false,
+      "buttons": 17,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    },
+    {
+      "editor": "design",
+      "mode": "control",
+      "placement": "frame",
+      "flag": true,
+      "title": "Official synthetic canvas",
+      "framed": true,
+      "buttons": 16,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    },
+    {
+      "editor": "design",
+      "mode": "branch",
+      "placement": "standalone",
+      "flag": true,
+      "title": "Official synthetic canvas",
+      "framed": false,
+      "buttons": 17,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    },
+    {
+      "editor": "design",
+      "mode": "branch",
+      "placement": "frame",
+      "flag": true,
+      "title": "Official synthetic canvas",
+      "framed": true,
+      "buttons": 16,
+      "markerCount": 1,
+      "markerBlocked": false,
+      "securityErrors": [],
+      "exceptions": []
+    }
+  ],
+  "scope": "Real plugin editors opened through artifact.mjs; isolated relay imports the branch previewDownloadBody. Marker/CSP verification only; exports and production login are not accepted here.",
+  "editorLimitations": [
+    "Synthetic slides show a saved-content warning in both control and branch.",
+    "Design canvas was still loading at capture time in both control and branch."
+  ]
+}

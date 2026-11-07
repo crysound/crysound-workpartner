@@ -8,7 +8,7 @@ test('defaults apply for an empty config', () => {
   assert.equal(resolved.domain, 'feishu')
   assert.deepEqual(resolved.operators, [])
   assert.equal(resolved.statusIntervalMs, 5000)
-  assert.equal(resolved.bodySegmentChars, 3500)
+  assert.equal(resolved.bodySegmentChars, 4000)
   assert.equal(resolved.appIdRef, 'DSH_FEISHU_APP_ID')
   assert.equal(resolved.appSecretRef, 'DSH_FEISHU_APP_SECRET')
   assert.equal(resolved.appId, undefined)

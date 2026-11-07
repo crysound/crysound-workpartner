@@ -3,19 +3,55 @@ window.__ModuleLoader__.load({
   id: '@crysound/feishu-settings',
   factory(require) {
     const { createElement: h, useState, useEffect, useRef } = require('react');
-    const { Button, Modal, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
+    const { Button, Switch, Modal, IconLinkOutlineMedium } = require('@deepseek-ai/dsh-client-ui-primitives');
     const sectionId = 'crysound-feishu';
     const desktop = location.protocol === 'dsh-app:';
     const embedded = /Lark|Feishu/i.test(navigator.userAgent);
     const base = '/_zp/feishu/';
     const namespace = 'crysound.feishu';
     const en = {
+      dailyTitle: "Daily check",
+      dailyIntro: "On weekdays, this uses your Feishu identity to read unread @mentions, today’s and tomorrow’s calendar events, and Feishu tasks. Summaries use your model credits. Reminders are only for you; nothing is replied to or changed for you. You can turn this off at any time.",
+      dailyQuietIntro: "No new items means no interruptions. At most one attempt per day, with no repeated failure reminders.",
+      dailyTrial: "This feature is being tried gradually and is not available to you yet.",
+      dailyDisconnected: "Feishu is not connected. Checks will not run.",
+      dailyConnect: "Connect Feishu",
+      dailyOn: "On",
+      dailyOff: "Off by default",
+      dailyLoading: "Loading…",
+      dailyTime: "Weekdays · Beijing time",
+      dailySaveTime: "Save time",
+      dailyBusy: "Processing…",
+      dailyRun: "Check now",
+      dailyHistory: "Run history",
+      dailyEmpty: "No runs yet. Checks run Monday through Friday in Beijing time; missed checks run later the same day.",
+      dailyQuiet: "No new items; no message sent",
+      dailyFailed: "Check failed; no automatic retry today",
+      dailyInterrupted: "Running; no retry today if interrupted",
+      dailyPending: "Summary ready; waiting to save to a conversation",
+      dailyDelivered: "Saved to a partner conversation",
+      dailyCancelled: "Turned off; reminder cancelled",
+      dailyNew: "● View new reminder",
+      dailyView: "View conversation",
+      dailyUnreadLabel: "View new partner reminder",
+      dailyUnread: "● Partner reminder",
+      dailyReadFailure: "Feishu data could not be read completely. Check your Feishu authorization and connection.",
+      dailySummaryFailure: "Summary unavailable. Check your model credits and connection.",
+      dailyUnavailable: "Unable to check right now. Check the run history; there is no automatic retry today.",
+      dailyInvalidSettings: "Choose an on/off state and a valid Beijing time.",
+      dailyNotAvailable: "This feature is not available to you yet.",
+      dailyNeedsConnection: "Connect your Feishu account in authorization settings first.",
+      dailyNeedsEnabled: "Connect Feishu and turn on daily checks first.",
+      dailyAlreadyAttempted: "A check was already attempted today. Try tomorrow to avoid repeated reminders.",
+      dailyRunning: "A check is running. View the history shortly.",
+      dailyLogin: "Sign in to your work partner first.",
+      dailyRequestError: "Unable to process the request. Reopen work partner settings and try again.",
       title: 'Feishu authorization', intro: 'Connect to let your partner work with Feishu as you. It will ask before sending messages or emails, submitting approvals, deleting content, or changing sharing permissions.',
-      feishu: 'Feishu', project: 'Feishu Project', connect: 'Connect', reconnect: 'Reauthorize', disconnect: 'Disconnect',
+      feishu: 'Feishu', project: 'Feishu Project', connect: 'Connect {object}', reconnect: 'Reauthorize {object}', disconnect: 'Disconnect {object}',
       checking: 'Checking authorization…', unknown: 'Unable to verify right now', connected: 'Connected', disconnected: 'Not connected',
       disabled: 'Feishu authorization is disabled by your administrator', revoking: 'Access stopped. Remote revocation is pending; try disconnecting again.',
       returnHere: 'Return here when finished', waiting: 'Waiting for you to authorize', expired: 'Authorization expired. Connect again.',
-      retry: 'Unable to process authorization. Reopen this page or return later to retry.',
+      retry: 'Unable to process this authorization. Check its connection status or contact your administrator.',
       localNote: 'This connects Feishu Project on this device. Use the web app for cloud mode.',
       cloudNote: 'This connects Feishu Project in the cloud. Use the desktop app for local mode.',
       banner: 'Feishu is not connected. Your assistant cannot look up messages, calendars, or documents for you.', connectFeishu: 'Connect Feishu',
@@ -30,12 +66,48 @@ window.__ModuleLoader__.load({
     };
     /** @type {Record<keyof typeof en, string>} */
     const zh = {
+      dailyTitle: "每天帮我查一次",
+      dailyIntro: "打开后，工作日会用你本人的飞书身份读取未读 @、今天和明天的日程、飞书任务。生成摘要会使用模型额度。只提醒你本人，不替你回复或操作，可以随时关闭。",
+      dailyQuietIntro: "没有新事不打扰；同一天最多尝试一次，失败不反复提醒。",
+      dailyTrial: "正在分批试用，暂未向你开放。",
+      dailyDisconnected: "尚未连接飞书，检查不会运行。",
+      dailyConnect: "去连接飞书",
+      dailyOn: "已打开",
+      dailyOff: "默认关闭",
+      dailyLoading: "正在读取…",
+      dailyTime: "工作日 · 北京时间",
+      dailySaveTime: "保存时间",
+      dailyBusy: "正在处理…",
+      dailyRun: "现在查一次",
+      dailyHistory: "运行记录",
+      dailyEmpty: "还没有运行记录。周一至周五按北京时间检查；错过时间会在当天补查。",
+      dailyQuiet: "没有新事，未发消息",
+      dailyFailed: "检查失败，今天不会自动重试",
+      dailyInterrupted: "运行中；若意外中断，今天不会重试",
+      dailyPending: "摘要已生成，等待写入对话",
+      dailyDelivered: "已放进伙伴对话",
+      dailyCancelled: "已关闭，取消本次提醒",
+      dailyNew: "● 查看新提醒",
+      dailyView: "查看对话",
+      dailyUnreadLabel: "查看新的伙伴提醒",
+      dailyUnread: "● 伙伴提醒",
+      dailyReadFailure: "飞书数据未能完整读取，请检查授权与连接",
+      dailySummaryFailure: "摘要未能生成，请检查模型额度与连接",
+      dailyUnavailable: "暂时无法检查，请查看运行记录；今天不会自动重试",
+      dailyInvalidSettings: "请选择开关状态和有效的北京时间",
+      dailyNotAvailable: "这项功能尚未向你开放试用",
+      dailyNeedsConnection: "请先在飞书授权中连接本人账号",
+      dailyNeedsEnabled: "请先连接飞书并打开每天帮我查一次",
+      dailyAlreadyAttempted: "今天已经查过或尝试过了，明天再查，避免重复提醒",
+      dailyRunning: "正在检查，请稍后查看记录",
+      dailyLogin: "请先登录工作伙伴",
+      dailyRequestError: "暂时无法处理请求，请重新打开工作伙伴设置后重试。",
       title: '飞书授权', intro: '连接后，伙伴可以用你的身份处理飞书里的内容；发消息、发邮件、提交审批、删除、改分享权限之前会先问你。',
-      feishu: '飞书', project: '飞书项目', connect: '连接', reconnect: '重新授权', disconnect: '断开',
+      feishu: '飞书', project: '飞书项目', connect: '连接{object}', reconnect: '重新授权{object}', disconnect: '断开{object}',
       checking: '正在检查授权…', unknown: '暂时无法核实', connected: '已连接', disconnected: '未连接',
       disabled: '管理员已停用飞书授权', revoking: '已停止使用，远端撤销待完成，请重试断开',
       returnHere: '完成后回到这里', waiting: '等待你完成授权', expired: '授权已过期，请重新连接',
-      retry: '暂时无法处理授权，请重新打开页面或稍后切回重试。',
+      retry: '这项授权未处理完成，请查看连接状态；仍无法处理请联系管理员。',
       localNote: '此处连接本机的飞书项目。云端模式请在网页版连接。',
       cloudNote: '此处连接云端的飞书项目。本机运行模式请在桌面版连接。',
       banner: '还没连接飞书，助理无法替你查消息、日程、文档。', connectFeishu: '连接飞书',
@@ -248,9 +320,9 @@ window.__ModuleLoader__.load({
           h('div', { className: 'zp-feishu-actions' },
             confirmation === kind ? h('div', null, h('p', null, t('confirm')),
               h(Button, { size: 'sm', variant: 'outline', onClick: () => setConfirmation(null) }, t('cancel')),
-              h(Button, { size: 'sm', variant: 'outline', onClick: () => disconnect(kind) }, t('disconnect'))) : h('div', { className: 'zp-feishu-actions' },
-              h(Button, { size: 'sm', variant: connected ? 'outline' : 'primary', disabled: busy !== null || state === null || state?.error || state?.enabled === false || revoking, onClick: () => connect(kind) }, connected ? t('reconnect') : t('connect')),
-              connected || revoking ? h(Button, { size: 'sm', variant: 'outline', disabled: busy !== null, onClick: () => setConfirmation(kind) }, t('disconnect')) : null)));
+              h(Button, { size: 'sm', variant: 'outline', onClick: () => disconnect(kind) }, t('disconnect', { object: t(kind) }))) : h('div', { className: 'zp-feishu-actions' },
+              h(Button, { size: 'sm', variant: connected ? 'outline' : 'primary', disabled: busy !== null || state === null || state?.error || state?.enabled === false || revoking, onClick: () => connect(kind) }, t(connected ? 'reconnect' : 'connect', { object: t(kind) })),
+              connected || revoking ? h(Button, { size: 'sm', variant: 'outline', disabled: busy !== null, onClick: () => setConfirmation(kind) }, t('disconnect', { object: t(kind) })) : null)));
       }
       if (banner) {
         const state = states.feishu;
@@ -271,16 +343,116 @@ window.__ModuleLoader__.load({
         projectRetry ? h('p', { className: 'zp-feishu-feedback', role: 'alert' }, t('projectRetry')) : null,
         error ? h('p', { className: 'zp-feishu-feedback', role: 'alert' }, error) : null);
     }
+    const dailyStyles = `
+.zp-daily{font-size:14px;line-height:1.7;color:var(--dsw-alias-label-primary)}
+.zp-daily h2{font-size:16px;font-weight:500;margin:0 0 8px}
+.zp-daily p{margin:8px 0}.zp-daily-muted{color:var(--dsw-alias-label-secondary);font-size:13px}
+.zp-daily-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 0}
+.zp-daily input[type=time]{font:inherit;color:inherit;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:5px 8px}
+.zp-daily label{display:flex;align-items:center;gap:8px}
+.zp-daily-record{padding:12px 0;border-bottom:1px solid var(--dsw-alias-border-l2);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+`;
+    /** @type {Record<string, keyof typeof en>} */
+    const outcomes = { quiet: 'dailyQuiet', failed: 'dailyFailed', interrupted: 'dailyInterrupted', pending: 'dailyPending', delivered: 'dailyDelivered', cancelled: 'dailyCancelled' };
+    /** @type {Record<string, keyof typeof en>} */
+    const dailyErrors = { invalid_settings: 'dailyInvalidSettings', not_available: 'dailyNotAvailable', needs_connection: 'dailyNeedsConnection', needs_enabled: 'dailyNeedsEnabled', already_attempted: 'dailyAlreadyAttempted', running: 'dailyRunning', login: 'dailyLogin', request: 'dailyRequestError' };
+    async function dailyApi(route, body, signal) {
+      const response = await fetch('/_zp/daily-check/' + route, {
+        method: body ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', signal,
+        ...(body ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw Object.assign(new Error('Daily check request failed'), { localeKey: dailyErrors[result.code] || 'dailyUnavailable' });
+      return result;
+    }
+    /** @param {{openSession: (id: string) => void, t: FeishuTranslate}} props */
+    function DailyPanel({ openSession, t }) {
+      const [state, setState] = useState(null), [time, setTime] = useState('09:00');
+      const [busy, setBusy] = useState(false), [error, setError] = useState('');
+      const life = useRef(null);
+      useEffect(() => {
+        const controller = new AbortController(); life.current = controller;
+        let timer;
+        async function refresh() {
+          try { const value = await dailyApi('status', undefined, controller.signal); if (!controller.signal.aborted) { setState(value); setTime(value.time); setError(''); } }
+          catch (error) { if (!controller.signal.aborted) setError(error.localeKey || 'dailyUnavailable'); }
+        }
+        void refresh();
+        const focus = () => { void refresh(); };
+        window.addEventListener('focus', focus);
+        timer = setInterval(refresh, 60000);
+        return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', focus); };
+      }, []);
+      async function action(route, body) {
+        setBusy(true); setError('');
+        try { const result = await dailyApi(route, body, life.current.signal); if (!life.current.signal.aborted) { setState(result); setTime(result.time); } }
+        catch (error) { if (!life.current.signal.aborted) setError(error.localeKey || 'dailyUnavailable'); }
+        finally { if (!life.current.signal.aborted) setBusy(false); }
+      }
+      function view(record) {
+        openSession(record.sessionId);
+        void dailyApi('read', { id: record.id }, life.current.signal).then(() => {
+          if (!life.current.signal.aborted) setState(previous => ({ ...previous, records: previous.records.map(item => item.id === record.id ? { ...item, unread: false } : item) }));
+        }).catch(error => { if (!life.current.signal.aborted) setError(error.localeKey || 'dailyUnavailable'); });
+      }
+      return h('section', { className: 'zp-daily', 'aria-label': t('dailyTitle') },
+        h('h2', null, t('dailyTitle')),
+        h('p', { className: 'zp-daily-muted' }, t('dailyIntro')),
+        h('p', { className: 'zp-daily-muted' }, t('dailyQuietIntro')),
+        state && !state.available ? h('p', { role: 'status' }, t('dailyTrial')) : null,
+        state && !state.connected ? h('p', { role: 'status' }, t('dailyDisconnected'), h('a', { href: '/?zp-settings=feishu' }, t('dailyConnect'))) : null,
+        h('div', { className: 'zp-daily-controls' }, h('label', null,
+          h(Switch, { label: t('dailyTitle'), checked: state?.enabled || false, disabled: busy || !state || (!state.enabled && (!state.available || !state.connected)), onChange: enabled => { void action('settings', { enabled, time }); } }), t('dailyTitle')),
+          state ? h('span', { className: 'zp-daily-muted' }, state.enabled ? t('dailyOn') : t('dailyOff')) : h('span', null, t('dailyLoading'))),
+        h('div', { className: 'zp-daily-controls' }, h('label', null, t('dailyTime'), h('input', { type: 'time', value: time, disabled: busy || !state, onChange: event => setTime(event.target.value) })),
+          h(Button, { size: 'sm', variant: 'outline', disabled: busy || !state || time === state.time || !time, onClick: () => { void action('settings', { enabled: state.enabled, time }); } }, t('dailySaveTime')),
+          h(Button, { size: 'sm', variant: 'outline', disabled: busy || !state?.enabled || !state.connected || !state.available, onClick: () => { void action('run', {}); } }, busy ? t('dailyBusy') : t('dailyRun'))),
+        h('h3', null, t('dailyHistory')),
+        state && !state.records.length ? h('p', { className: 'zp-daily-muted' }, t('dailyEmpty')) : null,
+        ...(state?.records || []).map(record => h('div', { className: 'zp-daily-record', key: record.id },
+          h('span', null, record.date + ' · ' + t(outcomes[record.outcome]) + (record.reason ? ' · ' + t(record.reason === 'read' ? 'dailyReadFailure' : 'dailySummaryFailure') : '')),
+          record.outcome === 'delivered' ? h(Button, { size: 'sm', variant: 'outline', onClick: () => view(record) }, record.unread ? t('dailyNew') : t('dailyView')) : null)),
+        error ? h('p', { role: 'alert' }, t(error)) : null);
+    }
+    /** @param {{openSession: (id: string) => void, t: FeishuTranslate}} props */
+    function DailyUnread({ openSession, t }) {
+      const [record, setRecord] = useState(null);
+      useEffect(() => {
+        const controller = new AbortController();
+        async function refresh() {
+          try { const result = await dailyApi('status', undefined, controller.signal); if (!controller.signal.aborted) setRecord(result.records.find(item => item.unread) || null); }
+          catch { /* Settings owns visible errors; unread polling never interrupts. */ }
+        }
+        void refresh(); const timer = setInterval(refresh, 60000);
+        window.addEventListener('focus', refresh);
+        return () => { controller.abort(); clearInterval(timer); window.removeEventListener('focus', refresh); };
+      }, []);
+      return record ? h(Button, { size: 'sm', variant: 'outline', 'aria-label': t('dailyUnreadLabel'), onClick: () => {
+        openSession(record.sessionId);
+        void dailyApi('read', { id: record.id }).then(() => setRecord(null)).catch(() => {});
+      } }, t('dailyUnread')) : null;
+    }
+
     function Banner(props) { return h(Panel, { ...props, banner: true }); }
     function Icon({ size }) { return h(IconLinkOutlineMedium, { size }); }
-    return { name: '@crysound/feishu-settings', inject: ['slots', 'locale'], apply(ctx) {
+    return { name: '@crysound/feishu-settings', inject: ['slots', 'locale', 'uiWorkspace'], apply(ctx) {
       ctx.effect(() => ctx.locale.register(namespace, 'en', en));
       ctx.effect(() => ctx.locale.register(namespace, 'zh', zh));
       const t = ctx.locale.bind(namespace);
-      ctx.effect(() => { const sheet = document.createElement('style'); sheet.textContent = styles; document.head.appendChild(sheet); return () => sheet.remove(); });
+      ctx.effect(() => { const sheet = document.createElement('style'); sheet.textContent = styles + dailyStyles; document.head.appendChild(sheet); return () => sheet.remove(); });
       ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: sectionId, order: 65, label: () => t('title'), locale: namespace, inject: () => ({ formatTime: date => date.toLocaleString(ctx.locale.getSnapshot().active) }) }, Panel));
       ctx.slots.inject('conversation.header.leading', () => ctx.slots.register({ name: 'conversation.header.leading', id: 'crysound-feishu-reminder', locale: namespace, inject: () => ({ formatTime: date => date.toLocaleString(ctx.locale.getSnapshot().active) }) }, Banner));
       ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: sectionId }, Icon));
+      if (!desktop) {
+        const injectDaily = () => ({ openSession: id => {
+          ctx.uiWorkspace.openSession(id);
+          const shell = ctx.slots.entries('sidebar.settings').find(entry => entry.store)?.store;
+          shell?.create().actions.close();
+        } });
+        ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'crysound-daily-check', order: 66, label: () => t('dailyTitle'), locale: namespace, inject: injectDaily }, DailyPanel));
+        ctx.slots.inject('settings.section.icon', () => ctx.slots.register({ name: 'settings.section.icon', id: 'crysound-daily-check' }, Icon));
+        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({ name: 'sidebar.footer.action', id: 'crysound-daily-unread', locale: namespace, inject: injectDaily }, DailyUnread));
+      }
       ctx.effect(() => {
         const reopen = () => {
           if (new URLSearchParams(location.search).get('zp-settings') !== 'feishu' && sessionStorage.getItem('zp-feishu-return') !== '1') return;

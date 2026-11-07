@@ -1,0 +1,15 @@
+{
+  "kind": "component-preview",
+  "realProduct": false,
+  "realModelRequests": false,
+  "checks": {
+    "homeHasTwoOfficialShortcutsAndMarket": true,
+    "selectDoesNotSend": true,
+    "threePackageExamples": true,
+    "cancelPreservesDraft": true,
+    "englishAndDarkMode": true,
+    "narrow390NoHorizontalOverflow": true,
+    "exampleSubmitsOnceToFakeSession": true,
+    "shortcutsHiddenAfterSubmission": true
+  }
+}

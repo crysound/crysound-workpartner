@@ -17,13 +17,16 @@ function fixture(t, limits) {
 const report = { kind: 'preference', title: '报告格式', content: '报告使用 Markdown 表格' };
 const coffee = { kind: 'preference', title: '咖啡偏好', content: 'COFFEE_TEST_ONLY_LATTE' };
 
+// Save also returns the just-committed record id; snapshots contain persisted state only.
+const withoutReceipt = ({ savedId, ...snapshot }) => snapshot;
+
 test('new hosts recall saved facts; deletion preserves others and removes raw bytes', t => {
   const { store, dir } = fixture(t);
   store.save({ ...report, revision: 0 });
   const before = store.save({ ...coffee, revision: 1 });
   const other = new MemoryStore(dir);
   t.after(() => other.close());
-  assert.deepEqual(other.snapshot(), before);
+  assert.deepEqual(other.snapshot(), withoutReceipt(before));
   const id = before.facts.find(x => x.title === coffee.title).id;
   store.remove({ id, revision: 2 });
   assert.deepEqual(other.snapshot().facts.map(x => x.content), [report.content]);
@@ -49,7 +52,7 @@ test('updates reuse the concept, capacity failures keep all previous facts', t =
   const updated = store.save({ ...report, content: '报告先写结论', id: store.snapshot().facts[0].id, revision: 1 });
   assert.equal(updated.facts.length, 1);
   assert.throws(() => store.save({ ...coffee, revision: 2 }), /超出当前预算/u);
-  assert.deepEqual(store.snapshot(), updated);
+  assert.deepEqual(store.snapshot(), withoutReceipt(updated));
 });
 
 test('total recall stays within budget, including identifiers and revision', t => {
@@ -57,7 +60,7 @@ test('total recall stays within budget, including identifiers and revision', t =
   const first = store.save({ ...report, content: '甲'.repeat(240), revision: 0 });
   assert.ok(JSON.stringify(recallData(first)).length <= 512);
   assert.throws(() => store.save({ ...coffee, content: '乙'.repeat(240), revision: 1 }), /超出当前预算/u);
-  assert.deepEqual(store.snapshot(), first);
+  assert.deepEqual(store.snapshot(), withoutReceipt(first));
 });
 
 test('credential labels, common credential formats and invalid input are rejected at write time', t => {
@@ -117,7 +120,7 @@ test('real HTTP panel reads and deletes with revision checks, method and content
   const base = `http://127.0.0.1:${server.address().port}/crysound-memory/api/`;
   const get = await fetch(base + 'list');
   assert.equal(get.headers.get('cache-control'), 'no-store');
-  assert.deepEqual(await get.json(), { ...data, limits: { maxMemories: 50, recallChars: 6000 } });
+  assert.deepEqual(await get.json(), { ...withoutReceipt(data), limits: { maxMemories: 50, recallChars: 6000 } });
   assert.equal((await fetch(base + 'list', { method: 'POST' })).status, 405);
   assert.equal((await fetch(base + 'delete', { method: 'POST', body: '{}' })).status, 415);
   const post = body => fetch(base + 'delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
@@ -159,7 +162,7 @@ test('random ids survive rename; creation and update metadata persist across hos
   assert.ok(!JSON.stringify(recallData(updated)).includes('createdAt'));
   const other = new MemoryStore(dir);
   t.after(() => other.close());
-  assert.deepEqual(other.snapshot(), updated);
+  assert.deepEqual(other.snapshot(), withoutReceipt(updated));
   const independent = fixture(t).store.save({ ...report, revision: 0 });
   assert.notEqual(independent.facts[0].id, first.id);
 });
@@ -189,7 +192,7 @@ test('confirmed full-capacity merge and new fact commit together, failures roll 
   const plan = { kind: 'project', title: '长期项目', content: '声学校准', revision: 2,
     removeIds: [b.id], updates: [{ ...report, id: a.id, content: '先给结论再用表格' }] };
   assert.throws(() => store.save(plan), /先让用户确认/u);
-  assert.deepEqual(store.snapshot(), before);
+  assert.deepEqual(store.snapshot(), withoutReceipt(before));
   for (const broken of [
     { ...plan, content: '密码是不可以保存的' },
     { ...plan, updates: [{ ...report, id: 'a'.repeat(24) }] },
@@ -197,7 +200,7 @@ test('confirmed full-capacity merge and new fact commit together, failures roll 
     { ...plan, updates: [{ ...report, id: a.id, content: '密码' }] },
   ]) {
     assert.throws(() => store.save({ ...broken, confirmed: true }));
-    assert.deepEqual(store.snapshot(), before);
+    assert.deepEqual(store.snapshot(), withoutReceipt(before));
   }
   const after = store.save({ ...plan, confirmed: true });
   assert.equal(after.revision, 3);
@@ -212,7 +215,7 @@ test('over-budget multi-change rolls back removals, updates and new content', t 
   const before = store.save({ ...report, revision: 0 });
   assert.throws(() => store.save({ ...coffee, content: '新'.repeat(240), revision: 1, confirmed: true,
     updates: [{ ...report, id: before.facts[0].id, content: '长'.repeat(240) }] }), /预算/u);
-  assert.deepEqual(store.snapshot(), before);
+  assert.deepEqual(store.snapshot(), withoutReceipt(before));
 });
 
 test('clear requires confirmation and removes all original bytes while preserving the switch', t => {

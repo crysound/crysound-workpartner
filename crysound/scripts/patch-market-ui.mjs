@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { patchMarketCatalog } from "./patch-market-catalog.mjs";
 import { patchMarketEntry } from "./patch-market-entry.mjs";
+import { patchMarketGuides, patchGuideUse, patchGuidePlaceholder } from "./patch-market-guides.mjs";
 import { pathToFileURL } from "node:url";
 import { marketLocales } from "../brand/market-locales.mjs";
 
@@ -12,6 +13,23 @@ import { marketLocales } from "../brand/market-locales.mjs";
  * @returns 默认打开公司市场、按公司顺序和中英文名称显示标签的模块内容。
  */
 export function patchMarketUi(text) {
+  const marker = "/* CRYSOUND market navigation v1 */";
+  if (text.includes(marker)) return text;
+  text = patchMarketTabs(text);
+  const navigation = 'const disposeNavigation = ctx.reflect.provide("pluginNavigation", {';
+  if (text.split(navigation).length !== 2) throw new Error("公司市场导航补丁未唯一命中");
+  text = text.replace(navigation, `yield ctx.on("company-market/open", name => {
+    ctx.bail(ctx, "company-market/select", name);
+    ctx.layout.selectPanel(PANEL_ID);
+    instance.actions.setTab("discover");
+    instance.actions.setView({ kind: "list" });
+    return true;
+  });\n${navigation}`);
+  return marker + "\n" + text;
+}
+
+/** Preserve the pinned company tab layout while upgrading navigation independently. */
+function patchMarketTabs(text) {
   const marker = "/* CRYSOUND market tabs v3 */";
   if (text.includes(marker)) return text;
   const replace = (find, replacement) => {
@@ -68,14 +86,15 @@ export function patchMarketUiFile(file) {
 }
 
 /**
- * Patch four pinned browser modules before runtime integrity records are generated.
+ * Patch five pinned browser modules before runtime integrity records are generated.
  * @param {string} root Materialized runtime node_modules directory.
  * @returns {void}
  */
 export function patchCompanyMarketRuntime(root) {
   const files = [
-    ["ui-plugin-manager", patchMarketUi], ["ui-plugin-market", patchMarketCatalog],
-    ["ui-entry-customization", patchMarketEntry], ["ui-sidebar", patchMarketSidebar],
+    ["ui-plugin-manager", patchMarketUi], ["ui-plugin-market", text => patchGuideUse(patchMarketCatalog(text))],
+    ["ui-entry-customization", text => patchMarketGuides(patchMarketEntry(text))], ["ui-sidebar", patchMarketSidebar],
+    ["ui-conversation", patchGuidePlaceholder],
   ];
   const changes = files.map(([name, patch]) => {
     const file = path.join(root, `@deepseek-ai/dsh-client-${name}/lib/client.js`);

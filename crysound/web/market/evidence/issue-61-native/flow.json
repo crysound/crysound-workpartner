@@ -1,0 +1,63 @@
+{
+  "method": "native isolated dsh 0.2.2-rc.1 with production branch patches and market handler; existing old packages plus synthetic guide metadata, synthetic approval registry; no browser response replacement or remote/session mocks",
+  "checks": [
+    {
+      "route": "home",
+      "name": "@crysound/design",
+      "version": "0.1.0",
+      "summary": "Create branded pages, posters and interactive prototypes.",
+      "examples": [
+        "Design a product introduction page",
+        "Create an exhibition poster",
+        "Review this page design"
+      ],
+      "tag": "兆华设计×"
+    },
+    {
+      "route": "home",
+      "name": "@crysound/motion",
+      "version": "0.1.2",
+      "summary": "Turn a product story into motion, review a frame, then export video.",
+      "examples": [
+        "Create a product opening animation",
+        "Turn this product introduction into a short video",
+        "Create a looping exhibition animation"
+      ],
+      "tag": "兆华动效×"
+    },
+    {
+      "route": "market",
+      "name": "@crysound/design",
+      "version": "0.1.0",
+      "summary": "Create branded pages, posters and interactive prototypes.",
+      "examples": [
+        "Design a product introduction page",
+        "Create an exhibition poster",
+        "Review this page design"
+      ],
+      "tag": "兆华设计×"
+    },
+    {
+      "route": "market",
+      "name": "@crysound/motion",
+      "version": "0.1.2",
+      "summary": "Turn a product story into motion, review a frame, then export video.",
+      "examples": [
+        "Create a product opening animation",
+        "Turn this product introduction into a short video",
+        "Create a looping exhibition animation"
+      ],
+      "tag": "兆华动效×"
+    },
+    {
+      "cancelKeepsDraft": true,
+      "examplesDisabledWithDraft": true
+    }
+  ],
+  "errors": [],
+  "pending": [
+    "approved published package versions",
+    "real model submission and attachments",
+    "packaged Electron"
+  ]
+}

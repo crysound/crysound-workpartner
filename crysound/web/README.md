@@ -8,7 +8,7 @@
 
 dsh 的 bundle、个人、全局和启动覆盖层按顺序生效，patch 的 `config` 整块替换（见 `packages/boot/app-boot/src/profile.ts` 和 `packages/boot/app-boot/src/config-schema/document.ts`）。旧个人配置会覆盖低优先级的公司层；高优先级的公司层会覆盖个人提供方，并使设置页无法保存该配置（`packages/boot/config-editor/src/index.ts`）。因此在不改上游的约束下，启动时在个人 YAML 的语法树上只替换 `providers.magpie`，保留其他节点、注释及 `!!js` 标签。首次默认值仍只写一次。公司网页搜索条目缺失时会补齐；每次启动按公司配置刷新搜索地址和模型，地址从启动环境读取，其他搜索选项保留。
 
-公司 Sol、Terra 模型在各自条目声明 `input: [text, image]`；dsh-llm-pi-ai 将其传给 pi-ai 的模型能力，未声明的自定义模型默认只接收文本。此声明适用于 `openai-completions`，无需添加 `compat.imageInput`。同步公司配置后，已挂载配置目录的网页容器在空闲时重启刷新个人 profile，不需要重建镜像；支持远端公司配置的桌面版在联网重启后获取，离线仍使用安装包内配置。上线后用测试账号分别选择 Sol、Terra，读取一张含中文字的 PNG 并核对原文，再用兆华动效或兆华设计的静帧完成看图自查；配置检查通过不代表真实模型读图已验收。
+公司 Sol、Terra 模型在各自条目声明 `input: [text, image]`；dsh-llm-pi-ai 将其传给 pi-ai 的模型能力，未声明的自定义模型默认只接收文本。此声明适用于 `openai-completions`，无需添加 `compat.imageInput`。同步公司配置后，已挂载配置目录的网页容器在空闲时重启刷新个人 profile，不需要重建镜像；支持远端公司配置的桌面版在联网重启后获取，离线仍使用安装包内配置。上线后用测试账号分别选择 Sol、Terra，读取一张含中文字的 PNG 并核对原文，再用兆华动画或兆华设计的静帧完成看图自查；配置检查通过不代表真实模型读图已验收。
 
 桌面版启动时携带现有桌面登录令牌，从模型网关同源地址下载完整的七文件快照，使用独立临时目录，完成本次准备后清理。任何文件下载失败、超时、返回非成功响应或插件清单不合法，整份回退到安装包配置，不混用下载中的半份配置。断网回退可能恢复安装包中的旧插件版本和旧公司模型清单；重新联网并启动后重新取服务器配置。已开始应用后的插件安装失败沿用原有行为：记录日志，下次启动重试；配置刷新失败记日志，桌面壳继续启动。
 
@@ -24,15 +24,25 @@ dsh 的 bundle、个人、全局和启动覆盖层按顺序生效，patch 的 `c
 
 轻量检查：在已有镜像、只读挂载仓库的临时容器中运行 `node --test /repo/crysound/tests/web-auto-review.test.mjs`，覆盖真实权限服务的会话事件、个人设置更新、插件缺失/失败/停用、恢复和未修补的桌面默认。页面截图与可重复的浏览器环境启动方式见 [验收证据](../tests/evidence/issue-88/README.md)。本机不构建镜像或发起付费模型请求；另有基于真实发布运行时的无密钥会话回放，覆盖允许写入、审查拒绝转本人审批及文件结果，使用固定审查输出；实际模型的判断与完整新镜像仍须伙伴助理在测试账号上验收。
 
+## 多步任务的工具效率提示
+
+`profile-upgrades.mjs` 在启动时生成独立的 `crysound-tool-efficiency.mjs` 公司提示模块，并以原生 `insert` 加入个人 profile，重复执行不会重复插入。提示明确将多文件阅读列为原生“只能用单文件读取/搜索工具”偏好的公司例外，优先一次有路径标题、限制总输出的命令；搜索结果已足够时不再逐个重读。文件不在 shell 的执行环境、shell 不可用或需要图片等专用读取器时，继续使用原工具，不能绕过访问限制。已获授权的小脚本一次写完并在写入成功后运行；互不依赖的调用保持同轮并行，需要前置结果或审批的步骤继续分开。它只增加模型指导，不增加工具，也不改变权限或原生工具行为。标准、PTC 等普通角色提示不会覆盖这个独立片段；明确提供完整系统提示的极简或自定义预设仍沿用其原生行为，不强行注入。
+
+部署方式是公司配置：同步同一提交的 `profile-upgrades.mjs` 与 `market-profile.mjs` 后，安排已挂载公司配置的网页容器空闲重启；支持远端公司配置的现有桌面版联网重启即可。生成模块的内容随原有升级脚本传输，未增加下载文件，不要求重建镜像、网关或单独发布插件。离线桌面仍使用包内旧配置，下次桌面发布才包含离线版本。回退时恢复旧升级器和市场脚本，恢复前先备份个人配置，仅移除本项生成的插入条目；其他个人条目与会话保留。
+
+轻量检查：用已有发布运行时设置 `DSH_CLI_ENTRY`，执行 `node --expose-internals --experimental-vm-modules --test crysound/tests/company-config.test.mjs crysound/tests/tool-efficiency.test.mjs`（Node 24）。它实际加载生成模块并组装模型提示，覆盖预设覆盖、停用清理、新老 profile、更新幂等、市场初始化、桌面在线下载与离线回退。配置检查不证明模型按提示选择了调用方式。
+
+离线示例题可用 `node crysound/scripts/tool-efficiency-fixture.mjs <新建的基准目录>` 生成。正式对比使用同一套题，在相同模型、推理等级、预设、权限与插件下，改前改后每类交替各跑三次；所有任务用新会话，保留 18 份完整会话及实际脚本输出。分别记录会话和整条命令耗时、主对话模型请求、辅助模型请求、工具调用、输出 token（按供应商报告，缺失不得填零），核对所有答案和脚本文件，再比较中位数与范围。核对改后实际模型请求含本提示，防止测到未生效配置；记录缓存、失败重试、模型路由和环境差异。读文件要求中位数小于 20 秒且输出 token 明显减少，脚本要求主对话模型调用少一次，简单问答与正确率不得退步；三次结果若波动盖过差异就不能宣称提速。本次隔离实测及剩余上线验收见[证据](../tests/evidence/issue-120/README.md)。
+
 ## 飞书插件本地归档
 
-飞书插件使用镜像内 `file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz`。构建脚本从固定发行地址下载，核对 SHA-512 后才写入镜像。启动时在任何 `plugin add` 前修复个人 `pnpm-lock.yaml` 及已有 `node_modules/.pnpm/lock.yaml` 中该旧远程地址缺失的校验值，再按新 want 替换；不清空锁文件、不修改其他插件的 resolution。已有校验值不匹配或 YAML 无效时停止启动并保留原文件。
+飞书插件使用镜像内 `file:/opt/company-plugins/aiwayds-dsh-feishu-0.17.0-crysound.2.tgz`。构建脚本从固定发行地址下载，核对 SHA-512 后才写入镜像。每次安装前，共用的 `plugin-artifacts.mjs repair` 按清单目标版本移出旧飞书发行包的依赖记录：个人 `package.json`、`pnpm-lock.yaml`、已有 `node_modules/.pnpm/lock.yaml` 中的飞书 importer、package 和 snapshot，再由原生 `dsh plugin add` 重新解析新版。支持任意旧版本的 `/opt/company-plugins/` 绝对路径、`company-plugins/` 相对路径及公司下载站远程地址（包括缺失旧校验值的锁文件）；不依赖镜像保留上一版归档。只移出旧发行包的安装记录，保留插件配置、会话、已安装文件和其他依赖；新版归档仍须通过固定 SHA-512 验证。三个文件全部解析成功后才依次原子替换，清单最后写；中断后重跑仍会补装，当前版本重复启动不改文件。
 
-本次必须重建镜像并同步清单，先验证独立测试账号，再逐人空闲时换镜像；不能只更新清单后重启旧镜像。Mac/Windows 下个安装包携带同一校验后的归档，桌面会将共享清单中的网页路径转换为 profile 内的相对文件依赖。旧桌面包不支持这个本地路径，需随新包更新。
+本次必须重建镜像并同步清单，先验证独立测试账号，再逐人空闲时换镜像；不能只更新清单后重启旧镜像。Mac/Windows 下个安装包携带同一校验后的归档，桌面会将共享清单中的网页路径转换为 profile 内的相对文件依赖，并把该目标传给同一个修复脚本。旧桌面包不支持这个本地路径，需随新包更新。
 
-轻量测试使用 Node 24 和已有 yaml：`node --test crysound/tests/plugin-artifacts.test.mjs`；默认从已有 dsh 运行时找 yaml，也可设置 `PARTNER_YAML_PACKAGE` 为已有 yaml 包路径。设置 `PARTNER_FEISHU_ARCHIVE` 为校验过的归档绝对路径后，覆盖桌面复制模板、旧版替换、重复启动、校验失败，从 `lib/types` 编译后目录加载资源，以及含空格和引号的测试路径；不设时跳过需要真实归档的用例。
+轻量测试使用 Node 24 和已有 yaml：`node --test crysound/tests/plugin-artifacts.test.mjs`；默认从已有 dsh 运行时找 yaml，也可设置 `PARTNER_YAML_PACKAGE` 为已有 yaml 包路径。设置 `PARTNER_FEISHU_ARCHIVE` 为校验过的归档绝对路径后，覆盖桌面复制模板、旧版替换、重复启动、校验失败，从 `lib/types` 目录加载资源，以及含空格和引号的测试路径；不设时跳过需要真实归档的用例。
 
-交付验证由伙伴助理在重建的镜像里执行 `node /repo/crysound/tests/plugin-install-smoke.mjs`（仓库只读挂到 `/repo`，使用临时 profile，允许测试安装联网，限一核、512 MiB）。它用真实 dsh/pnpm 检查有、无校验值两种旧锁的入口迁移，重复启动，以及后续 add、add、remove 后远程条目消失且本地 integrity 保留。打包后另跑既有 Mac 首启动冒烟；Windows 需在目标系统核对资源路径与旧版升级。
+真实升级检查用同一个临时可写目录挂到旧、新镜像的 `/test`，本检出只读挂到 `/src`，设置 `PARTNER_TEST_ROOT=/test` 并清空 `NODE_OPTIONS`。先在含 crysound.1 归档的旧镜像执行 `node /src/crysound/tests/plugin-install-smoke.mjs seed`，再在只含 crysound.2 的候选镜像执行同一脚本的 `upgrade` 子命令；候选镜像必须包含本提交的 `plugin-artifacts.mjs`，本地预检也可只读覆盖 `/opt/partner/plugin-artifacts.mjs`。脚本用真实 dsh/pnpm 验证旧本地包、旧远程地址有/无校验值、桌面相对包路径，核对新版、两份锁、其他插件及配置保留，重复启动和后续 add/remove，并从实际运行时查询飞书插件处于 active、网页正常响应。测试安装允许联网，限一核、1 GiB，不连接真实飞书账号。镜像 CLI 将 desktop 留给 Electron，因此相对路径检查使用独立自定义 profile；真正桌面准备流程由上述轻量测试覆盖，打包后另跑既有 Mac 首启动冒烟，Windows 仍需在目标系统核对升级。
 
 ## 上线顺序
 

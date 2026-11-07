@@ -25,7 +25,7 @@ description: 把公司 Cordis 插件组合包发布或更新到兆华市场，�
 
 README 说明用途、配置、权限和限制；有版本要求时声明 `engines.dsh`。先构建，用 `npm pack --dry-run` 核对内容并确认可通过 dsh profile 加载。不得包含令牌、`.env`、用户数据或本机路径。
 
-`package.json` 可写中文 `displayName`（也支持 `title`，前者优先），1 到 80 字；市场按它显示，安装仍使用原包名。公司官方插件显示名统一用“兆华 + 两到四字”，例如“兆华设计”“兆华动效”。“兆华”前缀保留给官方包，普通包的包名、displayName 或 title 不能以“兆华”开头。“兆华官方”标识和作者“兆华工作伙伴”由公司官方名单决定，发布者不能用包内字段自行声明官方；普通同事发布的包不带该标识。
+`package.json` 可写中文 `displayName`（也支持 `title`，前者优先），1 到 80 字；市场按它显示，安装仍使用原包名。公司官方插件显示名统一用“兆华 + 两到四字”，例如“兆华设计”“兆华动画”。“兆华”前缀保留给官方包，普通包的包名、displayName 或 title 不能以“兆华”开头。“兆华官方”标识和作者“兆华工作伙伴”由公司官方名单决定，发布者不能用包内字段自行声明官方；普通同事发布的包不带该标识。
 
 ## 身份与发布
 
@@ -46,3 +46,28 @@ NPM_CONFIG_USERCONFIG="$CRYSOUND_NPM_USERCONFIG" npm publish --registry "$CRYSOU
 遇到 401，桌面版重新登录，网页版联系管理员重建容器。403 检查 scope、官方保留名称和首发所有权或维护人资格；409 或“上传结果未知”时停止，不重试同一版本，请管理员核对。通知失败不会撤销已发布版本，管理员可从审批页重发卡片。不要 unpublish、删除 dist-tag 或覆盖版本。
 
 发布前请作者选择分类，写入 `package.json` 的 `labels` 或 `keywords`：设计、视频、文档与报告、数据、研发、销售与市场、其他（对应 `design`、`video`、`documents`、`data`、`development`、`sales`、`other`）。没有选择时归入其他。可把包内样例图编码为 `dsh.market.preview`（PNG、JPEG 或 WebP 的 base64 data URL，解码后不超过 32 KiB）；不要填私有下载地址、令牌或外部追踪 URL。官方身份和维护姓名由管理员配置，包内声明不能授予官方标识或发布权限。
+
+## 官方插件的首页引导
+
+维护人可在包内添加 `dsh.market.guide`，普通包不会因此获得官方身份。中英文都要有，每种语言需一句 `summary`（最多 200 字符）、一段 `prompt`（最多 500 字符）和恰好三个 `examples`（各最多 300 字符），均不能只有空白。prompt 说明用哪个技能或工具完成用户需求，会与用户文字及附件一起进入会话日志，不放秘密或绕过确认的指令。例如，合并到已有 `dsh` 中：
+
+```json
+{
+  "market": {
+    "guide": {
+      "zh": {
+        "summary": "用公司品牌制作网页和海报。",
+        "prompt": "请使用本插件提供的设计技能完成以下需求。",
+        "examples": ["设计产品介绍页", "制作展会海报", "检查页面设计"]
+      },
+      "en": {
+        "summary": "Create branded pages and posters.",
+        "prompt": "Use this plugin’s design skill for the following request.",
+        "examples": ["Design a product page", "Create an event poster", "Review a page design"]
+      }
+    }
+  }
+}
+```
+
+引导只读已批准版本，修改后需递增版本、重新发布和审批；客户端已安装版本必须与引导版本一致且处于启用状态。首页是否展示由管理员的官方清单控制，包不能自行置顶。首次发布前核对三个例句实际能由本插件完成；不要把示例版本当成已发布版本。缺引导的包仍可使用原生设置。

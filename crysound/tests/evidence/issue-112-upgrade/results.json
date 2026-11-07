@@ -1,0 +1,72 @@
+{
+  "environment": "Existing partner image, dsh 0.2.2-rc.1, pnpm 10.34.9, Node 24.22.2; 1 CPU, 1 GiB; isolated profiles; archive directory and candidate repair helper mounted; no complete image build",
+  "baseline": "Removing an installed old archive makes native pnpm add of crysound.2 fail with ENOENT and exit 254",
+  "unit": {
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0
+  },
+  "upgrade": [
+    {
+      "scenario": "web-file",
+      "installedBefore": "0.17.0-crysound.1",
+      "installedAfter": "0.17.0-crysound.2",
+      "repeatChecks": 2,
+      "runtime": {
+        "moduleName": "@aiwayds/dsh-feishu",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      "httpStatus": 200,
+      "otherPluginAndConfigRetained": true,
+      "subsequentAddRemove": "passed"
+    },
+    {
+      "scenario": "web-remote-integrity",
+      "installedBefore": "0.17.0-crysound.1",
+      "installedAfter": "0.17.0-crysound.2",
+      "repeatChecks": 2,
+      "runtime": {
+        "moduleName": "@aiwayds/dsh-feishu",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      "httpStatus": 200,
+      "otherPluginAndConfigRetained": true,
+      "subsequentAddRemove": "passed"
+    },
+    {
+      "scenario": "web-remote-no-integrity",
+      "installedBefore": "0.17.0-crysound.1",
+      "installedAfter": "0.17.0-crysound.2",
+      "repeatChecks": 2,
+      "runtime": {
+        "moduleName": "@aiwayds/dsh-feishu",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      "httpStatus": 200,
+      "otherPluginAndConfigRetained": true,
+      "subsequentAddRemove": "passed"
+    },
+    {
+      "scenario": "desktop-file",
+      "installedBefore": "0.17.0-crysound.1",
+      "installedAfter": "0.17.0-crysound.2",
+      "repeatChecks": 2,
+      "runtime": {
+        "moduleName": "@aiwayds/dsh-feishu",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      "httpStatus": 200,
+      "otherPluginAndConfigRetained": true,
+      "subsequentAddRemove": "passed"
+    }
+  ],
+  "pending": [
+    "Complete candidate image and full shared plugin list",
+    "Packaged Mac/Windows upgrade",
+    "Authenticated Feishu bot connection and real message interaction"
+  ]
+}

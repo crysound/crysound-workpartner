@@ -6,9 +6,9 @@ import { join } from 'node:path';
 
 export const FEISHU = {
   name: '@aiwayds/dsh-feishu',
-  file: 'aiwayds-dsh-feishu-0.17.0-crysound.1.tgz',
-  url: 'https://partner-dl.corp.crysound.com/plugins/oqheD9rnauk8nFF3/aiwayds-dsh-feishu-0.17.0-crysound.1.tgz',
-  integrity: 'sha512-sGKLuHf26IqTLP4maQiXlFOi6CHRHoFZ7IcrwVoVTb2aajQ/7riAyZQnVWy792eLSAoLROKOMkuIpzusEsFl3A==',
+  file: 'aiwayds-dsh-feishu-0.17.0-crysound.2.tgz',
+  url: 'https://partner-dl.corp.crysound.com/plugins/GdIDOj8kNqAK1mrp/aiwayds-dsh-feishu-0.17.0-crysound.2.tgz',
+  integrity: 'sha512-iEfUGVCW/GoQCNoDbP+ZB1lyl5rav8KlX9K0lj5tJeGE5f6G/r5FPN77OD++GIDq2Qqb7rK5VCTPUM9PSqPNOw==',
 };
 export const WEB_SPEC = `file:/opt/company-plugins/${FEISHU.file}`;
 export const DESKTOP_WANT = `file:company-plugins/${FEISHU.file}`;
@@ -55,41 +55,87 @@ export function desktopPlugins(plugins, artifacts, profile) {
   });
 }
 
-/** Repair only the known remote release; pnpm removes it when replacing it with the local archive. */
-export function repairLockfile(file, yaml) {
-  if (!existsSync(file)) return;
-  const before = readFileSync(file, 'utf8');
-  if (!before.includes(FEISHU.url)) return;
-  const document = yaml.parseDocument(before);
-  if (document.errors.length) throw document.errors[0];
-  const packages = document.get('packages', true);
-  let changed = false;
-  if (yaml.isMap(packages)) for (const { value } of packages.items) {
-    if (!yaml.isMap(value)) continue;
-    const resolution = value.get('resolution', true);
-    if (!yaml.isMap(resolution) || resolution.get('tarball') !== FEISHU.url) continue;
-    if (resolution.has('integrity')) {
-      if (resolution.get('integrity') !== FEISHU.integrity) throw new Error('Unexpected company Feishu lockfile checksum');
-    } else {
-      resolution.set('integrity', FEISHU.integrity);
-      changed = true;
+/** Recognize company release archives, including peer-qualified pnpm package IDs. */
+function isOldRelease(value, want) {
+  if (typeof value !== 'string') return false;
+  const spec = value.replace(`${FEISHU.name}@`, '').split('(')[0];
+  if (spec === want) return false;
+  if (/^file:(?:\/opt\/company-plugins\/|company-plugins\/)aiwayds-dsh-feishu-[^/]+\.tgz$/.test(spec)) return true;
+  try {
+    const url = new URL(spec);
+    return url.origin === new URL(FEISHU.url).origin && /^\/plugins\/[^/]+\/aiwayds-dsh-feishu-[^/]+\.tgz$/.test(url.pathname);
+  } catch { return false; }
+}
+
+/**
+ * Forget superseded company Feishu install records before pnpm add, with the Host stopped.
+ * Parse every file before writing; keep other plugins, installed files and all dsh configuration.
+ * Locks are written before the manifest so interrupted preparation still retries the install.
+ */
+export function repairProfile(profile, yaml, want = WEB_SPEC) {
+  if (!want) return;
+  const updates = [];
+  for (const relative of ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml']) {
+    const file = join(profile, relative);
+    if (!existsSync(file)) continue;
+    const before = readFileSync(file, 'utf8');
+    const document = yaml.parseDocument(before);
+    if (document.errors.length) throw document.errors[0];
+    let changed = false;
+    const importers = document.get('importers', true);
+    if (yaml.isMap(importers)) for (const { value: importer } of importers.items) {
+      if (!yaml.isMap(importer)) continue;
+      for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+        const dependencies = importer.get(section, true);
+        if (!yaml.isMap(dependencies)) continue;
+        const entry = dependencies.get(FEISHU.name, true);
+        if (yaml.isMap(entry) && [entry.get('specifier'), entry.get('version')].some(value => isOldRelease(value, want))) {
+          dependencies.delete(FEISHU.name);
+          changed = true;
+        }
+      }
     }
+    for (const section of ['packages', 'snapshots']) {
+      const entries = document.get(section, true);
+      if (!yaml.isMap(entries)) continue;
+      for (const { key, value } of [...entries.items]) {
+        const id = String(key);
+        const tarball = yaml.isMap(value) ? value.getIn(['resolution', 'tarball']) : undefined;
+        if (isOldRelease(id, want) || isOldRelease(tarball, want)) {
+          entries.delete(key);
+          changed = true;
+        }
+      }
+    }
+    if (changed) updates.push([file, String(document)]);
   }
-  if (changed) {
-    writeFileSync(`${file}.tmp`, String(document), { mode: 0o600 });
+  const manifestFile = join(profile, 'package.json');
+  if (existsSync(manifestFile)) {
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    let changed = false;
+    for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+      if (isOldRelease(manifest[section]?.[FEISHU.name], want)) {
+        delete manifest[section][FEISHU.name];
+        changed = true;
+      }
+    }
+    if (changed) updates.push([manifestFile, `${JSON.stringify(manifest, null, 2)}\n`]);
+  }
+  for (const [file, text] of updates) {
+    writeFileSync(`${file}.tmp`, text, { mode: 0o600 });
     renameSync(`${file}.tmp`, file);
   }
 }
 
 if (import.meta.main) {
-  const [command, directory, cliEntry] = process.argv.slice(2);
+  const [command, directory, cliEntry, want = WEB_SPEC] = process.argv.slice(2);
   if (command === 'download' && directory) await downloadArchive(directory);
   else if (command === 'repair' && directory && cliEntry) {
-    const files = ['pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml'].map(file => join(directory, file));
-    if (files.some(file => existsSync(file) && readFileSync(file, 'utf8').includes(FEISHU.url))) {
+    const files = ['package.json', 'pnpm-lock.yaml', 'node_modules/.pnpm/lock.yaml'].map(file => join(directory, file));
+    if (files.some(file => existsSync(file) && readFileSync(file, 'utf8').includes('aiwayds-dsh-feishu-'))) {
       let require = createRequire(cliEntry);
       for (const name of ['@deepseek-ai/dsh/package.json', '@deepseek-ai/dsh-base/package.json', '@deepseek-ai/dsh-config-editor/package.json']) require = createRequire(require.resolve(name));
-      for (const file of files) repairLockfile(file, require('yaml'));
+      repairProfile(directory, require('yaml'), want);
     }
-  } else throw new Error('Usage: node plugin-artifacts.mjs download <directory> | repair <profile> <dsh CLI entry>');
+  } else throw new Error('Usage: node plugin-artifacts.mjs download <directory> | repair <profile> <dsh CLI entry> [target spec]');
 }

@@ -53,3 +53,7 @@ python3 crysound/plugins/memory-evaluation/inspect_candidates.py \
 界面变化及新持久化结构须在形成可审查 PR 后先经提问分诊；此处未请求重新决定已批准的产品方向。插件由伙伴助理验收后，再经负责人同意预装。
 
 个人记忆的开关、编辑、来源时间、随机编号更新、原子合并、敏感拒存和本会话不记的新版验证见 [IMPROVEMENTS.md](IMPROVEMENTS.md)。`verify_personal_memory.py` 可无模型访问复查已提交的真实会话及页面证据；原评估结果保留为历史记录。
+
+## 首次陈述与后台学习验证
+
+当前新增的 30 段合成对话、真实保存对比脚本及回复回执证据见 [FIRST-MENTION.md](FIRST-MENTION.md)；后台学习五项技术结论见 [BACKGROUND-FEASIBILITY.md](BACKGROUND-FEASIBILITY.md)。本页以上内容是最初候选评估记录，不替代当前版本验收。

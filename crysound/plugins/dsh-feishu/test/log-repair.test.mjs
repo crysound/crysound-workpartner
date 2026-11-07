@@ -179,7 +179,12 @@ test('the zstd path writes session.repaired.jsonl.zstd (skipped without a zstd b
   }
 })
 
-test('the vendored script re-encodes multi-frame: frame 1 is the header line alone', async () => {
+test('the vendored script re-encodes multi-frame: frame 1 is the header line alone', async t => {
+  const probe = spawnSync('zstd', ['--version'])
+  if (probe.error !== undefined || probe.status !== 0) {
+    t.skip('no zstd binary on PATH; multi-frame compression requires zstd')
+    return
+  }
   // dsh's jsonl loader requires the FIRST frame to hold exactly one header
   // line; a single-frame rewrite is rejected with "first frame is not exactly
   // one header line" and bricks /resume listing for the whole workspace.
