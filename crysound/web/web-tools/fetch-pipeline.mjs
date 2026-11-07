@@ -1,4 +1,5 @@
-/** Bounded direct retrieval, question summaries, and one public-page Codex open attempt. */
+/** Bounded direct retrieval, question summaries, and DeepSeek then Codex public-page fallbacks. */
+import { deepseekFetch } from "./deepseek-fetch.mjs";
 import { companyModelAccess, summarizeFetch } from "./summary.mjs";
 import { publicTarget, withAbort, webError } from "./network.mjs";
 import { toolTiming } from "./timing.mjs";
@@ -27,9 +28,18 @@ export async function fetchPage(ctx, config, input, prompt, render, signal, serv
   signal?.throwIfAborted();
   const started = performance.now();
   let original, failure;
+  const fallback = config.fetchOpen || config.fetchDeepSeek;
+  const remaining = () => config.fetchTotalTimeoutMs - (performance.now() - started);
+  const summarize = async result => {
+    if (!fallback) return summarizeFetch(ctx, config, prompt, input.url, result, render, signal, services);
+    if (remaining() <= 0) return result;
+    try {
+      return await bounded(remaining(), signal, summarySignal => summarizeFetch(ctx, config, prompt, input.url, result, render, summarySignal, services));
+    } catch (error) { signal?.throwIfAborted(); return result; } // A readable page survives the total summary deadline.
+  };
   toolTiming.fetch("direct-start");
   try {
-    original = config.fetchOpen
+    original = fallback
       ? await bounded(config.fetchDirectTimeoutMs, signal, directSignal => ctx.web.fetch(input, directSignal))
       : await ctx.web.fetch(input, signal);
     toolTiming.fetch("direct-end", original.statusCode >= 400 ? "http-error" : "success");
@@ -39,15 +49,29 @@ export async function fetchPage(ctx, config, input, prompt, render, signal, serv
     failure = error;
   }
   if (original && original.statusCode < 400 && original.body.content.trim()) {
+    toolTiming.fetch("deepseek-skip", "direct-success");
     toolTiming.fetch("open-skip", "direct-success");
-    return summarizeFetch(ctx, config, prompt, input.url, original, render, signal, services);
+    return summarize(original);
   }
-  if (config.fetchOpen && !blocked(failure)) {
+  if (config.fetchDeepSeek && !blocked(failure) && remaining() > 0) {
+    toolTiming.fetch("deepseek-start");
+    try {
+      const fetched = await bounded(Math.min(config.fetchDeepSeekTimeoutMs, remaining()), signal,
+        dsSignal => deepseekFetch(ctx, config, input, dsSignal, services));
+      toolTiming.fetch("deepseek-end", "success");
+      toolTiming.fetch("open-skip", "deepseek-success");
+      return summarize(fetched);
+    } catch (error) {
+      const outcome = signal?.aborted ? "cancelled" : error.code === "WEB_FETCH_TIMEOUT" ? "timeout" : "error";
+      toolTiming.fetch("deepseek-request-end", outcome);
+      toolTiming.fetch("deepseek-end", outcome);
+      signal?.throwIfAborted();
+    }
+  } else toolTiming.fetch("deepseek-skip", blocked(failure) ? "blocked" : !config.fetchDeepSeek ? "disabled" : "budget");
+  if (config.fetchOpen && !blocked(failure) && remaining() > 0) {
     toolTiming.fetch("open-start");
     try {
-      const remaining = config.fetchTotalTimeoutMs - (performance.now() - started);
-      if (remaining <= 0) throw webError("网页抓取超时，请稍后重试", "WEB_FETCH_TIMEOUT");
-      const opened = await bounded(Math.min(config.fetchOpenTimeoutMs, remaining), signal, async openSignal => {
+      const opened = await bounded(Math.min(config.fetchOpenTimeoutMs, remaining()), signal, async openSignal => {
         // Never send private destinations or URL credentials to an external model.
         await withAbort(publicTarget(input.url), openSignal);
         const { base, key } = await companyModelAccess(ctx, config, services);
@@ -90,7 +114,7 @@ export async function fetchPage(ctx, config, input, prompt, render, signal, serv
       toolTiming.fetch("open-end", outcome);
       signal?.throwIfAborted();
     }
-  } else toolTiming.fetch("open-skip", config.fetchOpen ? "blocked" : "disabled");
+  } else toolTiming.fetch("open-skip", blocked(failure) ? "blocked" : !config.fetchOpen ? "disabled" : "budget");
   if (failure) throw failure;
   return original;
 }

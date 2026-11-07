@@ -18,6 +18,9 @@ services:
       PREVIEW_HOST: ${PREVIEW_HOST:-}
       OLD_HOSTS: ${OLD_HOSTS:-}
       FEISHU_USER_AUTH_ENABLED: ${FEISHU_USER_AUTH_ENABLED:-0}
+      DS_TOOLS_API_KEY_FILE: ${DS_TOOLS_API_KEY_FILE:-/secure/deepseek-tools.key}
+      DS_TOOLS_MONTHLY_USD: ${DS_TOOLS_MONTHLY_USD:-10}
+      DS_TOOLS_USER_RPM: ${DS_TOOLS_USER_RPM:-20}
       TREG_ENABLED: ${TREG_ENABLED:-0}
       TREG_ORG_ID: ${TREG_ORG_ID:-}
       TREG_ORG_SLUG: ${TREG_ORG_SLUG:-}
@@ -56,6 +59,7 @@ services:
           create_host_path: false
       - ./gateway/market.mjs:/app/market.mjs:ro
       - ./gateway/treg-catalog.mjs:/app/treg-catalog.mjs:ro
+      - ./gateway/ds-tools.mjs:/app/ds-tools.mjs:ro
       - ./gateway/treg.mjs:/app/treg.mjs:ro
       - ./gateway/treg-state.mjs:/app/treg-state.mjs:ro
       - ./gateway/market-auth.mjs:/app/market-auth.mjs:ro
@@ -65,6 +69,13 @@ services:
       - ${PARTNER_DATA}/users.json:/etc/partner/users.json
       - ${PARTNER_DATA}/users:/users
       - ${PARTNER_SECURE}:/secure
+      # Existing paid tools key: gateway only, read-only; prepare before recreating the gateway.
+      - type: bind
+        source: ${PARTNER_SECURE}/deepseek-tools.key
+        target: /secure/deepseek-tools.key
+        read_only: true
+        bind:
+          create_host_path: false
       - ${PARTNER_DATA}/gateway/state:/state
       - ${PARTNER_DATA}/downloads:/downloads:ro
       - /var/run/docker.sock:/var/run/docker.sock

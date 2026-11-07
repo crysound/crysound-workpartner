@@ -449,7 +449,7 @@ test("patches apply to the pinned artifacts, repeat identically, and reject upst
   const registered = [];
   tools.apply({ tools: { register: tool => registered.push(tool) }, systemPrompt: { section() {}, getSectionOrder() { return 0; } } }, tools.Config({}));
   assert.equal(registered.find(tool => tool.name === "web_search").timeoutMs, 18000, "twelve-second primary and four-second fallback fit in the real tool deadline");
-  assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 8000);
+  assert.equal(registered.find(tool => tool.name === "web_fetch").timeoutMs, 10000);
   const toolFile = join(root, "@deepseek-ai/dsh-tool-web/lib/index.js");
   const currentTool = await readFile(toolFile, "utf8");
   await writeFile(toolFile, currentTool.replace('searchTimeoutMs: z.number().default(18_000)', 'searchTimeoutMs: z.number().default(65_000)'));
@@ -568,7 +568,7 @@ async function summaryTool(t, config = {}, request = async () => Response.json({
     environment: new Map([["DEEPSEEK_BASE_URL", { value: "https://company.example/v1" }]]),
     get: name => name === "credentials" ? { resolve: resolveKey } : name === "agents" ? { currentInitiator: () => ({ session: { append: record } }) } : undefined,
   };
-  api.apply(ctx, api.Config({ fetchMaxOutputChars: 40000, ...config }));
+  api.apply(ctx, api.Config({ fetchDeepSeek: false, fetchMaxOutputChars: 40000, ...config }));
   const tool = registered.find(tool => tool.name === "web_fetch");
   return { tool, result, ctx, api };
 }
@@ -581,7 +581,7 @@ test("released web_fetch accepts a question, sends bounded Markdown to company m
   }, { record: (type, data) => records.push({ type, data }) });
   assert.equal(tool.parameters.prompt.type, "string");
   assert.notEqual(tool.parameters.prompt.required, true);
-  assert.equal(tool.timeoutMs, 8000);
+  assert.equal(tool.timeoutMs, 10000);
   const args = { url: "https://public.example/original", prompt: "收入是多少，同比增长多少？" };
   const value = await tool.execute(args, {});
   const text = tool.output.render(args, value)[0].text;
@@ -618,7 +618,7 @@ test("missing/blank questions and disabled summaries preserve the original resul
     const value = await tool.execute({ url: result.url, ...(prompt === undefined ? {} : { prompt }) }, {});
     assert.equal(value.body.content, result.body.content);
     assert.equal(value.body.kind, "html");
-    if (config.fetchSummary === false) assert.equal(tool.timeoutMs, 8000);
+    if (config.fetchSummary === false) assert.equal(tool.timeoutMs, 10000);
   }
 });
 
@@ -688,7 +688,7 @@ test("summary model, endpoint and token budget follow config; invalid settings r
   assert.equal(sent.url, "https://alternate.example/v1/messages");
   assert.equal(sent.body.model, "codex/gpt-6.1-sol");
   assert.equal(sent.body.max_tokens, 900);
-  for (const config of [{ fetchOpen: "yes" }, { fetchOpenModel: "" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchOpenTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 4000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
+  for (const config of [{ fetchDeepSeek: "yes" }, { fetchDeepSeekTimeoutMs: 0 }, { fetchDeepSeekMinChars: 0 }, { fetchOpen: "yes" }, { fetchOpenModel: "" }, { fetchDirectTimeoutMs: 0 }, { fetchSummaryMinChars: 0 }, { fetchOpenTimeoutMs: 2147483648 }, { fetchTotalTimeoutMs: 2147483647 }, { fetchTotalTimeoutMs: 4000 }, { fetchSummaryModel: "" }, { fetchSummary: "yes" }, { fetchSummaryTimeoutMs: 0 }, { fetchSummaryMaxTokens: 0 }, { fetchSummaryBaseURL: "file:///tmp/test" }]) assert.throws(() => api.apply(ctx, api.Config(config)));
   await assert.rejects(tool.execute({ url: result.url, prompt: 123 }, {}), /prompt/);
 });
 
@@ -865,8 +865,8 @@ test("direct deadline aborts retrieval; open deadline and caller cancellation ab
   t.mock.timers.tick(3000);
   await ready;
   assert.equal(directSignal.aborted, true);
-  now = 7500;
-  t.mock.timers.tick(4500);
+  now = 9000;
+  t.mock.timers.tick(6000);
   await assert.rejects(pending, { code: "WEB_FETCH_TIMEOUT" });
   assert.equal(openSignal.aborted, true);
 
@@ -950,4 +950,26 @@ test("released fetch pipeline records download, extraction, summary and open sta
   const incomplete = timingReport(records.filter(record => record.stage !== "fetch-download-end"));
   assert.equal(incomplete[0].fetchStages.download[0].durationMs, null);
   assert.equal(fetchTimingSummary(incomplete).stages.download.incomplete, 2);
+});
+
+
+test("released patched web_fetch uses gateway identity for paid rescue and keeps short Markdown without a model request", async t => {
+  const root = await mkdtemp(join(tmpdir(), "partner-paid-identity-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const tokenFile = join(root, "identity"), token = "zpd.fixture." + "a".repeat(43);
+  await writeFile(tokenFile, token, { mode: 0o600 });
+  const calls = [], page = "收入 1.2 亿元，同比增长 12%，仅适用于校准设备。".repeat(10);
+  const { tool, ctx } = await summaryTool(t, { fetchDeepSeek: true }, async (endpoint, init) => {
+    calls.push({ endpoint, init }); return Response.json({ title: "年度数据", content: page });
+  });
+  ctx.environment.set("CRYSOUND_DS_TOOLS_BASE", { value: "http://zhaohua-partner-gateway:3091/_zp/ds-tools/" });
+  ctx.environment.set("CRYSOUND_DS_TOOLS_TOKEN_FILE", { value: tokenFile });
+  ctx.web.fetch = async () => { throw Object.assign(new Error("原抓取失败"), { code: "WEB_PROVIDER_ERROR" }); };
+  const args = { url: "https://8.8.8.8/report", prompt: "收入和限制？" }, result = await tool.execute(args, {});
+  const output = tool.output.render(args, result)[0].text;
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].endpoint, "http://zhaohua-partner-gateway:3091/_zp/ds-tools/fetch");
+  assert.equal(calls[0].init.headers.authorization, `Bearer ${token}`);
+  assert.match(output, /https:\/\/8.8.8.8\/report/); assert.match(output, /12%.*校准设备/);
+  assert.equal(tool.timeoutMs, 10000);
 });

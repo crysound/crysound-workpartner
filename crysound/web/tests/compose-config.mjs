@@ -17,6 +17,14 @@ try {
   const gateway = config.services.gateway;
   assert.equal(gateway.environment.HOST_PARTNER_CONFIG, `${root}/company-config`);
   assert.equal(gateway.environment.TREG_MONTHLY_USD, "5");
+  assert.equal(gateway.environment.DS_TOOLS_MONTHLY_USD, "10");
+  assert.equal(gateway.environment.DS_TOOLS_USER_RPM, "20");
+  const paidKey = gateway.volumes.find(volume => volume.target === "/secure/deepseek-tools.key");
+  assert.equal(paidKey.read_only, true);
+  assert.equal(paidKey.bind.create_host_path, false);
+  assert.equal(paidKey.source, `${root}/fake-secure/deepseek-tools.key`);
+  assert.equal(gateway.ports.some(port => port.target === 3091), false);
+  assert.ok(Object.entries(config.services).filter(([name]) => name !== "gateway").every(([, service]) => !service.volumes?.some(volume => volume.target === paidKey.target)));
   assert.ok(gateway.volumes.some((v) => v.target === "/app/treg-state.mjs" && v.read_only));
   for (const volume of gateway.volumes.filter((v) => v.type === "bind" && /^\/app\/.*\.mjs$/.test(v.target))) {
     assert.ok(fs.statSync(volume.source).isFile(), `gateway module mount missing: ${volume.target}`);

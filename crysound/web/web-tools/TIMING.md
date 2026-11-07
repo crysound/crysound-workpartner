@@ -59,18 +59,20 @@ node crysound/web/web-tools/timing-report.mjs /path/to/tool-timing.jsonl
 | `extract-start/end` | 登录/空壳识别及 HTML 精简；摘要前的有界 Markdown 转换另记一段 |
 | `render-start/end` | Chromium 加载、渲染到清理完毕 |
 | `summary-request-start/end` | 摘要 HTTP 派发至响应解析完成；派发前失败只有 end，耗时为 null |
+| `deepseek-start/end` | DeepSeek 阶段，包含地址检查、身份文件读取和网关往返 |
+| `deepseek-request-start/end` | 发往内部网关的付费抓取请求及解析；未实际派发时不计调用 |
 | `open-start/end` | Codex 打开整个阶段，包括公开地址检查、凭据读取和模型请求 |
 | `open-request-start/end` | `/responses` HTTP 派发至打开记录及摘要解析完成 |
 
-`outcome` 标明 success、http-error、timeout、error、cancelled；`fetch-render-skip`、`fetch-summary-skip`、`fetch-open-skip` 标明静态页、短正文、不满足摘要条件、直抓成功、被拦截或已关闭的分支。直抓/打开/下载/提取有包含关系，不能把所有段相加当作端到端时间。取消后的浏览器清理可能晚于直抓截止时刻，记录保留实际完成时间；同一调用异步尝试结束后才 flush。
+`outcome` 标明 success、http-error、timeout、error、cancelled；`fetch-render-skip`、`fetch-summary-skip`、`fetch-open-skip`、`fetch-deepseek-skip` 标明静态页、短正文、不满足摘要条件、直抓成功、被拦截或已关闭的分支。直抓/打开/下载/提取有包含关系，不能把所有段相加当作端到端时间。取消后的浏览器清理可能晚于直抓截止时刻，记录保留实际完成时间；同一调用异步尝试结束后才 flush。
 
-原命令逐调用输出 `fetchStages`（每段可多次）与 `fetchBranches`。没有运行的段是空数组，只有开始/结束一端的段是 null，不补成零。跨调用汇总：
+原命令逐调用输出 `fetchStages`（每段可多次）、`fetchRequests`（实际 DeepSeek/Codex 派发次数）与 `fetchBranches`。没有运行的段是空数组，只有开始/结束一端的段是 null，不补成零。跨调用汇总：
 
 ```sh
 node crysound/web/web-tools/timing-report.mjs /path/to/tool-timing.jsonl --fetch-summary
 ```
 
-汇总含调用数、各段完整样本数、缺失数、中位数、90 分位、结果及跳过分支计数。分位取有序完整样本的 nearest rank；错误/超时也保留在相应分布并单列结果数量。未包含的凭据等待可对照整个 open 阶段与 open-request 的差值。进程被强杀或诊断写入失败仍不构成完整样本。
+汇总的 `fallbackCalls.deepseek`、`fallbackCalls.codex` 按 request-start 统计，包含未完成请求，缺钥匙、未派发不计；计数是兜底尝试次数，不是付费成功数（成功与预留以网关持久账本为准）。汇总还含调用数、各段完整样本数、缺失数、中位数、90 分位、结果及跳过分支计数。分位取有序完整样本的 nearest rank；错误/超时也保留在相应分布并单列结果数量。未包含的凭据等待可对照整个 open 阶段与 open-request 的差值。进程被强杀或诊断写入失败仍不构成完整样本。
 
 ## 检查和上线验收
 

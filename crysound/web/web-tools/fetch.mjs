@@ -11,12 +11,8 @@ export function loginPage(url, html = "") {
     || /<title[^>]*>[^<]*(?:登录|登入|sign\s*in|log\s*in)[^<]*<\/title>/i.test(html);
 }
 
-/** Identify a short script-driven shell. @param html Decoded HTML. @returns Whether one render should be attempted. */
-export function needsRendering(html) {
-  for (const [, , body] of compactHtml(html).matchAll(/<(article|main)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi)) {
-    if (body.replace(/<[^>]*>/g, "").replace(/&(?:nbsp|#160);|\s/g, "").length >= 80) return false;
-  }
-  // Count text tokens only. This heuristic never produces HTML for display or execution.
+// Count text tokens for a rendering heuristic. No derived HTML is displayed or executed.
+function hasText(html, minimum) {
   let length = 0, rawTag;
   for (const match of html.matchAll(/<!--[\s\S]*?-->|<(\/?)([a-z][\w:-]*)\b[^>]*>|([^<]+)/gi)) {
     const [, closing, tag, text] = match;
@@ -26,10 +22,18 @@ export function needsRendering(html) {
       else if (!closing && ["script", "style", "noscript"].includes(name) && !rawTag) rawTag = name;
     } else if (text && !rawTag) {
       length += (text.match(/&(?:nbsp|#160);|\S/g) ?? []).filter(token => token !== "&nbsp;" && token !== "&#160;").length;
-      if (length >= 240) return false;
+      if (length >= minimum) return true;
     }
   }
-  return /<script\b|enable\s+javascript|需要.{0,5}JavaScript/i.test(html);
+  return false;
+}
+
+/** Identify a short script-driven shell. @param html Decoded HTML. @returns Whether one render should be attempted. */
+export function needsRendering(html) {
+  for (const [, , body] of compactHtml(html).matchAll(/<(article|main)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi)) {
+    if (hasText(body, 80)) return false;
+  }
+  return !hasText(html, 240) && /<script\b|enable\s+javascript|需要.{0,5}JavaScript/i.test(html);
 }
 
 /** Flatten HTTP redirects using checked transport. @param url Initial URL. @param signal Optional cancellation. @param request Checked request function. @param maxHops Redirect limit. @param main Check login paths when true. @returns Final response and URL. */

@@ -13,6 +13,9 @@ node "$CONFIG/market-npmrc.mjs" /data/.npmrc || echo "警告：市场 npm 配置
 MAGPIE_API_KEY=$(cat /etc/partner/magpie.key) && export MAGPIE_API_KEY
 export DEEPSEEK_API_KEY="$MAGPIE_API_KEY" DEEPSEEK_BASE_URL="${MAGPIE_BASE_URL:?请设置 MAGPIE_BASE_URL}"
 export CRYSOUND_LLM_BASE="$DEEPSEEK_BASE_URL"
+# Only the existing container identity is read here; the paid API key remains in the gateway.
+export CRYSOUND_DS_TOOLS_BASE="http://zhaohua-partner-gateway:3091/_zp/ds-tools/"
+export CRYSOUND_DS_TOOLS_TOKEN_FILE="/data/.zp-market-token"
 mkdir -p /data/work && cd /data/work
 # 旧远程或本地发行包的安装记录先移出，避免 pnpm 读取新镜像已不再携带的旧包。
 FEISHU_SPEC=$(node -e 'console.log(require(process.argv[1]).plugins.find(p => p.name === "@aiwayds/dsh-feishu")?.want || "")' "$CONFIG/plugins.json")

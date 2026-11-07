@@ -75,7 +75,7 @@ export function refreshProfile(file, seedFile, yaml, seedDefaults = false, enabl
   const personalToolConfig = mine.getIn(toolPath, true);
   if (personalToolConfig === undefined) mine.setIn(toolPath, mine.createNode({}));
   else if (!yaml.isMap(personalToolConfig)) throw new Error("个人网页工具配置使用了动态表达式，无法安全刷新公司上限；请把 config 改为映射");
-  for (const key of ["searchTimeoutMs", "fetchMaxOutputChars", "fetchSummary", "fetchSummaryModel", "fetchSummaryBaseURL", "fetchSummaryTimeoutMs", "fetchSummaryMaxTokens", "fetchSummaryMinChars", "fetchOpen", "fetchOpenModel", "fetchDirectTimeoutMs", "fetchOpenTimeoutMs", "fetchTotalTimeoutMs"]) {
+  for (const key of ["searchTimeoutMs", "fetchMaxOutputChars", "fetchSummary", "fetchSummaryModel", "fetchSummaryBaseURL", "fetchSummaryTimeoutMs", "fetchSummaryMaxTokens", "fetchSummaryMinChars", "fetchOpen", "fetchOpenModel", "fetchDirectTimeoutMs", "fetchOpenTimeoutMs", "fetchTotalTimeoutMs", "fetchDeepSeek", "fetchDeepSeekTimeoutMs", "fetchDeepSeekMinChars"]) {
     mine.setIn([...toolPath, key], toolConfig.get(key, true).clone());
   }
 
