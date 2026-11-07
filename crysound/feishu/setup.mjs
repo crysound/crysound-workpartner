@@ -1,4 +1,4 @@
-import { prepareNativeProfile } from "./native-profile.mjs";
+import { prepareNativeProfile, prepareProfilePlugin } from "./native-profile.mjs";
 // 可重复的本机准备：命令脚本和不含凭据的配置；公司技能版本目录只读，不覆盖个人文件。
 import fs from "node:fs";
 import path from "node:path";
@@ -66,11 +66,7 @@ export function prepareWrappers(config, configFile) {
  */
 export function prepareSkillProfile(patch) {
   prepareNativeProfile(patch);
-  const initial = fs.existsSync(patch) ? fs.readFileSync(patch, "utf8") : "[]\n";
-  if (/^- id: ['"]?company-feishu-skills['"]?\s*$/m.test(initial)) return;
-  const text = initial.replace(/^\[\]\s*$/m, "").replace(/\n*$/, "\n") + `\n- id: company-feishu-skills\n  name: '@deepseek-ai/dsh-skill-filesystem'\n  config:\n    providerName: company-feishu\n    includeDefaultRoots: false\n    watch: false\n    customSkillDirs: !!js '[process.env.CRYSOUND_COMPANY_SKILLS]'\n`;
-  const temp = `${patch}.feishu.tmp`;
-  fs.writeFileSync(temp, text, { mode: 0o600 }); fs.renameSync(temp, patch);
+  prepareProfilePlugin(patch, 'company-feishu-skills', `- id: company-feishu-skills\n  name: '@deepseek-ai/dsh-skill-filesystem'\n  config:\n    providerName: company-feishu\n    includeDefaultRoots: false\n    watch: false\n    customSkillDirs: !!js '[process.env.CRYSOUND_COMPANY_SKILLS]'\n`);
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
